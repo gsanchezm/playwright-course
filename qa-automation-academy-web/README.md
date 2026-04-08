@@ -13,8 +13,8 @@ Vive como proyecto independiente dentro del monorepo y **no modifica** `typescri
 
 ## Requisitos
 
-- Node.js >= 18.18
-- pnpm 9 (`corepack enable && corepack prepare pnpm@9.12.0 --activate`)
+- Node.js 20.x
+- pnpm 9 (`corepack pnpm --version`)
 
 ## Desarrollo local
 
@@ -62,7 +62,7 @@ El archivo `render.yaml` en esta carpeta define el servicio. Desde el dashboard 
 2. Conecta el repo y apunta al blueprint `qa-automation-academy-web/render.yaml`.
 3. Render detecta un Static Site con:
    - Root directory: `qa-automation-academy-web`
-   - Build command: `corepack enable && pnpm install --frozen-lockfile=false && pnpm build`
+   - Build command: `corepack pnpm install --frozen-lockfile=false && corepack pnpm build`
    - Publish directory: `./dist`
    - Rewrite SPA: `/*` → `/index.html`
 
@@ -72,7 +72,7 @@ Si prefieres crearlo a mano: **New +** → **Static Site** con los mismos valore
 
 ### Notas
 
-- El proyecto usa pnpm vía Corepack para evitar instalar pnpm globalmente en el builder.
+- El proyecto usa pnpm vía Corepack, pero sin `corepack enable`, porque en Render el filesystem del binario global puede ser de solo lectura.
 - `pullRequestPreviewsEnabled: true` genera previews por PR.
 - Headers de seguridad básicos ya están incluidos en `render.yaml`.
 
