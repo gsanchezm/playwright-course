@@ -1,0 +1,18 @@
+[
+  {
+    "name": "agregar un todo simple",
+    "todo": "Comprar leche"
+  },
+  {
+    "name": "agregar un todo con emojis",
+    "todo": "Hacer ejercicio 💪"
+  },
+  {
+    "name": "agregar un todo largo",
+    "todo": "Estudiar la documentación oficial de Playwright de principio a fin"
+  },
+  {
+    "name": "agregar un todo con caracteres especiales",
+    "todo": "Test con #hashtag y @mención"
+  }
+]
