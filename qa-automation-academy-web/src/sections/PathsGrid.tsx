@@ -55,7 +55,7 @@ export default function PathsGrid() {
                       <img
                         src={p.logo}
                         alt=""
-                        className="h-6 w-6 object-contain"
+                        className="h-7 w-7 object-contain"
                       />
                     ) : (
                       <Icon name={p.iconName as IconName} className="h-5 w-5" />
