@@ -51,7 +51,15 @@ export default function PathsGrid() {
                     className={`grid h-11 w-11 place-items-center rounded-xl border border-qa-line bg-qa-panel ${accentIconClass[p.accent]}`}
                     aria-hidden="true"
                   >
-                    <Icon name={p.iconName as IconName} className="h-5 w-5" />
+                    {p.logo ? (
+                      <img
+                        src={p.logo}
+                        alt=""
+                        className="h-6 w-6 object-contain"
+                      />
+                    ) : (
+                      <Icon name={p.iconName as IconName} className="h-5 w-5" />
+                    )}
                   </span>
                   <Badge status={p.status} />
                 </div>

@@ -8,6 +8,10 @@
 
 ---
 
+![Guía rápida de Git](/git-guide.jpg)
+
+---
+
 ## 🍎 macOS
 
 ### Opción A (recomendada): Homebrew

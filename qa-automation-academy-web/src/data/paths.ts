@@ -10,6 +10,7 @@ export type LearningPath = {
   href: string;
   accent: PathAccent;
   iconName: "code" | "git-branch" | "play";
+  logo?: string;
 };
 
 export const paths: LearningPath[] = [
@@ -27,6 +28,7 @@ export const paths: LearningPath[] = [
     href: "/docs/typescript",
     accent: "cyan",
     iconName: "code",
+    logo: "/typescript.png",
   },
   {
     id: "git-github",
@@ -42,6 +44,7 @@ export const paths: LearningPath[] = [
     href: "/docs/git-github",
     accent: "periwinkle",
     iconName: "git-branch",
+    logo: "/github.png",
   },
   {
     id: "playwright",
@@ -57,5 +60,6 @@ export const paths: LearningPath[] = [
     href: "/docs/playwright",
     accent: "lavender",
     iconName: "play",
+    logo: "/playwright.png",
   },
 ];

@@ -34,7 +34,7 @@ export default function Methodology() {
           </SectionReveal>
 
           <SectionReveal delay={120}>
-            <ol className="relative space-y-4 border-l border-qa-line pl-6">
+            <ol className="relative space-y-4 border-l border-qa-line pl-5 sm:pl-6">
               {methodology.map((step, i) => (
                 <li key={step.id} className="relative">
                   <span

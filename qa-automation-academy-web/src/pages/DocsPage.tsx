@@ -47,19 +47,7 @@ export default function DocsPage() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // If no slug, redirect to first item of section (if available)
-  const sectionData = docsNav.find((s) => s.id === section);
-  if (!slug) {
-    if (sectionData && sectionData.items.length > 0) {
-      return (
-        <Navigate to={`/docs/${section}/${sectionData.items[0].slug}`} replace />
-      );
-    }
-    // Section exists but has no content yet — fall through to "coming soon" view
-  }
-
-  const content = slug ? getContent(section, slug) : null;
-  const { prev, next } = slug ? getNextPrev(section, slug) : { prev: null, next: null };
+  // ── ALL hooks must be called unconditionally (Rules of Hooks) ──
 
   // Close sidebar on outside click
   useEffect(() => {
@@ -87,8 +75,23 @@ export default function DocsPage() {
 
   // Scroll to top on navigation
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    if (slug) window.scrollTo({ top: 0 });
   }, [section, slug]);
+
+  // ── Derived values (after all hooks) ──
+  const sectionData = docsNav.find((s) => s.id === section);
+
+  // Redirect: /docs/setup → /docs/setup/overview (first item)
+  if (!slug && sectionData && sectionData.items.length > 0) {
+    return (
+      <Navigate to={`/docs/${section}/${sectionData.items[0].slug}`} replace />
+    );
+  }
+
+  const content = slug ? getContent(section, slug) : null;
+  const { prev, next } = slug
+    ? getNextPrev(section, slug)
+    : { prev: null, next: null };
 
   return (
     <div className="min-h-screen bg-qa-base font-sans text-qa-text">
@@ -263,8 +266,9 @@ export default function DocsPage() {
                 <h1 className="mt-4 font-display text-3xl font-semibold text-qa-text">
                   Contenido en desarrollo
                 </h1>
-                <p className="mt-4 max-w-sm mx-auto font-sans text-qa-muted">
-                  Esta sección estará disponible pronto. Mientras tanto, comienza con el módulo de Setup.
+                <p className="mt-4 mx-auto max-w-sm font-sans text-qa-muted">
+                  Esta sección estará disponible pronto. Mientras tanto,
+                  comienza con el módulo de Setup.
                 </p>
                 <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                   <Link
@@ -272,8 +276,18 @@ export default function DocsPage() {
                     className="inline-flex items-center gap-2 rounded-full bg-qa-accent px-5 py-2.5 font-mono text-sm font-medium text-qa-base transition-all hover:-translate-y-px"
                   >
                     Ir al Setup
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </Link>
                   <Link

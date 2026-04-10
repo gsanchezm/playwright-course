@@ -64,7 +64,7 @@ export default function CodeShowcase({
         <div
           role="tablist"
           aria-label="Selector de ejemplo"
-          className="flex items-center gap-1"
+          className="flex items-center gap-0.5 overflow-x-auto"
         >
           {snippets.map((s) => {
             const isActive = s.id === active;

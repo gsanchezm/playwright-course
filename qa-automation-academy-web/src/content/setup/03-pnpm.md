@@ -5,6 +5,9 @@
 > **Sitio oficial:** https://pnpm.io/
 
 > **Versión recomendada:** **9.x o superior**.
+---
+
+![Guía visual de pnpm](/pnpm-guide.jpg)
 
 ---
 

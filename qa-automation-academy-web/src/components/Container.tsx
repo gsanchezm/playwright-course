@@ -7,7 +7,7 @@ type Props = HTMLAttributes<HTMLDivElement> & {
 export default function Container({ children, className = "", ...rest }: Props) {
   return (
     <div
-      className={`mx-auto w-full max-w-6xl px-6 lg:px-8 ${className}`.trim()}
+      className={`mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 ${className}`.trim()}
       {...rest}
     >
       {children}

@@ -20,17 +20,11 @@ export default function Hero() {
       className="relative overflow-hidden bg-qa-hero"
       aria-labelledby="hero-title"
     >
-      {/* Decorative orbs, near-static */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-qa-cyan/10 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-40 h-96 w-96 rounded-full bg-qa-violet/10 blur-3xl"
-      />
+      {/* Decorative orbs */}
+      <div aria-hidden="true" className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-qa-cyan/10 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute right-0 top-40 h-96 w-96 rounded-full bg-qa-violet/10 blur-3xl" />
 
-      <Container className="relative py-20 sm:py-24 lg:py-32">
+      <Container className="relative py-16 sm:py-24 lg:py-32">
         <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
           {/* Left: copy + CTAs */}
           <div>
@@ -38,7 +32,7 @@ export default function Hero() {
 
             <h1
               id="hero-title"
-              className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-qa-text text-balance sm:text-5xl lg:text-6xl"
+              className="mt-4 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-qa-text sm:text-4xl lg:text-5xl xl:text-6xl"
             >
               Aprende automatización con{" "}
               <span className="bg-qa-accent bg-clip-text text-transparent">
@@ -47,30 +41,27 @@ export default function Hero() {
               , desde TypeScript hasta Playwright.
             </h1>
 
-            <p className="mt-6 max-w-2xl font-sans text-lg leading-relaxed text-qa-muted sm:text-xl">
+            <p className="mt-5 max-w-2xl font-sans text-base leading-relaxed text-qa-muted sm:text-lg sm:mt-6">
               Una academia práctica para QA que quieren dar el salto a
               automatización: tipado, flujo real de Git/GitHub y tests E2E con
               Playwright, en una sola ruta.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:mt-8">
               <Button as="a" href="#rutas" variant="primary">
-                Explorar ejercicios
+                Explorar rutas
                 <Icon name="arrow-right" className="h-4 w-4" />
               </Button>
-              <Button
-                as="a"
-                href="https://github.com/gilbertosanchez/typescript"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="ghost"
+              <Link
+                to="/docs/setup"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-qa-line bg-qa-panel/40 px-6 py-3 font-sans font-medium text-qa-text backdrop-blur-sm transition-all hover:border-qa-cyan hover:text-qa-cyan"
               >
-                <Icon name="github" className="h-4 w-4" />
-                Ver el repo
-              </Button>
+                Empezar con Setup
+                <Icon name="arrow-right" className="h-4 w-4" />
+              </Link>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center gap-2">
+            <div className="mt-8 flex flex-wrap items-center gap-2">
               <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-qa-muted">
                 Stack de rutas
               </span>
@@ -80,20 +71,10 @@ export default function Hero() {
                 </Badge>
               ))}
             </div>
-
-            <div className="mt-6">
-              <Link
-                to="/docs/setup"
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-qa-muted transition-colors hover:text-qa-cyan"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-qa-cyan/70" aria-hidden="true" />
-                ¿Primera vez? Empieza con el Setup →
-              </Link>
-            </div>
           </div>
 
-          {/* Right: code showcase */}
-          <div className="lg:pl-4">
+          {/* Right: code showcase — only on large screens */}
+          <div className="hidden lg:block lg:pl-4">
             <CodeShowcase />
           </div>
         </div>
