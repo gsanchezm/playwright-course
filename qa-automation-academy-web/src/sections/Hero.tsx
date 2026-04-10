@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Container from "@/components/Container";
 import Eyebrow from "@/components/Eyebrow";
 import Button from "@/components/Button";
@@ -78,6 +79,16 @@ export default function Hero() {
                   {b.label}
                 </Badge>
               ))}
+            </div>
+
+            <div className="mt-6">
+              <Link
+                to="/docs/setup"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-qa-muted transition-colors hover:text-qa-cyan"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-qa-cyan/70" aria-hidden="true" />
+                ¿Primera vez? Empieza con el Setup →
+              </Link>
             </div>
           </div>
 

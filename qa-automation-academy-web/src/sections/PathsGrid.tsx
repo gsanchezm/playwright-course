@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Container from "@/components/Container";
 import Eyebrow from "@/components/Eyebrow";
 import Card from "@/components/Card";
@@ -78,16 +79,25 @@ export default function PathsGrid() {
                 </ul>
 
                 <div className="mt-auto pt-8">
-                  <a
-                    href={p.href}
-                    {...(p.href.startsWith("http")
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                    className={`inline-flex items-center gap-2 font-mono text-sm transition-all hover:gap-3 ${accentLinkClass[p.accent]}`}
-                  >
-                    {p.status === "live" ? "Empezar ruta" : "Ver detalles"}
-                    <Icon name="arrow-right" className="h-4 w-4" />
-                  </a>
+                  {p.href.startsWith("http") ? (
+                    <a
+                      href={p.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 font-mono text-sm transition-all hover:gap-3 ${accentLinkClass[p.accent]}`}
+                    >
+                      {p.status === "live" ? "Empezar ruta" : "Ver detalles"}
+                      <Icon name="arrow-right" className="h-4 w-4" />
+                    </a>
+                  ) : (
+                    <Link
+                      to={p.href}
+                      className={`inline-flex items-center gap-2 font-mono text-sm transition-all hover:gap-3 ${accentLinkClass[p.accent]}`}
+                    >
+                      {p.status === "live" ? "Empezar ruta" : "Ver detalles"}
+                      <Icon name="arrow-right" className="h-4 w-4" />
+                    </Link>
+                  )}
                 </div>
               </Card>
             </SectionReveal>
