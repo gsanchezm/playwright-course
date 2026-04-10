@@ -48,14 +48,14 @@ export default function PathsGrid() {
               <Card accent={p.accent} as="article" className="flex h-full flex-col">
                 <div className="flex items-center justify-between">
                   <span
-                    className={`grid h-11 w-11 place-items-center rounded-xl border border-qa-line bg-qa-panel ${accentIconClass[p.accent]}`}
+                    className={`grid h-12 w-12 place-items-center rounded-xl border border-qa-line bg-qa-elevated ${accentIconClass[p.accent]}`}
                     aria-hidden="true"
                   >
                     {p.logo ? (
                       <img
                         src={p.logo}
                         alt=""
-                        className="h-7 w-7 object-contain"
+                        className="h-9 w-9 object-contain"
                       />
                     ) : (
                       <Icon name={p.iconName as IconName} className="h-5 w-5" />

@@ -44,7 +44,7 @@ export const paths: LearningPath[] = [
     href: "/docs/git-github",
     accent: "periwinkle",
     iconName: "git-branch",
-    logo: "/github.png",
+    logo: "/git-icon.svg",
   },
   {
     id: "playwright",
@@ -60,6 +60,6 @@ export const paths: LearningPath[] = [
     href: "/docs/playwright",
     accent: "lavender",
     iconName: "play",
-    logo: "/playwright.png",
+    logo: "/playwright-logo.svg",
   },
 ];
