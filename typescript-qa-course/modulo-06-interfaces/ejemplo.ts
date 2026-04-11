@@ -2,13 +2,16 @@
 // Módulo 6: Interfaces - Runner
 // ============================================================
 // Cada mini-clase expone su interfaz y su demo:
-//   01-api-response.ts  ─ interface ApiResponse
-//   02-product-list.ts  ─ interfaces Product + ProductListResponse
-//   03-web-actions.ts   ─ interface WebActions + clase PlaywrightHelper
-//   04-assertion-fn.ts  ─ interface AssertionFn + expectToEqual
+//   01-api-response.ts      ─ interface ApiResponse + assertStatus
+//   02-product-list.ts      ─ interfaces Product + ProductListResponse
+//   03-web-actions/         ─ carpeta con interfaz + implementación
+//       WebActions.ts         · contrato
+//       PlaywrightHelper.ts   · implementación con Playwright
+//       index.ts              · test que usa el contrato
+//   04-assertion-fn.ts      ─ interface AssertionFn + expectToEqual
 //
 // Para correr una sola mini-clase:
-//   pnpm tsx modulo-06-interfaces/03-web-actions.ts
+//   pnpm tsx modulo-06-interfaces/03-web-actions
 // ============================================================
 
 import "./01-api-response";

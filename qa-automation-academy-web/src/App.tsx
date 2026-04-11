@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "@/sections/Header";
 import Hero from "@/sections/Hero";
 import PathsGrid from "@/sections/PathsGrid";
+import TypescriptProgress from "@/sections/TypescriptProgress";
 import Methodology from "@/sections/Methodology";
 import Highlights from "@/sections/Highlights";
 import Footer from "@/sections/Footer";
@@ -14,6 +15,7 @@ function LandingPage() {
       <main>
         <Hero />
         <PathsGrid />
+        <TypescriptProgress />
         <Methodology />
         <Highlights />
       </main>
