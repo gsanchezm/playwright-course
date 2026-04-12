@@ -9,21 +9,34 @@ import DocSidebar from "@/components/docs/DocSidebar";
 import MarkdownContent from "@/components/docs/MarkdownContent";
 import { docsNav } from "@/data/docsNav";
 
-// Eagerly import all setup .md files as raw strings
+// Eagerly import all .md files as raw strings, grouped by section folder.
 const setupModules = import.meta.glob(
   "../content/setup/*.md",
   { query: "?raw", import: "default", eager: true }
 ) as Record<string, string>;
 
-// Build a slug → content map
-const setupContent: Record<string, string> = {};
-for (const path in setupModules) {
-  const filename = path.split("/").pop()!.replace(".md", "");
-  setupContent[filename] = setupModules[path];
+const typescriptModules = import.meta.glob(
+  "../content/typescript/*.md",
+  { query: "?raw", import: "default", eager: true }
+) as Record<string, string>;
+
+function buildSlugMap(
+  modules: Record<string, string>
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const path in modules) {
+    const filename = path.split("/").pop()!.replace(".md", "");
+    map[filename] = modules[path];
+  }
+  return map;
 }
+
+const setupContent = buildSlugMap(setupModules);
+const typescriptContent = buildSlugMap(typescriptModules);
 
 function getContent(section: string, slug: string): string | null {
   if (section === "setup") return setupContent[slug] ?? null;
+  if (section === "typescript") return typescriptContent[slug] ?? null;
   return null;
 }
 
