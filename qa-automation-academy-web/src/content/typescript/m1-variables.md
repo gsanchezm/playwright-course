@@ -17,6 +17,7 @@
 ## Código
 
 ```ts
+// @file modulo-01-hello-world/02-variables.ts
 // const = valor que NO cambia. Lo recomendado por defecto.
 const suiteName: string = "Smoke Test Suite";
 const totalTests: number = 5;

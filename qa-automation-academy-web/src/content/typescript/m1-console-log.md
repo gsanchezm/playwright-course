@@ -16,6 +16,7 @@
 ## Código
 
 ```ts
+// @file modulo-01-hello-world/01-console-log.ts
 // Mini-clase 1.1: Nuestro primer "Test" con console.log
 console.log("\n===== 1.1 console.log =====");
 

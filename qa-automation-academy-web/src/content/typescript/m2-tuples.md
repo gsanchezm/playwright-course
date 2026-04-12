@@ -17,6 +17,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/06-tuples.ts
 // Una tupla tiene CANTIDAD y TIPOS fijos en un orden específico.
 let httpResponse: [number, string, boolean] = [404, "Not Found", true];
 let loginResult: [boolean, string] = [true, "Login successful"];

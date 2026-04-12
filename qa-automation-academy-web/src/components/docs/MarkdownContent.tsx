@@ -1,7 +1,31 @@
+import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { Link } from "react-router-dom";
+import CodeWindow from "./CodeWindow";
+
+function collectText(node: ReactNode): string {
+  if (node == null || node === false) return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(collectText).join("");
+  if (isValidElement(node)) {
+    const props = node.props as { children?: ReactNode };
+    return collectText(props.children);
+  }
+  return "";
+}
+
+function extractFilename(code: string): { filename?: string; code: string } {
+  const lines = code.split("\n");
+  const first = lines[0] ?? "";
+  // Matches "// @file path" or "# @file path"
+  const match = first.match(/^\s*(?:\/\/|#)\s*@file\s+(.+?)\s*$/);
+  if (match) {
+    return { filename: match[1], code: lines.slice(1).join("\n") };
+  }
+  return { code };
+}
 
 type Props = {
   content: string;
@@ -87,17 +111,31 @@ export default function MarkdownContent({ content }: Props) {
           </code>
         );
       }
+      // Block code — render untouched so `pre` can introspect className + text.
+      return <code className={className}>{children}</code>;
+    },
+    pre: ({ children }) => {
+      const child = Array.isArray(children) ? children[0] : children;
+      if (!isValidElement(child)) {
+        return (
+          <pre className="mb-4 overflow-x-auto rounded-xl border border-qa-line bg-qa-panel p-4 font-mono text-sm leading-relaxed">
+            {children}
+          </pre>
+        );
+      }
+      const childProps = child.props as {
+        className?: string;
+        children?: ReactNode;
+      };
+      const className = childProps.className ?? "";
+      const langMatch = className.match(/language-(\w+)/);
+      const language = langMatch ? langMatch[1] : undefined;
+      const rawText = collectText(childProps.children).replace(/\n$/, "");
+      const { filename, code } = extractFilename(rawText);
       return (
-        <code className="font-mono text-sm text-qa-text" {...rest}>
-          {children}
-        </code>
+        <CodeWindow code={code} language={language} filename={filename} />
       );
     },
-    pre: ({ children }) => (
-      <pre className="mb-4 overflow-x-auto rounded-xl border border-qa-line bg-qa-panel p-4 font-mono text-sm leading-relaxed">
-        {children}
-      </pre>
-    ),
     table: ({ children }) => (
       <div className="mb-4 overflow-x-auto">
         <table className="w-full border-collapse font-sans text-sm">

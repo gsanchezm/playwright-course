@@ -16,6 +16,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/04-any.ts
 // Mala práctica: "any" acepta cualquier cosa sin avisar de errores.
 let data: any = "esto puede ser cualquier cosa";
 data = 42;

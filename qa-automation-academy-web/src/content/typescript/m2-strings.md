@@ -16,6 +16,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/03-strings.ts
 let baseUrl: string = "https://qa.myapp.com";
 let errorMessage: string = "Element not found";
 let cssSelector: string = "#submit-btn";

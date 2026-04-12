@@ -17,6 +17,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/01-booleans.ts
 let testPassed: boolean = true;
 let hasErrors: boolean = false;
 

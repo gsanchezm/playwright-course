@@ -16,6 +16,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/02-numbers.ts
 let statusCode: number = 200;
 let responseTime: number = 1.35; // segundos
 let retries: number = 3;

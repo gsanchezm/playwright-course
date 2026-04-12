@@ -17,6 +17,7 @@
 ## Código
 
 ```ts
+// @file modulo-02-types/05-arrays.ts
 let testUsers: string[] = [
   "admin@test.com",
   "viewer@test.com",
