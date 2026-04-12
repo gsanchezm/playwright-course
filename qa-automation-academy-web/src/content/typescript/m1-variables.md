@@ -47,4 +47,4 @@ $ pnpm tsx modulo-01-hello-world/02-variables.ts
 - `let` sí permite reasignar, pero el tipo declarado sigue aplicando.
 - Los backticks (`` ` ``) permiten interpolar variables con `${...}` — perfecto para logs de tests.
 
-⬅️ Anterior: [1.1 console.log](/docs/typescript/m1-console-log) · ➡️ Siguiente: [2.1 boolean](/docs/typescript/m2-booleans)
+⬅️ Anterior: [1.1 console.log](/docs/typescript/m1-console-log) · ➡️ Siguiente: [Reto M1](/docs/typescript/m1-reto)

@@ -46,4 +46,4 @@ $ pnpm tsx modulo-02-types/01-booleans.ts
 - `assertionResult` no lo asignamos manualmente: TypeScript sabe que `===` devuelve `boolean`.
 - En los tests reales, los asserts siempre terminan en un `boolean` — si es `false`, el test falla.
 
-⬅️ Anterior: [1.2 Variables](/docs/typescript/m1-variables) · ➡️ Siguiente: [2.2 number](/docs/typescript/m2-numbers)
+⬅️ Anterior: [Reto M1](/docs/typescript/m1-reto) · ➡️ Siguiente: [2.2 number](/docs/typescript/m2-numbers)

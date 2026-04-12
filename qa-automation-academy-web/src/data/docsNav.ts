@@ -40,6 +40,7 @@ export const docsNav: DocSection[] = [
     items: [
       { slug: "m1-console-log", label: "1.1 console.log", group: "Módulo 1 · Hello World" },
       { slug: "m1-variables", label: "1.2 Variables", group: "Módulo 1 · Hello World" },
+      { slug: "m1-reto", label: "🚩 Reto M1", group: "Módulo 1 · Hello World" },
       { slug: "m2-booleans", label: "2.1 boolean", group: "Módulo 2 · Tipos" },
       { slug: "m2-numbers", label: "2.2 number", group: "Módulo 2 · Tipos" },
       { slug: "m2-strings", label: "2.3 string", group: "Módulo 2 · Tipos" },
