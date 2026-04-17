@@ -100,7 +100,7 @@ Si ves este mensaje, SSH está listo.
    $ git push -u origin feature/add-readme-badges
    ```
 4. Ve a GitHub. Verás un banner amarillo: **"feature/add-readme-badges had recent pushes ... Compare & pull request"**. Click.
-5. Llena el PR con una buena descripción siguiendo la plantilla del `ejemplo.md`:
+5. Llena el PR con una buena descripción siguiendo la plantilla de [`03-pull-requests.md`](./03-pull-requests.md):
    - **Título:** `docs: add badges and install instructions to README`
    - **Descripción:** usa la plantilla (¿Qué cambia?, ¿Por qué?, ¿Cómo probarlo?, Checklist).
 6. Click **Create pull request**.

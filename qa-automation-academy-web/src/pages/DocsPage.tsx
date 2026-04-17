@@ -20,6 +20,11 @@ const typescriptModules = import.meta.glob(
   { query: "?raw", import: "default", eager: true }
 ) as Record<string, string>;
 
+const gitGithubModules = import.meta.glob(
+  "../content/git-github/*.md",
+  { query: "?raw", import: "default", eager: true }
+) as Record<string, string>;
+
 function buildSlugMap(
   modules: Record<string, string>
 ): Record<string, string> {
@@ -33,10 +38,12 @@ function buildSlugMap(
 
 const setupContent = buildSlugMap(setupModules);
 const typescriptContent = buildSlugMap(typescriptModules);
+const gitGithubContent = buildSlugMap(gitGithubModules);
 
 function getContent(section: string, slug: string): string | null {
   if (section === "setup") return setupContent[slug] ?? null;
   if (section === "typescript") return typescriptContent[slug] ?? null;
+  if (section === "git-github") return gitGithubContent[slug] ?? null;
   return null;
 }
 

@@ -14,7 +14,7 @@ $ git --version
 
 **✅ Resultado esperado:** una línea similar a `git version 2.45.2` (la versión exacta puede variar; debe ser 2.x o superior).
 
-**❌ Si dices "command not found"** → vuelve a la sección **5. Instalación de Git** del `ejemplo.md` y reinstala.
+**❌ Si dices "command not found"** → vuelve a [`05-instalacion.md`](./05-instalacion.md) y reinstala.
 
 ---
 
@@ -89,7 +89,7 @@ Sin salir de la terminal, responde estas 3 preguntas consultando **únicamente**
 
 ## Reto 1.5 — Simular el escenario del automatizador
 
-En tu `ejemplo.md` leíste la historia del automatizador que modificó un localizador y rompió 8 tests. **Sin tocar código aún**, responde en un archivo de texto o en un comentario:
+En [`01-que-es-vcs.md`](./01-que-es-vcs.md) leíste la historia del automatizador que modificó un localizador y rompió 8 tests. **Sin tocar código aún**, responde en un archivo de texto o en un comentario:
 
 1. ¿Qué comando usarías para ver el historial de cambios de un archivo llamado `tests/checkout.spec.ts`?
 2. ¿Qué comando usarías para comparar la versión actual de ese archivo contra su versión de hace 3 commits?
