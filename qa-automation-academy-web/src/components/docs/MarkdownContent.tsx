@@ -1,6 +1,7 @@
 import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import type { Components } from "react-markdown";
 import { Link } from "react-router-dom";
 import CodeWindow from "./CodeWindow";
@@ -161,10 +162,24 @@ export default function MarkdownContent({ content }: Props) {
       <strong className="font-semibold text-qa-text">{children}</strong>
     ),
     em: ({ children }) => <em className="text-qa-muted/80">{children}</em>,
+    details: ({ children }) => (
+      <details className="group mb-4 rounded-xl border border-qa-line bg-qa-elevated/60 px-4 py-3 font-sans text-base text-qa-muted [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2">
+        {children}
+      </details>
+    ),
+    summary: ({ children }) => (
+      <summary className="cursor-pointer select-none font-medium text-qa-text marker:text-qa-cyan">
+        {children}
+      </summary>
+    ),
   };
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      components={components}
+    >
       {content}
     </ReactMarkdown>
   );
