@@ -55,4 +55,4 @@ $ pnpm tsx modulo-02-types/06-tuples.ts
 - `httpResponse = [404]` también falla: faltan elementos.
 - El destructuring `([code, message], index)` dentro de `forEach` es el patrón que usarás para tablas de casos de prueba (parameterized tests).
 
-⬅️ Anterior: [2.5 arrays](/docs/typescript/m2-arrays)
+⬅️ Anterior: [2.5 arrays](/docs/typescript/m2-arrays) · ➡️ Siguiente: [2.7 enums](/docs/typescript/m2-enums)

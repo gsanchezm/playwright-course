@@ -12,6 +12,7 @@ const VALID_PASS = "Test1234!";
 
 // "export" hace que esta función pueda ser usada desde OTROS archivos.
 export function login(username: string, password: string): boolean {
+  // Forma tradicional usando if/else
   if (username === VALID_USER && password === VALID_PASS) {
     console.log(`Login successful for user: ${username}`);
     return true;
@@ -19,6 +20,16 @@ export function login(username: string, password: string): boolean {
     console.log(`Login failed for user: ${username}`);
     return false;
   }
+}
+
+// Forma simplificada usando Operador Ternario
+export function loginTernary(username: string, password: string): boolean {
+  const isSuccess = username === VALID_USER && password === VALID_PASS;
+  
+  // (condición ? caso_verdadero : caso_falso)
+  console.log(isSuccess ? `Ternary Login successful: ${username}` : `Ternary Login failed: ${username}`);
+  
+  return isSuccess;
 }
 
 // Demo (se ejecuta al importar o al correr este archivo directamente)
