@@ -3,26 +3,12 @@
 // ============================================================
 // Analogía: Definir tu propio esquema, como las columnas de una
 // tabla en una base de datos de usuarios de prueba.
+//
+// Este archivo es la "demo": importa el type y los datos desde
+// los archivos vecinos y los usa.
 // ============================================================
 
-// "export type" permite que OTROS archivos usen este molde.
-export type TestUser = {
-  username: string;
-  password: string;
-  isActive: boolean;
-};
-
-export const adminUser: TestUser = {
-  username: "admin@test.com",
-  password: "SecurePass123!",
-  isActive: true,
-};
-
-export const viewerUser: TestUser = {
-  username: "viewer@test.com",
-  password: "Viewer123!",
-  isActive: false,
-};
+import { adminUser, viewerUser } from "./test-users";
 
 console.log("\n===== 4.2 type alias =====");
 console.log(`Admin: ${adminUser.username}, Active: ${adminUser.isActive}`);
