@@ -1,36 +1,36 @@
 # Reto — Módulo 3: Ejecuciones
 
-Todos los retos se hacen contra los tests del **Módulo 2** (que ya escribiste).
+Todos los retos se hacen contra los tests del **Módulo 2** (la mini-suite de OmniPizza que ya escribiste).
 
 ---
 
 ## Reto 3.1 — Ejecuciones básicas
 
-Ejecuta cada uno de estos comandos y observa la salida:
+Ejecuta cada comando y observa la salida:
 
 ```bash
-$ pnpm test modulo-02-anotaciones
-$ pnpm test modulo-02-anotaciones --headed --workers=1 --project=chromium
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts
-$ pnpm test modulo-02-anotaciones -g "caso simple"
+pnpm test modulo-02-anotaciones
+pnpm test modulo-02-anotaciones --headed --workers=1 --project=chromium
+pnpm test modulo-02-anotaciones/01-test-basico.spec.ts
+pnpm test modulo-02-anotaciones -g "standard_user"
 ```
 
-**✅ Resultado esperado:** el primero corre muchos tests, el segundo corre todos con ventana visible uno por uno, el tercero solo el archivo, el cuarto solo los tests cuyo nombre contenga "caso simple".
+**✅ Resultado esperado:** el primero corre los 20+ tests, el segundo uno por uno con ventana visible, el tercero solo el archivo 01, el cuarto solo los tests cuyo título contenga `standard_user`.
 
 ---
 
 ## Reto 3.2 — Filtrado por tag
 
 ```bash
-$ pnpm test modulo-02-anotaciones --grep @smoke
-$ pnpm test modulo-02-anotaciones --grep @regression
-$ pnpm test modulo-02-anotaciones --grep-invert @slow
+pnpm test modulo-02-anotaciones --grep @smoke
+pnpm test modulo-02-anotaciones --grep @regression
+pnpm test modulo-02-anotaciones --grep-invert @slow
 ```
 
 **✅ Resultado esperado:**
-- `@smoke` corre 2 tests.
-- `@regression` corre 3 tests.
-- `--grep-invert @slow` corre todos **menos** el test `@slow` del archivo `06`.
+- `@smoke`: 2 tests (del archivo 06).
+- `@regression`: 3 tests.
+- `--grep-invert @slow`: todos menos `las 4 banderas de mercado son clickables @regression @slow`.
 
 ---
 
@@ -42,22 +42,24 @@ $ pnpm test modulo-02-anotaciones --grep-invert @slow
    import { test, expect } from '@playwright/test';
 
    test('ejemplo con pausa', async ({ page }) => {
-     await page.goto('https://playwright.dev/');
-     await page.pause(); // ⏸
-     await page.getByRole('link', { name: 'Get started' }).click();
-     await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+     await page.goto('/');
+     await page.getByTestId('username-desktop').fill('standard_user');
+     await page.pause(); // ⏸ el test se detiene aquí
+     await page.getByTestId('password-desktop').fill('pizza123');
+     await page.getByTestId('login-button-desktop').click();
+     await expect(page).toHaveURL(/\/catalog/);
    });
    ```
 
 2. Córrelo en debug:
    ```bash
-   $ pnpm test:debug modulo-03-ejecuciones/debug-example.spec.ts
+   pnpm test:debug modulo-03-ejecuciones/debug-example.spec.ts
    ```
 
 3. En el Inspector:
-   - Haz click en **Step over** y observa cómo avanza línea por línea.
-   - Haz click en **Pick locator** y apunta al link "Docs". Copia el selector sugerido.
-   - Continúa hasta el final con **Resume**.
+   - Haz click en **Step over** y avanza paso a paso.
+   - Haz click en **Pick locator** y apunta al botón "Sign In" — copia el selector sugerido.
+   - Continúa con **Resume**.
 
 4. Borra el archivo cuando termines.
 
@@ -66,53 +68,63 @@ $ pnpm test modulo-02-anotaciones --grep-invert @slow
 ## Reto 3.4 — UI Mode (⭐ el más importante)
 
 1. Corre: `pnpm test:ui`
-2. En la interfaz gráfica:
-   - Activa el **watch mode** 👁 en el tope.
-   - Haz click en el test `"caso simple: abrir la página de Playwright"`.
-   - Observa el timeline de pasos.
-   - Hover sobre el paso del `goto` → ¿cómo se ve el DOM en ese momento?
-   - Abre tu archivo `01-test-basico.spec.ts` en el editor, cambia algo (añade un comentario) y guarda. ¿Qué pasa en la UI de Playwright?
-   - Usa el **Pick locator** para obtener el selector del botón "Get started".
+2. En la UI:
+   - Activa el **watch mode** 👁.
+   - Haz click en `"caso simple: login de standard_user llega al catálogo"`.
+   - Observa el timeline — ¿cómo se veía la pantalla cuando el test hizo `goto('/')`?
+   - Abre `01-test-basico.spec.ts`, añade un comentario, guarda. ¿Qué pasa?
+   - Usa **Pick locator** sobre cualquier elemento y copia el selector.
 
-**✅ Resultado esperado:** entiendes por qué UI mode es el favorito para desarrollar tests. Si no lo sentiste, repite el reto.
+**✅ Resultado esperado:** si no sentiste el "wow", repite el reto.
 
 ---
 
-## Reto 3.5 — Correr en múltiples navegadores
+## Reto 3.5 — Multi-browser
 
 ```bash
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=chromium
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=firefox
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=webkit
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=mobile-chrome
+pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=chromium
+pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=firefox
+pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=webkit
+pnpm test modulo-02-anotaciones/01-test-basico.spec.ts --project=mobile-chrome
 ```
 
-**✅ Resultado esperado:** los 4 ejecutan el mismo test y pasan.
+**✅ Resultado esperado:** los 3 desktop pasan. `mobile-chrome` **falla** porque a viewport mobile los testids terminan en `-responsive`, no `-desktop`. Anótalo — lo arreglamos en M4.
 
 ---
 
-## Reto 3.6 — Preguntas
+## Reto 3.6 — Reintentos con `performance_glitch_user`
 
-1. ¿Por qué es mala idea usar `--retries=10` para arreglar un test flaky?
-2. ¿Cuándo usarías `--workers=1` en vez del paralelismo default?
-3. ¿Qué hace `--grep-invert @slow`?
-4. ¿Cuál es la diferencia principal entre `--debug` y UI mode?
+```bash
+pnpm test modulo-02-anotaciones/05-skip-only-fixme.spec.ts --grep "glitch" --retries=2
+```
+
+**✅ Resultado esperado:** el test pasa. Si hubo un cold start del backend, el primer intento puede haber timeado y el reintento lo salvó. Mira el reporte HTML — verás la fila con `retry #1` o `retry #2`.
+
+---
+
+## Reto 3.7 — Preguntas
+
+1. ¿Por qué `--workers=1` es útil con `--headed`?
+2. ¿Qué diferencia hay entre `--debug` y `test:ui`?
+3. ¿Por qué `mobile-chrome` falló en el Reto 3.5?
+4. ¿En qué escenarios de CI usarías `pnpm test:smoke` vs `pnpm test:regression`?
 
 **Respuestas:**
 
-1. Porque los reintentos **esconden** el problema. Un test flaky es un síntoma de que el código o el test tienen una condición de carrera, una espera mal hecha, o un estado compartido mal gestionado. Debes arreglarlo, no esconderlo con reintentos.
-2. Cuando quieres ejecutar con `--headed` y solo quieres ver UNA ventana a la vez, para no perderte entre varias. También cuando los tests comparten estado global (ej. una DB) y no pueden correr en paralelo.
-3. Corre TODOS los tests **excepto** los que tengan el tag `@slow`.
-4. `--debug` abre el Inspector con breakpoints y control manual línea a línea. UI mode es una interfaz visual completa con timeline, watch mode, y vista del DOM por paso — ideal para desarrollar y explorar. Debug es ideal para **inspeccionar** un test puntual; UI mode es ideal para **escribir** nuevos tests.
+1. Porque con varios workers se abren varias ventanas y no puedes seguir visualmente lo que pasa.
+2. `--debug` abre el Inspector (pausa + step-over manual, ideal para **inspeccionar**). `test:ui` es un IDE visual con watch mode (ideal para **escribir**).
+3. Porque el hook `tid()` del frontend devuelve `-responsive` a viewport mobile. Nuestros tests llaman `getByTestId('username-desktop')` — ese testid no existe en mobile. En M4 armaremos un helper para resolverlo.
+4. `test:smoke` en cada PR (3-5 min, bloqueante). `test:regression` de noche o en el merge a `main` (30-60 min, reportado a Slack si falla).
 
 ---
 
 ## ✅ Checklist
 
-- [ ] Sé correr tests en headless, headed y UI mode.
-- [ ] Sé filtrar tests por nombre (`-g`), por tag (`--grep`), por archivo y por línea.
-- [ ] Usé `page.pause()` y el Inspector al menos una vez.
+- [ ] Corro la suite en headless, headed y UI mode.
+- [ ] Sé filtrar por nombre, tag, archivo y línea.
+- [ ] Usé `page.pause()` + el Inspector al menos una vez.
 - [ ] Usé UI mode con watch mode.
-- [ ] Corrí el mismo test en 3 navegadores distintos con `--project`.
+- [ ] Corrí el mismo test en 3 navegadores distintos.
+- [ ] Vi cómo `mobile-chrome` falla y entiendo por qué (lo arreglaremos en M4).
 
-➡️ Siguiente: [Módulo 4: Localizadores](../modulo-04-localizadores/)
+➡️ Siguiente: [Módulo 4 — Localizadores](../modulo-04-localizadores/)

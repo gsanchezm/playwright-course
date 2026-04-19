@@ -1,189 +1,201 @@
-# Módulo 7: Reports (Reporters)
+# Módulo 7 — Reports: HTML, Trace Viewer y flakiness
 
-> **Objetivo:** Conocer los reporters built-in de Playwright (HTML, list, line, dot, json, JUnit, GitHub, blob) y saber cuándo usar cada uno.
-
-> **Referencia oficial:** [test-reporters](https://playwright.dev/docs/test-reporters)
-
----
-
-## 🎯 Analogía principal
-
-> **Un reporter es el "formato de salida" de tu suite.** Así como un tester manual entrega sus resultados en **Word, Excel o un dashboard**, Playwright puede generar sus resultados en varios formatos para distintas audiencias:
+> **Historia del curso:** ya sabes escribir, parametrizar y grabar tests contra OmniPizza. Hoy aprendes a **leer sus resultados** — HTML reports, Trace Viewer, y cómo diagnosticar un test flaky usando `performance_glitch_user`.
 >
-> - **HTML** → para humanos que revisan en el navegador.
-> - **list / dot / line** → para ti mientras desarrollas en la terminal.
-> - **JUnit XML** → para que Jenkins/GitLab CI lo entiendan.
-> - **JSON** → para integraciones custom.
-> - **GitHub** → para anotaciones en PRs.
+> **Referencia oficial:** [Reporters](https://playwright.dev/docs/test-reporters) · [Trace Viewer](https://playwright.dev/docs/trace-viewer)
 
 ---
 
-## 1. Los reporters built-in
+## Analogía
 
-| Reporter | Para qué | Ejemplo de salida |
-|----------|----------|-------------------|
-| `list` | Terminal: lista de tests con ✓ o ✗ | `✓ login valid (1.2s)` |
-| `line` | Terminal: una sola línea actualizada | `[2/10] Running login spec` |
-| `dot` | Terminal minimalista: un punto por test | `...F..` |
-| `html` | Reporte visual interactivo | Página web completa |
-| `json` | Archivo JSON con todos los resultados | `{ "tests": [...] }` |
-| `junit` | XML compatible con Jenkins/GitLab | `<testsuite>...</testsuite>` |
-| `github` | Anotaciones automáticas en PRs de GitHub | Inline comments en el diff |
-| `blob` | Para mergear reports de varios shards | — |
+Un reporter es el **formato de salida** de tu suite. Distintos consumidores quieren formatos distintos:
+
+| Consumidor | Reporter |
+|---|---|
+| Tú viendo resultados en terminal | `list`, `line`, `dot` |
+| Revisor humano en el navegador | `html` |
+| Jenkins / GitLab CI | `junit` XML |
+| Integraciones custom (Slack, Datadog) | `json` o reporter custom |
+| GitHub Actions con anotaciones en PR | `github` |
 
 ---
 
-## 2. Configurar reporters en `playwright.config.ts`
+## 1. Reporters built-in
 
-Ya están configurados en el curso. Puedes tener **varios a la vez**:
+| Reporter | Para qué | Ejemplo |
+|---|---|---|
+| `list` | Terminal con ✓/✗ (default) | `✓ login smoke (1.2s)` |
+| `line` | Una sola línea que se actualiza | `[3/12] Running...` |
+| `dot` | Minimalista: un punto por test | `......F....` |
+| `html` | Reporte visual con filtros + traces | Se abre con `pnpm report` |
+| `json` | Archivo JSON con todos los resultados | `{"tests": [...]}` |
+| `junit` | XML para Jenkins/GitLab | `<testsuite>...</testsuite>` |
+| `github` | Anotaciones inline en PRs | — |
+| `blob` | Para mergear reports multi-shard (M8) | — |
 
-```typescript
-// playwright.config.ts
-export default defineConfig({
-  reporter: [
-    ['html', { open: 'never' }],
-    ['list'],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-  ],
-});
+---
+
+## 2. Configuración actual del curso
+
+En `playwright.config.ts` ya tienes:
+
+```ts
+reporter: [
+  ['html', { open: 'never' }],   // no abre el browser automáticamente
+  ['list'],                       // lista en terminal
+],
+```
+
+Para agregar JSON + JUnit (útil en CI):
+
+```ts
+reporter: [
+  ['html', { open: 'never' }],
+  ['list'],
+  ['json', { outputFile: 'test-results/results.json' }],
+  ['junit', { outputFile: 'test-results/junit.xml' }],
+],
 ```
 
 ---
 
 ## 3. El reporter HTML (el más usado)
 
-Después de correr `pnpm test`, abres el reporte con:
-
 ```bash
-$ pnpm report
+# Después de correr tests
+pnpm report
 ```
 
-Se abre en tu navegador y puedes:
-- Ver el listado completo de tests con su duración.
-- Filtrar por status (passed / failed / flaky / skipped).
-- Hacer click en un test fallido y ver:
-  - **Screenshot** del momento del fallo.
-  - **Video** de toda la ejecución.
-  - **Trace** (el súper poder de Playwright — ver sección 5).
-  - Logs paso a paso.
+Se abre el navegador con:
+- Lista completa de tests con duración y status.
+- Filtros: passed / failed / flaky / skipped.
+- Al hacer click en un test fallido: screenshot, video, trace, logs.
 
-### Abrir el HTML desde cualquier carpeta
+### Ejemplo: ver el reporte de M5
 
 ```bash
-$ pnpm exec playwright show-report ./playwright-report
+pnpm test modulo-05-parametrizacion --project=chromium
+pnpm report
 ```
+
+Verás los 5 tests parametrizados del forEach, los 4 del JSON (uno por mercado), los del env vars y los de la fixture.
 
 ---
 
-## 4. Reporters para terminal (`list`, `line`, `dot`)
+## 4. Trace Viewer — el súper poder ⭐
 
-Úsalos desde CLI con `--reporter`:
+Cuando `trace: 'on-first-retry'` (ya configurado), Playwright graba una **caja negra** de cada test que falla + retry:
 
+- 📸 DOM snapshot antes y después de cada acción
+- 🌐 Todos los requests de red
+- 📜 Console logs del navegador
+- 🎬 Video completo de la sesión
+- 📋 Stack trace del error
+
+### Cómo abrirlo
+
+1. `pnpm test` — corre tus specs.
+2. Si alguno falló: `pnpm report`.
+3. Click en el test fallido → botón **"View trace"**.
+4. Se abre el Trace Viewer con timeline interactivo.
+
+En el Trace Viewer:
+- **Click en un paso** del timeline → ves el DOM congelado en ese momento.
+- **Scroll en el video** → se sincroniza con el DOM.
+- **Pestaña "Network"** → todas las requests que se hicieron.
+- **Pestaña "Console"** → logs del browser.
+
+---
+
+## 5. El caso estrella: diagnosticar flakiness con `performance_glitch_user`
+
+OmniPizza tiene un usuario diseñado para ser lento: **`performance_glitch_user`** agrega ~3s a cada request. Corre este test varias veces para ver cómo el Trace Viewer te ayuda a diagnosticar.
+
+### Test flaky a propósito
+
+```ts
+// modulo-07-reports/flaky.spec.ts  (créalo tú)
+import { test, expect } from '@playwright/test';
+
+test('performance_glitch_user llega al catálogo @regression', async ({ page }) => {
+  // Sin test.slow() ni retries — DEJAMOS que se ponga flaky para el ejercicio.
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill('performance_glitch_user');
+  await page.getByTestId('password-desktop').fill('pizza123');
+  await page.getByTestId('login-button-desktop').click();
+  await expect(page).toHaveURL(/\/catalog/);
+});
+```
+
+Córrelo varias veces:
 ```bash
-$ pnpm test --reporter=list   # lista con ✓/✗ (default)
-$ pnpm test --reporter=line   # una sola línea que se actualiza
-$ pnpm test --reporter=dot    # un punto por test (ideal en CI con mucho output)
+pnpm test modulo-07-reports/flaky.spec.ts --project=chromium --retries=2
 ```
 
-**Analogía QA:** son distintas vistas de Excel. `list` es detallada, `line` es un "progreso actual", `dot` es minimalista como un indicador de carga.
+Abre el reporte HTML: verás los intentos fallidos y el Trace Viewer te mostrará **exactamente en qué request se fue el tiempo**. Esa pestaña "Network" es la evidencia que presentarías para justificar un `test.slow()` o un timeout mayor.
 
 ---
 
-## 5. El Trace Viewer (el súper poder ⭐)
+## 6. Reporters de CI
 
-Cuando configuras `trace: 'on-first-retry'` (ya lo hicimos en `playwright.config.ts`), Playwright graba:
+### GitHub Actions
 
-- 📸 Snapshots del DOM en cada paso
-- 🌐 Todas las requests de red
-- 📜 Todos los console logs
-- 🎬 Un video completo
-- 📋 El stack trace de cualquier error
-
-Para verlo, en el reporte HTML haces click en el botón **"View trace"** de un test fallido. Se abre una interfaz con timeline interactivo.
-
-**Analogía QA:** es como tener una cámara que grabó todo lo que pasó durante la prueba, y además un inspector de consola congelado en el tiempo. No hay herramienta más poderosa para depurar tests que fallan en CI y no puedes reproducir localmente.
-
-Abrir un trace sin reporter:
-
-```bash
-$ pnpm exec playwright show-trace test-results/path-to-trace.zip
-```
-
----
-
-## 6. JUnit XML para CI (Jenkins, GitLab, CircleCI)
-
-```typescript
-reporter: [['junit', { outputFile: 'test-results/junit.xml' }]],
-```
-
-Jenkins/GitLab consumen este XML para mostrar el status de tests en cada build. No necesitas más configuración.
-
----
-
-## 7. Reporter de GitHub Actions
-
-Cuando tu CI corre en GitHub Actions, usa el reporter especial `github`:
-
-```typescript
+```ts
 reporter: process.env.CI
   ? [['github'], ['html', { open: 'never' }]]
   : [['list'], ['html', { open: 'never' }]],
 ```
 
-Esto hace que los fallos aparezcan como **anotaciones inline en el PR** — directamente en las líneas del código que causaron el fallo.
+El `github` reporter imprime anotaciones directo en los diffs del PR — perfecto cuando alguien abre un PR y un test falla: la anotación aparece en la línea exacta.
+
+### Jenkins / GitLab
+
+```ts
+['junit', { outputFile: 'test-results/junit.xml' }]
+```
+
+Jenkins/GitLab parsean el XML y muestran el status del build en el dashboard.
 
 ---
 
-## 8. Reporter custom (avanzado)
+## 7. Reporter custom (teaser de M8 y proyectos reales)
 
-Si necesitas integrar con Slack, Datadog, TestRail, etc., puedes crear un reporter propio implementando la interfaz `Reporter`:
+Puedes crear un reporter que envíe a Slack, Datadog, TestRail…
 
-```typescript
+```ts
 // custom-reporter.ts
-import { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
-export default class MyReporter implements Reporter {
-  onBegin(config, suite) {
-    console.log(`🚀 Iniciando suite con ${suite.allTests().length} tests`);
-  }
+export default class SlackReporter implements Reporter {
   onTestEnd(test: TestCase, result: TestResult) {
-    console.log(`${test.title}: ${result.status}`);
-    // Aquí enviarías a Slack, Datadog, etc.
-  }
-  onEnd(result) {
-    console.log(`✅ Suite terminó con status: ${result.status}`);
+    if (result.status === 'failed') {
+      // fetch a un webhook de Slack con el nombre del test
+    }
   }
 }
 ```
 
-Y lo usas así:
-```typescript
-reporter: [['./custom-reporter.ts']],
+En `playwright.config.ts`: `reporter: [['./custom-reporter.ts']]`.
+
+---
+
+## Cheatsheet
+
+```bash
+# HTML report
+pnpm report
+
+# Reporter específico desde CLI
+pnpm test --reporter=list
+pnpm test --reporter=line
+pnpm test --reporter=dot
+pnpm test --reporter=json
+
+# Abrir un trace específico sin el reporter
+pnpm exec playwright show-trace test-results/ruta-al-trace.zip
+
+# Abrir un HTML report de otra carpeta
+pnpm exec playwright show-report ./playwright-report
 ```
 
----
-
-## 📋 Pasos explícitos para explicar en clase
-
-1. **Corre `pnpm test` con el reporter default (list + html).** Muestra la salida en terminal.
-2. **Abre el reporte HTML con `pnpm report`.** Navega por los tests pasados.
-3. **Rompe un test a propósito** (cambia un assertion) y vuelve a correr.
-4. **En el reporte HTML**, haz click en el test fallido. Muestra el screenshot, el error, y el botón "View trace".
-5. **Abre el Trace Viewer.** Esto es el momento WOW del módulo. Muestra el timeline, el DOM snapshot de cada paso, y cómo puedes ver el error exacto.
-6. **Corre con `--reporter=line`** y muestra la diferencia.
-7. **Corre con `--reporter=json`** y abre el archivo generado en `test-results/results.json`.
-8. **Envía al reto.**
-
----
-
-## ✅ Checklist
-
-- [ ] Sé correr tests con distintos reporters desde la CLI.
-- [ ] Sé abrir el reporte HTML con `pnpm report`.
-- [ ] Sé ver el trace de un test fallido.
-- [ ] Sé configurar múltiples reporters en `playwright.config.ts`.
-- [ ] Entiendo cuándo usar JUnit XML vs HTML vs GitHub reporter.
-
-➡️ Siguiente: [Módulo 8: Repositorios](../modulo-08-repositorios/)
+➡️ [reto.md](./reto.md) · [Módulo 8 — Repositorios y CI](../modulo-08-repositorios/)

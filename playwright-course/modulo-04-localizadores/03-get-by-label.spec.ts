@@ -1,59 +1,66 @@
 // ============================================================
 // Mini-clase 4.3 — getByLabel
 // ============================================================
-// Analogía: En un formulario, cada campo tiene una "etiqueta"
-// (el texto "Nombre", "Email", "Contraseña" que aparece al lado
-// o arriba del input). getByLabel busca el input por esa etiqueta.
+// Localiza un INPUT por el texto de su <label> asociado.
+// Funciona cuando el DOM tiene uno de estos patrones:
 //
-// Ejemplo HTML:
-//   <label for="email">Email address</label>
-//   <input id="email" type="email" />
+//   <label for="username">Username</label>
+//   <input id="username" />                         ← linked por "for"/"id"
 //
-//   → page.getByLabel('Email address').fill('test@test.com')
+//   <label>Username <input /></label>                ← label envolvente
 //
-// Es el locator RECOMENDADO para inputs de formulario porque:
-// ✅ Refleja cómo un usuario real describe el campo.
-// ✅ Te obliga a que los devs usen <label> correctamente (accesibilidad).
+//   <input aria-label="Username" />                  ← aria-label directo
+//
+//   <input aria-labelledby="x" /> <span id="x">Username</span>
+//
+// IMPORTANTE — pedagógicamente: OmniPizza's InputGroup NO conecta
+// <label> con <input> mediante "for"/"id". Por eso getByLabel()
+// FALLA en el login form. Esto es una lección de accesibilidad.
+//
+// Doc: https://playwright.dev/docs/locators#locate-by-label
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-test.describe('getByLabel en un formulario real', () => {
-  // Usaremos la página de búsqueda de Playwright docs.
-  // Nota: el sitio oficial no tiene un formulario clásico con labels,
-  // así que este ejemplo usa un sitio público de TodoMVC.
-
-  test('escribir en el input "What needs to be done?"', async ({ page }) => {
-    await page.goto('https://demo.playwright.dev/todomvc');
-
-    // El input tiene un aria-label "New Todo Input"
-    // getByLabel encuentra inputs por label, aria-label o aria-labelledby
-    const newTodoInput = page.getByLabel('New Todo Input');
-
-    await newTodoInput.fill('Aprender getByLabel');
-    await newTodoInput.press('Enter');
-
-    // Verificamos que el todo se agregó
-    await expect(page.getByText('Aprender getByLabel')).toBeVisible();
+test.describe('getByLabel — comportamiento y limitación en OmniPizza', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
   });
 
-  test('agregar múltiples todos con getByLabel', async ({ page }) => {
-    await page.goto('https://demo.playwright.dev/todomvc');
+  test.fixme(
+    'getByLabel("Username") debería funcionar pero NO funciona en OmniPizza',
+    async ({ page }) => {
+      // El <label>Username</label> no tiene atributo "for" y el <input>
+      // no tiene "id", por eso Playwright no puede conectarlos.
+      // Este test queda como FIXME — documenta el bug de accesibilidad.
+      await expect(page.getByLabel('Username')).toBeVisible();
+    }
+  );
 
-    const input = page.getByLabel('New Todo Input');
+  test('alternativa 1: getByPlaceholder("standard_user") SÍ funciona', async ({ page }) => {
+    // El placeholder del input es literalmente "standard_user"
+    await expect(page.getByPlaceholder('standard_user')).toBeVisible();
+    await page.getByPlaceholder('standard_user').fill('admin');
+    await expect(page.getByPlaceholder('standard_user')).toHaveValue('admin');
+  });
 
-    await input.fill('Estudiar Playwright');
-    await input.press('Enter');
-
-    await input.fill('Escribir tests');
-    await input.press('Enter');
-
-    await input.fill('Revisar PRs');
-    await input.press('Enter');
-
-    // Verificamos que los 3 todos están visibles
-    await expect(page.getByText('Estudiar Playwright')).toBeVisible();
-    await expect(page.getByText('Escribir tests')).toBeVisible();
-    await expect(page.getByText('Revisar PRs')).toBeVisible();
+  test('alternativa 2: getByTestId("username-desktop") SÍ funciona', async ({ page }) => {
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await expect(page.getByTestId('username-desktop')).toHaveValue('standard_user');
   });
 });
+
+// ============================================================
+// La lección del módulo:
+//
+// getByLabel es el locator IDEAL por accesibilidad — si tu app lo
+// soporta, úsalo. Pero no siempre los frontends están bien escritos.
+//
+// Orden de preferencia cuando getByLabel no funciona:
+//   1. getByRole (si el elemento tiene role claro)
+//   2. getByPlaceholder (si el placeholder es estable)
+//   3. getByTestId (explícito, robusto)
+//
+// Regla: si necesitas que getByLabel funcione, ABRE UN PR al frontend
+// para añadir `htmlFor` e `id` en el label/input. Es accesibilidad real.
+// ============================================================

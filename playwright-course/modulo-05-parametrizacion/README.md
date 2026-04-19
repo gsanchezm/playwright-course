@@ -1,77 +1,113 @@
-# Módulo 5: Parametrización de Test Scripts
+# Módulo 5 — Parametrización: data-driven con los 4 mercados
 
-> **Objetivo:** Aprender a correr el mismo test con múltiples conjuntos de datos (data-driven testing), leer datos desde JSON, crear fixtures personalizadas y usar variables de entorno.
-
-> **Referencia oficial:** [parameterize-tests](https://playwright.dev/docs/test-parameterize) · [test-fixtures](https://playwright.dev/docs/test-fixtures)
+> **Historia del curso:** hasta M4 tienes specs individuales. Hoy aprendes a ejecutar **el mismo test con muchos datos distintos** — el corazón del data-driven testing. OmniPizza tiene 4 mercados (MX/US/CH/JP) con monedas, impuestos y campos de checkout distintos: el escenario perfecto para esta técnica.
+>
+> **Referencia oficial:** [Parameterize Tests](https://playwright.dev/docs/test-parameterize) · [Test Fixtures](https://playwright.dev/docs/test-fixtures)
 
 ---
 
-## 🎯 Analogía principal
+## Analogía
 
-> **Data-driven testing = un solo plan de pruebas que se ejecuta con 10 usuarios distintos.**
->
-> En pruebas manuales tendrías una tabla:
->
-> | Usuario | Password | Resultado esperado |
-> |---------|----------|---------------------|
-> | admin | 1234 | login OK |
-> | viewer | abcd | login OK |
-> | hacker | xxxx | login FAIL |
->
-> Y pasarías horas ejecutando el mismo procedimiento 3 veces. En Playwright: escribes el procedimiento UNA vez y le pasas la tabla como parámetro. El robot hace los 3 casos automáticamente.
+Data-driven = un solo plan de pruebas que se ejecuta N veces con N datasets.
+
+En manual tendrías una tabla:
+
+| Usuario | Password | Resultado esperado |
+|---|---|---|
+| `standard_user` | `pizza123` | login OK → /catalog |
+| `locked_out_user` | `pizza123` | error visible |
+| `problem_user` | `pizza123` | login OK (con precios rotos) |
+
+Pasarías horas ejecutando el mismo procedimiento 3 veces. En Playwright: escribes el procedimiento UNA vez y le pasas la tabla como parámetro. El robot hace los 3 casos automáticamente.
 
 ---
 
 ## Archivos del módulo
 
-| Archivo | Técnica | Caso de uso |
-|---------|---------|-------------|
-| [01-foreach-simple.spec.ts](./01-foreach-simple.spec.ts) | `forEach` con array inline | Pocos casos, simple |
-| [02-data-driven-json.spec.ts](./02-data-driven-json.spec.ts) | Datos desde un archivo JSON | Muchos casos, datos reales |
-| [03-env-variables.spec.ts](./03-env-variables.spec.ts) | Variables de entorno | URLs, credenciales |
-| [04-fixtures-personalizadas.spec.ts](./04-fixtures-personalizadas.spec.ts) | Fixtures custom | Estado compartido reutilizable |
-| [test-data.json](./test-data.json) | Dataset de ejemplo | — |
-| [reto.spec.ts](./reto.spec.ts) | Retos del alumno | — |
+| Archivo | Técnica | Escenario OmniPizza |
+|---|---|---|
+| [01-foreach-simple.spec.ts](./01-foreach-simple.spec.ts) | `forEach` con array inline | Login de los 5 usuarios deterministas |
+| [02-data-driven-json.spec.ts](./02-data-driven-json.spec.ts) | Datos desde JSON externo | Catálogo por mercado (MX/US/CH/JP) |
+| [03-env-variables.spec.ts](./03-env-variables.spec.ts) | `process.env` | Credenciales y BASE_URL configurables |
+| [04-fixtures-personalizadas.spec.ts](./04-fixtures-personalizadas.spec.ts) | `test.extend()` | Fixture `authenticatedPage` — el germen del framework |
+| [test-data.json](./test-data.json) | — | Los 4 mercados con datos de envío |
+| [reto.spec.ts](./reto.spec.ts) | Todos combinados | Tu ejercicio integrador |
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
+## El hito del módulo: la fixture `authenticatedPage`
 
-1. **Pregunta al grupo:** "¿alguien ha ejecutado el mismo caso de prueba manual con 5 usuarios distintos? ¿cuánto tiempo les tomó?".
-2. **Muestra `01-foreach-simple.spec.ts`:** un test que corre N veces con datos inline.
-3. **Muestra el reporte:** cada caso aparece como un test separado, con el dato como parte del nombre.
-4. **Muestra `02-data-driven-json.spec.ts`:** los mismos datos, pero en archivo JSON externo. Explica: "ahora QA puede agregar casos sin tocar el código".
-5. **Muestra `03-env-variables.spec.ts`:** `BASE_URL=https://staging.app.com pnpm test` — muy útil para correr la misma suite en distintos ambientes.
-6. **Muestra `04-fixtures-personalizadas.spec.ts`:** una fixture `authenticatedPage` que devuelve una página ya logueada. Explica cómo elimina el login repetitivo.
-7. **Envía al reto.**
+Hasta ahora todos los specs que van más allá del login repiten:
+
+```ts
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill('standard_user');
+  await page.getByTestId('password-desktop').fill('pizza123');
+  await page.getByTestId('login-button-desktop').click();
+  await expect(page).toHaveURL(/\/catalog/);
+});
+```
+
+En M5 **extraes ese boilerplate a una fixture**:
+
+```ts
+test('catálogo tiene pizzas', async ({ authenticatedPage }) => {
+  const count = await authenticatedPage.locator('[data-testid^="pizza-card-"]').count();
+  expect(count).toBeGreaterThan(0);
+});
+```
+
+Ese `authenticatedPage` es la **primera pieza reutilizable** del framework que vas construyendo. En M10 se muda a `fixtures/auth.ts` como parte de la estructura final.
+
+---
+
+## Cómo correr
+
+```bash
+# Todo el módulo
+pnpm test modulo-05-parametrizacion
+
+# Solo mercado MX del data-driven
+pnpm test modulo-05-parametrizacion/02-data-driven-json.spec.ts -g "MX"
+
+# Ejecutar con env var custom
+TEST_USER=error_user pnpm test modulo-05-parametrizacion/03-env-variables.spec.ts
+
+# Ver el reporte — cada caso parametrizado es un test separado
+pnpm report
+```
 
 ---
 
 ## Cheatsheet
 
 ```typescript
-// forEach
-[1, 2, 3].forEach(n => {
-  test(`caso con n=${n}`, async ({ page }) => { /* ... */ });
+// forEach inline
+[case1, case2].forEach(c => {
+  test(`caso ${c.name}`, async ({ page }) => { /* ... */ });
 });
 
-// JSON
-import testCases from './test-data.json';
-for (const tc of testCases) {
-  test(tc.name, async ({ page }) => { /* ... */ });
+// for-of (equivalente, más legible con muchas props)
+for (const market of markets) {
+  test(`mercado ${market.code}`, async ({ page }) => { /* ... */ });
 }
 
-// env vars
-const baseUrl = process.env.BASE_URL ?? 'https://default.com';
+// JSON externo
+import markets from './test-data.json';
 
-// fixture custom
-const test = base.extend<{ authenticatedPage: Page }>({
+// env vars con fallback
+const user = process.env.TEST_USER ?? 'standard_user';
+
+// Fixture custom
+type MyFixtures = { authenticatedPage: Page };
+export const test = base.extend<MyFixtures>({
   authenticatedPage: async ({ page }, use) => {
-    await page.goto('/login');
-    // ...login...
+    // setup
     await use(page);
+    // teardown
   },
 });
 ```
 
-➡️ Empieza por [01-foreach-simple.spec.ts](./01-foreach-simple.spec.ts).
+➡️ [reto.spec.ts](./reto.spec.ts) · [Módulo 6 — Codegen](../modulo-06-codegen/)

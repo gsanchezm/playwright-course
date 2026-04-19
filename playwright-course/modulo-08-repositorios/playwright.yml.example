@@ -1,11 +1,8 @@
 # ============================================================
-# Ejemplo de workflow de GitHub Actions para Playwright
+# Ejemplo de workflow GitHub Actions para el framework OmniPizza
 # ============================================================
-# Copia este archivo a .github/workflows/playwright.yml en tu repo
+# Copia este archivo a .github/workflows/playwright.yml de tu repo
 # (con extensión .yml, no .yml.example).
-#
-# Si no lo haces en playwright-course/ sino en tu propio repo,
-# asegúrate que la estructura de carpetas coincida con los paths.
 # ============================================================
 
 name: Playwright Tests
@@ -18,7 +15,7 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -34,6 +31,7 @@ jobs:
         with:
           version: 9
 
+      # Cache de pnpm store para acelerar runs posteriores
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -51,18 +49,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # En CI solo instalamos Chromium para ahorrar minutos
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run Playwright tests
-        run: pnpm test
+      # Despertar OmniPizza backend (Render free tier)
+      - name: Warm up OmniPizza backend
+        run: |
+          curl -f --max-time 60 https://omnipizza-backend.onrender.com/health || true
+          curl -f --max-time 60 https://omnipizza-frontend.onrender.com/ || true
+        continue-on-error: true
+
+      # En PRs: solo smoke (~3 min). En push a main: sustituir por pnpm test
+      - name: Run smoke tests
+        run: pnpm test:smoke --project=chromium
         env:
-          # Ejemplo de variables de entorno desde GitHub Secrets
-          BASE_URL: ${{ secrets.BASE_URL }}
+          # Los usuarios deterministas de OmniPizza son PÚBLICOS en el curso.
+          # En un proyecto real, aquí pondrías credenciales reales vía secrets:
           TEST_USER: ${{ secrets.TEST_USER }}
           TEST_PASS: ${{ secrets.TEST_PASS }}
 
-      - name: Upload Playwright report
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -70,10 +77,29 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
-      - name: Upload test results
+      - name: Upload test-results (traces, videos, screenshots)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: test-results/
           retention-days: 7
+
+# ============================================================
+# VARIANTE: shards en paralelo (suite grande)
+# ============================================================
+# Reemplaza el job "test" por:
+#
+#   test:
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         shard: [1/4, 2/4, 3/4, 4/4]
+#     steps:
+#       # ...checkout + setup...
+#       - run: pnpm test --shard=${{ matrix.shard }} --project=chromium
+#
+# Esto arranca 4 jobs en paralelo. Requiere (en CI) el reporter "blob"
+# y un job final que mergea los reports:
+#   reporter: process.env.CI ? [['blob']] : [['html']]
+# ============================================================

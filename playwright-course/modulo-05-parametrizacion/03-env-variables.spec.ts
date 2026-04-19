@@ -1,58 +1,49 @@
 // ============================================================
 // Mini-clase 5.3 — Variables de entorno
 // ============================================================
-// Caso de uso real: quieres correr la MISMA suite contra distintos
-// ambientes sin cambiar el código.
+// Cuando un dato NO debe ir hardcoded en el código (credenciales,
+// URLs, tokens), se pasa por variable de entorno.
 //
-//   pnpm test                              → QA (default)
-//   BASE_URL=https://staging.app.com pnpm test   → Staging
-//   BASE_URL=https://prod.app.com pnpm test      → Prod ⚠️ cuidado
+// Ejemplo de uso:
+//   TEST_USER=error_user pnpm test modulo-05-parametrizacion/03-env-variables.spec.ts
+//   BASE_URL=http://localhost:5173 pnpm test
 //
-// Las credenciales también deben venir de env vars, nunca hardcoded:
-//
-//   TEST_USER=admin TEST_PASS=Test1234! pnpm test
-//
-// Analogía QA: es como tener un "config profile" en Postman
-// (QA, staging, prod) y cambiar con un click. Pero en tests.
+// En `playwright.config.ts` ya usamos `process.env.CI` para decidir
+// retries y workers. Aquí lo aplicamos a nivel de test.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-// process.env son las variables de entorno.
-// El operador "??" devuelve el valor de la derecha si la izquierda es undefined/null.
-const BASE_URL = process.env.BASE_URL ?? 'https://playwright.dev';
-const ENV_NAME = process.env.ENV_NAME ?? 'default';
+// Leemos del entorno con fallback seguro.
+// Si alguien corre sin la env var, el test usa el default.
+const USERNAME = process.env.TEST_USER ?? 'standard_user';
+const PASSWORD = process.env.TEST_PASS ?? 'pizza123';
 
-test.describe(`Tests contra ambiente: ${ENV_NAME}`, () => {
-  test('la homepage del ambiente responde', async ({ page }) => {
-    console.log(`[INFO] Corriendo contra: ${BASE_URL}`);
+test(`login con credenciales desde env (user=${USERNAME})`, async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill(USERNAME);
+  await page.getByTestId('password-desktop').fill(PASSWORD);
+  await page.getByTestId('login-button-desktop').click();
 
-    const response = await page.goto(BASE_URL);
-
-    // Validamos que la respuesta HTTP fue 200
-    expect(response?.status()).toBe(200);
-  });
-
-  test('el ambiente correcto está en la URL', async ({ page }) => {
-    await page.goto(BASE_URL);
-    expect(page.url()).toContain(new URL(BASE_URL).hostname);
-  });
+  // standard_user, problem_user, performance_glitch_user, error_user → catálogo
+  // locked_out_user → error
+  if (USERNAME === 'locked_out_user') {
+    await expect(page.getByTestId('login-error')).toBeVisible();
+  } else {
+    await expect(page).toHaveURL(/\/catalog/);
+  }
 });
 
 // ============================================================
-// 💡 En la práctica usarás un archivo .env con dotenv:
+// Patrón común en CI:
 //
-//   # .env (NUNCA subir a Git)
-//   BASE_URL=https://qa.miempresa.com
-//   TEST_USER=qa-user
-//   TEST_PASS=secret123
+//   # .github/workflows/playwright.yml
+//   env:
+//     TEST_USER: ${{ secrets.TEST_USER }}
+//     TEST_PASS: ${{ secrets.TEST_PASS }}
 //
-// Y en playwright.config.ts:
-//   import dotenv from 'dotenv';
-//   dotenv.config();
+// Esto permite rotar credenciales sin tocar el código versionado.
 //
-// Luego en la terminal simplemente:
-//   pnpm test
-//
-// Las vars se cargan automáticamente. ⚠️ .env debe estar en .gitignore.
+// Otra variante: archivos .env cargados con dotenv (extensión del
+// curso — no incluida para mantener cero dependencias extra).
 // ============================================================

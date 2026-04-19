@@ -1,74 +1,91 @@
 // ============================================================
-// RETO — Módulo 4: Localizadores
+// 🚩 RETO — Módulo 4: Localizadores (integrador)
 // ============================================================
-// Usa SIEMPRE la jerarquía de preferencia:
-//   getByRole > getByLabel > getByPlaceholder > getByText > getByTestId > CSS
+// Meta: usar AL MENOS 5 estrategias distintas de locator para
+// completar un mismo flujo en OmniPizza.
 //
-// Todos los retos usan https://demo.playwright.dev/todomvc
+// Corre con:
+//   pnpm test modulo-04-localizadores/reto.spec.ts
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-const TODOMVC_URL = 'https://demo.playwright.dev/todomvc';
+test.describe('🚩 Reto integrador de localizadores', () => {
+  // ----------------------------------------------------------------
+  // Reto 4.1 — Localiza y verifica 6 elementos de la pantalla de
+  // login usando 6 locators DIFERENTES (sin repetir estrategia).
+  //
+  // Elementos sugeridos:
+  //   1. Logo principal del login    → ¿getByAltText?
+  //   2. Heading "Welcome back!"     → ¿getByText?
+  //   3. Botón Sign In               → ¿getByRole?
+  //   4. Input username              → ¿getByPlaceholder?
+  //   5. Bandera de MX               → ¿getByTitle?
+  //   6. Botón quick-login error_user → ¿getByTestId?
+  // ----------------------------------------------------------------
 
-test.describe('Reto: Localizadores en TodoMVC', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(TODOMVC_URL);
+  test('Reto 4.1 — 6 elementos, 6 strategies', async ({ page }) => {
+    await page.goto('/');
+
+    // TODO: Logo principal del login por getByAltText
+    // await expect(page.getByAltText(...)).toBeVisible();
+
+    // TODO: Heading "Welcome back!" por getByText
+
+    // TODO: Botón Sign In por getByRole
+
+    // TODO: Input username por getByPlaceholder
+
+    // TODO: Bandera de MX por getByTitle
+
+    // TODO: user-error_user por getByTestId
   });
 
   // ----------------------------------------------------------------
-  // Reto 4.1 — Agrega un todo con el texto "Mi primer reto"
-  // usando getByPlaceholder. Valida que aparece en la lista.
+  // Reto 4.2 — Chaining: dado el <form>, obtén su botón submit
+  // SIN usar testid. Luego haz click con credenciales válidas.
   // ----------------------------------------------------------------
-  test.fixme('4.1: agregar un todo con getByPlaceholder', async ({ page }) => {
-    // TODO: implementa
+
+  test('Reto 4.2 — chaining form → submit button', async ({ page }) => {
+    await page.goto('/');
+    // TODO: localiza el botón submit via page.locator('form').locator(...)
+    // TODO: llena credenciales y haz click
+    // TODO: expect(page).toHaveURL(/\/catalog/)
   });
 
   // ----------------------------------------------------------------
-  // Reto 4.2 — Agrega 3 todos: "A", "B", "C". Luego valida con
-  // toHaveCount que hay 3 items, y que el segundo es "B" usando .nth(1).
+  // Reto 4.3 — Filter + nth: del catálogo, obtén la tarjeta
+  // de pizza que esté en la posición 1 (segunda) y que contenga un
+  // botón add-to-cart (filter({ has: ... })). Haz click en ese botón.
   // ----------------------------------------------------------------
-  test.fixme('4.2: contar y acceder por nth', async ({ page }) => {
-    // TODO:
+
+  test('Reto 4.3 — filter + nth en el catálogo', async ({ page }) => {
+    // Helper login
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
+
+    // TODO: Localiza las tarjetas de pizza
+    // TODO: Filtra las que tienen un botón add-to-cart dentro (filter({ has }))
+    // TODO: Toma la tarjeta en la posición .nth(1)
+    // TODO: Clickea su botón add-to-cart interno
   });
 
   // ----------------------------------------------------------------
-  // Reto 4.3 — Agrega 3 todos: "Comprar leche", "Pagar renta",
-  // "Llamar a mamá". Marca SOLO el segundo como completado usando
-  // encadenamiento: listitem + filter + checkbox.
+  // Reto 4.4 — .or() — espera el resultado del login:
+  // cualquiera que sea (éxito O error) el assertion debe pasar.
+  // Úsalo como wrapper para un test que prueba ambos casos.
   // ----------------------------------------------------------------
-  test.fixme('4.3: marcar un todo específico como completado', async ({ page }) => {
-    // TODO:
-  });
 
-  // ----------------------------------------------------------------
-  // Reto 4.4 — Agrega 2 todos y luego haz click en el link "Active"
-  // del footer de TodoMVC (es un link con texto "Active"). Valida que
-  // sigue mostrando los 2 todos porque ninguno está completado.
-  // Pista: usa getByRole('link', { name: 'Active' })
-  // ----------------------------------------------------------------
-  test.fixme('4.4: filtro Active con getByRole link', async ({ page }) => {
-    // TODO:
-  });
+  test('Reto 4.4 — .or() espera éxito o error de login', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('locked_out_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
 
-  // ----------------------------------------------------------------
-  // Reto 4.5 — Agrega un todo. Hover sobre él para mostrar el botón
-  // de borrar (X). Haz click en el botón. Valida que la lista queda
-  // vacía con toHaveCount(0).
-  // Pista: el botón de borrar tiene role "button" y name "Delete"
-  // ----------------------------------------------------------------
-  test.fixme('4.5: hover y click en botón de borrar', async ({ page }) => {
-    // TODO:
-  });
-
-  // ----------------------------------------------------------------
-  // Reto 4.6 — BONUS: reescribe el reto 4.3 usando 3 locators diferentes:
-  //   (a) con filter({ hasText: '...' })
-  //   (b) con .nth(1)
-  //   (c) con getByRole('listitem', { name: 'Pagar renta' })
-  // Y observa cuál se lee mejor.
-  // ----------------------------------------------------------------
-  test.fixme('4.6: 3 formas de localizar el mismo elemento', async ({ page }) => {
-    // TODO:
+    // TODO: expect que aparezca login-error O el navbar-logo de OmniPizza
+    // (en este caso solo aparece login-error, pero el locator debe permitir ambos)
   });
 });

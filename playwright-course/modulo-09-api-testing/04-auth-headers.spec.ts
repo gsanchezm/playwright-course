@@ -1,84 +1,105 @@
 // ============================================================
-// Mini-clase 9.4 — Autenticación y Headers custom
+// Mini-clase 9.4 — Headers de autenticación y contexto
 // ============================================================
-// En la vida real, casi todas las APIs requieren autenticación.
-// Formas comunes:
-//   1. Bearer Token (JWT):     Authorization: Bearer eyJ...
-//   2. API Key en header:       X-API-Key: abc123
-//   3. Basic Auth:              Authorization: Basic <base64(user:pass)>
-//   4. Cookies de sesión:        se manejan solas con el contexto
+// En OmniPizza hay 2 headers clave:
+//   - Authorization: Bearer <JWT>  → identifica al usuario
+//   - X-Country-Code: MX|US|CH|JP  → elige el mercado
 //
-// Playwright te permite:
-// - Setear headers por request individual.
-// - Setear headers GLOBALES en el config para todo el suite.
-// - Crear un "apiContext" con headers pre-configurados.
+// Podemos pasarlos en CADA request (verboso) o crear un
+// "apiContext" con los headers ya aplicados (DRY).
 // ============================================================
 
-import { test, expect } from '@playwright/test';
+import { test, expect, request as apiRequest } from '@playwright/test';
 
-const API_BASE = 'https://reqres.in/api';
+const BACKEND_URL = 'https://omnipizza-backend.onrender.com';
 
-test.describe('Headers y autenticación', () => {
-  test('agregar headers custom a un request', async ({ request }) => {
-    const response = await request.get(`${API_BASE}/users/1`, {
-      headers: {
-        'X-Custom-Header': 'valor-custom',
-        'Accept': 'application/json',
-      },
+test.describe.configure({ retries: 1 });
+
+async function login(request: import('@playwright/test').APIRequestContext): Promise<string> {
+  const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+    data: { username: 'standard_user', password: 'pizza123' },
+  });
+  const body = await response.json();
+  return body.access_token as string;
+}
+
+test.describe('Headers: auth + X-Country-Code', () => {
+  test('sin Authorization, endpoints protegidos responden 401/403', async ({ request }) => {
+    const response = await request.get(`${BACKEND_URL}/api/auth/profile`);
+    expect([401, 403]).toContain(response.status());
+  });
+
+  test('con Authorization válido, GET /api/auth/profile responde 200', async ({ request }) => {
+    const token = await login(request);
+    const response = await request.get(`${BACKEND_URL}/api/auth/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
     expect(response.status()).toBe(200);
+
+    const profile = await response.json();
+    expect(profile).toHaveProperty('username');
   });
 
-  test('flujo: obtener token con POST /login y usarlo en GET', async ({ request }) => {
-    // 1. Login para obtener el token
-    const loginResponse = await request.post(`${API_BASE}/login`, {
-      data: {
-        email: 'eve.holt@reqres.in',
-        password: 'cityslicka',
-      },
+  test('X-Country-Code cambia el mercado del /api/pizzas', async ({ request }) => {
+    const token = await login(request);
+    const auth = { Authorization: `Bearer ${token}` };
+
+    const mxResponse = await request.get(`${BACKEND_URL}/api/pizzas`, {
+      headers: { ...auth, 'X-Country-Code': 'MX' },
+    });
+    const jpResponse = await request.get(`${BACKEND_URL}/api/pizzas`, {
+      headers: { ...auth, 'X-Country-Code': 'JP' },
     });
 
-    expect(loginResponse.status()).toBe(200);
-    const { token } = await loginResponse.json();
-    console.log('Token obtenido:', token);
+    expect(mxResponse.status()).toBe(200);
+    expect(jpResponse.status()).toBe(200);
 
-    // 2. Usar el token en un GET posterior
-    const profileResponse = await request.get(`${API_BASE}/users/1`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const mxPizzas = await mxResponse.json();
+    const jpPizzas = await jpResponse.json();
 
-    expect(profileResponse.status()).toBe(200);
-  });
-
-  test('pasar query params en un GET', async ({ request }) => {
-    // Dos formas de mandar query params:
-
-    // Forma 1: directo en la URL
-    const r1 = await request.get(`${API_BASE}/users?page=2`);
-    expect(r1.status()).toBe(200);
-
-    // Forma 2: objeto "params" (recomendado, más legible)
-    const r2 = await request.get(`${API_BASE}/users`, {
-      params: { page: 2, per_page: 5 },
-    });
-    expect(r2.status()).toBe(200);
-
-    const body = await r2.json();
-    expect(body.page).toBe(2);
+    // Ambos devuelven el mismo menú pero con pricing distinto por mercado.
+    expect(mxPizzas).toBeTruthy();
+    expect(jpPizzas).toBeTruthy();
   });
 });
 
 // ============================================================
-// 💡 Para headers globales del suite, en playwright.config.ts:
+// Patrón: apiRequest context con headers default
 //
-//   use: {
+//   const ctx = await apiRequest.newContext({
+//     baseURL: BACKEND_URL,
 //     extraHTTPHeaders: {
-//       'Authorization': `Bearer ${process.env.API_TOKEN}`,
+//       'Authorization': `Bearer ${token}`,
+//       'X-Country-Code': 'MX',
 //     },
-//   }
+//   });
 //
-// Así TODOS los requests del suite llevan el token automáticamente.
+//   // Ahora todas las requests del ctx llevan esos headers por default
+//   const res = await ctx.get('/api/pizzas');
+//
+// Así evitas repetir los headers en cada request.
 // ============================================================
+
+test.describe('apiRequest.newContext con headers default', () => {
+  test('contexto autenticado para el mercado MX', async () => {
+    const loginCtx = await apiRequest.newContext({ baseURL: BACKEND_URL });
+    const token = await login(loginCtx);
+    await loginCtx.dispose();
+
+    const ctx = await apiRequest.newContext({
+      baseURL: BACKEND_URL,
+      extraHTTPHeaders: {
+        Authorization: `Bearer ${token}`,
+        'X-Country-Code': 'MX',
+      },
+    });
+
+    const pizzasRes = await ctx.get('/api/pizzas');
+    expect(pizzasRes.status()).toBe(200);
+
+    const profileRes = await ctx.get('/api/auth/profile');
+    expect(profileRes.status()).toBe(200);
+
+    await ctx.dispose();
+  });
+});

@@ -1,30 +1,35 @@
 // ============================================================
-// Módulo 1 — Tu primer test: "Hello Playwright"
+// Módulo 1 — Visión general · Primer smoke test
 // ============================================================
-// Analogía: Este es el equivalente del "Hola Mundo" del curso
-// de TypeScript, pero ahora el mundo es un navegador real.
+// Historia del curso:
+//   OmniPizza es una app de pedidos de pizza (React + FastAPI) en
+//   vivo en https://omnipizza-frontend.onrender.com. A lo largo del
+//   curso vamos a ir construyendo un mini framework que la cubre
+//   con pruebas E2E y de API. Este archivo es el PRIMER test.
+//
+// Meta del smoke:
+//   Que "standard_user" haga login y llegue al catálogo.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-test('homepage de Playwright tiene el título correcto', async ({ page }) => {
-  // 1. Arrange — navegar a la URL de prueba
-  await page.goto('https://playwright.dev/');
+test('smoke: standard_user puede hacer login y llegar al catálogo', async ({ page }) => {
+  // Arrange — baseURL ya apunta a OmniPizza en playwright.config.ts
+  await page.goto('/');
 
-  // 2. Assert — verificar que el título contiene "Playwright"
-  //    La expresión /Playwright/ es una regex: busca esa palabra
-  //    en cualquier parte del título, sin importar mayúsculas/minúsculas.
-  await expect(page).toHaveTitle(/Playwright/);
-});
+  // Act — llenamos el formulario de login.
+  // OmniPizza expone data-testid en todos los campos; a viewport
+  // desktop (default) el hook `tid()` del front añade el sufijo
+  // "-desktop". En M4 veremos los detalles; por ahora úsalo tal cual.
+  // (El form viene prellenado con standard_user / pizza123, pero
+  //  lo tipeamos explícitamente para que el test sea realista.)
+  await page.getByTestId('username-desktop').fill('standard_user');
+  await page.getByTestId('password-desktop').fill('pizza123');
+  await page.getByTestId('login-button-desktop').click();
 
-test('el link "Get Started" lleva a la página de instalación', async ({ page }) => {
-  // 1. Arrange
-  await page.goto('https://playwright.dev/');
+  // Assert 1 — la SPA redirige a /catalog tras login exitoso.
+  await expect(page).toHaveURL(/\/catalog/);
 
-  // 2. Act — hacer click en el link "Get started"
-  await page.getByRole('link', { name: 'Get started' }).click();
-
-  // 3. Assert — validar que ya estamos en la página de instalación
-  //    Buscamos un heading (h1/h2/h3) con el texto "Installation"
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+  // Assert 2 — el logo de OmniPizza está en el navbar ⇒ sesión activa.
+  await expect(page.getByAltText('OmniPizza')).toBeVisible();
 });

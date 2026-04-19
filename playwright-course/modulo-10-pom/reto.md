@@ -1,71 +1,115 @@
 # Reto — Módulo 10: Page Object Model
 
-## Reto 10.1 — Extender el TodoMvcPage
+## Reto 10.1 — Crea un `CheckoutPage`
 
-Agrega estos métodos a `pages/TodoMvcPage.ts`:
+Crea `modulo-10-pom/pages/CheckoutPage.ts` con:
 
-1. `async getActiveCount(): Promise<number>` — devuelve el número que muestra "X items left" en el footer.
-2. `async filterActive(): Promise<void>` — click en el filtro "Active".
-3. `async filterCompleted(): Promise<void>` — click en el filtro "Completed".
-4. `async filterAll(): Promise<void>` — click en el filtro "All".
-
-Pista: los filtros son `getByRole('link', { name: 'Active' })`, etc.
-
----
-
-## Reto 10.2 — Usar los nuevos métodos
-
-Crea un nuevo archivo `tests/todomvc.filters.spec.ts` con 3 tests que:
-
-1. Agreguen 3 todos y validen que `getActiveCount()` devuelve 3.
-2. Marquen uno como completado y validen que `getActiveCount()` devuelve 2.
-3. Click en "Completed" y validen que solo hay 1 todo visible.
-
----
-
-## Reto 10.3 — Crear un Page Object para playwright.dev
-
-Crea `pages/PlaywrightDevPage.ts` extendiendo `BasePage` con:
-
-- Selectores privados para: link "Get started", link "Docs", link "API", heading principal.
+- `path = '/checkout'`
+- Locators **privados** (usando `tid()` cuando aplique):
+  - `address`, `fullName`, `phone` (con sufijo -desktop)
+  - `zipCode` (estático, sin sufijo)
+  - `payment-card`, `payment-cash` (uno con sufijo, otro estático)
+  - `place-order-btn` (con sufijo)
 - Métodos públicos:
-  - `async clickGetStarted(): Promise<void>`
-  - `async clickDocs(): Promise<void>`
-  - `async clickApi(): Promise<void>`
-  - `async isHeadingVisible(): Promise<boolean>`
+  - `fillShippingInfo(data: { address, fullName, phone, zipCode }): Promise<void>`
+  - `selectPaymentMethod(method: 'card' | 'cash'): Promise<void>`
+  - `placeOrder(): Promise<void>`
+- Assertion:
+  - `expectLoaded()` → verificar que los campos están visibles.
 
-Crea un archivo `tests/playwright-dev.spec.ts` con 2 tests que usen tu nuevo POM.
+Al terminar, escribe `modulo-10-pom/tests/checkout.pom.spec.ts` que:
+1. Use `authenticatedPage` para llegar a `/catalog`.
+2. Agregue una pizza via `catalogPage.addFirstPizza()`.
+3. Navegue a `/checkout`.
+4. Use tu `CheckoutPage` para llenar datos de MX (desde `test-data.json` de M5).
+5. Verifique que puede hacer click en "Place Order" (sin necesariamente completar la orden — los campos de tarjeta son complejos).
 
 ---
 
-## Reto 10.4 — Refactorizar tests viejos
+## Reto 10.2 — Agrega un POM para el Navbar
 
-Toma el archivo `modulo-02-anotaciones/02-describe-agrupacion.spec.ts` y reescríbelo usando el POM del reto 10.3. Los tests deberían ser casi idénticos en comportamiento pero MUY diferentes en apariencia.
+El navbar está en todas las páginas autenticadas. Crea `modulo-10-pom/pages/NavbarPage.ts`:
+
+- Hereda de `BasePage`.
+- Locators privados: `nav-logo`, `nav-catalog`, `nav-checkout`, `nav-profile`, `nav-cart-count`, `logout-btn`.
+- Métodos públicos:
+  - `goToCatalog()`
+  - `goToProfile()`
+  - `logout()`
+  - `getCartCount(): Promise<number>` — devuelve el número mostrado.
+- Assertion: `expectLoggedIn()` → navbar es visible con el logo.
+
+---
+
+## Reto 10.3 — Fixture `cartWithOnePizza`
+
+Extiende `fixtures/auth.ts` con una nueva fixture:
+
+```ts
+cartWithOnePizza: async ({ authenticatedPage, catalogPage }, use) => {
+  await catalogPage.addFirstPizza();
+  await use(authenticatedPage);
+},
+```
+
+Usa esa fixture en un test que verifique que `nav-cart-count` muestre "1".
+
+---
+
+## Reto 10.4 — Parametriza el login con forEach
+
+Aplica el patrón de M5 a `LoginPage`:
+
+```ts
+const loginCases = [
+  { username: 'standard_user', shouldSucceed: true },
+  { username: 'locked_out_user', shouldSucceed: false },
+  // ...
+];
+
+loginCases.forEach(({ username, shouldSucceed }) => {
+  test(`login ${username}`, async ({ loginPage, page }) => {
+    await loginPage.login(username, 'pizza123');
+    if (shouldSucceed) {
+      await expect(page).toHaveURL(/\/catalog/);
+    } else {
+      await loginPage.expectLoginError();
+    }
+  });
+});
+```
+
+Pon el archivo en `modulo-10-pom/tests/login-parametrized.pom.spec.ts`.
 
 ---
 
 ## Reto 10.5 — Preguntas
 
-1. ¿Por qué los selectores del POM son `private` y no `public`?
-2. ¿Por qué los métodos del POM NO deberían contener `expect(...)`?
-3. ¿Cuál es la ventaja de heredar de `BasePage` en vez de copiar los métodos comunes en cada POM?
-4. Tu compañera creó un POM con un método `getLoginButton(): Locator` que devuelve el locator. ¿Por qué es una mala práctica?
+1. ¿Por qué los locators de un Page Object son `private`?
+2. ¿Cuál es la diferencia filosófica entre POM (UI) y los módulos de M9 (API)? ¿Deberían convivir?
+3. ¿Por qué la fixture `authenticatedPage` usa `LoginPage` por dentro en vez de llamar a testids directamente?
+4. Si mañana OmniPizza renombra `data-testid="login-button-desktop"` a `"submit-desktop"`, ¿qué archivos tocas?
 
 **Respuestas:**
 
-1. Para ocultar los detalles de implementación (los `#login-btn`, `.css-1x2y3z`, etc.) del resto del código. Si un selector cambia, solo el POM se afecta, no los tests. Esto es **encapsulación** — un principio fundamental de POO.
-2. Porque mezcla responsabilidades: el POM debe **hacer acciones** y el test debe **validar**. Si el POM tiene assertions, se vuelve más difícil reutilizarlo en tests con distintas expectativas. (Hay escuelas que discrepan, pero es la convención más común.)
-3. Reutilización y mantenibilidad. Si mañana agregas un método `waitForToast()` a `BasePage`, TODOS los POMs lo tienen gratis. Y si hay un bug en `waitForLoad()`, lo arreglas en un solo lugar.
-4. Porque expone los locators al test, rompiendo la encapsulación. Si el test puede obtener el locator, también puede hacer `.click()` o `.fill()` y el POM pierde control. Mejor: método público `clickLogin()` que hace el click internamente.
+1. Porque son **detalles de implementación**. Un test no debería saber que el botón de login tiene `data-testid="login-button-desktop"` — solo debería decir "hago login". Si mañana cambia el testid, cambias una línea del POM y los tests no se dan ni cuenta.
+2. Los POMs abstraen **UI**; los API specs no usan POMs (o usan patrones equivalentes tipo clases `AuthApi`, `PizzasApi`). Ambos conviven en el mismo repo pero son disciplinas distintas. El curso los mantiene aislados (UI en M1-M8,M10; API en M9) por decisión pedagógica.
+3. Para **reutilizar** la lógica de login. Si mañana el login cambia (nuevo campo, MFA, etc.), modificas `LoginPage.login()` **una vez** y la fixture sigue funcionando.
+4. **Solo `LoginPage.ts`** — la línea `return this.tid('login-button')` se cambia a `return this.tid('submit')`. Ningún test ni fixture necesita tocarse.
 
 ---
 
 ## ✅ Checklist
 
-- [ ] Extendí TodoMvcPage con nuevos métodos.
-- [ ] Creé un Page Object para playwright.dev.
-- [ ] Refactoré un test viejo usando el POM.
-- [ ] Entiendo la jerarquía BasePage → PageObjectEspecífico.
-- [ ] Sé por qué los selectores deben ser privados.
+- [ ] Creé `CheckoutPage.ts` con locators, acciones y assertions.
+- [ ] Creé `NavbarPage.ts` reutilizable en tests de páginas autenticadas.
+- [ ] Extendí `fixtures/auth.ts` con `cartWithOnePizza`.
+- [ ] Parametrizé el login usando forEach + POM.
+- [ ] Puedo explicar por qué separamos selectores en POMs privados.
 
-➡️ Siguiente: [Módulo 11: IA en Testing](../modulo-11-ia/)
+🎓 **¡Terminaste el curso!** Tu framework OmniPizza está listo para:
+- Extenderse con más pages/ (Profile, Admin, etc.).
+- Subirse a GitHub (M8) con CI.
+- Refactorizarse a la estructura de repo independiente.
+
+➡️ Revisa el [README principal del curso](../README.md) para ver el framework completo en contexto.

@@ -1,80 +1,86 @@
 // ============================================================
-// RETO — Módulo 9: API Testing
+// 🚩 RETO — Módulo 9: API testing puro
 // ============================================================
-// Todos los retos usan https://reqres.in/api
+// Completa los TODOs. Todas las pruebas son 100% API — NO uses
+// `page` ni navegador.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'https://reqres.in/api';
+const BACKEND_URL = 'https://omnipizza-backend.onrender.com';
 
 // ----------------------------------------------------------------
-// Reto 9.1 — GET /users/3
-// Valida que:
-//   (a) status es 200
-//   (b) body.data.id es 3
-//   (c) body.data.email contiene "@reqres.in"
+// Reto 9.1 — GET básicos
+//
+// Escribe 2 tests:
+//   a) GET /health devuelve 200.
+//   b) GET /api/countries devuelve 200 y al menos 4 países.
 // ----------------------------------------------------------------
-test.fixme('9.1: GET usuario por ID', async ({ request }) => {
-  // TODO:
+
+test('Reto 9.1a — /health responde 200', async ({ request }) => {
+  // TODO
+});
+
+test('Reto 9.1b — /api/countries lista al menos 4 mercados', async ({ request }) => {
+  // TODO
 });
 
 // ----------------------------------------------------------------
-// Reto 9.2 — GET /users?page=2
-// Valida que:
-//   (a) el campo "page" del body es 2
-//   (b) data es un array con al menos 1 elemento
-//   (c) cada usuario tiene las propiedades: id, email, first_name, last_name
+// Reto 9.2 — Autenticación con POST
+//
+// a) POST /api/auth/login con performance_glitch_user/pizza123
+//    debe devolver 200 y un access_token.
+// b) POST /api/auth/login con un username vacío debe devolver 400 o 422.
 // ----------------------------------------------------------------
-test.fixme('9.2: GET lista paginada', async ({ request }) => {
-  // TODO:
+
+test('Reto 9.2a — login con performance_glitch_user → 200 + token', async ({ request }) => {
+  test.slow(); // el usuario añade delay
+  // TODO
+});
+
+test('Reto 9.2b — login sin username → 400/422', async ({ request }) => {
+  // TODO
 });
 
 // ----------------------------------------------------------------
-// Reto 9.3 — POST /users
-// Crea un usuario con { name: "Tu Nombre", job: "QA Learner" }.
-// Valida status 201 y que el body contiene los campos enviados + "id" + "createdAt".
+// Reto 9.3 — Endpoint protegido con JWT
+//
+// 1. Haz login con standard_user y obtén el token.
+// 2. Llama GET /api/auth/profile con Authorization: Bearer <token>.
+// 3. Verifica que la respuesta contiene el username.
 // ----------------------------------------------------------------
-test.fixme('9.3: POST crear usuario', async ({ request }) => {
-  // TODO:
+
+test('Reto 9.3 — /api/auth/profile con JWT válido', async ({ request }) => {
+  // TODO: login → extract token → GET profile con Authorization
 });
 
 // ----------------------------------------------------------------
-// Reto 9.4 — POST /register con credenciales correctas
-// Endpoint: POST /register
-// Body: { "email": "eve.holt@reqres.in", "password": "pistol" }
-// Valida status 200 y que la respuesta contiene "token".
+// Reto 9.4 — Data-driven: pizzas por mercado
+//
+// Usa forEach sobre los 4 mercados (MX/US/CH/JP). Para cada uno:
+//   1. Haz GET /api/pizzas con X-Country-Code=<market>.
+//   2. Verifica status 200.
+//   3. Verifica que la respuesta contiene datos.
 // ----------------------------------------------------------------
-test.fixme('9.4: POST register válido', async ({ request }) => {
-  // TODO:
+
+const markets = ['MX', 'US', 'CH', 'JP'];
+
+markets.forEach((market) => {
+  test(`Reto 9.4 — /api/pizzas para mercado ${market}`, async ({ request }) => {
+    // TODO
+  });
 });
 
 // ----------------------------------------------------------------
-// Reto 9.5 — POST /register SIN password
-// Debe devolver 400 y un body con "error" que diga "Missing password".
+// Reto 9.5 — BONUS: Detectar un cambio de rendimiento
+//
+// Llama GET /api/pizzas 3 veces seguidas con X-Country-Code=MX.
+// Guarda el tiempo de respuesta de cada llamada. Verifica que
+// NINGUNA tomó más de 5 segundos (5000 ms).
+//
+// Pista: usa Date.now() antes y después del request.
 // ----------------------------------------------------------------
-test.fixme('9.5: POST register inválido', async ({ request }) => {
-  // TODO:
-});
 
-// ----------------------------------------------------------------
-// Reto 9.6 — Flujo completo CRUD
-// 1. POST /users para crear un usuario → guarda el ID.
-// 2. PUT /users/{id} para actualizar el job.
-// 3. GET /users/{id} para verificar que existe (nota: reqres.in es mock,
-//    así que el GET puede devolver datos aleatorios — es ok).
-// 4. DELETE /users/{id} → validar 204.
-// ----------------------------------------------------------------
-test.fixme('9.6: flujo CRUD completo', async ({ request }) => {
-  // TODO:
-});
-
-// ----------------------------------------------------------------
-// Reto 9.7 — BONUS: UI + API
-// 1. [API] POST /login para obtener un token.
-// 2. [UI] Navegar a https://playwright.dev y validar el título.
-// 3. Console.log del token y del título para confirmar que ambos mundos corrieron.
-// ----------------------------------------------------------------
-test.fixme('9.7: UI + API combinados', async ({ page, request }) => {
-  // TODO:
+test('Reto 9.5 — ninguna llamada a /api/pizzas supera 5s', async ({ request }) => {
+  // TODO
 });

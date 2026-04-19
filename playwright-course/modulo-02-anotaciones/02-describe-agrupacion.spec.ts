@@ -2,9 +2,9 @@
 // Mini-clase 2.2 — Agrupar tests con test.describe
 // ============================================================
 // Analogía: En un plan de pruebas manual tienes "secciones":
-// "Login", "Checkout", "Perfil de usuario". Cada sección tiene
-// varios casos adentro. "describe" es exactamente eso: agrupa
-// tests relacionados bajo un título común.
+// "Login", "Checkout", "Perfil". Cada sección tiene varios casos
+// adentro. "describe" es eso: agrupa tests relacionados bajo un
+// título común.
 //
 // Beneficios:
 // - En el reporte se ven agrupados.
@@ -14,31 +14,39 @@
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Suite: Homepage de Playwright', () => {
-  test('el título contiene la palabra Playwright', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(page).toHaveTitle(/Playwright/);
+test.describe('Suite: Login de OmniPizza', () => {
+  test('standard_user es redirigido al catálogo', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
   });
 
-  test('el botón "Get started" es visible', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(
-      page.getByRole('link', { name: 'Get started' })
-    ).toBeVisible();
-  });
+  test('locked_out_user ve el mensaje de error y no entra', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('locked_out_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
 
-  test('la navegación contiene el link Docs', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(page.getByRole('link', { name: 'Docs' }).first()).toBeVisible();
+    // El mensaje de error aparece y seguimos en la pantalla de login
+    await expect(page.getByTestId('login-error')).toBeVisible();
+    await expect(page).not.toHaveURL(/\/catalog/);
   });
 });
 
-// Puedes tener varios describes en el mismo archivo si quieres
-test.describe('Suite: Página de instalación', () => {
-  test('muestra el heading de Installation', async ({ page }) => {
-    await page.goto('https://playwright.dev/docs/intro');
-    await expect(
-      page.getByRole('heading', { name: 'Installation' })
-    ).toBeVisible();
+// Puedes tener varios describes en el mismo archivo.
+test.describe('Suite: UI de la pantalla de login', () => {
+  test('el logo "Art of Pizza" es visible', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByAltText('Art of Pizza')).toBeVisible();
+  });
+
+  test('las 4 banderas de mercado están presentes', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTitle('Select MX')).toBeVisible();
+    await expect(page.getByTitle('Select US')).toBeVisible();
+    await expect(page.getByTitle('Select CH')).toBeVisible();
+    await expect(page.getByTitle('Select JP')).toBeVisible();
   });
 });

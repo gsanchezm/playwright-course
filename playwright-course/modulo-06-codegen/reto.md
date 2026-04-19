@@ -1,78 +1,92 @@
-# Reto — Módulo 6: Codegen
+# Reto — Módulo 6: Codegen contra OmniPizza
 
 ## Reto 6.1 — Tu primer test grabado
 
-1. Ejecuta: `pnpm exec playwright codegen https://demo.playwright.dev/todomvc`
-2. En el navegador que se abre:
-   - Agrega 3 todos: "Aprender codegen", "Practicar selectores", "Revisar resultados".
-   - Marca el segundo como completado (check).
-   - Haz click en el filtro "Completed".
+1. Ejecuta: `pnpm codegen`
+2. En la ventana del navegador:
+   - Click en el quick-login `standard_user` (o llena username/password a mano).
+   - Click en **Sign In**.
+   - En `/catalog`: click en el primer botón **Add to Cart** de cualquier pizza.
 3. Observa el código generado en el Inspector.
-4. Copia el código a un archivo `modulo-06-codegen/grabado.spec.ts`.
-5. Corre el test: `pnpm test modulo-06-codegen/grabado.spec.ts`.
+4. Copia el código a `modulo-06-codegen/grabado.spec.ts`.
+5. Corre: `pnpm test modulo-06-codegen/grabado.spec.ts --project=chromium`.
 
-**✅ Resultado esperado:** el test pasa en los 3 navegadores.
+**✅ Resultado esperado:** el test pasa en Chromium.
 
 ---
 
 ## Reto 6.2 — Refactorización
 
-Después del reto 6.1, toma tu `grabado.spec.ts` y refactorízalo:
+Toma tu `grabado.spec.ts` del reto 6.1 y refactorízalo:
 
-1. Dale un nombre descriptivo al test (no "test").
-2. Agrega un `test.describe('Suite TodoMVC grabado', () => { ... })` envolviendo el test.
-3. Al final del flujo, agrega una assertion explícita: `await expect(page.getByTestId('todo-title')).toHaveCount(1)` (porque filtraste solo los completados).
-4. Corre de nuevo y verifica que sigue pasando.
+1. Dale un **nombre descriptivo** al test (no "test").
+2. Envuelvelo en `test.describe('Carrito de OmniPizza', () => { ... })`.
+3. Agrega tags `@smoke @critical`.
+4. Agrega una assertion final: `expect(page.getByTestId('nav-cart-count')).toContainText('1')`.
+5. Reemplaza los locators de codegen por otros más robustos si aplica.
+6. Corre de nuevo y verifica que siga pasando.
 
 ---
 
-## Reto 6.3 — Assertions generadas
+## Reto 6.3 — Assertions generadas por codegen
 
-1. Ejecuta `pnpm codegen` apuntando a `https://playwright.dev`.
-2. En el Inspector, busca los 3 botones de assertions:
+1. Arranca `pnpm codegen` contra OmniPizza.
+2. En el Inspector, identifica los 3 botones de assertion:
    - **Assert visibility** 👁
    - **Assert text** 📝
    - **Assert value** 📥
-3. Haz click en "Assert visibility" y luego click en el logo de Playwright.
-4. Haz click en "Assert text" y luego click en el heading principal. Escribe el texto esperado.
-5. Copia el código generado y observa cómo Playwright creó los `expect(...).toBeVisible()` y `expect(...).toHaveText(...)` automáticamente.
+3. Haz login y en `/catalog` usa:
+   - **Assert visibility** sobre el logo del navbar.
+   - **Assert text** sobre el texto de una categoría (ej. "Popular").
+4. Copia el código y pégalo en otro spec. Obsérvalo: son `expect(...)` válidos.
 
 ---
 
-## Reto 6.4 — Codegen en otro dispositivo
+## Reto 6.4 — Codegen en mobile
 
 ```bash
-$ pnpm exec playwright codegen --device="iPhone 13" https://playwright.dev
+pnpm exec playwright codegen --device="iPhone 13" https://omnipizza-frontend.onrender.com
 ```
 
-1. Graba un flujo de navegación corto.
-2. Observa cómo el navegador emula el tamaño y touch events de un iPhone.
-3. Guarda el código en `modulo-06-codegen/mobile.spec.ts`.
+1. Graba el mismo flujo de login.
+2. Observa cómo los **testids cambian a `-responsive`** — ese es el sufijo que el hook `tid()` aplica a viewport <768px.
+3. Guarda en `modulo-06-codegen/mobile.spec.ts`.
+4. Corre con `--project=mobile-chrome`.
 
 ---
 
-## Reto 6.5 — Preguntas
+## Reto 6.5 — Pick Locator
 
-1. ¿Por qué codegen no es un reemplazo completo del trabajo del automatizador?
-2. ¿Qué es el botón "Pick locator" y cuándo lo usarías?
-3. Generaste un test con codegen que tiene `page.locator('.btn-primary').click()`. ¿Qué harías con ese selector antes de commitearlo?
-4. ¿En qué situación usarías codegen en tu trabajo real?
+Arranca `pnpm codegen`. Usa el botón **🎯 Pick locator**:
+
+1. Apunta al logo "OmniPizza Logo" del login. ¿Qué locator sugiere? (Debería ser `getByAltText(...)`).
+2. Apunta a la bandera de México. ¿Qué locator sugiere?
+3. Apunta al botón `performance_glitch_user`. ¿Qué locator sugiere?
+
+**✅ Resultado esperado:** observas que codegen prefiere `getByRole`, `getByText`, `getByAltText`, `getByTestId` sobre selectores CSS crudos. Eso valida la "pirámide de prioridad" del M4.
+
+---
+
+## Reto 6.6 — Preguntas
+
+1. ¿Por qué codegen no reemplaza el trabajo del automatizador?
+2. Al grabar en mobile viewport, el testid de Sign In fue distinto. ¿Cómo lo harías viewport-agnóstico?
+3. Si codegen generó `page.locator('.btn-primary').click()`, ¿qué harías antes de commitear?
 
 **Respuestas:**
 
-1. Porque genera código bruto sin semántica, sin assertions significativas, con datos hardcoded y sin estructura POM. Siempre necesitas **revisar, refactorizar y parametrizar** lo generado.
-2. Es una herramienta que te permite apuntar visualmente a cualquier elemento de la página y te da el locator recomendado de Playwright. Lo usarías cuando quieres saber **"cómo localizo este elemento"** sin tener que inspeccionar el HTML manualmente.
-3. Reemplazarlo con un locator semántico como `getByRole('button', { name: '...' })` o pedirle al dev que agregue `data-testid`. Las clases CSS como `.btn-primary` cambian mucho entre deploys.
-4. Cuando tengo que **prototipar rápidamente** un test nuevo en una página que no conozco bien, para luego refactorizar. También cuando estoy explorando el DOM de una app nueva y quiero "descubrir" los locators correctos.
+1. Porque genera código **bruto** sin structure (no fixtures, no POM), con datos hardcoded, sin assertions significativas y sin paramétrización. Siempre hay que **revisar y refactorizar**.
+2. Creas un helper `tid(page, base)` como el de `modulo-04-localizadores/07-get-by-test-id.spec.ts` que calcula el sufijo `-desktop` o `-responsive` según el viewport.
+3. Lo reemplazas por un locator semántico (`getByRole`, `getByTestId`) o pides al equipo front que agregue un `data-testid` estable. Las clases Tailwind como `.btn-primary` cambian con refactors.
 
 ---
 
 ## ✅ Checklist
 
-- [ ] Grabé mi primer test con `pnpm codegen`.
-- [ ] Refactoré el test grabado para que sea profesional.
-- [ ] Usé el botón "Pick locator" para obtener selectores.
-- [ ] Usé los botones de assertions para generar `expect(...)` automáticamente.
-- [ ] Entiendo cuándo codegen es útil y cuándo NO.
+- [ ] Grabé un test contra OmniPizza con `pnpm codegen`.
+- [ ] Refactoré el test: nombre, tags, assertion.
+- [ ] Usé los 3 botones de assertion del Inspector.
+- [ ] Probé codegen en modo mobile y noté el cambio de testids.
+- [ ] Usé **Pick Locator** para descubrir selectores.
 
-➡️ Siguiente: [Módulo 7: Reports](../modulo-07-reports/)
+➡️ Siguiente: [Módulo 7 — Reports](../modulo-07-reports/)

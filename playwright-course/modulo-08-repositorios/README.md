@@ -1,39 +1,35 @@
-# Módulo 8: Repositorios (Git + GitHub Actions para tests)
+# Módulo 8 — Repositorios y CI: correr el framework contra OmniPizza en GitHub Actions
 
-> **Objetivo:** Integrar tu framework de Playwright con Git, GitHub y un pipeline de CI que corra los tests automáticamente en cada push y PR.
-
+> **Historia del curso:** ya tienes una mini-suite completa contra OmniPizza. Hoy la publicas en GitHub y la haces correr automáticamente en cada push/PR — **la automatización de la automatización**.
+>
 > **Prerrequisito:** haber completado el [curso de Git/GitHub](../../git-github-course/).
-
-> **Referencia oficial:** [ci](https://playwright.dev/docs/ci) · [ci-intro](https://playwright.dev/docs/ci-intro)
+>
+> **Referencia oficial:** [CI](https://playwright.dev/docs/ci) · [CI Intro](https://playwright.dev/docs/ci-intro)
 
 ---
 
-## 🎯 Analogía principal
+## Analogía
 
-> **CI (Continuous Integration) es como tener un asistente robótico que corre TODA tu regresión cada vez que alguien toca el código.**
->
-> Sin CI:
-> 1. Dev hace cambio.
-> 2. Automatizador se entera horas después.
-> 3. Corre los tests localmente.
-> 4. Reporta fallos.
->
-> Con CI:
-> 1. Dev hace push.
-> 2. GitHub Actions corre la suite completa automáticamente.
-> 3. En 5 minutos todos saben si algo se rompió.
-> 4. El PR se bloquea si los tests fallan.
+CI = asistente robótico que corre **toda tu regresión** cada vez que alguien toca el código.
+
+| Sin CI | Con CI |
+|---|---|
+| Dev hace cambio | Dev hace push |
+| Automatizador se entera horas después | GitHub Actions corre la suite |
+| Corre tests local | 5-10 min, todos saben si algo rompió |
+| Reporta fallos | El PR se **bloquea** si falla |
 
 ---
 
-## 1. Estructura de un repo de automatización en GitHub
+## 1. Estructura del repo del curso
 
 ```
-mi-framework-e2e/
+playwright-course/
 ├── .github/
 │   └── workflows/
-│       └── playwright.yml     # ⭐ el pipeline
-├── modulo-*/                   # o tests/
+│       └── playwright.yml     ← ⭐ el pipeline (lo crearás en el reto)
+├── modulo-01..10/             ← los tests
+├── fixtures/                  ← (llega en M10 con POM)
 ├── package.json
 ├── playwright.config.ts
 ├── tsconfig.json
@@ -41,17 +37,9 @@ mi-framework-e2e/
 └── README.md
 ```
 
-## 2. Archivos que SÍ van al repo
+---
 
-- ✅ Todo el código de tests (`*.spec.ts`, `*.ts`)
-- ✅ `package.json`, `pnpm-lock.yaml`
-- ✅ `playwright.config.ts`
-- ✅ `tsconfig.json`
-- ✅ `.github/workflows/*.yml`
-- ✅ `README.md` con instrucciones de cómo correr los tests
-- ✅ `.gitignore`
-
-## 3. Archivos que NO van al repo
+## 2. `.gitignore` del curso
 
 ```gitignore
 node_modules/
@@ -64,13 +52,13 @@ node_modules/
 .DS_Store
 ```
 
-Ya está en tu `.gitignore` del curso.
+Ya está en tu repo. Nunca commits artefactos ni secretos.
 
 ---
 
-## 4. El workflow de GitHub Actions para Playwright
+## 3. El workflow — `.github/workflows/playwright.yml`
 
-Crea `.github/workflows/playwright.yml` en tu repo:
+Usa el archivo [`playwright.yml.example`](./playwright.yml.example) como base. Versión abreviada:
 
 ```yaml
 name: Playwright Tests
@@ -83,53 +71,106 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v3
         with:
           version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Run Playwright tests
-        run: pnpm test
-
-      - name: Upload Playwright report
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:smoke
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
 ```
 
-### ¿Qué hace cada paso?
+**Puntos importantes para este curso:**
 
-1. **`checkout`**: descarga el código del repo al runner de GitHub.
-2. **`setup-node`**: instala Node.js v20.
-3. **`pnpm/action-setup`**: instala pnpm.
-4. **`pnpm install --frozen-lockfile`**: instala dependencias exactamente como están en `pnpm-lock.yaml` (sin actualizar).
-5. **`playwright install --with-deps`**: descarga los navegadores Y sus dependencias del SO (linux libs para Chromium, etc.).
-6. **`pnpm test`**: corre todos los tests.
-7. **`upload-artifact`**: guarda el reporte HTML como artifact del build. Lo puedes descargar desde la página del run en GitHub. `if: always()` asegura que se sube incluso si los tests fallan.
+- **`--with-deps`** — Ubuntu runners no tienen las libs nativas que los navegadores de Playwright necesitan. El flag las instala.
+- **`chromium` solo** — en CI restringimos a un navegador para ahorrar minutos. Local puedes probar Firefox/WebKit.
+- **`pnpm test:smoke`** — en PR corremos solo `@smoke`. `@regression` completo se reserva para merges a `main` (ver sección 5).
+- **`if: always()`** — el upload del reporte HTML corre **incluso si los tests fallan** (sin este flag, justo cuando más lo necesitas no lo tendrías).
 
 ---
 
-## 5. Shards: correr tests en paralelo en varias máquinas
+## 4. OmniPizza en Render + CI: el problema del cold start
 
-Cuando tu suite crece a 500+ tests, puedes **partirla en shards** y correr cada shard en paralelo:
+Render free tier duerme al servicio tras 15 min sin tráfico. El primer request tras dormir tarda ~30-40s.
+
+**En CI esto puede causar el primer test al día siempre falle**. Soluciones del curso:
+
+### Solución A — Warm-up en `beforeAll` (ya aplicada en M2)
+
+El `modulo-02-anotaciones/04-hooks-all.spec.ts` tiene:
+
+```ts
+test.beforeAll(async () => {
+  const api = await request.newContext();
+  await api.get('https://omnipizza-backend.onrender.com/health', { timeout: 60_000 });
+  await api.dispose();
+});
+```
+
+Esto despierta el backend antes de que corran los tests reales.
+
+### Solución B — Step pre-test en el workflow
+
+```yaml
+- name: Warm up OmniPizza backend
+  run: |
+    curl -f --max-time 60 https://omnipizza-backend.onrender.com/health || true
+    curl -f --max-time 60 https://omnipizza-frontend.onrender.com/ || true
+  continue-on-error: true
+```
+
+`|| true` y `continue-on-error` aseguran que si el warm-up falla, el workflow sigue a los tests reales.
+
+### Solución C — `retries: 2` en CI
+
+Ya está en el `playwright.config.ts`:
+
+```ts
+retries: process.env.CI ? 2 : 0,
+```
+
+Un reintento absorbe el cold-start sin ocultar bugs reales.
+
+---
+
+## 5. Smoke en PRs, regression completa en main
+
+```yaml
+jobs:
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # ...setup...
+      - run: pnpm test:smoke
+
+  regression:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # ...setup...
+      - run: pnpm test:regression
+```
+
+**Beneficio:** los PRs corren rápido (~2-3 min de smoke); el merge a main corre la regresión completa.
+
+---
+
+## 6. Shards por mercado (OmniPizza-flavored)
+
+En M5 aprendiste que el mismo test corre para los 4 mercados (MX/US/CH/JP). En CI puedes **partir la suite en 4 shards** — uno por mercado:
 
 ```yaml
 jobs:
@@ -140,88 +181,55 @@ jobs:
         shard: [1/4, 2/4, 3/4, 4/4]
 
     steps:
-      # ...pasos anteriores...
-      - name: Run tests shard ${{ matrix.shard }}
+      # ...setup...
+      - name: Run shard ${{ matrix.shard }}
         run: pnpm test --shard=${{ matrix.shard }}
 ```
 
-Esto arranca **4 jobs en paralelo**, cada uno corriendo ¼ de la suite. Total: 4x más rápido.
+Cuatro jobs corren en paralelo en 4 runners distintos. Total ~4× más rápido.
 
 ---
 
-## 6. Variables de entorno (secretos)
+## 7. Secrets — NUNCA hardcodear
 
-NUNCA hardcodees credenciales en el yml. Usa **GitHub Secrets**:
+GitHub → **Settings → Secrets and variables → Actions**. Crea:
+- `TEST_USER` (opcional, por si quieres forzar un usuario distinto).
+- `TEST_PASS` (opcional).
 
-1. Ve a **Settings → Secrets and variables → Actions → New repository secret**.
-2. Crea `TEST_USER`, `TEST_PASS`, `BASE_URL`, etc.
-3. En el workflow:
-   ```yaml
-   - name: Run tests
-     env:
-       BASE_URL: ${{ secrets.BASE_URL }}
-       TEST_USER: ${{ secrets.TEST_USER }}
-       TEST_PASS: ${{ secrets.TEST_PASS }}
-     run: pnpm test
-   ```
+> En OmniPizza los usuarios son **públicos deterministas** (`standard_user` / `pizza123`), así que **no hay secretos reales que proteger** en este curso. Pero el patrón queda enseñado para cuando trabajes con apps con credenciales reales.
 
 ---
 
-## 7. Badge de CI en el README
-
-Agrega al `README.md` de tu repo:
+## 8. Badge de CI en el README
 
 ```markdown
-![Playwright Tests](https://github.com/tu-usuario/tu-repo/actions/workflows/playwright.yml/badge.svg)
+![Playwright Tests](https://github.com/<tu-user>/<tu-repo>/actions/workflows/playwright.yml/badge.svg)
 ```
 
-Esto muestra un badge verde/rojo según el estado del último run.
+Verde = último run pasó. Rojo = falló. Es la vitrina de tu framework.
 
 ---
 
-## 8. Correr solo smoke en PRs, regresión completa en merge a main
+## 9. Artifacts — descargar el reporte HTML del run
 
-Ejemplo de workflow con dos jobs:
+Cuando el CI termina, tienes **30 días** para descargar:
+- `playwright-report.zip` → descomprímelo y abre `index.html`.
+- Ves EXACTAMENTE lo mismo que `pnpm report` local.
 
-```yaml
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-
-jobs:
-  smoke:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      # ...setup...
-      - run: pnpm test --grep @smoke
-
-  regression:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      # ...setup...
-      - run: pnpm test
-```
-
-**Beneficio:** PRs corren rápido (solo smoke, ~2 min). Merge a main corre todo (~20 min).
+El Trace Viewer (M7) funciona igual — puedes abrir un trace de un fallo que ocurrió en CI sin reproducirlo local.
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
+## Cheatsheet
 
-1. **Pregunta al grupo:** "¿qué pasa en su empresa cuando un dev rompe algo? ¿cómo se enteran?". Usa las respuestas como motivación.
-2. **Muestra la estructura de un repo de automatización** bien organizado.
-3. **Explica cada sección del `.gitignore`** y por qué importa (secretos, reportes temporales, node_modules).
-4. **Muestra el `playwright.yml`** línea por línea. Explica cada `step:` como "un paso de un caso de prueba manual".
-5. **Crea un repo en GitHub** (desde el curso de Git) y sube tu framework.
-6. **Haz un push** y muestra la pestaña **Actions** corriendo el workflow en vivo.
-7. **Rompe un test**, empuja, y muestra el PR marcado en rojo.
-8. **Descarga el artifact** del reporte HTML y ábrelo.
-9. **Envía al reto.**
+| Concepto | Comando / Config |
+|---|---|
+| Crear workflow | `.github/workflows/playwright.yml` |
+| Instalar browsers en runner | `pnpm exec playwright install --with-deps chromium` |
+| Warm-up de Render | curl al `/health` antes de los tests |
+| Retries en CI | `retries: process.env.CI ? 2 : 0` |
+| Shards en paralelo | `matrix: shard: [1/4, 2/4, 3/4, 4/4]` |
+| Subir reporte | `actions/upload-artifact@v4` con `if: always()` |
+| Badge | `https://...actions/workflows/playwright.yml/badge.svg` |
 
----
-
-➡️ Siguiente: [reto.md](./reto.md)
+➡️ [reto.md](./reto.md) · [Módulo 9 — API testing](../modulo-09-api-testing/)

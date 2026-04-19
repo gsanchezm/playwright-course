@@ -1,5 +1,5 @@
 // ============================================================
-// Mini-clase 2.1 — El test más simple posible
+// Mini-clase 2.1 — El test más simple posible (OmniPizza)
 // ============================================================
 // Analogía: Este es el equivalente a un "caso de prueba" en tu
 // plan de pruebas manual. Un caso = un objetivo verificable.
@@ -16,10 +16,15 @@
 
 import { test, expect } from '@playwright/test';
 
-test('caso simple: abrir la página de Playwright', async ({ page }) => {
-  // Paso 1: Navegar
-  await page.goto('https://playwright.dev/');
+test('caso simple: login de standard_user llega al catálogo', async ({ page }) => {
+  // Paso 1: Navegar a la home (OmniPizza muestra el login aquí)
+  await page.goto('/');
 
-  // Paso 2: Validar
-  await expect(page).toHaveTitle(/Playwright/);
+  // Paso 2: Llenar credenciales y enviar
+  await page.getByTestId('username-desktop').fill('standard_user');
+  await page.getByTestId('password-desktop').fill('pizza123');
+  await page.getByTestId('login-button-desktop').click();
+
+  // Paso 3: Validar redirección
+  await expect(page).toHaveURL(/\/catalog/);
 });

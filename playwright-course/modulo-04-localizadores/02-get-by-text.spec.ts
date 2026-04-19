@@ -1,56 +1,68 @@
 // ============================================================
 // Mini-clase 4.2 — getByText
 // ============================================================
-// Analogía: Cuando el elemento NO es un botón, link o heading,
-// sino simplemente texto visible en la página. Ejemplo clásico:
-// mensajes de error, textos descriptivos, mensajes de éxito.
+// Localiza un elemento por su contenido textual (o un substring).
+// Útil para encabezados, párrafos, textos sueltos. Para botones y
+// links es mejor getByRole (por accesibilidad).
 //
-// Ejemplos de cuándo usarlo:
-// - "Login successful" → mensaje de confirmación
-// - "Password must be at least 8 characters" → validación
-// - "Welcome back, John" → saludo personalizado
-//
-// 3 formas de hacer match:
-//   1. Substring (default): .getByText('Welcome')
-//      → encuentra "Welcome", "Welcome back", "Welcome to..."
-//   2. Exact: .getByText('Welcome', { exact: true })
-//      → solo exactamente "Welcome"
-//   3. Regex: .getByText(/welcome/i)
-//      → case-insensitive regex
+// Doc: https://playwright.dev/docs/locators#locate-by-text
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-test.describe('getByText en playwright.dev', () => {
+test.describe('getByText en OmniPizza', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://playwright.dev/');
+    await page.goto('/');
   });
 
-  test('match por substring (default)', async ({ page }) => {
-    // Busca cualquier elemento que CONTENGA el texto "Playwright enables"
-    const descripcion = page.getByText('Playwright enables');
-    await expect(descripcion).toBeVisible();
+  test('match substring (default) — "Welcome back"', async ({ page }) => {
+    // getByText hace substring por default
+    await expect(page.getByText('Welcome back')).toBeVisible();
   });
 
-  test('match con regex case-insensitive', async ({ page }) => {
-    // /get started/i ignora mayúsculas/minúsculas
-    const link = page.getByText(/get started/i).first();
-    await expect(link).toBeVisible();
+  test('match exacto — texto completo', async ({ page }) => {
+    await expect(
+      page.getByText('Welcome back!', { exact: true })
+    ).toBeVisible();
   });
 
-  test('encontrar texto dentro del footer', async ({ page }) => {
-    // Primero encuentra el footer (por rol) y luego busca texto dentro
-    const footer = page.getByRole('contentinfo');
-    await expect(footer).toBeVisible();
+  test('match con regex — "Art of Pizza"', async ({ page }) => {
+    // Regex permite case-insensitive y patrones flexibles
+    await expect(page.getByText(/art of pizza/i)).toBeVisible();
+  });
+
+  test('texto "Quick Login" está en la sección de usuarios de prueba', async ({ page }) => {
+    await expect(page.getByText('Quick Login')).toBeVisible();
+  });
+
+  test('texto del subtítulo del login', async ({ page }) => {
+    await expect(
+      page.getByText('Please enter your details.')
+    ).toBeVisible();
+  });
+
+  test('texto del tagline — "Crafting moments"', async ({ page }) => {
+    // Texto más largo de la pantalla, ideal para regex case-insensitive
+    await expect(page.getByText(/crafting moments/i)).toBeVisible();
+  });
+
+  // ─── Catálogo (después de login) ───────────────────────────────
+  test('después del login hay texto con nombre del catálogo', async ({ page }) => {
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
+
+    // Match con regex: "Menu" aparece en el header del catálogo
+    await expect(page.getByText(/menu/i).first()).toBeVisible();
   });
 });
 
 // ============================================================
-// ⚠️ Pro tip: getByText funciona, pero cuando el elemento TAMBIÉN
-// tiene un rol semántico (botón, link...), prefiere getByRole.
-// Ejemplo:
-//   ❌ page.getByText('Get started').click()
-//   ✅ page.getByRole('link', { name: 'Get started' }).click()
-// Porque si mañana el "Get started" aparece como span decorativo
-// en otra parte de la página, tu test se vuelve ambiguo.
+// Reglas de getByText:
+//   - Por default, es SUBSTRING + trim + collapse whitespace.
+//   - { exact: true }  → match de cadena completa.
+//   - /regex/          → patrones flexibles.
+//   - NO uses getByText para elementos accionables (botones, links).
+//     Usa getByRole. getByText es para texto puro.
 // ============================================================

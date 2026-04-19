@@ -1,59 +1,44 @@
 // ============================================================
-// BasePage — la clase padre de todos los Page Objects
+// BasePage — clase base del Page Object Model
 // ============================================================
-// Analogía: Es como la "metodología de pruebas" de tu empresa.
-// Todos los planes de prueba incluyen:
-//   - Abrir el navegador
-//   - Esperar que la página cargue
-//   - Tomar screenshot si algo falla
+// Todos los Page Objects extienden BasePage y heredan:
+//   - la referencia al `page` (la pestaña del navegador)
+//   - métodos comunes de navegación y espera
+//   - acceso al sufijo responsive/desktop (tid)
 //
-// En vez de copiar esos pasos en CADA plan, los escribes UNA vez
-// en una "guía base" y cada plan específico la referencia.
+// Heredando de BasePage, cada LoginPage/CatalogPage/etc. se enfoca
+// SOLO en su lógica específica.
 // ============================================================
 
-import { Page, expect } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 
-export class BasePage {
-  // "protected" permite que las subclases (LoginPage, HomePage, etc.)
-  // accedan a "page", pero no el código externo.
-  protected readonly page: Page;
+export abstract class BasePage {
+  // "protected" permite que las clases hijas usen `this.page`.
+  constructor(protected readonly page: Page) {}
 
-  // La URL base de la página. Cada subclase la define.
-  protected readonly url: string;
+  // URL relativa de la página — cada hija decide la suya.
+  abstract readonly path: string;
 
-  constructor(page: Page, url: string) {
-    this.page = page;
-    this.url = url;
+  // Navegar a la página (relativa al baseURL de playwright.config.ts)
+  async goto() {
+    await this.page.goto(this.path);
   }
 
-  /**
-   * Navegar a la URL de la página.
-   * Analogía: Es como decir "abre el navegador y ve a la página X".
-   */
-  async goto(): Promise<void> {
-    await this.page.goto(this.url);
+  // Helper: resuelve el testid con el sufijo correcto según el viewport.
+  // OmniPizza añade "-desktop" (≥768px) o "-responsive" (<768px).
+  protected tid(base: string): Locator {
+    const size = this.page.viewportSize();
+    const suffix = size && size.width < 768 ? '-responsive' : '-desktop';
+    return this.page.getByTestId(`${base}${suffix}`);
   }
 
-  /**
-   * Esperar a que la página termine de cargar.
-   * Analogía: Es como esperar a que el spinner desaparezca antes
-   * de empezar a interactuar.
-   */
-  async waitForLoad(): Promise<void> {
-    await this.page.waitForLoadState('networkidle');
+  // Esperar a que la URL coincida con un patrón dado.
+  async waitForUrl(pattern: RegExp, timeout = 15_000) {
+    await this.page.waitForURL(pattern, { timeout });
   }
 
-  /**
-   * Validar que el título contiene un texto.
-   */
-  async assertTitle(expected: RegExp | string): Promise<void> {
-    await expect(this.page).toHaveTitle(expected);
-  }
-
-  /**
-   * Tomar un screenshot con un nombre descriptivo.
-   */
-  async screenshot(name: string): Promise<void> {
-    await this.page.screenshot({ path: `test-results/${name}.png`, fullPage: true });
+  // Tomar un screenshot (útil para debug/reporting custom).
+  async screenshot(name: string) {
+    await this.page.screenshot({ path: `test-results/${name}.png` });
   }
 }

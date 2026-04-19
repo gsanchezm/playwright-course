@@ -1,36 +1,58 @@
 // ============================================================
-// Mini-clase 5.1 — forEach con datos inline
+// Mini-clase 5.1 — forEach con array inline
 // ============================================================
-// La forma más simple de parametrizar: un array de datos y un
-// forEach que crea N tests dinámicamente.
+// La forma más simple de parametrizar: un array con los casos y
+// un forEach que genera un test por cada item.
 //
-// Analogía: Es como una hoja de Excel con 5 filas de casos,
-// y el robot ejecuta cada fila automáticamente.
+// OmniPizza nos regala 5 usuarios deterministas — perfectos para
+// un test parametrizado que cubre happy path + casos de error.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-// Datos de prueba: cada objeto es un caso
-const searchTerms = [
-  { term: 'Playwright', expected: /Playwright/ },
-  { term: 'Locators', expected: /Locators/ },
-  { term: 'Fixtures', expected: /Fixtures/ },
+type LoginCase = {
+  username: string;
+  shouldSucceed: boolean;
+  slow?: boolean;
+};
+
+const loginCases: LoginCase[] = [
+  { username: 'standard_user', shouldSucceed: true },
+  { username: 'locked_out_user', shouldSucceed: false },
+  { username: 'problem_user', shouldSucceed: true },
+  { username: 'performance_glitch_user', shouldSucceed: true, slow: true },
+  { username: 'error_user', shouldSucceed: true },
 ];
 
-// El forEach crea UN test por cada elemento del array
-searchTerms.forEach(({ term, expected }) => {
-  test(`búsqueda en docs: "${term}"`, async ({ page }) => {
-    await page.goto('https://playwright.dev/docs/intro');
+test.describe('Login parametrizado con forEach', () => {
+  loginCases.forEach(({ username, shouldSucceed, slow }) => {
+    // Cada iteración del forEach genera un test NUEVO con nombre dinámico.
+    // En el reporte verás 5 tests distintos, uno por usuario.
+    test(`${username} (esperado: ${shouldSucceed ? 'éxito' : 'falla'})`, async ({ page }) => {
+      if (slow) test.slow();
 
-    // Playwright docs tiene una caja de búsqueda integrada.
-    // La abrimos con el shortcut /
-    await page.keyboard.press('/');
+      await page.goto('/');
+      await page.getByTestId('username-desktop').fill(username);
+      await page.getByTestId('password-desktop').fill('pizza123');
+      await page.getByTestId('login-button-desktop').click();
 
-    // Esperamos a que aparezca el input de búsqueda
-    const searchInput = page.getByPlaceholder(/Search docs/i);
-    await searchInput.fill(term);
-
-    // Esperamos un resultado y validamos que aparece el término
-    await expect(page.getByRole('listbox')).toContainText(expected);
+      if (shouldSucceed) {
+        await expect(page).toHaveURL(/\/catalog/);
+      } else {
+        await expect(page.getByTestId('login-error')).toBeVisible();
+      }
+    });
   });
 });
+
+// ============================================================
+// Ventajas vs escribir 5 tests manualmente:
+//   ✅ Una sola fuente de verdad (loginCases) — agregar un usuario
+//      nuevo es añadir una línea al array.
+//   ✅ Los cambios en la lógica del test aplican a TODOS los casos.
+//   ✅ El reporte los muestra agrupados bajo el describe.
+//
+// Cuándo NO usar forEach:
+//   ❌ Cuando cada caso tiene lógica MUY distinta (mejor tests separados).
+//   ❌ Cuando los datos son demasiados — mejor un archivo JSON (siguiente spec).
+// ============================================================

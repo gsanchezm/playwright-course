@@ -1,66 +1,75 @@
 // ============================================================
-// Mini-clase 9.2 — POST request
+// Mini-clase 9.2 — POST requests (login)
 // ============================================================
-// Analogía: Un POST es como llenar un formulario y dar "Submit".
-// Estás CREANDO algo nuevo en el servidor.
-//
-// Respuesta típica: 201 Created (NO 200 OK).
-// El body de respuesta suele contener el recurso recién creado
-// con su ID asignado por el servidor.
+// POST crea un recurso o dispara una acción. En OmniPizza, el
+// POST más importante es /api/auth/login: recibe credenciales,
+// devuelve un JWT.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'https://reqres.in/api';
+const BACKEND_URL = 'https://omnipizza-backend.onrender.com';
 
-test.describe('API POST requests', () => {
-  test('POST /users crea un usuario nuevo', async ({ request }) => {
-    const newUser = {
-      name: 'María Pérez',
-      job: 'QA Automation Engineer',
-    };
+test.describe.configure({ retries: 1 });
 
-    const response = await request.post(`${API_BASE}/users`, {
-      data: newUser, // Playwright serializa a JSON automáticamente
-    });
-
-    // 201 Created es el status correcto de un POST exitoso
-    expect(response.status()).toBe(201);
-
-    const body = await response.json();
-
-    // El servidor devuelve el objeto creado + un ID + timestamp
-    expect(body).toMatchObject(newUser); // los campos que enviamos están
-    expect(body).toHaveProperty('id');
-    expect(body).toHaveProperty('createdAt');
-  });
-
-  test('POST /login con credenciales válidas devuelve token', async ({ request }) => {
-    const credentials = {
-      email: 'eve.holt@reqres.in',
-      password: 'cityslicka',
-    };
-
-    const response = await request.post(`${API_BASE}/login`, {
-      data: credentials,
+test.describe('POST /api/auth/login', () => {
+  test('login exitoso con standard_user devuelve 200 y un token', async ({ request }) => {
+    const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: {
+        username: 'standard_user',
+        password: 'pizza123',
+      },
     });
 
     expect(response.status()).toBe(200);
 
     const body = await response.json();
-    expect(body).toHaveProperty('token');
-    expect(body.token).toBeTruthy();
-    expect(typeof body.token).toBe('string');
+    // El body debe traer un access_token (o similar)
+    expect(body).toHaveProperty('access_token');
+    expect(typeof body.access_token).toBe('string');
+    expect(body.access_token.length).toBeGreaterThan(10);
   });
 
-  test('POST /login sin password devuelve 400', async ({ request }) => {
-    const response = await request.post(`${API_BASE}/login`, {
-      data: { email: 'eve.holt@reqres.in' }, // falta password a propósito
+  test('login con locked_out_user devuelve 403', async ({ request }) => {
+    const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: {
+        username: 'locked_out_user',
+        password: 'pizza123',
+      },
     });
+    expect(response.status()).toBe(403);
+  });
 
-    expect(response.status()).toBe(400);
+  test('login con credenciales incorrectas devuelve 401', async ({ request }) => {
+    const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: {
+        username: 'standard_user',
+        password: 'not-the-password',
+      },
+    });
+    expect(response.status()).toBe(401);
+  });
 
-    const body = await response.json();
-    expect(body).toHaveProperty('error');
+  test('login sin body devuelve error 422 (validation)', async ({ request }) => {
+    const response = await request.post(`${BACKEND_URL}/api/auth/login`, {
+      data: {},
+    });
+    // FastAPI valida schemas con pydantic y devuelve 422 cuando faltan campos
+    expect([400, 422]).toContain(response.status());
   });
 });
+
+// ============================================================
+// POST con distintos payloads:
+//
+//   // JSON (lo más común)
+//   await request.post(url, { data: { username, password } });
+//
+//   // Form-urlencoded
+//   await request.post(url, { form: { username, password } });
+//
+//   // Multipart (file upload)
+//   await request.post(url, {
+//     multipart: { file: { name: 'x.png', mimeType: 'image/png', buffer } },
+//   });
+// ============================================================

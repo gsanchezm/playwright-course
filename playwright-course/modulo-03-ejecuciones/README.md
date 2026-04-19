@@ -1,213 +1,188 @@
-# Módulo 3: Ejecuciones
+# Módulo 3 — Ejecuciones: correr la suite contra OmniPizza
 
-> **Objetivo:** Dominar las múltiples formas de ejecutar tests en Playwright según el momento del día: mientras desarrollas, cuando debuggeas, en CI, etc.
-
-> **Referencia oficial:** [running-tests](https://playwright.dev/docs/running-tests) · [debug](https://playwright.dev/docs/debug) · [test-ui-mode](https://playwright.dev/docs/test-ui-mode)
-
----
-
-## 🎯 Analogía principal
-
-> **Las distintas formas de ejecutar tests son como los distintos "modos" de una prueba manual:**
-> - **Headless** = ejecutar en tu cabeza (rápido, sin distracción).
-> - **Headed** = hacer la prueba mirando la pantalla (lento pero puedes ver).
-> - **Debug mode** = hacer la prueba con un compañero mirando por encima de tu hombro, pausando en cada paso.
-> - **UI mode** = hacer la prueba con una interfaz gráfica que te muestra cada click y el estado del DOM.
-> - **Por tag (`--grep`)** = ejecutar solo los casos marcados como "smoke" o "críticos".
-> - **Por proyecto** = correr la misma suite en Chrome, Firefox y Safari.
+> **Historia del curso:** ya tienes la mini-suite de M2 contra OmniPizza. Hoy aprendes **todas las formas de correrla**: headless/headed, UI mode, por tag, por proyecto, con reintentos para el `performance_glitch_user`.
+>
+> **Referencia oficial:** [Running Tests](https://playwright.dev/docs/running-tests) · [Debug](https://playwright.dev/docs/debug) · [UI Mode](https://playwright.dev/docs/test-ui-mode)
 
 ---
 
-## 1. Modos de ejecución: headless vs headed
+## Analogía principal
+
+Cada modo de ejecución responde a una necesidad distinta del día a día:
+
+| Modo | Cuándo usarlo |
+|---|---|
+| **Headless** | Ejecuciones regulares, CI — rápido, sin ventana |
+| **Headed** | Verificar visualmente qué hace el robot |
+| **Debug mode** | Pausar en un paso y explorar el DOM |
+| **UI mode** | ⭐ Desarrollo interactivo de tests (el favorito) |
+| **Por tag** | Pipeline: smoke en cada deploy, regression por la noche |
+| **Por proyecto** | Mismo test en Chrome + Firefox + WebKit |
+
+---
+
+## 1. Headless vs Headed
 
 ### Headless (default)
-Playwright ejecuta el navegador **sin mostrar la ventana**. Es más rápido y se usa en CI y en ejecuciones regulares.
 
 ```bash
-$ pnpm test                                    # todos los tests en headless
-$ pnpm test modulo-02-anotaciones               # solo un módulo
+pnpm test                                  # todo el suite (todos los proyectos)
+pnpm test modulo-02-anotaciones            # un módulo completo
+pnpm test modulo-02-anotaciones/04-hooks-all.spec.ts
 ```
 
 ### Headed
-Abre el navegador visible. Útil cuando quieres **ver** qué está haciendo el robot.
+
+Abre el navegador visible — útil cuando aprendes.
 
 ```bash
-$ pnpm test:headed
-$ pnpm test --headed modulo-02-anotaciones/01-test-basico.spec.ts
+pnpm test:headed
+pnpm test --headed --workers=1 --project=chromium modulo-02-anotaciones
 ```
 
-> 💡 **Tip:** usa `--headed` con `--workers=1 --project=chromium` para ver una sola ventana, un test a la vez, sin caos visual.
+> 💡 **Combina siempre `--headed` con `--workers=1 --project=chromium`** — si no, verás 4 ventanas de Chromium al mismo tiempo y el caos es real.
+
+---
+
+## 2. Ejecutar un subconjunto
 
 ```bash
-$ pnpm test --headed --workers=1 --project=chromium modulo-02-anotaciones
+# Archivo completo
+pnpm test modulo-02-anotaciones/02-describe-agrupacion.spec.ts
+
+# Por nombre (match de texto en el título del test)
+pnpm test -g "locked_out_user"
+
+# Por línea
+pnpm test modulo-02-anotaciones/02-describe-agrupacion.spec.ts:18
 ```
 
 ---
 
-## 2. Ejecutar UN solo test
+## 3. Por tag (`--grep`)
+
+En M2 etiquetaste los tests con `@smoke`, `@regression`, `@critical`.
 
 ```bash
-# Todo un archivo
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts
+pnpm test --grep @smoke                 # solo @smoke
+pnpm test --grep @regression            # solo @regression
+pnpm test --grep "@smoke|@critical"     # @smoke O @critical
+pnpm test --grep-invert @slow           # todos menos @slow
 
-# Un test específico por nombre (match de texto)
-$ pnpm test -g "caso simple"
-
-# Test en una línea específica del archivo
-$ pnpm test modulo-02-anotaciones/01-test-basico.spec.ts:15
+# Atajos del package.json
+pnpm test:smoke
+pnpm test:regression
 ```
 
-**Analogía QA:** Es como decirle al robot: "ignora el resto del plan, hoy solo me importa el caso de login válido".
-
----
-
-## 3. Ejecutar por tag (`--grep`)
-
-Tu `06-tags-smoke-regression.spec.ts` del módulo 2 ya etiqueta tests con `@smoke`, `@regression`, etc.
-
-```bash
-$ pnpm test --grep @smoke            # solo los @smoke
-$ pnpm test --grep @regression       # solo los @regression
-$ pnpm test --grep "@smoke|@critical" # @smoke O @critical
-$ pnpm test --grep-invert @slow       # TODOS menos los @slow
-```
-
-Equivalente con scripts pre-configurados:
-```bash
-$ pnpm test:smoke       # alias para --grep @smoke
-$ pnpm test:regression  # alias para --grep @regression
-```
+**En la vida real:** `test:smoke` corre en cada PR (3-5 min), `test:regression` corre en la noche (30-60 min). Esta división te la regala OmniPizza con su surface pequeño.
 
 ---
 
 ## 4. Debug Mode (`--debug`)
 
-Abre el **Playwright Inspector**: una ventana lateral que te permite pausar, avanzar paso a paso y explorar el DOM.
+Abre el **Playwright Inspector** — un panel lateral con control manual del test.
 
 ```bash
-$ pnpm test:debug modulo-02-anotaciones/01-test-basico.spec.ts
+pnpm test:debug modulo-02-anotaciones/01-test-basico.spec.ts
 ```
 
-**Qué te permite el Inspector:**
-- ⏸ **Pausar** en cualquier momento con `await page.pause()`.
+**Lo que te da el Inspector:**
+- ⏸ **Pausa** en `await page.pause()` dentro de cualquier test.
 - ⏭ **Step over** línea por línea.
 - ▶️ **Resume** hasta el próximo breakpoint.
-- 🎯 **Pick locator**: seleccionas visualmente un elemento y te da el selector exacto.
-- 📋 **Explore DOM**: inspeccionas el árbol HTML actual.
+- 🎯 **Pick locator** — clic visual sobre un elemento y te da el selector ideal.
 
-### Poner un breakpoint en el código
+### Poner una pausa manual en un test
 
 ```typescript
 test('ejemplo con pausa', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
-  await page.pause(); // ⏸ el test se detiene aquí y abre el Inspector
-  await page.getByRole('link', { name: 'Get started' }).click();
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill('standard_user');
+  await page.pause(); // ⏸ el test se detiene aquí
+  await page.getByTestId('login-button-desktop').click();
 });
 ```
 
-**Analogía QA:** `page.pause()` es como decir "alto, déjame revisar manualmente qué pasa antes de continuar". Como cuando en una prueba manual dices "espera, voy a verificar la consola del navegador".
+`page.pause()` = "alto, déjame inspeccionar el DOM antes de continuar".
 
 ---
 
-## 5. UI Mode (el favorito para aprender y desarrollar)
-
-**El modo más poderoso de Playwright.** Abre una interfaz gráfica donde ves:
-- Lista de todos tus tests.
-- Timeline de cada paso (como un video).
-- Screenshot del DOM en cada paso.
-- Logs, red, consola.
-- Watch mode: re-corre automáticamente al guardar cambios.
+## 5. UI Mode (⭐ el favorito)
 
 ```bash
-$ pnpm test:ui
+pnpm test:ui
 ```
 
-**Cosas que puedes hacer en UI Mode:**
-1. Hacer click en un test → lo corre y muestra la grabación paso a paso.
-2. Hover sobre un paso → te muestra cómo se veía el DOM en ese momento.
-3. Activar "watch mode" 👁 → cada vez que guardas el archivo, re-corre automáticamente el test.
-4. Usar el "pick locator" para copiar el selector de cualquier elemento.
+Interfaz gráfica con:
+- Lista de todos los tests (filtrable por tag, por browser, por status).
+- Timeline con **screenshot del DOM en cada paso**.
+- **Watch mode** 👁 — guardas el archivo y re-corre automáticamente.
+- **Pick locator** integrado.
+- Logs de red + consola del navegador.
 
-> 💡 **Recomendación del instructor:** cuando estés desarrollando un nuevo test, usa SIEMPRE `pnpm test:ui`. No hay nada más productivo.
+**Recomendación:** cuando escribas nuevos tests, usa UI mode **siempre**.
 
 ---
 
-## 6. Proyectos: correr en varios navegadores
-
-En tu `playwright.config.ts` hay 4 proyectos definidos: `chromium`, `firefox`, `webkit`, `mobile-chrome`.
+## 6. Proyectos: multi-browser
 
 ```bash
-# Todos los proyectos (default)
-$ pnpm test
+# Solo Chromium
+pnpm test:chromium modulo-02-anotaciones
 
-# Solo uno
-$ pnpm test --project=chromium
-$ pnpm test --project=firefox
-$ pnpm test --project=webkit
-$ pnpm test --project=mobile-chrome
+# Solo Firefox
+pnpm test --project=firefox modulo-02-anotaciones
 
-# Varios específicos
-$ pnpm test --project=chromium --project=webkit
+# Solo WebKit (equivalente a probar en Safari)
+pnpm test --project=webkit modulo-02-anotaciones
+
+# Emulación mobile
+pnpm test --project=mobile-chrome modulo-02-anotaciones
 ```
 
-**Analogía QA:** Es como repetir la misma prueba manual en Chrome, Firefox y Safari. La diferencia es que el robot lo hace en paralelo y en 10 segundos.
+**Nota sobre OmniPizza y mobile:** el front tiene un hook `tid()` que añade `-desktop` o `-responsive` al testid según el viewport. A viewport de `mobile-chrome` (Pixel 5, 393×727) los testids que ven tus specs son distintos. En M4 haremos un helper.
 
 ---
 
-## 7. Reintentos (`--retries`)
+## 7. Reintentos (para el `performance_glitch_user`)
 
 ```bash
-# Reintentar hasta 2 veces los tests que fallen
-$ pnpm test --retries=2
+pnpm test --retries=2 modulo-02-anotaciones
 ```
 
-En `playwright.config.ts` ya está configurado: en CI hace 2 reintentos, local 0.
+`performance_glitch_user` agrega ~3s por request: ocasionalmente un test timea aunque el comportamiento sea correcto. Reintentar **una o dos veces** es válido — siempre que entiendas **por qué**.
 
-> ⚠️ **Cuidado con los reintentos:** son una curita, no una cura. Si un test necesita reintentos para pasar, es **flaky** y debes arreglarlo, no esconderlo.
+> ⚠️ Los reintentos son una curita, no una cura. Si un test necesita 10 reintentos para pasar, el código o el test están mal. Arréglalo.
+
+En `playwright.config.ts` ya lo tienes: 0 retries local, 2 en CI.
 
 ---
 
 ## 8. Workers y paralelismo
 
 ```bash
-# Forzar 1 worker (útil para debug y ver ventanas headed)
-$ pnpm test --workers=1
-
-# Forzar 4 workers
-$ pnpm test --workers=4
+pnpm test --workers=1   # serializado (útil en headed o con datos compartidos)
+pnpm test --workers=4   # 4 en paralelo
 ```
 
-Por defecto Playwright usa tantos workers como núcleos tengas.
+Con OmniPizza en Render gratis, `--workers=2` es un buen compromiso: evita saturar el servidor con requests simultáneos que podrían hacer cold start caer.
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
-
-1. **Explica headless vs headed** con la analogía de "prueba mental vs mirando la pantalla".
-2. **Corre los mismos tests en headless**, luego en headed, para que el grupo vea la diferencia visual.
-3. **Muestra `pnpm test -g "caso simple"`** para correr por nombre.
-4. **Demuestra los tags:** `pnpm test --grep @smoke`. Explica por qué esto es crucial en un pipeline de CI de empresa.
-5. **Debug mode:** añade un `await page.pause()` a un test y corre con `pnpm test:debug`. Muestra el Inspector y el "Pick locator".
-6. **UI Mode:** ⭐ **esta es la parte más impresionante del módulo.** Abre `pnpm test:ui`, corre un test, muestra el timeline, activa watch mode, modifica el test guardando y ven cómo se re-ejecuta solo.
-7. **Proyectos:** corre `pnpm test --project=firefox` y muestra que es el mismo test en otro navegador.
-8. **Envía al reto.**
-
----
-
-## 🗒 Cheatsheet de comandos
+## Cheatsheet
 
 | Comando | Uso |
-|---------|-----|
-| `pnpm test` | Todos los tests, headless, todos los proyectos |
-| `pnpm test:ui` | ⭐ Modo UI interactivo (recomendado para desarrollo) |
-| `pnpm test:headed` | Con ventanas de navegador visibles |
-| `pnpm test:debug` | Abre el Inspector con breakpoints |
-| `pnpm test --grep @smoke` | Solo tests con tag @smoke |
-| `pnpm test --project=firefox` | Solo en Firefox |
-| `pnpm test -g "nombre"` | Por nombre (match de texto) |
-| `pnpm test archivo.spec.ts:15` | Test de la línea 15 del archivo |
-| `pnpm test --workers=1` | Un solo worker (útil para headed) |
-| `pnpm test --retries=2` | 2 reintentos por test |
-| `pnpm report` | Abre el último reporte HTML |
+|---|---|
+| `pnpm test` | Todo el suite |
+| `pnpm test:ui` | ⭐ UI mode (dev interactivo) |
+| `pnpm test:headed` | Con navegador visible |
+| `pnpm test:debug archivo` | Inspector con breakpoints |
+| `pnpm test --grep @smoke` | Tag |
+| `pnpm test --project=firefox` | Un browser |
+| `pnpm test -g "texto"` | Por nombre |
+| `pnpm test archivo:N` | Línea N |
+| `pnpm test --workers=1` | Serializado |
+| `pnpm test --retries=2` | Con reintentos |
+| `pnpm report` | Abre el último HTML report |
 
-➡️ Siguiente: [reto.md](./reto.md)
+➡️ Siguiente: [reto.md](./reto.md) · [Módulo 4 — Localizadores](../modulo-04-localizadores/)

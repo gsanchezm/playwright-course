@@ -2,75 +2,79 @@
 // Mini-clase 5.4 — Fixtures personalizadas
 // ============================================================
 // Una "fixture" es un objeto que Playwright te inyecta en cada test.
-// Las fixtures built-in: page, context, browser, request...
+// Las built-in: page, context, browser, request.
+// Puedes CREAR las tuyas — es la base del framework final.
 //
-// Tú puedes crear las tuyas. Ejemplo clásico: una fixture
-// "todoMvcPage" que te da una página de TodoMVC ya cargada con
-// 3 todos preexistentes, para no repetir ese setup en cada test.
-//
-// Analogía: Es como tener un "estado inicial del ambiente" listo
-// antes de cada caso. Como en pruebas manuales, donde antes de
-// probar "editar perfil" tú ya tienes un usuario creado.
+// En el curso construimos `authenticatedPage`: una página ya logueada
+// con standard_user. Los tests que la usen no tienen que repetir el
+// boilerplate de login.
 // ============================================================
 
 import { test as base, expect, Page } from '@playwright/test';
 
-// Definimos el tipo de nuestras fixtures custom
-type MyFixtures = {
-  todoMvcPage: Page;
+base.describe.configure({ retries: 1 });
+
+// Definimos los tipos de nuestras fixtures custom
+type OmniPizzaFixtures = {
+  authenticatedPage: Page;
 };
 
-// Extendemos el test base con nuestras fixtures
-export const test = base.extend<MyFixtures>({
-  // La fixture "todoMvcPage": abre TodoMVC y agrega 3 todos
-  todoMvcPage: async ({ page }, use) => {
-    // Setup
-    await page.goto('https://demo.playwright.dev/todomvc');
+// Extendemos `test` para agregar la fixture
+export const test = base.extend<OmniPizzaFixtures>({
+  authenticatedPage: async ({ page }, use) => {
+    // ─── Setup ─────────────────────────────────────
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
 
-    const input = page.getByPlaceholder('What needs to be done?');
-    await input.fill('Todo 1');
-    await input.press('Enter');
-    await input.fill('Todo 2');
-    await input.press('Enter');
-    await input.fill('Todo 3');
-    await input.press('Enter');
+    // Esperamos que el catálogo esté listo antes de entregar la page
+    await page
+      .locator('[data-testid^="pizza-card-"]')
+      .first()
+      .waitFor({ state: 'visible', timeout: 30_000 });
 
-    // Entregamos la página al test
+    // ─── Entregamos la página al test ──────────────
     await use(page);
 
-    // Teardown (después del test) — opcional
-    // Podrías limpiar datos, cerrar conexiones, etc.
+    // ─── Teardown (después del test) ───────────────
+    // Aquí podrías hacer logout, limpiar estado, etc.
+    // En este caso no hace falta: cada test tiene su page aislado.
   },
 });
 
-// Usamos nuestra fixture como si fuera "page"
-test('el estado inicial tiene 3 todos', async ({ todoMvcPage }) => {
-  // No necesitamos goto ni agregar todos: ya vienen desde la fixture.
-  await expect(todoMvcPage.getByTestId('todo-title')).toHaveCount(3);
+// Ahora los tests usan `authenticatedPage` en vez de `page`
+test('el catálogo tiene al menos 1 pizza', async ({ authenticatedPage }) => {
+  const count = await authenticatedPage
+    .locator('[data-testid^="pizza-card-"]')
+    .count();
+  expect(count).toBeGreaterThan(0);
 });
 
-test('marcar el primer todo como completo', async ({ todoMvcPage }) => {
-  await todoMvcPage
-    .getByRole('listitem')
-    .first()
-    .getByRole('checkbox')
-    .check();
-
-  // Validamos que quedó marcado
-  await expect(
-    todoMvcPage.getByRole('listitem').first()
-  ).toHaveClass(/completed/);
+test('cada pizza tiene su botón add-to-cart', async ({ authenticatedPage }) => {
+  const pizzas = authenticatedPage.locator('[data-testid^="pizza-card-"]');
+  const addButtons = authenticatedPage.locator('[data-testid^="add-to-cart-"]');
+  const pizzaCount = await pizzas.count();
+  const addCount = await addButtons.count();
+  expect(addCount).toBe(pizzaCount);
 });
 
-test('borrar el segundo todo', async ({ todoMvcPage }) => {
-  // Hover para mostrar el botón X
-  await todoMvcPage.getByRole('listitem').nth(1).hover();
-  await todoMvcPage
-    .getByRole('listitem')
-    .nth(1)
-    .getByRole('button', { name: 'Delete' })
-    .click();
-
-  // Ahora hay 2 todos
-  await expect(todoMvcPage.getByTestId('todo-title')).toHaveCount(2);
+test('las categorías del catálogo están disponibles', async ({ authenticatedPage }) => {
+  // Los testids de categorías son estáticos (sin sufijo -desktop)
+  await expect(authenticatedPage.getByTestId('category-all')).toBeVisible();
+  await expect(authenticatedPage.getByTestId('category-popular')).toBeVisible();
 });
+
+// ============================================================
+// Por qué esta fixture es PODEROSA:
+//
+// 1. Antes: 3 tests × 8 líneas de login boilerplate = 24 líneas duplicadas.
+// 2. Después: 1 fixture con el login + 3 tests limpios.
+// 3. Si mañana cambia el flujo de login (nuevo campo, CAPTCHA, MFA),
+//    cambias UN lugar — la fixture.
+// 4. Los tests se leen como ESPECIFICACIONES, no como scripts.
+//
+// En M10 (POM) vamos a mover esta fixture a `fixtures/auth.ts` como
+// parte de la estructura final del framework.
+// ============================================================

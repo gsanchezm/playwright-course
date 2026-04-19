@@ -6,61 +6,59 @@
 //   - Regression: los 200+ tests que corren cada noche.
 //   - Critical: los tests de flujos donde se pierde dinero si fallan.
 //
-// Playwright permite etiquetar tests con tags y luego correr
-// solo los que tienen un tag específico usando --grep.
+// Playwright permite etiquetar tests con tags y correr solo los
+// que tienen un tag específico usando --grep.
 //
-// Sintaxis:
-//   test('nombre @smoke @critical', ...)
+// Sintaxis: test('nombre @smoke @critical', ...)
 //
 // Comandos:
 //   pnpm test --grep @smoke              → solo tests con @smoke
 //   pnpm test --grep "@smoke|@critical"  → smoke O critical
 //   pnpm test --grep-invert @slow        → todos MENOS los @slow
+//
+// Scripts ya definidos en package.json:
+//   pnpm test:smoke        → atajo de --grep @smoke
+//   pnpm test:regression   → atajo de --grep @regression
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Suite de ejemplos con tags', () => {
-  test('homepage carga correctamente @smoke @critical', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(page).toHaveTitle(/Playwright/);
+test.describe('Login de OmniPizza — tagged', () => {
+  test('standard_user completa login @smoke @critical', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
   });
 
-  test('link Get Started existe @smoke', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(
-      page.getByRole('link', { name: 'Get started' })
-    ).toBeVisible();
+  test('el form tiene username + password + botón @smoke', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('username-desktop')).toBeVisible();
+    await expect(page.getByTestId('password-desktop')).toBeVisible();
+    await expect(page.getByTestId('login-button-desktop')).toBeVisible();
   });
 
-  test('página de Docs carga @regression', async ({ page }) => {
-    await page.goto('https://playwright.dev/docs/intro');
-    await expect(
-      page.getByRole('heading', { name: 'Installation' })
-    ).toBeVisible();
+  test('locked_out_user es rechazado @regression', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('locked_out_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page.getByTestId('login-error')).toBeVisible();
   });
 
-  test('página de API carga @regression', async ({ page }) => {
-    await page.goto('https://playwright.dev/docs/api/class-playwright');
-    await expect(page.locator('body')).toBeVisible();
+  test('botones quick-login están disponibles @regression', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('user-standard_user')).toBeVisible();
+    await expect(page.getByTestId('user-error_user')).toBeVisible();
   });
 
-  test('búsqueda en la homepage @regression @slow', async ({ page }) => {
+  test('las 4 banderas de mercado son clickables @regression @slow', async ({ page }) => {
     test.slow();
-    await page.goto('https://playwright.dev/');
-    // Simulación de un test más complejo
-    await expect(page.locator('body')).toBeVisible();
+    await page.goto('/');
+    await expect(page.getByTitle('Select MX')).toBeVisible();
+    await expect(page.getByTitle('Select US')).toBeVisible();
+    await expect(page.getByTitle('Select CH')).toBeVisible();
+    await expect(page.getByTitle('Select JP')).toBeVisible();
   });
 });
-
-// ============================================================
-// 💡 Práctica: corre los siguientes comandos y observa la diferencia
-//
-//   pnpm test modulo-02-anotaciones/06-tags-smoke-regression.spec.ts --grep @smoke
-//   pnpm test modulo-02-anotaciones/06-tags-smoke-regression.spec.ts --grep @regression
-//   pnpm test modulo-02-anotaciones/06-tags-smoke-regression.spec.ts --grep @critical
-//
-// Usando los scripts del package.json:
-//   pnpm test:smoke
-//   pnpm test:regression
-// ============================================================

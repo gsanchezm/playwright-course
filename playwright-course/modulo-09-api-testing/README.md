@@ -1,84 +1,147 @@
-# Módulo 9: API Testing con Playwright
+# Módulo 9 — API testing puro (aislado del UI)
 
-> **Objetivo:** Hacer pruebas de APIs REST (GET, POST, PUT, DELETE) directamente desde Playwright usando la fixture `request`, y combinar tests UI + API.
-
-> **Referencia oficial:** [api-testing](https://playwright.dev/docs/api-testing)
-
-> **Sitio de pruebas:** [reqres.in](https://reqres.in) — API REST mock gratuita para aprender.
+> **Historia del curso:** hasta M8 construiste un suite completo de UI contra OmniPizza. Hoy aprendes a probar el **backend directamente** con el mismo framework. Este módulo es **completamente independiente del UI** — no usa `page` en ningún lado.
+>
+> **Referencia oficial:** [API Testing](https://playwright.dev/docs/api-testing)
 
 ---
 
-## 🎯 Analogía principal
+## Filosofía del curso — por qué separar UI de API
 
-> **Playwright no es solo para UI — también puede hacer lo que hacías en Postman.**
->
-> Ventajas de hacer API testing con Playwright en vez de Postman:
-> 1. Todo está en **código versionado en Git**, no en colecciones JSON copiadas.
-> 2. Puedes **combinar UI + API en el mismo test**: crear un usuario vía API (rápido) y luego loguearte por UI (real).
-> 3. Los tests de API son **10x más rápidos** que los de UI.
-> 4. Usas el **mismo framework, mismo runner, mismo reporte** para todo.
+Los tests de UI y los de API son disciplinas distintas. En este curso:
 
-**Analogía de equipo:** Antes tenías un automatizador de UI con Playwright y uno de API con Postman/REST Assured. Ahora una sola persona puede mantener ambos con la misma herramienta.
+| Suite | Qué prueba | Cuándo corre |
+|---|---|---|
+| `modulo-02…08/` (UI) | Pantallas, flujos de usuario, accesibilidad | PRs + regresión diaria |
+| `modulo-09-api-testing/` (API) | Lógica de backend, reglas, contratos HTTP | PRs + regresión diaria |
+
+**No los mezclamos.** El curso NO enseña el patrón "login vía API + sembrar JWT + probar UI" (atomic testing) — ese es un curso avanzado. Aquí, cada suite vive por separado y se ejecuta con un comando propio:
+
+```bash
+pnpm test modulo-09-api-testing     # solo API
+pnpm test modulo-02-anotaciones     # solo UI
+```
+
+---
+
+## OmniPizza Backend
+
+| Aspecto | Valor |
+|---|---|
+| Live | https://omnipizza-backend.onrender.com |
+| Stack | FastAPI (Python) |
+| Docs | `/api/docs` (Swagger UI) · `/api/redoc` · `/api/openapi.json` |
+| Auth | JWT via POST /api/auth/login |
+| Headers requeridos | `Authorization: Bearer <token>` · `X-Country-Code: MX|US|CH|JP` |
+
+### Endpoints principales (los que cubrimos en el módulo)
+
+```
+GET  /health                   → healthcheck (no auth)
+GET  /api/countries            → lista de mercados (no auth)
+GET  /api/pizzas               → catálogo (requiere X-Country-Code)
+POST /api/auth/login           → login (body: username, password)
+GET  /api/auth/profile         → perfil del usuario (requiere Bearer)
+GET  /api/orders               → órdenes del usuario (requiere Bearer)
+```
 
 ---
 
 ## Archivos del módulo
 
-| Archivo | Método HTTP | Concepto |
-|---------|-------------|----------|
-| [01-get-request.spec.ts](./01-get-request.spec.ts) | GET | Leer datos, status 200, parsear JSON |
-| [02-post-request.spec.ts](./02-post-request.spec.ts) | POST | Crear recursos, status 201 |
-| [03-put-patch-delete.spec.ts](./03-put-patch-delete.spec.ts) | PUT / PATCH / DELETE | Actualizar y borrar |
-| [04-auth-headers.spec.ts](./04-auth-headers.spec.ts) | Headers | Auth tokens, headers custom |
-| [05-ui-mas-api.spec.ts](./05-ui-mas-api.spec.ts) | UI + API | Setup de datos por API + verificación UI |
-| [reto.spec.ts](./reto.spec.ts) | — | Retos del alumno |
+| Archivo | Verbo / Concepto | Escenario |
+|---|---|---|
+| [01-get-request.spec.ts](./01-get-request.spec.ts) | GET | `/health`, `/api/countries`, `/api/pizzas` |
+| [02-post-request.spec.ts](./02-post-request.spec.ts) | POST | `/api/auth/login` — happy path + errores |
+| [03-put-patch-delete.spec.ts](./03-put-patch-delete.spec.ts) | PUT / PATCH / DELETE | jsonplaceholder.typicode.com (OmniPizza no los usa) |
+| [04-auth-headers.spec.ts](./04-auth-headers.spec.ts) | Headers | Bearer + X-Country-Code + `apiRequest.newContext` |
+| [05-api-workflow.spec.ts](./05-api-workflow.spec.ts) | Flujo completo | login → profile → pizzas → orders |
+| [reto.spec.ts](./reto.spec.ts) | Integrador | Tu ejercicio de API pura |
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
+## Sobre el archivo PUT/PATCH/DELETE
 
-1. **Pregunta al grupo:** "¿quién usa Postman hoy?". Explica que Playwright reemplaza Postman con ventajas.
-2. **Muestra `01-get-request.spec.ts`** — el equivalente a un "Send" en Postman, pero en código versionado.
-3. **Hablar de status codes:** 200, 201, 400, 401, 404, 500. Pídeles que los anoten.
-4. **Muestra `02-post-request.spec.ts`** — crear un recurso y validar el body de respuesta.
-5. **Explica PUT vs PATCH vs DELETE** en `03-*`. Usa la analogía: PUT = reemplazar todo el perfil, PATCH = cambiar solo el email, DELETE = borrar la cuenta.
-6. **Muestra `04-auth-headers.spec.ts`** — cómo mandar tokens y headers custom.
-7. **⭐ Muestra `05-ui-mas-api.spec.ts`** — el momento WOW. Explica cómo combinar ambos mundos: "en vez de loguearnos por UI (20 segundos), creamos el usuario por API (0.2 segundos) y luego validamos por UI".
-8. **Envía al reto.**
+OmniPizza solo expone **GET y POST**. Para enseñar PUT/PATCH/DELETE usamos **jsonplaceholder.typicode.com** (API mock pública, sin API key). La sintaxis es idéntica — cuando tu app real tenga esos verbos, solo cambias la URL.
 
 ---
 
-## Cheatsheet de métodos HTTP
+## Cheatsheet
 
 ```typescript
 import { test, expect } from '@playwright/test';
 
 test('ejemplo', async ({ request }) => {
-  // GET — leer
-  const getRes = await request.get('https://reqres.in/api/users/1');
+  // GET
+  const getRes = await request.get('https://api.example.com/users/1', {
+    headers: { 'X-Country-Code': 'MX' },
+  });
   expect(getRes.status()).toBe(200);
-  const getBody = await getRes.json();
+  const body = await getRes.json();
 
-  // POST — crear
-  const postRes = await request.post('https://reqres.in/api/users', {
-    data: { name: 'María', job: 'QA' },
-  });
-  expect(postRes.status()).toBe(201);
-
-  // PUT — reemplazar
-  const putRes = await request.put('https://reqres.in/api/users/1', {
-    data: { name: 'María', job: 'Lead QA' },
+  // POST con JSON body
+  const postRes = await request.post('https://api.example.com/login', {
+    data: { username: 'x', password: 'y' },
   });
 
-  // PATCH — actualizar parcial
-  const patchRes = await request.patch('https://reqres.in/api/users/1', {
-    data: { job: 'Lead QA' },
-  });
-
-  // DELETE — eliminar
-  const delRes = await request.delete('https://reqres.in/api/users/1');
-  expect(delRes.status()).toBe(204);
+  // PUT / PATCH / DELETE — mismo patrón
+  await request.put(url, { data });
+  await request.patch(url, { data });
+  await request.delete(url);
 });
 ```
 
-➡️ Empieza por [01-get-request.spec.ts](./01-get-request.spec.ts).
+### Contexto reusable con headers default
+
+```typescript
+import { request as apiRequest } from '@playwright/test';
+
+const ctx = await apiRequest.newContext({
+  baseURL: 'https://api.example.com',
+  extraHTTPHeaders: {
+    Authorization: `Bearer ${token}`,
+    'X-Country-Code': 'MX',
+  },
+});
+
+await ctx.get('/pizzas');   // lleva los headers automáticamente
+await ctx.dispose();
+```
+
+---
+
+## Qué chequear en cada response
+
+```typescript
+expect(response.status()).toBe(200);
+expect(response.ok()).toBeTruthy();
+
+const body = await response.json();
+expect(body).toHaveProperty('access_token');
+expect(body.username).toBe('standard_user');
+
+// Headers
+expect(response.headers()['content-type']).toContain('application/json');
+
+// URL final (útil si hay redirects)
+expect(response.url()).toBe('https://api.example.com/users/1');
+```
+
+---
+
+## Cómo correr
+
+```bash
+# Todo el módulo
+pnpm test modulo-09-api-testing
+
+# Solo un archivo
+pnpm test modulo-09-api-testing/02-post-request.spec.ts
+
+# Con reporte detallado
+pnpm test modulo-09-api-testing --reporter=list
+```
+
+> ⚠️ Las pruebas de API también sufren el cold-start de Render — el `retries: 1` por describe absorbe el primer intento fallido.
+
+➡️ [reto.spec.ts](./reto.spec.ts) · [Módulo 10 — POM (refactor final del framework)](../modulo-10-pom/)

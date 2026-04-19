@@ -1,70 +1,110 @@
-# Módulo 4: Localizadores de Objetos
+# Módulo 4 — Localizadores: todos los que Playwright ofrece
 
-> **Objetivo:** Dominar las formas RECOMENDADAS de localizar elementos con Playwright (`getByRole`, `getByLabel`, `getByText`, `getByTestId`, `getByPlaceholder`), entender por qué son mejores que CSS/XPath, y aprender filtros y encadenamiento.
-
-> **Referencia oficial:** [locators](https://playwright.dev/docs/locators) · [best practices](https://playwright.dev/docs/best-practices#use-locators)
-
----
-
-## 🎯 Analogía principal
-
-> **Un locator es tu "dedo apuntador".** En una prueba manual tú dices: "click en el botón _Agregar al carrito_". Un locator es exactamente eso: una forma de describirle al robot cuál es ese botón.
+> **Historia del curso:** hasta ahora usamos testids porque son robustos. Hoy vemos **las 12 estrategias de localización** de Playwright y cuándo usar cada una, todas aplicadas a los flujos reales de OmniPizza (login, catálogo, checkout).
 >
-> La pregunta clave es: **¿cómo lo describes?**
-> - ❌ "el tercer `<button>` de la segunda `<div>` con clase `.container`" → frágil, cambia mañana.
-> - ✅ "el botón que se llama 'Add to cart'" → robusto, refleja lo que ve el usuario.
-
-Los localizadores de Playwright están diseñados para reflejar **cómo un humano o un lector de pantalla** describiría el elemento. Si tu test puede romperse cuando un diseñador mueve una `div`, tu selector está mal.
+> **Referencia oficial:** [Locators](https://playwright.dev/docs/locators)
 
 ---
 
-## Jerarquía de preferencia (⭐ aprende esta lista de memoria)
+## Pirámide de prioridad (recomendada por Playwright)
 
-Playwright recomienda usar los localizadores **en este orden de preferencia**:
+```
+1. getByRole        ← accesibilidad + estabilidad
+2. getByLabel       ← formularios bien hechos
+3. getByPlaceholder ← cuando el label no está bien conectado
+4. getByText        ← texto visible único
+5. getByAltText     ← imágenes
+6. getByTitle       ← tooltips
+7. getByTestId      ← cuando los anteriores no bastan (requiere contrato con front)
+8. page.locator()   ← CSS/XPath crudo (último recurso)
+```
 
-| Prioridad | Locator | Cuándo usarlo | Ejemplo |
-|:---------:|---------|---------------|---------|
-| 🥇 1 | `getByRole` | **SIEMPRE que puedas.** Refleja lo que ven lectores de pantalla. | Botones, links, inputs, headings |
-| 🥈 2 | `getByLabel` | Inputs de formulario con su `<label>`. | Campos de texto con etiqueta visible |
-| 🥉 3 | `getByPlaceholder` | Inputs sin label pero con placeholder. | Cajas de búsqueda |
-| 4 | `getByText` | Cuando lo único único es el texto visible. | Mensajes de error, texto descriptivo |
-| 5 | `getByAltText` | Imágenes con alt. | Logos, iconos importantes |
-| 6 | `getByTitle` | Elementos con `title` tooltip. | Iconos con tooltip |
-| 7 | `getByTestId` | Último recurso recomendado. Requiere que devs agreguen `data-testid`. | Elementos sin semántica clara |
-| 😬 8 | `locator(css)` | Úsalo cuando nada más funciona. | Selectores CSS tradicionales |
-| 👻 9 | XPath | Último recurso absoluto. | Cuando Dios te ha abandonado |
-
----
-
-## Archivos del módulo (modular)
-
-| Archivo | Concepto | Sitio de pruebas |
-|---------|----------|------------------|
-| [01-get-by-role.spec.ts](./01-get-by-role.spec.ts) | `getByRole` — el mejor locator | playwright.dev |
-| [02-get-by-text.spec.ts](./02-get-by-text.spec.ts) | `getByText` — match exacto y parcial | playwright.dev |
-| [03-get-by-label.spec.ts](./03-get-by-label.spec.ts) | `getByLabel` — inputs con label | demo.playwright.dev/todomvc |
-| [04-get-by-placeholder.spec.ts](./04-get-by-placeholder.spec.ts) | `getByPlaceholder` — inputs sin label | demo.playwright.dev/todomvc |
-| [05-get-by-test-id.spec.ts](./05-get-by-test-id.spec.ts) | `getByTestId` — cuando no hay semántica | demo.playwright.dev/todomvc |
-| [06-css-y-xpath.spec.ts](./06-css-y-xpath.spec.ts) | CSS y XPath — cuándo caer aquí | playwright.dev |
-| [07-filtros-y-chaining.spec.ts](./07-filtros-y-chaining.spec.ts) | `filter`, `.nth()`, `.first()`, chaining | demo.playwright.dev/todomvc |
-| [reto.spec.ts](./reto.spec.ts) | Retos del alumno | — |
+La regla: **sube en la pirámide siempre que puedas**. Un test que usa `getByRole` es más accesible, más estable y se lee mejor.
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
+## Archivos del módulo (uno por estrategia)
 
-1. **Empieza con la tabla de prioridad.** Haz que el grupo la copie en su cuaderno.
-2. **Abre `01-get-by-role.spec.ts`** y corre `pnpm test:ui modulo-04-localizadores/01-get-by-role.spec.ts`. Demuestra en vivo cómo el test encuentra el elemento.
-3. **Usa el "Pick locator" del UI mode** para mostrar que cualquier elemento de una página tiene múltiples formas de ser localizado, y Playwright sugiere siempre la más semántica.
-4. **Ve archivo por archivo** mostrando cada locator en acción.
-5. **En `06-css-y-xpath`** haz énfasis: "esto existe, pero NUNCA es la primera opción".
-6. **En `07-filtros-y-chaining`** usa el TodoMVC real: agrega 3 todos, muestra cómo seleccionar el "segundo" con `.nth(1)` o con `.filter({ hasText: 'X' })`.
-7. **Envía al reto.**
+| # | Archivo | Estrategia | Escenario en OmniPizza |
+|---|---------|------------|------------------------|
+| 4.1 | [01-get-by-role.spec.ts](./01-get-by-role.spec.ts) | `getByRole` | Botón Sign In, headings, quick-login buttons |
+| 4.2 | [02-get-by-text.spec.ts](./02-get-by-text.spec.ts) | `getByText` | "Welcome back!", "Art of Pizza", "Quick Login" |
+| 4.3 | [03-get-by-label.spec.ts](./03-get-by-label.spec.ts) | `getByLabel` | ⚠️ FALLA en OmniPizza — lección de accesibilidad |
+| 4.4 | [04-get-by-placeholder.spec.ts](./04-get-by-placeholder.spec.ts) | `getByPlaceholder` | Username + password placeholders |
+| 4.5 | [05-get-by-alt-text.spec.ts](./05-get-by-alt-text.spec.ts) | `getByAltText` | "OmniPizza Logo", "Art of Pizza", pizzas del catálogo |
+| 4.6 | [06-get-by-title.spec.ts](./06-get-by-title.spec.ts) | `getByTitle` | Banderas de mercado, quick-login users |
+| 4.7 | [07-get-by-test-id.spec.ts](./07-get-by-test-id.spec.ts) | `getByTestId` | El gotcha de `-desktop`/`-responsive` + helper `tid()` |
+| 4.8 | [08-css-selectors.spec.ts](./08-css-selectors.spec.ts) | CSS via `page.locator()` | Selectores por atributo, descendiente, pseudo-clase |
+| 4.9 | [09-xpath.spec.ts](./09-xpath.spec.ts) | XPath | Texto exacto, navegación padre, último recurso |
+| 4.10 | [10-filters.spec.ts](./10-filters.spec.ts) | `.filter()` | `hasText`, `has`, `hasNot`, `visible` |
+| 4.11 | [11-chaining-nesting.spec.ts](./11-chaining-nesting.spec.ts) | Chaining + `.and()` / `.or()` | Locator dentro de locator; combinar condiciones |
+| 4.12 | [12-position-nth.spec.ts](./12-position-nth.spec.ts) | `.first()`, `.last()`, `.nth()` | Posición en listas (pizza cards, mercados, users) |
+| 🚩 | [reto.spec.ts](./reto.spec.ts) | Integrador | 6 elementos, 6 strategies distintas |
 
 ---
 
-## 🔑 Regla de oro
+## El gotcha de OmniPizza: `-desktop` / `-responsive`
 
-> Antes de escribir cualquier locator, pregúntate: **"¿cómo describiría un usuario ciego este elemento con un lector de pantalla?"**. Esa descripción es casi siempre tu mejor locator.
+El frontend usa un hook `tid()` que añade un sufijo al `data-testid` según el viewport:
 
-➡️ Empieza por [01-get-by-role.spec.ts](./01-get-by-role.spec.ts).
+```jsx
+// En el componente:
+<input data-testid={tid('username')} />
+
+// En runtime, según el viewport:
+// Desktop (≥768px) → data-testid="username-desktop"
+// Mobile  (<768px) → data-testid="username-responsive"
+```
+
+**Implicación para tus tests:**
+- Si usas `--project=chromium` (default 1280×720), todos los testids dinámicos terminan en `-desktop`.
+- Si usas `--project=mobile-chrome` (Pixel 5, 393×727), terminan en `-responsive`.
+- **La mayoría de los specs del módulo usan `-desktop` directo** (porque corren en Chromium).
+- El archivo **07-get-by-test-id.spec.ts** define un helper `tid(page, base)` que calcula el sufijo en runtime — úsalo como referencia cuando escribas tests que corran en varios viewports.
+
+---
+
+## Cómo correr
+
+```bash
+# Todo el módulo
+pnpm test modulo-04-localizadores
+
+# Un solo archivo
+pnpm test modulo-04-localizadores/07-get-by-test-id.spec.ts
+
+# En UI mode (ideal para ver los locators en acción)
+pnpm test:ui
+
+# Usar Pick Locator para descubrir el selector exacto de un elemento
+pnpm test:debug modulo-04-localizadores/01-get-by-role.spec.ts
+# → en el Inspector: click en "Pick locator" → click sobre el elemento
+```
+
+---
+
+## Comparación rápida — 4 formas de localizar el botón Sign In
+
+```ts
+// 1. getByRole       — ideal (accesible + semántico)
+page.getByRole('button', { name: /sign in/i });
+
+// 2. getByTestId     — robusto (requiere testid en el DOM)
+page.getByTestId('login-button-desktop');
+
+// 3. CSS selector    — funciona pero más frágil
+page.locator('button[data-testid="login-button-desktop"]');
+
+// 4. XPath           — último recurso
+page.locator('//button[text()="Sign In"]');
+```
+
+**Regla de oro:** cuando todos funcionan, elige el **más alto** en la pirámide.
+
+---
+
+## Siguiente
+
+➡️ [reto.spec.ts](./reto.spec.ts) — reto integrador
+
+➡️ [Módulo 5 — Parametrización con los 4 mercados de OmniPizza](../modulo-05-parametrizacion/)

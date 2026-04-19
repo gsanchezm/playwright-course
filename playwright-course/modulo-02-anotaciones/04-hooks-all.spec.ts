@@ -1,54 +1,61 @@
 // ============================================================
 // Mini-clase 2.4 — beforeAll / afterAll
 // ============================================================
-// Diferencia clave con 03-hooks-each.spec.ts:
-//   - beforeEach corre N veces (una por cada test)
-//   - beforeAll corre UNA SOLA VEZ, al inicio del describe
+// Diferencia clave con beforeEach:
+//   - beforeEach corre N veces (una por cada test).
+//   - beforeAll corre UNA SOLA VEZ al inicio del describe.
 //
-// Analogía: Imagina que llegas en la mañana a tu trabajo de QA.
-//   - beforeAll = prender la computadora, abrir el ambiente de QA,
-//     obtener un token de API — lo haces UNA vez en todo el día.
-//   - beforeEach = abrir un nuevo caso en TestRail — lo haces
-//     antes de CADA caso que vas a ejecutar.
-//
-// ¿Cuándo usar beforeAll en vez de beforeEach?
-// - Cuando el setup es caro (crear datos en DB, hacer login API).
-// - Cuando todos los tests pueden compartir el mismo estado inicial.
-//
-// ⚠️ CUIDADO: si en beforeAll creas un "page" o datos, los tests
-// pueden contaminarse entre sí. Úsalo solo para cosas de solo lectura.
+// Caso real: OmniPizza vive en Render (free tier). Si nadie tocó
+// el backend en un rato, está "dormido" y el primer request puede
+// tardar 30-40s. Un `beforeAll` con un ping al /health despierta
+// el servicio antes de que corran los tests reales — así evitamos
+// que el PRIMER test se lleve el timeout.
 // ============================================================
 
-import { test, expect } from '@playwright/test';
+import { test, expect, request } from '@playwright/test';
 
-test.describe('Suite con setup pesado una sola vez', () => {
-  // Esta variable se comparte entre los tests del describe.
-  let suiteStartedAt: Date;
+test.describe('Suite con warm-up del backend', () => {
+  let suiteStartedAt: number;
 
+  // ─── Setup: una sola vez antes de todos los tests ─────────────
   test.beforeAll(async () => {
-    console.log('[beforeAll] 🚀 Iniciando la suite...');
-    suiteStartedAt = new Date();
+    console.log('[beforeAll] 🚀 Despertando OmniPizza backend...');
+    suiteStartedAt = Date.now();
 
-    // Aquí podrías: obtener un token, crear un usuario de prueba,
-    // cargar un archivo grande, etc.
+    const api = await request.newContext();
+    const res = await api.get('https://omnipizza-backend.onrender.com/health', {
+      timeout: 60_000,
+    });
+    console.log(`[beforeAll] Backend vivo (status ${res.status()})`);
+    await api.dispose();
   });
 
+  // ─── Teardown: una sola vez después de todos los tests ────────
   test.afterAll(async () => {
-    const elapsed = (new Date().getTime() - suiteStartedAt.getTime()) / 1000;
-    console.log(`[afterAll] ✅ Suite terminó en ${elapsed}s`);
-
-    // Aquí podrías: borrar el usuario de prueba, cerrar conexiones, etc.
+    const elapsed = ((Date.now() - suiteStartedAt) / 1000).toFixed(1);
+    console.log(`[afterAll] ✅ Suite completa en ${elapsed}s`);
   });
 
-  test('primer test que usa el estado de la suite', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    expect(suiteStartedAt).toBeDefined();
+  // ─── Tests ────────────────────────────────────────────────────
+  test('login de standard_user llega al catálogo', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
   });
 
-  test('segundo test que también usa el estado', async ({ page }) => {
-    await page.goto('https://playwright.dev/docs/intro');
-    await expect(
-      page.getByRole('heading', { name: 'Installation' })
-    ).toBeVisible();
+  test('/catalog sin sesión redirige al login', async ({ page }) => {
+    await page.goto('/catalog');
+    // La ruta protegida empuja al usuario de vuelta al login (/)
+    await expect(page).not.toHaveURL(/\/catalog/);
   });
 });
+
+// ============================================================
+// ¿Cuándo usar beforeAll vs beforeEach?
+// - beforeAll: setup CARO que todos los tests pueden COMPARTIR
+//   (wake-up de un servicio, obtener un token, seed de datos).
+// - beforeEach: setup BARATO que cada test necesita AISLADO
+//   (navegar a una URL, resetear estado de UI).
+// ============================================================

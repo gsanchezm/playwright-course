@@ -1,18 +1,35 @@
 [
   {
-    "name": "agregar un todo simple",
-    "todo": "Comprar leche"
+    "code": "MX",
+    "currency": "MXN",
+    "fullName": "Juan Pérez",
+    "phone": "+52 55 1234 5678",
+    "address": "Avenida Reforma 123",
+    "colonia": "Polanco",
+    "zipCode": "11550"
   },
   {
-    "name": "agregar un todo con emojis",
-    "todo": "Hacer ejercicio 💪"
+    "code": "US",
+    "currency": "USD",
+    "fullName": "John Doe",
+    "phone": "+1 555 123 4567",
+    "address": "123 Main St",
+    "zipCode": "90210"
   },
   {
-    "name": "agregar un todo largo",
-    "todo": "Estudiar la documentación oficial de Playwright de principio a fin"
+    "code": "CH",
+    "currency": "CHF",
+    "fullName": "Hans Müller",
+    "phone": "+41 44 123 45 67",
+    "address": "Bahnhofstrasse 1",
+    "zipCode": "8001"
   },
   {
-    "name": "agregar un todo con caracteres especiales",
-    "todo": "Test con #hashtag y @mención"
+    "code": "JP",
+    "currency": "JPY",
+    "fullName": "Taro Yamada",
+    "phone": "+81 3 1234 5678",
+    "address": "1-1 Chiyoda, Chiyoda-ku",
+    "zipCode": "100-0001"
   }
 ]

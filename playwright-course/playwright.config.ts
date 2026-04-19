@@ -23,6 +23,11 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0, // Reintenta 2 veces en CI, 0 local
   workers: process.env.CI ? 1 : undefined, // 1 worker en CI para logs limpios
 
+  // Timeout por test. OmniPizza vive en Render free tier: la primera
+  // navegación al día puede tardar 30-40s porque el servicio está dormido.
+  // 60s da margen suficiente para el cold start sin ocultar tests reales lentos.
+  timeout: 60_000,
+
   // --- Reportes ---
   // Varios reporters a la vez: HTML para humanos + lista para terminal
   reporter: [
@@ -33,7 +38,8 @@ export default defineConfig({
   // --- Opciones globales de cada test ---
   use: {
     // URL base: se usa con page.goto('/') sin tener que repetir el dominio.
-    baseURL: 'https://playwright.dev',
+    // Todo el curso gira alrededor de OmniPizza (https://github.com/gsanchezm/OmniPizza).
+    baseURL: 'https://omnipizza-frontend.onrender.com',
 
     // Trazas: útiles para depurar tests que fallan en CI.
     // 'on-first-retry' = solo grabar en el primer reintento.
@@ -44,6 +50,10 @@ export default defineConfig({
 
     // Video solo cuando falla.
     video: 'retain-on-failure',
+
+    // Timeouts específicos de acción y navegación (cold start de Render).
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
   },
 
   // --- Proyectos: correr los mismos tests en varios navegadores ---

@@ -1,51 +1,59 @@
-# Módulo 10: Page Object Model (POM)
+# Módulo 10 — POM: refactor final del framework
 
-> **Objetivo:** Estructurar tu framework usando el **Page Object Model** para separar el "cómo interactúo con la página" del "qué valido en el test".
-
-> **Referencia oficial:** [pom](https://playwright.dev/docs/pom)
+> **Historia del curso:** a lo largo de los 9 módulos anteriores escribiste tests contra OmniPizza con boilerplate repetido (`page.goto('/')`, `fill(username)`, `fill(password)`, etc.). Hoy refactorizas TODO detrás del **Page Object Model**. Al terminar este módulo el framework está completo.
+>
+> **Referencia oficial:** [POM](https://playwright.dev/docs/pom) · [Fixtures](https://playwright.dev/docs/test-fixtures)
 
 ---
 
-## 🎯 Analogía principal
+## Analogía
 
-> **Un Page Object es como un "manual de instrucciones" de una página.**
->
-> En pruebas manuales, antes de probar el login tenías una hoja que decía:
-> - El campo de usuario está en el recuadro arriba a la izquierda.
-> - El campo de contraseña está debajo.
-> - El botón azul dice "Iniciar sesión".
->
-> Un Page Object encapsula ese conocimiento en **código**: todos los selectores y acciones de la página de login viven en una clase `LoginPage`. Si mañana el dev cambia el selector del botón, tú cambias **una sola línea** en `LoginPage.ts` y todos tus 30 tests de login siguen funcionando.
+Un Page Object es un **"manual de instrucciones"** de una página.
 
-**Sin POM:**
-```typescript
-test('login 1', async ({ page }) => {
-  await page.goto('/login');
-  await page.fill('#username', 'admin');
-  await page.fill('#password', 'Test1234!');
-  await page.click('#login-btn');
+En manual, antes de probar el login tenías una hoja:
+- El campo de usuario está arriba a la izquierda.
+- La contraseña está debajo.
+- El botón azul dice "Sign In".
+
+Un Page Object encapsula ese conocimiento en **código**. Si mañana cambia un testid, actualizas **una sola clase** — los 50 tests que la usan siguen funcionando.
+
+---
+
+## Antes (sin POM) vs después (con POM)
+
+### Antes — cada test repite el boilerplate
+
+```ts
+test('login standard_user', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill('standard_user');
+  await page.getByTestId('password-desktop').fill('pizza123');
+  await page.getByTestId('login-button-desktop').click();
+  await expect(page).toHaveURL(/\/catalog/);
 });
 
-test('login 2', async ({ page }) => {
-  await page.goto('/login');
-  await page.fill('#username', 'viewer'); // 🔁 repetido
-  await page.fill('#password', 'Test1234!'); // 🔁 repetido
-  await page.click('#login-btn'); // 🔁 repetido
-});
-```
-
-Si cambia `#login-btn` → tienes que actualizar 30 tests.
-
-**Con POM:**
-```typescript
-test('login 1', async ({ page }) => {
-  const loginPage = new LoginPage(page);
-  await loginPage.goto();
-  await loginPage.login('admin', 'Test1234!');
+test('login locked_out', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('username-desktop').fill('locked_out_user');   // 🔁
+  await page.getByTestId('password-desktop').fill('pizza123');           // 🔁
+  await page.getByTestId('login-button-desktop').click();                // 🔁
+  await expect(page.getByTestId('login-error')).toBeVisible();
 });
 ```
 
-Si cambia `#login-btn` → cambias una línea en `LoginPage.ts`.
+### Después — los tests se leen como una especificación
+
+```ts
+test('login standard_user', async ({ loginPage, page }) => {
+  await loginPage.login('standard_user', 'pizza123');
+  await expect(page).toHaveURL(/\/catalog/);
+});
+
+test('login locked_out', async ({ loginPage }) => {
+  await loginPage.login('locked_out_user', 'pizza123');
+  await loginPage.expectLoginError();
+});
+```
 
 ---
 
@@ -53,38 +61,109 @@ Si cambia `#login-btn` → cambias una línea en `LoginPage.ts`.
 
 ```
 modulo-10-pom/
-├── README.md                  # este archivo
+├── README.md
+├── reto.md
 ├── pages/
-│   ├── BasePage.ts            # clase base con métodos comunes
-│   └── TodoMvcPage.ts         # page object de TodoMVC
-├── tests/
-│   └── todomvc.pom.spec.ts    # tests usando el POM
-└── reto.md
+│   ├── BasePage.ts         ← clase abstracta base
+│   ├── LoginPage.ts        ← Page Object de /
+│   └── CatalogPage.ts      ← Page Object de /catalog
+├── fixtures/
+│   └── auth.ts             ← fixtures: loginPage, catalogPage, authenticatedPage
+└── tests/
+    ├── login.pom.spec.ts       ← usa loginPage
+    └── catalog.pom.spec.ts     ← usa authenticatedPage + catalogPage
 ```
 
-**Analogía de herencia:**
-- `BasePage` es la "metodología de pruebas de la empresa": todos los page objects heredan sus métodos comunes (navegar, esperar carga, screenshot).
-- `TodoMvcPage extends BasePage` es el "manual específico de la página de TODO": hereda lo general y agrega lo específico.
+Esta es la **estructura final del framework**. En un proyecto real, movería `pages/` y `fixtures/` al root del repo, fuera de `modulo-10-pom/`.
 
 ---
 
 ## Reglas del POM
 
-1. **Un Page Object por página lógica** (no por archivo HTML). Ejemplos: `LoginPage`, `DashboardPage`, `CheckoutPage`.
-2. **Los selectores son `private`** — nadie fuera del Page Object debe saber que `#login-btn` existe.
-3. **Los métodos públicos representan ACCIONES del usuario:** `login(user, pass)`, `search(term)`, `addToCart(product)`. **NO** devuelven locators — devuelven `void` o datos.
-4. **Las assertions van en los tests, no en el POM.** El POM hace acciones; el test valida. (Hay debate sobre esto, pero es la regla más común y la que recomienda Playwright.)
-5. **Los tests NO usan `page.locator(...)` directamente** — todo pasa por el POM.
+1. **Un Page Object por página lógica** (no por archivo HTML).
+2. **Los locators son `private`** — nadie fuera del POM sabe que `getByTestId('login-button-desktop')` existe.
+3. **Los métodos públicos representan ACCIONES humanas:** `login(user, pass)`, `addFirstPizza()`, `selectCategory('popular')`. **NO** devuelven locators.
+4. **Las assertions pueden vivir en el POM** (`expectLoginError()`) o **en el test**. Ambas escuelas son válidas; el curso mezcla las dos según convenga.
+5. **Los tests NO usan `page.locator(...)` directamente** — todo pasa por el POM o las fixtures.
+6. **Los Page Objects heredan de `BasePage`** para compartir `page`, helpers (`tid()`) y navegación.
 
 ---
 
-## 📋 Pasos explícitos para explicar en clase
+## El helper `tid()` viajando al framework
 
-1. **Empieza con el ejemplo malo** (sin POM) y muestra cómo se repite código. Pregunta: "¿qué pasa si cambian el selector?".
-2. **Muestra `BasePage.ts`** — explica la herencia: todos los page objects reciben `page` en el constructor y tienen métodos comunes como `waitForLoad`.
-3. **Muestra `TodoMvcPage.ts`** — los selectores son `private`, los métodos son públicos y representan acciones humanas.
-4. **Muestra `todomvc.pom.spec.ts`** — los tests son **súper legibles**: `todoPage.addTodo('Comprar leche')`.
-5. **Simula un cambio:** edita `TodoMvcPage.ts` para cambiar un selector. Muestra que los 5 tests siguen funcionando sin tocarlos.
-6. **Envía al reto.**
+En M4 lo creaste como helper suelto; en M10 lo trasladas a `BasePage.tid()`:
 
-➡️ Lee el código de [pages/BasePage.ts](./pages/BasePage.ts) y [pages/TodoMvcPage.ts](./pages/TodoMvcPage.ts).
+```ts
+// BasePage.ts
+protected tid(base: string): Locator {
+  const size = this.page.viewportSize();
+  const suffix = size && size.width < 768 ? '-responsive' : '-desktop';
+  return this.page.getByTestId(`${base}${suffix}`);
+}
+```
+
+Ahora todos los Page Objects son **viewport-aware gratis**. Correr con `--project=mobile-chrome` simplemente funciona.
+
+---
+
+## La fixture `authenticatedPage`
+
+En M5 la creaste dentro del mismo archivo. En M10 vive en `fixtures/auth.ts`:
+
+```ts
+export const test = base.extend<OmniPizzaFixtures>({
+  loginPage: async ({ page }, use) => { /* ... */ },
+  catalogPage: async ({ page }, use) => { /* ... */ },
+  authenticatedPage: async ({ page }, use) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+    await loginPage.loginAsStandardUser();
+
+    const catalogPage = new CatalogPage(page);
+    await catalogPage.expectLoaded();
+    await catalogPage.waitForCatalog();
+
+    await use(page);
+  },
+});
+```
+
+**Resultado:** los tests del catálogo (`catalog.pom.spec.ts`) arrancan directo en `/catalog` con las pizzas cargadas, sin escribir una línea de setup.
+
+---
+
+## Cómo correr
+
+```bash
+# Todos los tests del módulo 10
+pnpm test modulo-10-pom/tests
+
+# Solo login
+pnpm test modulo-10-pom/tests/login.pom.spec.ts
+
+# Solo smoke del catálogo
+pnpm test modulo-10-pom/tests --grep @smoke
+```
+
+---
+
+## Qué logras con este módulo
+
+1. **Menos duplicación** — el boilerplate de login no se repite.
+2. **Mantenimiento barato** — si cambia un testid, cambias **una línea**.
+3. **Tests legibles** — cualquier nuevo miembro del equipo entiende `loginPage.login(user, pass)` sin mirar el DOM.
+4. **Viewport-agnóstico gratis** — el helper `tid()` encapsulado.
+5. **Composición** — una fixture puede usar 2 o más POMs (`authenticatedPage` usa `LoginPage` + `CatalogPage`).
+
+---
+
+## Próximos pasos
+
+Cuando termines este módulo, tu framework está **listo** para proyectos reales. Posibles extensiones (fuera del curso):
+
+- Un `CheckoutPage` con parametrización por mercado (lo viste en M5).
+- Un `PizzaBuilderPage` para el modal de customización.
+- POMs para API: `AuthApi`, `PizzasApi`, `OrdersApi` (modelando los endpoints de M9).
+- **Atomic testing** (login via API + sembrar JWT) — curso avanzado.
+
+➡️ [reto.md](./reto.md)

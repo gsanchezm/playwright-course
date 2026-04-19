@@ -2,56 +2,68 @@
 // Mini-clase 2.5 — Modificadores: skip, only, fixme, slow
 // ============================================================
 // Analogía: En tu plan de pruebas manual tienes casos con estados:
-//   - BLOQUEADO: no se puede ejecutar (ambiente caído) → skip
-//   - EN FOCO: lo único que estoy debuggeando hoy → only
-//   - PENDIENTE DE ARREGLAR: encontré un bug → fixme
-//   - LENTO: toma el triple de tiempo normal → slow
+//   - BLOQUEADO: no se puede ejecutar (feature no existe)   → skip
+//   - EN FOCO: lo único que estoy debuggeando hoy           → only
+//   - PENDIENTE DE ARREGLAR: encontré un bug                → fixme
+//   - LENTO A PROPÓSITO: tarda el triple                    → slow
+//
+// OmniPizza tiene usuarios deterministas perfectos para cada
+// modificador — los usamos como vehículo pedagógico.
 // ============================================================
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Modificadores de tests', () => {
+test.describe('Modificadores de tests en OmniPizza', () => {
   // ✅ Test normal que siempre corre
-  test('test normal que corre siempre', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    await expect(page).toHaveTitle(/Playwright/);
+  test('standard_user hace login normalmente', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('standard_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
   });
 
-  // ⏸ test.skip: no se ejecuta nunca (se marca en el reporte como skipped)
-  //    Úsalo cuando: el backend está caído, feature aún no existe,
-  //    o estás esperando un fix.
-  test.skip('test bloqueado por bug QA-1234', async ({ page }) => {
-    await page.goto('https://playwright.dev/');
-    // No se ejecuta — está "bloqueado"
+  // ⏸ test.skip: no se ejecuta nunca (marcado como skipped en el reporte)
+  //    Úsalo cuando: la feature aún no existe o el ambiente está caído.
+  test.skip('signup de un nuevo usuario', async ({ page }) => {
+    // OmniPizza NO tiene signup público; este test queda parqueado
+    // hasta que se implemente el endpoint.
+    await page.goto('/signup');
   });
 
-  // 🎯 test.only: cuando lo pones, SOLO este test corre del archivo
-  //    (los demás del mismo archivo se saltan).
-  //    Úsalo para debuggear un test aislado. ⚠️ Quítalo antes de pushear.
-  // test.only('test en foco para debug', async ({ page }) => {
-  //   await page.goto('https://playwright.dev/');
+  // 🎯 test.only: SOLO este test corre del archivo (los demás se saltan)
+  //    Úsalo para debuggear. ⚠️ Quítalo antes de pushear.
+  // test.only('en foco para debug', async ({ page }) => {
+  //   await page.goto('/');
   // });
 
   // 🐛 test.fixme: marca un test como pendiente de arreglar.
-  //    No se ejecuta, pero queda documentado.
-  test.fixme('test que falla por un bug real', async ({ page }) => {
-    // Sabemos que falla. Aún no lo arreglamos. Lo dejamos marcado.
-    await page.goto('https://playwright.dev/');
-    await expect(page).toHaveTitle(/Cypress/); // 🐛 va a fallar a propósito
+  //    No se ejecuta pero queda documentado en el reporte.
+  test.fixme('error_user completa el checkout (bug OMNI-42)', async ({ page }) => {
+    // `error_user` falla ~50% en checkout — flaky por diseño del sandbox.
+    // Dejamos el test marcado para retomarlo cuando se arregle.
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('error_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
+    // ... aquí iría el flujo de checkout que a veces revienta
   });
 
-  // 🐢 test.slow: multiplica x3 el timeout de este test.
-  //    Útil para tests que sabes que son lentos (ej. descargar algo).
-  test('test lento intencionalmente', async ({ page }) => {
-    test.slow(); // marca el test como lento
-    await page.goto('https://playwright.dev/');
-    await page.waitForTimeout(1000); // simula una operación lenta
-    await expect(page).toHaveTitle(/Playwright/);
+  // 🐢 test.slow: multiplica ×3 el timeout de este test.
+  //    `performance_glitch_user` agrega ~3s a cada request, por eso es
+  //    un caso típico para marcar como slow.
+  test('performance_glitch_user llega al catálogo aunque lento', async ({ page }) => {
+    test.slow();
+    await page.goto('/');
+    await page.getByTestId('username-desktop').fill('performance_glitch_user');
+    await page.getByTestId('password-desktop').fill('pizza123');
+    await page.getByTestId('login-button-desktop').click();
+    await expect(page).toHaveURL(/\/catalog/);
   });
 });
 
-// Puedes skippear UN describe completo:
-test.describe.skip('Suite bloqueada: esperando deploy', () => {
-  test('a', async () => {});
-  test('b', async () => {});
+// describe.skip: saltar TODO un bloque de golpe
+test.describe.skip('Suite de signup (pendiente de feature)', () => {
+  test('placeholder', async () => {});
 });
