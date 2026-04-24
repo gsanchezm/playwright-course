@@ -1,118 +1,140 @@
-# Curso de Playwright para QA Automation — sobre OmniPizza
+# Curso de Playwright para QA Automation — OmniPizza (v3)
 
 Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pasaron por los cursos de [TypeScript](../typescript-qa-course/) y de [Git/GitHub](../git-github-course/).
 
-**Hilo conductor:** todos los ejemplos, retos y ejercicios del curso son pruebas contra **OmniPizza**, una app real de pedidos de pizza. Al terminar los 10 módulos habrás construido un **mini framework E2E + API** completo.
+**Filosofía v3 — arquitectura incremental:** cada módulo **añade una capa** al framework. Los conceptos de TS/Playwright entran *just-in-time* cuando se necesitan, no como bloques teóricos sueltos. Al terminar M06 tienes un framework E2E + API producción-grade.
 
 | Aspecto | Valor |
 |---|---|
 | Frontend live | https://omnipizza-frontend.onrender.com |
 | Backend live | https://omnipizza-backend.onrender.com |
-| Repo del producto | https://github.com/gsanchezm/OmniPizza |
+| Swagger | https://omnipizza-backend.onrender.com/api/docs |
 | Stack | React + Vite (front), FastAPI (back) |
-| Auth | JWT con 5 usuarios deterministas |
+| Auth | JWT con usuarios deterministas |
 | Mercados | MX / US / CH / JP |
+| Duración | 4.5 – 6 horas, 6 módulos |
 
-> ⚠️ El backend vive en Render free tier: si está dormido, el primer request tarda ~30-40s. El curso tiene timeouts generosos y un patrón `beforeAll` para despertarlo.
-
----
-
-## Narrativa — 10 módulos, un framework
-
-Cada módulo **añade una pieza** al framework. Al terminar M10 el framework está completo.
-
-| # | Módulo | Pieza del framework |
-|---|---------|---------------------|
-| 1 | [Visión general](./modulo-01-vision-general/) | `hello.spec.ts` — primer smoke |
-| 2 | [Anotaciones](./modulo-02-anotaciones/) | `describe` + hooks + tags `@smoke`/`@regression` |
-| 3 | [Ejecuciones](./modulo-03-ejecuciones/) | Correr la suite: headed/UI/tag/browser |
-| 4 | [Localizadores](./modulo-04-localizadores/) | Las 12 estrategias de locator de Playwright |
-| 5 | [Parametrización](./modulo-05-parametrizacion/) | Data-driven con los 4 mercados |
-| 6 | [Codegen](./modulo-06-codegen/) | Grabar specs automáticamente |
-| 7 | [Reports](./modulo-07-reports/) | HTML + Trace Viewer + flakiness |
-| 8 | [Repositorios/CI](./modulo-08-repositorios/) | GitHub + Actions contra el deploy live |
-| 9 | [API testing](./modulo-09-api-testing/) | Pruebas **puras** de API (aisladas del UI) |
-| 10 | [POM](./modulo-10-pom/) | Refactor final: Page Object Model |
-
-> **Nota:** M9 (API testing) y el resto del framework UI son **suites independientes**. El curso NO enseña el patrón "login vía API + sembrar JWT" (atomic testing); eso queda para un curso avanzado.
+> ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M04) hace el warmup automático.
 
 ---
 
-## Framework final (entregable)
+## Los 6 módulos
+
+| # | Módulo | Pieza que añade al framework |
+|---|---------|-------------|
+| 1 | [Smoke feo](./modulo-01-smoke-feo/) | `ejemplo.spec.ts` plano + `.env` + `dotenv` |
+| 2 | [Locators + Data tipada](./modulo-02-locators-data/) | `types/*` + `data/*.json` + `test.each()` |
+| 3 | [POM incremental](./modulo-03-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout |
+| 4 | [Setup project + Fixtures](./modulo-04-setup-fixtures/) | `tests/setup/auth.setup.ts` + `fixtures/` + `helpers/unique-data.ts` + `page.route()` |
+| 5 | [API Layer](./modulo-05-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
+| 6 | [CI/CD + Trace Viewer](./modulo-06-ci-debugging/) | `.github/workflows/playwright.yml` con matrix por browser |
+
+### Apéndices opcionales (fuera de las 4-6 h)
+
+- **A1 — Codegen:** `pnpm codegen` para prototipar specs rápido.
+- **A2 — Playwright MCP + agentes AI:** revive del commit `58d61c2` si se quiere recuperar.
+
+---
+
+## Framework final
 
 ```
-omnipizza-e2e/
-├── playwright.config.ts        # multi-browser, multi-mercado, CI-ready
-├── fixtures/
-│   ├── auth.ts                 # authenticatedPage (login por UI)
-│   ├── market.ts               # worker fixture con X-Country-Code
-│   └── test-data.json          # 4 mercados + 5 usuarios
-├── api/                        # solo para tests/api/ (aislado del UI)
-├── pages/                      # BasePage + LoginPage + CatalogPage + ...
+playwright-course/
+├── playwright.config.ts              # projects: setup, ui-chromium/firefox/webkit, api, anonymous
+├── .env.example                      # plantilla versionada
+├── .env                              # secretos locales (gitignored)
+├── .auth/                            # storageState por rol (gitignored)
+├── types/                            # User, Market, Pizza, Order, …
+├── data/                             # users.json, markets.json
+├── helpers/                          # unique-data.ts (data isolation)
+├── pages/                            # BasePage (normal) + LoginPage + CatalogPage + CheckoutPage
+├── services/                         # BaseService (abstract) + Auth/Order/PizzaService
+├── fixtures/                         # omnipizza.ts — custom fixtures
 ├── tests/
-│   ├── smoke/                  # @smoke — flows críticos
-│   ├── regression/             # @regression — flows completos
-│   └── api/                    # API pura (M9)
-└── .github/workflows/playwright.yml
+│   ├── setup/auth.setup.ts           # login vía API, persiste storageState
+│   ├── smoke/                        # @smoke
+│   ├── regression/                   # @regression
+│   └── api/                          # API pura (project "api", sin storageState de UI)
+├── .github/workflows/
+│   └── playwright.yml                # matrix: 3 browsers × 2 shards + api
+└── modulo-0X-*/                      # 6 módulos con README + ejemplo + reto
 ```
 
 ---
 
 ## Requisitos
 
-- Node.js **v18+** (ideal v20 LTS).
-- **pnpm** 9+ (`npm install -g pnpm`).
+- Node.js **v20+** (v18+ mínimo).
+- **pnpm** 10+ (`npm install -g pnpm`).
 - VS Code con la extensión oficial **Playwright Test for VSCode**.
-- Haber completado [TypeScript](../typescript-qa-course/) (módulos 1–6) y [Git/GitHub](../git-github-course/).
+- GitHub CLI (`gh`) para el módulo M06.
+- Haber completado [TypeScript](../typescript-qa-course/) y [Git/GitHub](../git-github-course/).
 
 ## Setup inicial
 
 ```bash
 cd playwright-course
 pnpm install
-pnpm install-browsers    # alias de "playwright install"
+pnpm exec playwright install           # descarga chromium/firefox/webkit
+
+# Variables de entorno
+cp .env.example .env                   # .env NO se commitea
 ```
 
 ## Cómo correr
 
 ```bash
-# Todo el suite
+# Toda la suite (incluye setup project como dependencia)
 pnpm test
 
-# Un módulo
-pnpm test modulo-02-anotaciones
+# Un módulo específico
+pnpm m1   # M01 — Smoke feo
+pnpm m2   # M02 — Locators + Data
+pnpm m3   # M03 — POM
+pnpm m4   # M04 — Setup + Fixtures
+pnpm m5   # M05 — API Layer
+pnpm m6   # M06 — CI/CD + Trace Viewer
 
-# UI mode (recomendado mientras aprendes)
-pnpm test:ui
+# Por project
+pnpm test:setup                        # sólo tests/setup/
+pnpm test:chromium                     # sólo ui-chromium
+pnpm test:api                          # sólo tests/api/
 
-# Con browser visible
-pnpm test:headed
+# Modos de ejecución
+pnpm test:ui                           # UI mode (recomendado para aprender)
+pnpm test:headed                       # con browser visible
+pnpm test:debug                        # Inspector paso a paso
 
-# Debug con Inspector
-pnpm test:debug modulo-02-anotaciones/01-test-basico.spec.ts
+# Tags
+pnpm test:smoke                        # --grep @smoke
+pnpm test:regression                   # --grep @regression
 
-# Smoke / Regression
-pnpm test:smoke
-pnpm test:regression
+# Reportes
+pnpm report                            # HTML report del último run
 
-# Reporte HTML del último run
-pnpm report
+# Type-check
+pnpm typecheck                         # tsc --noEmit
 ```
 
 ---
 
 ## Filosofía del curso
 
-1. **Un concepto = un archivo.** Nada de megaarchivos con 20 conceptos mezclados.
-2. **Una historia continua.** Cada módulo **suma** al mini framework anterior — nada es teórico aislado.
-3. **Tests ejecutables contra el deploy real.** Todos los ejemplos corren contra OmniPizza live.
-4. **Reto al final.** Cada módulo cierra con un `reto.spec.ts` (o `reto.md` si es módulo de docs).
+1. **Un módulo = una pieza del framework.** Nada es teoría aislada.
+2. **Conceptos JIT.** `abstract`, `extends`, fixtures aparecen cuando el problema los pide.
+3. **Smoke feo → dolor → refactor.** El patrón se gana, no se impone.
+4. **Analogías QA.** Cada concepto se ancla al mundo que ya conoces (bugs, test plans, Postman).
+5. **Tests contra el deploy real.** Todo corre contra OmniPizza live.
+6. **Reto al final de cada módulo.** Práctica activa > lectura pasiva.
+
+---
 
 ## Convenciones
 
 - **Código:** nombres, funciones, clases y selectores en **inglés**.
 - **Comentarios y documentación:** **español**.
-- **Selectores:** priorizamos `getByRole`, `getByLabel`, `getByTestId` sobre CSS/XPath.
-- **Deploy:** OmniPizza live en Render; `docker-compose` del repo como fallback local si Render está dormido.
+- **Selectores:** jerarquía `getByRole` > `getByLabel`/`getByText` > `getByTestId` > CSS > XPath.
+- **Paralelismo:** `fullyParallel: true` con data isolation (`uniqueEmail`/`uniqueOrderId`).
+- **Deploy:** OmniPizza live en Render (backend con cold start ~30-40s).
 
-➡️ Empieza por el [Módulo 1 — Visión General](./modulo-01-vision-general/).
+➡️ Empieza por el [Módulo 1 — Smoke feo](./modulo-01-smoke-feo/).
