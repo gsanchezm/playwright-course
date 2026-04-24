@@ -1,0 +1,67 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.project }} / shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [ui-chromium, ui-firefox, ui-webkit, api]
+        shard: [1, 2]
+        exclude:
+          # api no se beneficia de browsers ni shardear mucho
+          - project: api
+            shard: 2
+
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_URL: ${{ secrets.API_URL }}
+      TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      DEFAULT_COUNTRY: MX
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run tests
+        working-directory: playwright-course
+        run: pnpm exec playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}-shard${{ matrix.shard }}
+          path: playwright-course/playwright-report
+          retention-days: 7
+
+      - name: Upload traces and videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.project }}-shard${{ matrix.shard }}
+          path: playwright-course/test-results
+          retention-days: 7
