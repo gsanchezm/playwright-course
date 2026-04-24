@@ -5,4 +5,5 @@ node_modules/
 /playwright/.cache/
 .env
 .env.local
+.auth/
 .DS_Store
