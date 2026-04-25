@@ -71,7 +71,7 @@ export default function TypescriptProgress() {
             id="avances-typescript-title"
             className="mt-4 max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight text-qa-text sm:text-4xl"
           >
-            Ejercicios publicados: Hello World y Tipos básicos.
+            Ejercicios publicados: Hello World, Tipos, Funciones, Objetos y Clases (POM).
           </h2>
           <p className="mt-4 max-w-2xl font-sans text-lg leading-relaxed text-qa-muted">
             Código real del repositorio. Navega entre los ejercicios disponibles

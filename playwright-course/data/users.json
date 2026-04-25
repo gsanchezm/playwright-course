@@ -1,0 +1,32 @@
+[
+  {
+    "username": "standard_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario estándar para flujos happy path"
+  },
+  {
+    "username": "admin_user",
+    "password": "pizza123",
+    "role": "admin",
+    "description": "Usuario con permisos administrativos"
+  },
+  {
+    "username": "locked_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario bloqueado — útil para validar login negativo"
+  },
+  {
+    "username": "problem_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario con bugs visuales intencionales"
+  },
+  {
+    "username": "performance_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que tarda más en cargar — prueba de timeouts"
+  }
+]

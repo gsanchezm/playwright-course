@@ -1,79 +1,84 @@
-import { defineConfig, devices } from '@playwright/test';
+// ============================================================
+// playwright.config.ts — Configuración maestra del framework
+// ============================================================
+// Analogía QA: este archivo es el "master test plan" — define
+// ambientes (projects), precondiciones (setup dependency),
+// timeouts, reintentos, reporteo y artefactos para TODA la suite.
+// ============================================================
 
-/**
- * Configuración de Playwright para el curso.
- *
- * Referencia oficial: https://playwright.dev/docs/test-configuration
- *
- * Analogía QA: Este archivo es como el "archivo maestro de configuración"
- * de cualquier herramienta de testing (como settings.xml en Maven, o
- * conftest.py en pytest). Define valores por defecto para TODO el suite:
- * navegadores, timeouts, reintentos, reportes, etc.
- */
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
+
+const STORAGE_STATE = ".auth/user.json";
+
 export default defineConfig({
   // --- Dónde buscar los tests ---
-  // Playwright escaneará recursivamente todos los archivos *.spec.ts
-  // dentro de las carpetas modulo-*.
-  testDir: '.',
-  testMatch: /modulo-.*\/.*\.spec\.ts/,
+  testDir: ".",
+  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
 
-  // --- Configuración global de ejecución ---
-  fullyParallel: true,          // Corre archivos en paralelo
-  forbidOnly: !!process.env.CI, // En CI falla si alguien dejó un .only por error
-  retries: process.env.CI ? 2 : 0, // Reintenta 2 veces en CI, 0 local
-  workers: process.env.CI ? 1 : undefined, // 1 worker en CI para logs limpios
+  // --- Paralelismo y reintentos ---
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
 
-  // Timeout por test. OmniPizza vive en Render free tier: la primera
-  // navegación al día puede tardar 30-40s porque el servicio está dormido.
-  // 60s da margen suficiente para el cold start sin ocultar tests reales lentos.
+  // Timeout generoso para cold start de Render
   timeout: 60_000,
+  expect: { timeout: 10_000 },
 
-  // --- Reportes ---
-  // Varios reporters a la vez: HTML para humanos + lista para terminal
-  reporter: [
-    ['html', { open: 'never' }],
-    ['list'],
-  ],
+  // --- Reporteo ---
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }], ["junit", { outputFile: "results.xml" }]]
+    : [["html", { open: "never" }], ["list"]],
 
-  // --- Opciones globales de cada test ---
+  // --- Defaults para todos los projects ---
   use: {
-    // URL base: se usa con page.goto('/') sin tener que repetir el dominio.
-    // Todo el curso gira alrededor de OmniPizza (https://github.com/gsanchezm/OmniPizza).
-    baseURL: 'https://omnipizza-frontend.onrender.com',
-
-    // Trazas: útiles para depurar tests que fallan en CI.
-    // 'on-first-retry' = solo grabar en el primer reintento.
-    trace: 'on-first-retry',
-
-    // Screenshot solo cuando falla.
-    screenshot: 'only-on-failure',
-
-    // Video solo cuando falla.
-    video: 'retain-on-failure',
-
-    // Timeouts específicos de acción y navegación (cold start de Render).
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
   },
 
-  // --- Proyectos: correr los mismos tests en varios navegadores ---
+  // --- Projects ---
+  // 1. `setup` corre primero (login vía API, persiste storageState).
+  // 2. Los `ui-*` dependen de `setup` y heredan el storageState.
+  // 3. `api` y `anonymous` NO heredan storageState (cookies de UI
+  //    no deben contaminar tests de API ni flujos negativos).
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "setup",
+      testMatch: /tests\/setup\/.*\.setup\.ts/,
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: "ui-chromium",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
     },
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: "ui-firefox",
+      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
     },
-    // Emulación móvil — útil para el módulo 3
     {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
+      name: "ui-webkit",
+      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+    },
+    {
+      name: "api",
+      use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
+    },
+    {
+      // Para tests de login negativo u otros flujos anónimos
+      name: "anonymous",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /tests\/.*\.anon\.spec\.ts/,
     },
   ],
 });
