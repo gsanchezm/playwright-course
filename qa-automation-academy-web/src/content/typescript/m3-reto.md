@@ -89,4 +89,4 @@ Unknown error
 
 ---
 
-⬅️ Anterior: [3.5 funciones void](/docs/typescript/m3-void-functions)
+⬅️ Anterior: [3.5 funciones void](/docs/typescript/m3-void-functions) · ➡️ Siguiente: [4.1 objeto básico](/docs/typescript/m4-basic-object)
