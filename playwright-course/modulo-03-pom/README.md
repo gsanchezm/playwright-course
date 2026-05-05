@@ -1,6 +1,6 @@
 # Módulo 03 — Refactor a POM (OOP incremental)
 
-**Duración estimada:** 50-60 min
+**Duración estimada:** 80-105 min (incluye dos *Git breaks* — branches y conflictos)
 **Pieza que suma al framework:** `pages/BasePage.ts` + `LoginPage.ts` + `CatalogPage.ts` + `CheckoutPage.ts`. El spec de M02 se refactoriza y se nota cuánto se limpia.
 
 ---
@@ -85,3 +85,117 @@ pnpm m3
 pnpm typecheck                                   # la herencia introduce errores sutiles
 pnpm exec playwright test --reporter=list        # output compacto
 ```
+
+---
+
+## 🌿 Git break — Refactoriza en una rama (no en `main`)
+
+Vas a tocar varios archivos a la vez (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`). Esto es **el momento perfecto** para una rama dedicada: si el refactor sale mal, descartas la rama y `main` queda intacto.
+
+### El flujo
+
+```bash
+# 1. Asegúrate de estar en main al día
+$ git switch main
+$ git pull            # sólo si ya tienes remoto configurado
+
+# 2. Crea tu rama de feature
+$ git switch -c feature/m03-pom
+
+# 3. Trabaja, commitea por pasos
+$ git add pages/BasePage.ts
+$ git commit -m "refactor: add BasePage with shared helpers"
+
+$ git add pages/LoginPage.ts pages/CatalogPage.ts
+$ git commit -m "refactor: extract Login and Catalog Page Objects"
+
+# 4. Cuando el refactor está listo, vuelve a main y mergea
+$ git switch main
+$ git merge feature/m03-pom
+
+# 5. Borra la rama ya mergeada
+$ git branch -d feature/m03-pom
+```
+
+### Convención de nombres de rama
+
+| Prefijo | Uso |
+|---|---|
+| `feature/` | Nueva capacidad (POM, fixture, test) |
+| `fix/` | Arreglar un test flaky o bug del framework |
+| `chore/` | Upgrade de dependencias, limpieza |
+| `refactor/` | Reestructurar sin cambiar comportamiento |
+
+### Fast-forward vs merge commit
+
+Cuando `main` no tiene commits nuevos desde que creaste tu rama, Git hace **fast-forward** (avanza el puntero, sin commit extra). Si `main` avanzó (porque alguien más mergeó), Git crea un **merge commit** con dos padres. Ambos están bien — sólo es bueno saber qué estás viendo cuando lees `git log --graph`.
+
+---
+
+## ⚔️ Git break — Resolver un conflicto
+
+Imagina que tú estás en `feature/m03-pom` y cambiaste el locator del input de email en `LoginPage`:
+
+```typescript
+// Tu cambio
+get emailInput() { return this.page.getByLabel('Correo'); }
+```
+
+Mientras tanto, una compañera ya mergeó otro cambio al mismo método en `main`:
+
+```typescript
+// El cambio en main que llegó primero
+get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
+```
+
+Cuando intentas mergear, Git no puede decidir y te avisa:
+
+```bash
+$ git switch main
+$ git merge feature/m03-pom
+Auto-merging pages/LoginPage.ts
+CONFLICT (content): Merge conflict in pages/LoginPage.ts
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+### Cómo se ve el archivo en conflicto
+
+```typescript
+export class LoginPage extends BasePage {
+<<<<<<< HEAD
+  get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
+=======
+  get emailInput() { return this.page.getByLabel('Correo'); }
+>>>>>>> feature/m03-pom
+}
+```
+
+- `<<<<<<< HEAD` = lo que está en `main` ahora.
+- `=======` = separador.
+- `>>>>>>> feature/m03-pom` = lo que trae tu rama.
+
+### Cómo lo resuelves
+
+1. Decide manualmente cuál se queda (o combinas ambos).
+2. **Borra los marcadores** (`<<<<<<<`, `=======`, `>>>>>>>`).
+3. Marca el archivo como resuelto y termina el merge:
+
+```bash
+$ git add pages/LoginPage.ts
+$ git commit                # abre el editor con el mensaje pre-escrito; guarda y cierra
+```
+
+### Si te arrepientes
+
+```bash
+$ git merge --abort
+```
+
+Esto regresa el repo al estado previo, como si el merge nunca hubiera pasado.
+
+> 💡 **VS Code** tiene botones inline **Accept Current**, **Accept Incoming**, **Accept Both** sobre cada bloque en conflicto. Úsalos para evitar errores manuales.
+
+---
+
+> 📚 **Profundización opcional:** [Conceptos de ramas](../../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md) · [Flujo feature-branch detallado](../../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md) · [Tipos de merge](../../git-github-course/modulo-04-ramas-y-merge/04-merge.md) · [Conflictos avanzados](../../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md) · [Workflows de equipo y rebase](../../git-github-course/modulo-05-workflows-rebase/)
+

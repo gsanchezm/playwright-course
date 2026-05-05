@@ -1,8 +1,8 @@
 # Curso de Playwright para QA Automation — OmniPizza (v3)
 
-Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pasaron por los cursos de [TypeScript](../typescript-qa-course/) y de [Git/GitHub](../git-github-course/).
+Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pasaron por el curso de [TypeScript](../typescript-qa-course/). **Git/GitHub está integrado aquí** — este curso es autónomo: no necesitas hacer otro curso antes.
 
-**Filosofía v3 — arquitectura incremental:** cada módulo **añade una capa** al framework. Los conceptos de TS/Playwright entran *just-in-time* cuando se necesitan, no como bloques teóricos sueltos. Al terminar M06 tienes un framework E2E + API producción-grade.
+**Filosofía v3 — arquitectura incremental:** cada módulo **añade una capa** al framework. Los conceptos de TS / Playwright / Git entran *just-in-time* cuando se necesitan, no como bloques teóricos sueltos. Al terminar M06 tienes un framework E2E + API producción-grade y un flujo Git/GitHub real (commits, branches, PRs, CI).
 
 | Aspecto | Valor |
 |---|---|
@@ -12,22 +12,33 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | Stack | React + Vite (front), FastAPI (back) |
 | Auth | JWT con usuarios deterministas |
 | Mercados | MX / US / CH / JP |
-| Duración | 4.5 – 6 horas, 6 módulos |
+| Duración | 5.5 – 7 horas, 7 módulos (M00 + 6) |
 
 > ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M04) hace el warmup automático.
 
 ---
 
-## Los 6 módulos
+## Los 7 módulos
 
 | # | Módulo | Pieza que añade al framework |
 |---|---------|-------------|
+| 0 | [Git esencial](./modulo-00-git-esencial/) | Config + `.gitignore` + ciclo `add`/`commit` + `log` (versión condensada) |
 | 1 | [Smoke feo](./modulo-01-smoke-feo/) | `ejemplo.spec.ts` plano + `.env` + `dotenv` |
 | 2 | [Locators + Data tipada](./modulo-02-locators-data/) | `types/*` + `data/*.json` + `test.each()` |
-| 3 | [POM incremental](./modulo-03-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout |
-| 4 | [Setup project + Fixtures](./modulo-04-setup-fixtures/) | `tests/setup/auth.setup.ts` + `fixtures/` + `helpers/unique-data.ts` + `page.route()` |
+| 3 | [POM incremental](./modulo-03-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout · *Git break:* feature branches + conflictos |
+| 4 | [Setup project + Fixtures](./modulo-04-setup-fixtures/) | `tests/setup/auth.setup.ts` + `fixtures/` + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR + deshacer cambios |
 | 5 | [API Layer](./modulo-05-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
 | 6 | [CI/CD + Trace Viewer](./modulo-06-ci-debugging/) | `.github/workflows/playwright.yml` con matrix por browser |
+
+### Mapa de Git embebido
+
+| Tema | Dónde se enseña |
+|---|---|
+| Identidad, 3 estados, init/add/commit, `.gitignore`, log básico | [M00](./modulo-00-git-esencial/) |
+| Feature branches, merge fast-forward / 3-way, conflictos | [M03 Git break](./modulo-03-pom/#-git-break--refactoriza-en-una-rama-no-en-main) |
+| Push, PR, code review, deshacer cambios (`restore`/`revert`/`reflog`) | [M04 Git break](./modulo-04-setup-fixtures/#-git-break--sube-tu-trabajo-a-github-y-abre-un-pr) |
+| GitHub Actions matrix CI, `secrets.*`, artefactos, traces | [M06](./modulo-06-ci-debugging/) |
+| Workflows de equipo, rebase interactivo, tags, aliases, branch protection | [`git-github-course/`](../git-github-course/) (referencia profunda, opcional) |
 
 ### Apéndices opcionales (fuera de las 4-6 h)
 
@@ -68,7 +79,7 @@ playwright-course/
 - **pnpm** 10+ (`npm install -g pnpm`).
 - VS Code con la extensión oficial **Playwright Test for VSCode**.
 - GitHub CLI (`gh`) para el módulo M06.
-- Haber completado [TypeScript](../typescript-qa-course/) y [Git/GitHub](../git-github-course/).
+- Recomendado: haber completado [TypeScript para QA](../typescript-qa-course/). Git/GitHub se enseña embebido aquí (M00 + *Git breaks* en M03/M04); el [curso completo de Git/GitHub](../git-github-course/) es referencia profunda opcional.
 
 ## Setup inicial
 
@@ -88,6 +99,7 @@ cp .env.example .env                   # .env NO se commitea
 pnpm test
 
 # Un módulo específico
+# M00 — Git esencial: sólo Markdown, sin script (lee modulo-00-git-esencial/README.md)
 pnpm m1   # M01 — Smoke feo
 pnpm m2   # M02 — Locators + Data
 pnpm m3   # M03 — POM

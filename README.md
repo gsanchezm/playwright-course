@@ -12,9 +12,9 @@ Monorepo con todos los cursos prácticos para Ingenieros de QA que están migran
 |---|---------|------|-------------|
 | 0 | [00-setup/](./00-setup/) | Setup | Instalación de Node.js, pnpm, Git, VS Code, GitHub, Playwright (con navegadores) y herramientas de IA opcionales. **Empieza aquí.** |
 | 1 | [typescript-qa-course/](./typescript-qa-course/) | Curso | TypeScript desde cero con analogías de QA. 6 módulos. ~6 h. |
-| 2 | [git-github-course/](./git-github-course/) | Curso | Git + GitHub para automatizadores y equipos de QA. 6 módulos. ~8 h. |
-| 3 | [playwright-course/](./playwright-course/) | Curso | Playwright + TypeScript: anotaciones, locators, parametrización, reports, API, POM e IA. 11 módulos. ~12 h. |
-| 4 | [qa-automation-academy-web/](./qa-automation-academy-web/) | Landing | Web pública (React + Vite + Tailwind) que presenta los 3 cursos como rutas. Hosteada en Render. |
+| 2 | [playwright-course/](./playwright-course/) | Curso | Playwright + TypeScript con **Git/GitHub esencial integrado** (M00 + Git breaks en M03/M04). 7 módulos. ~5.5–7 h. |
+| 3 | [git-github-course/](./git-github-course/) | Curso (opcional) | Git + GitHub completo para profundizar: workflows de equipo, rebase interactivo, tags, branch protection. 6 módulos. ~8 h. |
+| 4 | [qa-automation-academy-web/](./qa-automation-academy-web/) | Landing | Web pública (React + Vite + Tailwind) que presenta los cursos como rutas. Hosteada en Render. |
 | 5 | [docs/](./docs/) | Docs | Documentación interna del proyecto y la landing. |
 
 ---
@@ -31,11 +31,11 @@ Monorepo con todos los cursos prácticos para Ingenieros de QA que están migran
 ## 🛤 Ruta recomendada
 
 ```
-00-setup  →  TypeScript  →  Git/GitHub  →  Playwright
- (75 min)     (~6 h)         (~8 h)         (~12 h)
+00-setup  →  TypeScript  →  Playwright (incluye Git esencial)  →  Git/GitHub completo (opcional)
+ (75 min)     (~6 h)         (~5.5–7 h)                            (~8 h)
 ```
 
-Cada curso es independiente, pero el orden recomendado tiene sentido: necesitas TypeScript para escribir tests, necesitas Git para colaborar en equipo, y Playwright unifica todo en automatización E2E real.
+El curso de Playwright es **autónomo**: trae Git/GitHub esencial integrado (M00 + Git breaks en M03/M04) para que lo puedas tomar sin haber hecho otro curso de Git. El [`git-github-course/`](./git-github-course/) sigue disponible como **referencia profunda opcional** para quien quiera dominar workflows de equipo, rebase interactivo y mantenimiento de proyectos.
 
 ---
 
@@ -82,40 +82,19 @@ pnpm tsx modulo-02-types/01-booleans.ts   # mini-clase específica
 
 ---
 
-## 🔀 Curso 2 — Git y GitHub para testers
-
-📂 [`git-github-course/`](./git-github-course/)
-
-| # | Módulo | Tema |
-|---|--------|------|
-| 1 | `modulo-01-introduccion-git` | ¿Qué es Git? Instalación y configuración inicial |
-| 2 | `modulo-02-git-basico` | init, clone, add, commit, log, .gitignore |
-| 3 | `modulo-03-undo-remotos-tags` | Deshacer cambios, remotos, tags, aliases |
-| 4 | `modulo-04-ramas-y-merge` | Branches, merge fast-forward y 3-way, conflictos |
-| 5 | `modulo-05-workflows-rebase` | Workflows de equipo, rebase interactivo |
-| 6 | `modulo-06-github` | Cuenta, PRs, code review, branch protection, releases |
-
-Cada módulo tiene `ejemplo.md` (teoría con analogías) y `reto.md` (ejercicios para resolver).
-
----
-
-## 🎭 Curso 3 — Playwright para automatización web
+## 🎭 Curso 2 — Playwright para automatización web (con Git esencial integrado)
 
 📂 [`playwright-course/`](./playwright-course/)
 
 | # | Módulo | Tema |
 |---|--------|------|
-| 1 | `modulo-01-vision-general` | ¿Qué es Playwright? Instalación + primer test |
-| 2 | `modulo-02-anotaciones` | `test`, `describe`, hooks, `skip/only/fixme`, tags |
-| 3 | `modulo-03-ejecuciones` | Headed/headless, UI mode, debug, por tag, proyectos |
-| 4 | `modulo-04-localizadores` | `getByRole`, `getByLabel`, `getByText`, `getByTestId`, filtros |
-| 5 | `modulo-05-parametrizacion` | Data-driven con `forEach`, JSON, env vars, fixtures |
-| 6 | `modulo-06-codegen` | Generador de código y Inspector |
-| 7 | `modulo-07-reports` | HTML, JUnit, Trace Viewer |
-| 8 | `modulo-08-repositorios` | Integración con GitHub Actions |
-| 9 | `modulo-09-api-testing` | GET/POST/PUT/DELETE, auth, UI + API combinados |
-| 10 | `modulo-10-pom` | Page Object Model con `BasePage` y herencia |
-| 11 | `modulo-11-ia` | GitHub Copilot, MCP, prompts efectivos para QA |
+| 0 | `modulo-00-git-esencial` | **Git esencial:** config, 3 estados, init/add/commit, `.gitignore`, log |
+| 1 | `modulo-01-smoke-feo` | Primer spec plano, `.env`, `dotenv` |
+| 2 | `modulo-02-locators-data` | Locators + data tipada + `test.each()` |
+| 3 | `modulo-03-pom` | POM incremental con `BasePage` · *Git break:* feature branches + conflictos |
+| 4 | `modulo-04-setup-fixtures` | Setup project + fixtures + `page.route()` · *Git break:* push/PR + deshacer cambios |
+| 5 | `modulo-05-api-layer` | API Layer con `BaseService` (abstract) |
+| 6 | `modulo-06-ci-debugging` | GitHub Actions matrix CI + Trace Viewer |
 
 **Comandos:**
 ```bash
@@ -123,8 +102,25 @@ cd playwright-course
 pnpm install
 pnpm exec playwright install
 pnpm test:ui   # ⭐ recomendado para aprender
-pnpm test modulo-04-localizadores/01-get-by-role.spec.ts   # un solo archivo
+pnpm m3        # un módulo específico
 ```
+
+---
+
+## 🔀 Curso opcional — Git y GitHub completo
+
+📂 [`git-github-course/`](./git-github-course/) — **referencia profunda**
+
+Lo esencial ya está dentro de Playwright (M00 + Git breaks). Toma este curso si quieres dominar workflows de equipo, rebase interactivo, tags, ramas remotas avanzadas, branch protection y mantenimiento de proyectos.
+
+| # | Módulo | Tema |
+|---|--------|------|
+| 1 | `modulo-01-introduccion-git` | ¿Qué es Git? Snapshots, 3 estados (versión extendida) |
+| 2 | `modulo-02-git-basico` | init, clone, add, commit, log, .gitignore (versión extendida) |
+| 3 | `modulo-03-undo-remotos-tags` | Deshacer, remotos, tags, aliases |
+| 4 | `modulo-04-ramas-y-merge` | Branches, merge, conflictos (versión extendida) |
+| 5 | `modulo-05-workflows-rebase` | Workflows de equipo + rebase interactivo |
+| 6 | `modulo-06-github` | Cuenta, PRs, code review, branch protection, releases |
 
 ---
 

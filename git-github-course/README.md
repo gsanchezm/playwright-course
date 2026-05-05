@@ -1,8 +1,10 @@
 # Curso de Git y GitHub para Automatizadores QA
 
+> 📌 **Material de referencia profunda (opcional).** Lo esencial de Git/GitHub está integrado dentro del [curso de Playwright](../playwright-course/) — específicamente en [`modulo-00-git-esencial/`](../playwright-course/modulo-00-git-esencial/) y en los *Git breaks* de M03 (branches + conflictos) y M04 (push, PRs, deshacer cambios). **Toma este curso completo si quieres profundizar** en workflows de equipo, rebase interactivo, tags, aliases, ramas remotas avanzadas y mantenimiento de proyectos abiertos.
+
 Curso express de **Git y GitHub** orientado a ingenieros de QA que están migrando hacia la automatización. Todos los ejemplos, analogías y ejercicios están enfocados en el día a día de un **automatizador** (alguien que mantiene un repo de tests con Playwright, Cypress, Selenium, etc.) y de un **equipo de automatización** (varios ingenieros colaborando en el mismo framework de pruebas).
 
-> Este curso es complementario al [curso de TypeScript para QA](../typescript-qa-course/) y al curso de Playwright (próximamente).
+> Este curso es complementario al [curso de TypeScript para QA](../typescript-qa-course/) y al [curso de Playwright](../playwright-course/).
 
 ---
 
