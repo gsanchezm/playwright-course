@@ -1,6 +1,29 @@
 # 3. `.gitignore` para Playwright
 
-`.gitignore` es un archivo que le dice a Git **qué archivos jamás debe trackear**. En un repo de Playwright, hay carpetas y archivos que **nunca** deben subirse:
+## ¿Qué es `.gitignore`?
+
+`.gitignore` es un archivo de texto plano (sin extensión) que vive en la raíz de tu repo y le dice a Git **qué archivos jamás debe trackear** — ni mostrarlos como "untracked", ni dejarlos entrar a un commit aunque hagas `git add .`.
+
+> 💡 **Analogía QA:** es la **lista negra** que mantiene tu equipo de testing — "estos endpoints jamás se prueban en producción", "estas credenciales jamás se loguean en consola". `.gitignore` es la lista negra del repo: tú decides qué nunca debe salir publicado.
+
+### Cómo se ve un repo *sin* `.gitignore` (anti-ejemplo real)
+
+```bash
+$ git status
+Untracked files:
+  node_modules/           ← 200 MB de dependencias, regenerables
+  .env                    ← 🔥 contiene API_TOKEN=sk-live-...
+  playwright-report/      ← 50 MB de HTML que cambia cada corrida
+  test-results/           ← screenshots, videos, traces
+  .auth/user.json         ← 🔥 sesión activa, equivale a estar logueado
+  .DS_Store               ← basura de macOS
+```
+
+Si haces `git add .` aquí, **commiteas todo eso al historial** — incluyendo secretos. Y aunque después los borres, **quedan en el historial para siempre** (Git no olvida fácil). Por eso `.gitignore` se crea **antes del primer commit**.
+
+---
+
+En un repo de Playwright, hay carpetas y archivos que **nunca** deben subirse:
 
 | No commitear | Por qué |
 |---|---|

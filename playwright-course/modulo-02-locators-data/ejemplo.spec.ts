@@ -9,17 +9,35 @@
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import type { Market } from "../types";
+import type { Market, User, Currency } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
-import type { User } from "../types";
 
 // Casting tipado del JSON: TypeScript verifica que el JSON cumple el contrato.
 const markets = marketsJson as Market[];
 const users = usersJson as User[];
 
-// Usuario estándar para todos los mercados (en M04 parametrizamos por rol).
-const standardUser = users.find((u) => u.username === "standard_user")!;
+// ────────────────────────────────────────────────────────
+// Guard clause: si el dataset no trae el usuario que el smoke
+// necesita, FALLAMOS RÁPIDO con un mensaje claro — en vez de
+// usar `!` y dejar que el test reviente más adelante con un
+// críptico "Cannot read property 'username' of undefined".
+// ────────────────────────────────────────────────────────
+const standardUser = users.find((u) => u.username === "standard_user");
+if (!standardUser) {
+  throw new Error(
+    'data/users.json no contiene un usuario con username "standard_user". ' +
+      "Revisa el seed de datos antes de correr M02.",
+  );
+}
+
+// Mapa currency → símbolo que esperamos ver renderizado en la UI.
+// Si añades un mercado nuevo, agrega su símbolo aquí (o déjalo
+// fuera para que la validación se SALTE en ese mercado).
+const currencySymbol: Partial<Record<Currency, string>> = {
+  MXN: "$",
+  JPY: "¥",
+};
 
 test.describe("Smoke parametrizado por mercado (M02)", () => {
   // test.each() — un mismo TC ejecutado N veces, una por dato.
@@ -49,14 +67,15 @@ test.describe("Smoke parametrizado por mercado (M02)", () => {
       }
 
       // --- PASO 4: Validación dinámica por mercado ---
-      // Condicional de negocio: la moneda mostrada debe coincidir con el mercado.
-      if (market.code === "MX") {
-        // En MX esperamos ver el símbolo $ (MXN)
-        await expect(page.locator("body")).toContainText("$");
-      } else if (market.code === "JP") {
-        // En JP esperamos el símbolo de yen
-        await expect(page.locator("body")).toContainText("¥");
-      }
+      // Reemplazamos la cadena `if / else if` por un LOOKUP MAP +
+      // GUARD CLAUSE (fast return): si el mercado no tiene símbolo
+      // definido, saltamos la aserción y seguimos. Cero ramificación,
+      // cero `else`, fácil de extender (basta añadir una entrada al
+      // mapa `currencySymbol`).
+      const symbol = currencySymbol[market.currency];
+      if (!symbol) return; // ← guard clause: nada que validar para esta currency
+
+      await expect(page.locator("body")).toContainText(symbol);
     });
   }
 });

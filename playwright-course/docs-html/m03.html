@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M03 · POM — Playwright Course</title>
+<style>:root { --accent: #7c3aed; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" >M02</a><a href="m03.html" class="active">M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
+      <li><a href="#ritual-de-apertura-reactivar-el-dolor">🔥 Ritual de apertura — &quot;reactivar el dolor&quot;</a></li>
+      <li><a href="#analogía">Analogía</a></li>
+      <li><a href="#conceptos-jit">Conceptos JIT</a></li>
+      <li><a href="#arquitectura-del-pom-en-el-framework">Arquitectura del POM en el framework</a></li>
+      <li><a href="#paso-a-paso">Paso a paso</a></li>
+      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#outcome-esperado">Outcome esperado</a></li>
+      <li><a href="#git-break-refactoriza-en-una-rama-no-en-main">🌿 Git break — Refactoriza en una rama (no en main)</a></li>
+      <li><a href="#git-break-resolver-un-conflicto">⚔️ Git break — Resolver un conflicto</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 03</span>
+      <h1>POM</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 60-90 min
+        <br><strong>Pieza que suma al framework:</strong> Page Object Model: BasePage + 3 páginas reales
+      </p>
+    </header>
+<p><strong>Duración estimada:</strong> 80-105 min (incluye dos <em>Git breaks</em> — branches y conflictos)
+<strong>Pieza que suma al framework:</strong> <code>pages/BasePage.ts</code> + <code>LoginPage.ts</code> + <code>CatalogPage.ts</code> + <code>CheckoutPage.ts</code>. El spec de M02 se refactoriza y se nota cuánto se limpia.</p>
+<hr>
+<h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
+<p>Aparece la carpeta <strong><code>pages/</code></strong> con el Page Object Model. Las clases <code>extends BasePage</code> para reutilizar helpers (testid, waitForUrl, etc.) sin duplicar código.</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">playwright-course/
+├── data/                          ← (M02)
+├── pages/                         ← 🆕 Page Object Model
+│   ├── BasePage.ts                ← 🆕 clase normal, helpers compartidos
+│   ├── LoginPage.ts               ← 🆕 extends BasePage, maneja "/"
+│   ├── CatalogPage.ts             ← 🆕 extends BasePage, maneja /catalog
+│   ├── CheckoutPage.ts            ← 🆕 extends BasePage, maneja /checkout
+│   └── index.ts                   ← 🆕 barrel export
+├── types/                         ← (M02)
+├── modulo-01-smoke-feo/           ← (sin cambios — el "antes")
+├── modulo-02-locators-data/       ← (sin cambios — el "menos antes")
+├── modulo-03-pom/                 ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 specs limpios usando los Page Objects
+│   └── reto.spec.ts               ← 🆕 E2E checkout completo con CheckoutPage
+└── ...</code></pre></div>
+<p><strong>Jerarquía de clases</strong> (cómo se relacionan los Pages):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">                BasePage
+              (clase normal,
+               helpers comunes)
+                   ▲
+        ┌──────────┼──────────┬─────────────┐
+        │          │          │             │
+   LoginPage   CatalogPage  CheckoutPage   (futuras)
+    "/"        /catalog     /checkout</code></pre></div>
+<p><strong>Flujo del dato en el spec</strong> (cómo se compone un test):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">data/markets.json ──► const markets = marketsJson as Market[]
+                                          │
+                                          ▼
+                       for (const market of markets) {
+                         const loginPage = new LoginPage(page)
+                         await loginPage.loginInMarket(user, market.code)
+                                                ▲
+                                                │
+                                  (encapsula los 5 pasos
+                                   inline de M02)
+                       }</code></pre></div>
+<p><strong>Qué NO existe todavía:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Carpeta</th>
+<th>Llega en</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tests/setup/</code>, <code>fixtures/</code>, <code>helpers/</code>, <code>.auth/</code></td>
+<td>M04</td>
+<td>Eliminar el login UI de cada test</td>
+</tr>
+<tr>
+<td><code>services/</code>, <code>tests/api/</code></td>
+<td>M05</td>
+<td>API testing</td>
+</tr>
+<tr>
+<td><code>.github/workflows/</code></td>
+<td>M06</td>
+<td>CI/CD</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> después de presentar la jerarquía, abre <code>pages/LoginPage.ts</code> y muestra que <strong>todos los <code>get</code> son <code>private</code></strong>. Eso significa que el test NO puede acceder al locator directamente — debe ir por la acción pública (<code>loginInMarket</code>). Ése es el corazón del POM.</p>
+</aside>
+<hr>
+<h2 id="ritual-de-apertura-quotreactivar-el-dolorquot">🔥 Ritual de apertura — &quot;reactivar el dolor&quot;</h2>
+<p><strong>Antes de tocar ninguna clase</strong>, haz este ejercicio:</p>
+<ol>
+<li>Abre <code>modulo-02-locators-data/ejemplo.spec.ts</code>.</li>
+<li>Marca con resaltador (o copia a un archivo aparte) <strong>cada línea que se repite</strong> entre el bucle de mercados: login, selección de mercado, validación de URL.</li>
+<li><strong>Cuenta las líneas duplicadas.</strong> Anota el número.</li>
+<li>Completa: <em>&quot;Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más.&quot;</em></li>
+</ol>
+<p>Sólo <strong>después</strong> de ese ejercicio abrimos <code>BasePage.ts</code>. El patrón se gana — no se impone.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> <strong>no te saltes el ritual</strong>. El POM se justifica por contraste — si los alumnos no sienten primero la duplicación, leen el POM como &quot;abstracción innecesaria&quot; y lo abandonan en su trabajo real.</p>
+</aside>
+<hr>
+<h2 id="analogía">Analogía</h2>
+<p>¿Recuerdas el dolor? Cada test nuevo repetía los mismos locators. El <strong>Page Object Model</strong> es la solución: crear un <strong>mapa reutilizable</strong> de cada pantalla, como un tester manual mantiene un documento <em>&quot;así se llega al módulo de login&quot;</em>. El código pasa de script a <strong>libro de recetas</strong>: <code>await loginPage.loginInMarket(user, &#39;MX&#39;)</code> se lee como user story, no como instrucción técnica.</p>
+<hr>
+<h2 id="conceptos-jit">Conceptos JIT</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Analogía QA</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>class BasePage</code></td>
+<td>Plantilla genérica: toda pantalla tiene helpers comunes</td>
+</tr>
+<tr>
+<td><code>extends BasePage</code></td>
+<td>Herencia: no copio, reutilizo</td>
+</tr>
+<tr>
+<td><code>super(page)</code></td>
+<td>Pasar el <code>page</code> al constructor del padre</td>
+</tr>
+<tr>
+<td><code>private get loginButton()</code></td>
+<td>Documentación interna del Page — el test nunca la toca</td>
+</tr>
+<tr>
+<td><code>public async loginAs(user)</code></td>
+<td>Acción de negocio — la interfaz pública del POM</td>
+</tr>
+<tr>
+<td><code>protected tid()</code></td>
+<td>Herramienta del equipo QA interno: la ven las hijas, no el cliente (test)</td>
+</tr>
+<tr>
+<td><code>readonly page: Page</code></td>
+<td>Tu pestaña del navegador: no cambia a mitad del TC</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--warn"><p><strong>⚠️ Nota sobre <code>abstract</code>:</strong> en este módulo <code>BasePage</code> es una clase <strong>normal</strong>, no abstracta. La palabra <code>abstract</code> aparecerá por primera vez en M05 cuando tengamos varios servicios que realmente la justifiquen. Por ahora la convención es humana: <strong>no instancies <code>BasePage</code> directamente — extiéndela</strong>.</p>
+</aside>
+<hr>
+<h2 id="arquitectura-del-pom-en-el-framework">Arquitectura del POM en el framework</h2>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">pages/
+├── BasePage.ts        ← clase normal, helpers compartidos (tid, waitForUrl, screenshot)
+├── LoginPage.ts       ← extiende BasePage, maneja /
+├── CatalogPage.ts     ← extiende BasePage, maneja /catalog
+└── CheckoutPage.ts    ← extiende BasePage, maneja /checkout (lo usas en el reto)</code></pre></div>
+<hr>
+<h2 id="paso-a-paso">Paso a paso</h2>
+<h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
+pnpm m2            # debe pasar los 4 mercados en verde
+pnpm typecheck     # debe pasar limpio
+ls types/ data/    # ambas carpetas existen (vienen de M02)</code></pre></div>
+<p>Si M02 no corre, vuelve al módulo anterior. Este módulo asume que la data tipada y los locators jerárquicos ya están internalizados.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> repite en voz alta los nombres de los Page Objects que vamos a usar — <code>LoginPage</code>, <code>CatalogPage</code>, <code>CheckoutPage</code> — y enséñales que viven en <code>pages/</code>. Lo van a oír cien veces en los próximos 90 minutos.</p>
+</aside>
+<hr>
+<h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
+<p><strong>M03 no añade paquetes npm nuevos.</strong> Las clases TS se compilan con el <code>typescript</code> que ya tienes.</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null
+<span class="hl-comment"># Si las 4 aparecen, listo. Si no, ejecuta:</span>
+<span class="hl-comment">#   pnpm install            (si package.json ya las lista)</span>
+<span class="hl-comment">#   pnpm add -D @playwright/test dotenv typescript @types/node  (si no)</span></code></pre></div>
+<hr>
+<h3 id="paso-2-crear-pages-el-page-object-model">Paso 2 — Crear <code>pages/</code> (el Page Object Model)</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p pages
+touch pages/BasePage.ts pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts</code></pre></div>
+<p><strong>Esqueleto mínimo</strong> de cada archivo (el alumno los llena durante el módulo):</p>
+<p>📄 <code>pages/BasePage.ts</code> — clase normal (NO abstract; eso llega en M05):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { Page, Locator } from "@playwright/test";
+
+export class BasePage {
+  constructor(protected readonly page: Page) {}
+
+  protected tid(testId: string): Locator {
+    return this.page.getByTestId(testId);
+  }
+
+  async waitForUrl(pattern: RegExp): Promise&lt;void&gt; {
+    await this.page.waitForURL(pattern);
+  }
+}</code></pre></div>
+<p>📄 <code>pages/LoginPage.ts</code> — primera clase concreta:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { BasePage } from "./BasePage";
+import type { CountryCode, User } from "../types";
+
+export class LoginPage extends BasePage {
+  private get usernameInput() { return this.tid("username-desktop"); }
+  private get passwordInput() { return this.tid("password-desktop"); }
+  private get signInButton()  { return this.tid("login-button-desktop"); }
+
+  async goto(): Promise&lt;void&gt; {
+    await this.page.goto("/");
+  }
+
+  async selectMarket(code: CountryCode): Promise&lt;void&gt; {
+    await this.tid(`market-${code}`).click();
+  }
+
+  async loginAs(user: User): Promise&lt;void&gt; {
+    await this.usernameInput.fill(user.username);
+    await this.passwordInput.fill(user.password);
+    await this.signInButton.click();
+  }
+
+  async loginInMarket(user: User, code: CountryCode): Promise&lt;void&gt; {
+    await this.goto();
+    await this.selectMarket(code);
+    await this.loginAs(user);
+  }
+}</code></pre></div>
+<p>📄 <code>pages/index.ts</code> (barrel — facilita el import en los specs):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export { BasePage } from "./BasePage";
+export { LoginPage } from "./LoginPage";
+export { CatalogPage } from "./CatalogPage";
+export { CheckoutPage } from "./CheckoutPage";</code></pre></div>
+<p>(Los esqueletos completos de <code>CatalogPage</code> y <code>CheckoutPage</code> los construirás guiado por el ejemplo y el reto.)</p>
+<hr>
+<h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m03">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M03)</h3>
+<p><strong>M03 no requiere cambios al config.</strong> Sigue siendo el mismo de M01/M02.</p>
+<p>Solo asegúrate de que <code>tsconfig.json</code> incluya <code>pages/</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "modulo-*/**/*.ts"
+  ]
+}</code></pre></div>
+<p>Añade <code>m3</code> a <code>package.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
+  "m3": "playwright test modulo-03-pom --project=ui-chromium"
+}</code></pre></div>
+<p>Tu <code>playwright.config.ts</code> debe seguir como en M02:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M03 (igual que M01/M02)
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
+
+export default defineConfig({
+  testDir: ".",
+  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  reporter: [["html", { open: "never" }], ["list"]],
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+  projects: [
+    { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+  ],
+});</code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Punto pedagógico:</strong> M03 es <strong>puro código</strong>, no toca configuración. Eso refuerza el principio del curso: <strong>la arquitectura crece donde el problema lo exige</strong>. Aquí el problema es duplicación → solución POM → archivos en <code>pages/</code>.</p>
+</aside>
+<hr>
+<h3 id="paso-4-hacer-el-ritual-5-10-min">Paso 4 — Hacer el ritual (5-10 min)</h3>
+<p>(Ver la sección &quot;Ritual de apertura&quot; arriba.) <strong>No saltes este paso.</strong> Es lo que justifica todo lo demás.</p>
+<hr>
+<h3 id="paso-5-lectura-guiada-de-pagesbasepagets">Paso 5 — Lectura guiada de <code>pages/BasePage.ts</code></h3>
+<p>Abre <code>pages/BasePage.ts</code> con el grupo y señala:</p>
+<ul>
+<li><code>protected readonly page: Page</code> — todas las hijas la heredan, los tests no la tocan.</li>
+<li><code>protected tid(name: string)</code> — método helper interno; las hijas lo usan para construir testids consistentes.</li>
+<li><code>async waitForUrl(...)</code> — la espera &quot;paciente&quot; centralizada (sin <code>sleep</code>).</li>
+<li><strong>Por qué no es <code>abstract</code>:</strong> porque por sí sola sigue siendo útil para crear hijas. En M05 vas a ver el caso donde <code>abstract</code> sí es indispensable.</li>
+</ul>
+<hr>
+<h3 id="paso-6-lectura-guiada-de-pagesloginpagets">Paso 6 — Lectura guiada de <code>pages/LoginPage.ts</code></h3>
+<p>Cosas que el facilitador debe señalar:</p>
+<ul>
+<li>Los <strong>locators son <code>private get</code></strong> — el test no debería poder hacer <code>loginPage.usernameInput.fill(...)</code>. Si lo necesitara, es señal de que el Page no expone una acción de alto nivel.</li>
+<li>Las <strong>acciones públicas</strong> se leen como user story:<ul>
+<li><code>loginAs(user)</code></li>
+<li><code>loginInMarket(user, code)</code></li>
+<li><code>selectMarket(code)</code></li>
+</ul>
+</li>
+<li>El método <code>loginInMarket</code> <strong>encapsula los 5 pasos</strong> que en M02 estaban inline en cada test.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre M02 <code>ejemplo.spec.ts</code> y M03 <code>ejemplo.spec.ts</code> lado a lado. Cuenta las líneas: ~18 por test en M02, ~3 en M03. Ese delta es el argumento del módulo.</p>
+</aside>
+<hr>
+<h3 id="paso-7-ejecutar-el-ejemplo">Paso 7 — Ejecutar el ejemplo</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Headless</span>
+pnpm m3
+
+<span class="hl-comment"># UI mode (recomendado para ver el flujo limpio)</span>
+pnpm test:ui</code></pre></div>
+<p><strong>Qué esperar:</strong></p>
+<ul>
+<li>Los <strong>mismos 4 tests</strong> que en M02 (uno por mercado) corren en verde.</li>
+<li>En el spec verás <code>loginPage.loginInMarket(user, &#39;MX&#39;)</code> en lugar del bloque de 5 líneas.</li>
+<li>Hay un segundo <code>describe</code> (&quot;uso de acciones granulares&quot;) que muestra que el POM <strong>no obliga</strong> a usar siempre el método de alto nivel — puedes encadenar <code>goto / selectMarket / loginAs</code> cuando un TC necesite control fino.</li>
+</ul>
+<hr>
+<h3 id="paso-8-comparativa-antesdespués-5-min">Paso 8 — Comparativa antes/después (5 min)</h3>
+<p>Pide al grupo abrir M02 y M03 simultáneamente y responder:</p>
+<ol>
+<li>¿Qué pasa si el campo <code>username-desktop</code> cambia de testid?<ul>
+<li>En M02: <strong>modificas 4 tests</strong>.</li>
+<li>En M03: <strong>modificas 1 línea</strong> en <code>LoginPage.ts</code>.</li>
+</ul>
+</li>
+<li>Si añadieras un nuevo flujo &quot;logout&quot; desde el catálogo, ¿dónde viviría?<ul>
+<li>Respuesta: como método público en <code>CatalogPage</code> (o un nuevo <code>LogoutPage</code> si fuera más grande).</li>
+</ul>
+</li>
+<li>¿Por qué los locators son <code>private</code>?<ul>
+<li>Para que el test <strong>no sepa</strong> cómo está el DOM por dentro. Eso es encapsulación.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="paso-9-resolver-el-reto">Paso 9 — Resolver el reto</h3>
+<p>Abre <code>reto.spec.ts</code>. Tu trabajo es completar un flujo E2E <strong>login → catálogo → addToCart → checkout → confirmación</strong> usando los Page Objects ya construidos.</p>
+<p><code>CheckoutPage</code> ya tiene métodos listos (revísalos primero):</p>
+<ul>
+<li><code>checkoutWith(market)</code> — atajo: fill + placeOrder.</li>
+<li><code>fillWithMarket(market)</code> — sólo rellena el form.</li>
+<li><code>placeOrder()</code> — submit.</li>
+<li><code>expectLoaded()</code> / <code>expectConfirmation()</code> / <code>expectTotalContains(symbol)</code>.</li>
+</ul>
+<p>Cada TODO del reto sigue el formato <strong>Qué hacer / Pista / Cómo verificar</strong>.</p>
+<hr>
+<h2 id="comandos-útiles">Comandos útiles</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m3                                          # corre M03
+pnpm typecheck                                   # ojo: la herencia introduce errores sutiles
+pnpm exec playwright test --reporter=list        # output compacto
+pnpm exec playwright show-report                 # último HTML report
+pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium</code></pre></div>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Hiciste el ritual y anotaste el número de líneas duplicadas en M02.</li>
+<li><input disabled="" type="checkbox"> Puedes explicar qué significa <code>private</code> / <code>protected</code> / <code>public</code> en este contexto.</li>
+<li><input disabled="" type="checkbox"> Entiendes por qué <code>readonly page: Page</code> evita bugs.</li>
+<li><input disabled="" type="checkbox"> Sabes extender <code>BasePage</code> para crear un Page nuevo.</li>
+<li><input disabled="" type="checkbox"> <strong>Puedes contar las líneas eliminadas</strong> vs M02.</li>
+<li><input disabled="" type="checkbox"> Completaste el reto E2E con <code>CheckoutPage</code>.</li>
+<li><input disabled="" type="checkbox"> Sabes que <code>abstract</code> llega en M05 — no lo introdujimos aquí.</li>
+</ul>
+<hr>
+<h2 id="git-break-refactoriza-en-una-rama-no-en-main">🌿 Git break — Refactoriza en una rama (no en <code>main</code>)</h2>
+<p>Vas a tocar varios archivos a la vez (<code>BasePage</code>, <code>LoginPage</code>, <code>CatalogPage</code>, <code>CheckoutPage</code>). Esto es <strong>el momento perfecto</strong> para una rama dedicada: si el refactor sale mal, descartas la rama y <code>main</code> queda intacto.</p>
+<h3 id="el-flujo">El flujo</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Asegúrate de estar en main al día</span>
+$ git switch main
+$ git pull            # sólo si ya tienes remoto configurado
+
+<span class="hl-comment"># 2. Crea tu rama de feature</span>
+$ git switch -c feature/m03-pom
+
+<span class="hl-comment"># 3. Trabaja, commitea por pasos</span>
+$ git add pages/BasePage.ts
+$ git commit -m "refactor: add BasePage with shared helpers"
+
+$ git add pages/LoginPage.ts pages/CatalogPage.ts
+$ git commit -m "refactor: extract Login and Catalog Page Objects"
+
+<span class="hl-comment"># 4. Cuando el refactor está listo, vuelve a main y mergea</span>
+$ git switch main
+$ git merge feature/m03-pom
+
+<span class="hl-comment"># 5. Borra la rama ya mergeada</span>
+$ git branch -d feature/m03-pom</code></pre></div>
+<h3 id="convención-de-nombres-de-rama">Convención de nombres de rama</h3>
+<table>
+<thead>
+<tr>
+<th>Prefijo</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>feature/</code></td>
+<td>Nueva capacidad (POM, fixture, test)</td>
+</tr>
+<tr>
+<td><code>fix/</code></td>
+<td>Arreglar un test flaky o bug del framework</td>
+</tr>
+<tr>
+<td><code>chore/</code></td>
+<td>Upgrade de dependencias, limpieza</td>
+</tr>
+<tr>
+<td><code>refactor/</code></td>
+<td>Reestructurar sin cambiar comportamiento</td>
+</tr>
+</tbody></table>
+<h3 id="fast-forward-vs-merge-commit">Fast-forward vs merge commit</h3>
+<p>Cuando <code>main</code> no tiene commits nuevos desde que creaste tu rama, Git hace <strong>fast-forward</strong> (avanza el puntero, sin commit extra). Si <code>main</code> avanzó (porque alguien más mergeó), Git crea un <strong>merge commit</strong> con dos padres. Ambos están bien — sólo es bueno saber qué estás viendo cuando lees <code>git log --graph</code>.</p>
+<hr>
+<h2 id="git-break-resolver-un-conflicto">⚔️ Git break — Resolver un conflicto</h2>
+<p>Imagina que tú estás en <code>feature/m03-pom</code> y cambiaste el locator del input de email en <code>LoginPage</code>:</p>
+<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// Tu cambio
+get emailInput() { return this.page.getByLabel('Correo'); }</code></pre></div>
+<p>Mientras tanto, una compañera ya mergeó otro cambio al mismo método en <code>main</code>:</p>
+<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// El cambio en main que llegó primero
+get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }</code></pre></div>
+<p>Cuando intentas mergear, Git no puede decidir y te avisa:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git switch main
+$ git merge feature/m03-pom
+Auto-merging pages/LoginPage.ts
+CONFLICT (content): Merge conflict in pages/LoginPage.ts
+Automatic merge failed; fix conflicts and then commit the result.</code></pre></div>
+<h3 id="cómo-se-ve-el-archivo-en-conflicto">Cómo se ve el archivo en conflicto</h3>
+<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">export class LoginPage extends BasePage {
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+  get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
+=======
+  get emailInput() { return this.page.getByLabel('Correo'); }
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/m03-pom
+}</code></pre></div>
+<ul>
+<li><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> = lo que está en <code>main</code> ahora.</li>
+<li><code>=======</code> = separador.</li>
+<li><code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/m03-pom</code> = lo que trae tu rama.</li>
+</ul>
+<h3 id="cómo-lo-resuelves">Cómo lo resuelves</h3>
+<ol>
+<li>Decide manualmente cuál se queda (o combinas ambos).</li>
+<li><strong>Borra los marcadores</strong> (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>).</li>
+<li>Marca el archivo como resuelto y termina el merge:</li>
+</ol>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add pages/LoginPage.ts
+$ git commit                # abre el editor con el mensaje pre-escrito; guarda y cierra</code></pre></div>
+<h3 id="si-te-arrepientes">Si te arrepientes</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git merge --abort</code></pre></div>
+<p>Esto regresa el repo al estado previo, como si el merge nunca hubiera pasado.</p>
+<aside class="callout callout--tip"><p>💡 <strong>VS Code</strong> tiene botones inline <strong>Accept Current</strong>, <strong>Accept Incoming</strong>, <strong>Accept Both</strong> sobre cada bloque en conflicto. Úsalos para evitar errores manuales.</p>
+</aside>
+<hr>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md">Conceptos de ramas</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md">Flujo feature-branch detallado</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/04-merge.md">Tipos de merge</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md">Conflictos avanzados</a> · <a href="../../git-github-course/modulo-05-workflows-rebase/">Workflows de equipo y rebase</a></p>
+</aside>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m02.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M02 · Locators & data</div></a>
+      <a href="m04.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M04 · Setup & fixtures</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

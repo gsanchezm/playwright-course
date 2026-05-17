@@ -1,39 +1,159 @@
 // ============================================================
-// M02 — Reto: añadir un 5º mercado sin tocar el spec
+// 🚩 Reto M02 — Añadir un 5º mercado sin tocar este spec
 // ============================================================
-// Objetivo:
-//   1. Añade un mercado "CA" (Canada, currency "CAD") en
-//      data/markets.json con datos válidos.
-//   2. Corre `pnpm m2` y verifica que el test extra se ejecuta
-//      automáticamente sin modificar este archivo.
-//   3. Si TypeScript grita, lee el error — el contrato Market
-//      (en types/omnipizza.d.ts) está rechazando tu cambio.
-//      ¿Por qué?
+// Objetivo pedagógico: comprobar que la parametrización funciona.
+// Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
+// automáticamente, sin tocar ni una línea de este archivo.
 //
-// (Pista: CountryCode y Currency son union types acotados.)
+// El "truco" es que `markets.json` está tipado por la interfaz
+// `Market` (en types/omnipizza.d.ts). Si rompes el contrato,
+// TypeScript te lo dice ANTES de correr.
+// ============================================================
+//
+// 🧰 Pre-requisitos:
+//   ✔ pnpm m2 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
+//   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
+//
+// ▶ Cómo correr SOLO este reto:
+//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts \
+//     --headed --project=ui-chromium
+//
+//   (o con UI mode:)
+//   pnpm test:ui
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import type { Market } from "../types";
+import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
+import usersJson from "../data/users.json";
 
 const markets = marketsJson as Market[];
+const users = usersJson as User[];
+const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("Reto M02 — parametrización extendida", () => {
+  // ────────────────────────────────────────────────────────
+  // TODO 0 — Antes de venir aquí, edita estos DOS archivos:
+  // ────────────────────────────────────────────────────────
+  //
+  //   A) data/markets.json — añade al final del array:
+  //        {
+  //          "code": "CA",
+  //          "fullName": "Canada",
+  //          "currency": "CAD"
+  //        }
+  //
+  //   B) types/omnipizza.d.ts — amplía los union types:
+  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
+  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+  //
+  //   Verifica:
+  //     pnpm typecheck            ← debe pasar en verde
+  //     pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --list
+  //                               ← debe listar 5 tests (uno por mercado)
+  //
+  //   💡 Si typecheck se queja con "Type '\"CA\"' is not assignable to
+  //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
+
   for (const market of markets) {
-    test(`Reto-${market.code} — catálogo carga en ${market.fullName}`, async ({ page }) => {
-      // TODO 1 — hacer login con el standard_user y seleccionar este mercado
+    test(`Reto-${market.code} — catálogo carga en ${market.fullName}`, async ({
+      page,
+    }) => {
+      // ────────────────────────────────────────────────────────
+      // TODO 1 — Login con standard_user en este mercado
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   Replicar el bloque de login que ya viste en `ejemplo.spec.ts`:
+      //     goto, click market, fill username, fill password,
+      //     click login-button.
+      //
+      // Pista:
+      //   await page.goto("/");
+      //   await page.getByTestId(`market-${market.code}`).click();
+      //   await page.getByTestId("username-desktop").fill(standardUser.username);
+      //   await page.getByTestId("password-desktop").fill(standardUser.password);
+      //   await page.getByTestId("login-button-desktop").click();
+      //
+      // Cómo verificar (UI mode):
+      //   Para el caso `Reto-CA`, te aterriza en `/catalog` igual que
+      //   con MX/US/CH/JP (OmniPizza no diferencia visualmente CA;
+      //   lo importante es que la parametrización funciona).
 
-      // TODO 2 — contar cuántas pizzas tiene el catálogo en este mercado
-      //          (usa locator.all() y .length)
 
-      // TODO 3 — validar que la currency que aparece en la UI
-      //          coincide con market.currency
+      // ────────────────────────────────────────────────────────
+      // TODO 2 — Validar que llegaste al catálogo
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   Aserción de URL: debe contener "/catalog".
+      //
+      // Pista:
+      //   await expect(page).toHaveURL(/\/catalog/);
 
-      // Nota: si añadiste "CA" a markets.json y TypeScript se queja,
-      // extiende el union type CountryCode/Currency en
-      // types/omnipizza.d.ts para aceptar "CA"/"CAD".
-      expect(market).toBeDefined();
+
+      // ────────────────────────────────────────────────────────
+      // TODO 3 — Contar las pizzas del catálogo en este mercado
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   1) Crear un locator que matchee `[data-testid^="pizza-card-"]`.
+      //   2) Esperar a que la primera sea visible (timeout 30s por
+      //      el cold start de Render).
+      //   3) Obtener el array con `.all()` y validar que `.length > 0`.
+      //
+      // Pista:
+      //   const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+      //   await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+      //   const all = await pizzaCards.all();
+      //   expect(all.length).toBeGreaterThan(0);
+      //
+      // Cómo verificar (UI mode):
+      //   Verás un grid de pizzas con varias tarjetas — cuenta visualmente
+      //   que coincide con lo que reporta `all.length` en el log.
+
+
+      // ────────────────────────────────────────────────────────
+      // TODO 4 — Validación DATA-DRIVEN de la currency
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   Mapear cada `market.currency` a su símbolo y aseverar que
+      //   el body de la página lo contiene. Esto reemplaza el
+      //   `if (market.code === "MX")` del ejemplo (que era hardcoded).
+      //
+      // Pista:
+      //   const symbol = {
+      //     MXN: "$",
+      //     USD: "$",
+      //     CHF: "Fr",
+      //     JPY: "¥",
+      //     CAD: "$",     // ← tu nuevo mercado
+      //   }[market.currency];
+      //   await expect(page.locator("body")).toContainText(symbol);
+      //
+      // Cómo verificar:
+      //   El test pasa para los 5 mercados. Si el símbolo no aparece,
+      //   revisa qué muestra OmniPizza para esa currency (puede usar
+      //   un código distinto como "CA$").
+
+
+      expect(market).toBeDefined(); // placeholder — quítalo cuando termines
     });
   }
 });
+
+// ============================================================
+// 📝 Reflexión final — responde mentalmente:
+// ============================================================
+//
+//   1. ¿Cuántos archivos tocaste para añadir un 5º mercado?
+//      (Esperado: 2 — markets.json y omnipizza.d.ts.
+//       Si tocaste el spec, perdiste el premio del data-driven.)
+//
+//   2. ¿Qué pasaría si OmniPizza añadiera 50 mercados nuevos?
+//      ¿Cuántas líneas de spec tendrías que escribir? (Esperado: 0.)
+//
+//   3. Si quitas `as Market[]` del cast, ¿qué hace TypeScript?
+//      Pruébalo en tu editor: el tipo se vuelve `any` y pierdes
+//      el autocompletado de `market.code`. Por eso el cast importa.
+//
+// 👉 En M03 vas a refactorizar este bloque de login a una clase
+//    POM: 5 líneas se convertirán en 1.
+// ============================================================

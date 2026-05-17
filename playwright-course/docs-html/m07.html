@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M07 · IA + Playwright MCP — Playwright Course</title>
+<style>:root { --accent: #c026d3; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" >M02</a><a href="m03.html" >M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" class="active">M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
+      <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
+      <li><a href="#qué-es-mcp-y-por-qué-importa-para-qa">¿Qué es MCP y por qué importa para QA?</a></li>
+      <li><a href="#qué-llm-elegir-comparativa-mayo-2026">¿Qué LLM elegir? Comparativa (mayo 2026)</a></li>
+      <li><a href="#setup-paso-a-paso">Setup paso a paso</a></li>
+      <li><a href="#verificación-el-primer-hola-navegador">Verificación: el primer &quot;hola navegador&quot;</a></li>
+      <li><a href="#casos-de-uso-prácticos-lo-que-vas-a-usar-en-el-día-a-día">Casos de uso prácticos (lo que vas a usar en el día a día)</a></li>
+      <li><a href="#buenas-prácticas-con-ia-playwright">Buenas prácticas con IA + Playwright</a></li>
+      <li><a href="#outcome-esperado">Outcome esperado</a></li>
+      <li><a href="#reto">Reto</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 07</span>
+      <h1>IA + Playwright MCP</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 45-60 min
+        <br><strong>Pieza que suma al framework:</strong> Asistente de IA que controla el browser real vía Playwright MCP
+      </p>
+    </header>
+<p><strong>Duración estimada:</strong> 45-60 min
+<strong>Pieza que suma al framework:</strong> integración de un <strong>asistente de IA</strong> (Claude / Copilot / ChatGPT / Gemini) capaz de <strong>controlar el navegador real</strong> vía Playwright MCP, para generar, depurar y mantener tests usando lenguaje natural. No agrega código nuevo al framework — agrega un <strong>copiloto operativo</strong> sobre la suite que ya tienes desde M01..M06.</p>
+<aside class="callout callout--warn"><p>⚠️ Este módulo es <strong>opcional</strong> y se hace mejor <em>después</em> de M06. Asume que ya entiendes locators, POM, fixtures, API layer y CI — porque la IA va a generar contra ese framework.</p>
+</aside>
+<hr>
+<h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
+<p>M07 <strong>no agrega archivos nuevos al framework de producción</strong> — agrega una <strong>capa de tooling</strong> (MCP server + cliente LLM) que vive <em>afuera</em> del repo o en archivos de configuración locales (<code>.vscode/mcp.json</code>, <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>, etc.).</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">TU MÁQUINA
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│   Cliente LLM                  Playwright MCP server         │
+│   ┌─────────────────┐          ┌──────────────────────┐      │
+│   │ Claude Desktop  │          │  @playwright/mcp     │      │
+│   │ VS Code Copilot │ ◄──MCP──►│  (npx, stdio o sse)  │      │
+│   │ ChatGPT app     │          │                      │      │
+│   │ Gemini CLI      │          │   40+ tools:         │      │
+│   └─────────────────┘          │   · navigate         │      │
+│           ▲                    │   · click            │      │
+│           │ "Genera un test    │   · fill             │      │
+│           │  de login para     │   · screenshot       │      │
+│           │  OmniPizza"        │   · evaluate         │      │
+│                                │   · pdf, trace, ...  │      │
+│                                └──────────┬───────────┘      │
+│                                           │                  │
+│                                           ▼                  │
+│                                    ┌─────────────┐           │
+│                                    │  Chromium   │           │
+│                                    │  Firefox    │           │
+│                                    │  WebKit     │           │
+│                                    └─────┬───────┘           │
+│                                          │ HTTP              │
+└──────────────────────────────────────────┼──────────────────┘
+                                           ▼
+                              https://omnipizza.onrender.com
+                              (la app real, sobre la que la
+                               IA explora y genera tests)</code></pre></div>
+<p><strong>Qué cambia en tu workflow:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Antes de M07</th>
+<th>Después de M07</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Escribes selectors a mano viendo DevTools</td>
+<td>Le pides a la IA <em>&quot;abre la página de login y dame los locators role-based&quot;</em></td>
+</tr>
+<tr>
+<td>Debug de tests flakey leyendo trace</td>
+<td>Le pegas el trace a la IA, te explica la causa probable</td>
+</tr>
+<tr>
+<td>Migración de tests de Cypress / Selenium</td>
+<td>Le pasas el test viejo + URL, te devuelve la versión en Playwright</td>
+</tr>
+<tr>
+<td>Mantenimiento cuando la UI cambia</td>
+<td>La IA navega la nueva UI y actualiza locators rotos</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="analogía-de-apertura">Analogía de apertura</h2>
+<p>Sin MCP, un LLM es un <strong>consultor remoto</strong>: le describes el bug por teléfono y él te dicta el fix sin ver la app. Útil, pero ciego.</p>
+<p>Con <strong>Playwright MCP</strong>, ese consultor <strong>se sienta a tu lado y abre tu navegador</strong>. Ve la página, hace clic, lee el DOM, captura un screenshot. Cuando le pides <em>&quot;genera un test que compre una pizza vegana&quot;</em>, primero <strong>navega</strong> OmniPizza, <strong>observa</strong> los botones reales, y <em>luego</em> escribe el <code>.spec.ts</code> con locators que sí existen.</p>
+<aside class="callout callout--big-idea"><p>🎯 <strong>En breve:</strong> MCP convierte al LLM de <strong>autocompletado</strong> a <strong>operador real del browser</strong>, con la misma API que usas tú en Playwright.</p>
+</aside>
+<hr>
+<h2 id="qué-es-mcp-y-por-qué-importa-para-qa">¿Qué es MCP y por qué importa para QA?</h2>
+<p><strong>MCP (Model Context Protocol)</strong> es un estándar abierto creado por Anthropic en 2024 que define <strong>cómo un LLM habla con herramientas externas</strong> — bases de datos, APIs, sistemas de archivos… o un browser.</p>
+<table>
+<thead>
+<tr>
+<th>MCP en 1 línea</th>
+<th>Analogía QA</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Un <strong>puerto USB-C universal</strong> entre LLMs y herramientas</td>
+<td>Como TestRail/Xray: el LLM no inventa, <strong>consulta la fuente de verdad</strong> y opera sobre ella</td>
+</tr>
+</tbody></table>
+<p><strong>Playwright MCP</strong> (<code>@playwright/mcp</code> de Microsoft) expone Playwright <strong>como tools MCP</strong>: <code>navigate</code>, <code>click</code>, <code>fill</code>, <code>screenshot</code>, <code>evaluate</code>, etc. El LLM invoca esas tools como funciones; cada llamada <strong>abre/manipula un browser real</strong> en tu máquina.</p>
+<aside class="callout callout--learn-more"><p>📚 Spec oficial: <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> · Repo: <a href="https://github.com/microsoft/playwright-mcp">microsoft/playwright-mcp</a></p>
+</aside>
+<hr>
+<h2 id="qué-llm-elegir-comparativa-mayo-2026">¿Qué LLM elegir? Comparativa (mayo 2026)</h2>
+<p>Los 4 ecosistemas grandes soportan MCP de forma nativa. Las diferencias están en <strong>dónde corres el cliente</strong>, <strong>cómo lo configuras</strong> y <strong>fortalezas para código</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>LLM</th>
+<th>Cliente MCP</th>
+<th>Setup</th>
+<th>Mejor para</th>
+<th>Costo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Claude (Anthropic)</strong></td>
+<td>Claude Desktop · Claude Code (CLI) · Cursor</td>
+<td><code>claude_desktop_config.json</code> con <code>mcpServers</code></td>
+<td>Razonamiento largo, refactor complejo, <strong>review de PRs</strong>. Es el cliente de referencia (Anthropic creó MCP).</td>
+<td>Pro ~$20/mes; API por tokens</td>
+</tr>
+<tr>
+<td><strong>GitHub Copilot</strong></td>
+<td>VS Code (Agent mode) · Visual Studio</td>
+<td><code>.vscode/mcp.json</code> con clave <code>servers</code></td>
+<td>Trabajo <strong>dentro del editor</strong>, autocompletado + agent en el mismo flujo. Ideal si ya pagas Copilot.</td>
+<td>$10–$19/mes</td>
+</tr>
+<tr>
+<td><strong>ChatGPT (OpenAI)</strong></td>
+<td>ChatGPT app (web/desktop) vía Connectors · Apps SDK</td>
+<td>Connectors UI o <code>mcp-config.json</code></td>
+<td>UI visual, plugins/Apps SDK, multiplataforma. Útil para <strong>demos a stakeholders no-técnicos</strong>.</td>
+<td>Plus $20/mes</td>
+</tr>
+<tr>
+<td><strong>Gemini (Google)</strong></td>
+<td>Gemini CLI · Vertex AI Agent Builder · Gemini API</td>
+<td><code>~/.gemini/settings.json</code> (CLI) o config de Vertex</td>
+<td>Integración con <strong>Google Workspace</strong> (Sheets de bug-tracking), contexto largo barato.</td>
+<td>Free tier generoso; CLI gratis</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Recomendación didáctica:</strong> para el curso usa <strong>Claude Code</strong> o <strong>VS Code + Copilot agent mode</strong> — los dos están maduros, viven en la terminal/editor (no requieren cambiar de ventana) y tienen los mejores docs para Playwright MCP.</p>
+</aside>
+<h3 id="cuál-elegir-según-tu-contexto">Cuál elegir según tu contexto</h3>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">¿Ya pagas Copilot y vives en VS Code?         →  Copilot Agent + MCP
+¿Quieres el flujo más estable para Playwright? →  Claude Code o Claude Desktop
+¿Stack 100% Google / GCP?                      →  Gemini CLI
+¿Necesitas mostrar la IA a stakeholders?       →  ChatGPT (UI más amigable)
+¿Apenas explorando, presupuesto 0?             →  Gemini CLI (free tier)</code></pre></div>
+<hr>
+<h2 id="setup-paso-a-paso">Setup paso a paso</h2>
+<h3 id="0-prerequisitos-comunes">0) Prerequisitos comunes</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ node --version        # ≥ 20
+$ pnpm --version        # ≥ 9
+$ npx --version</code></pre></div>
+<p>Playwright MCP se descarga con <code>npx</code>. <strong>No requiere instalación previa</strong> — la primera invocación baja el paquete.</p>
+<aside class="callout callout--warn"><p>⚠️ Tu repo de <code>playwright-course/</code> debe estar limpio y con <code>pnpm install</code> ya corrido (M01). El MCP server abre el browser <strong>independiente</strong> de tu suite, pero el LLM va a leer tus archivos de tests.</p>
+</aside>
+<h3 id="1-setup-para-claude-code-recomendado">1) Setup para Claude Code (recomendado)</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Asegúrate de tener Claude Code instalado</span>
+$ claude --version
+
+<span class="hl-comment"># 2. Agrega Playwright MCP al config global</span>
+$ claude mcp add playwright npx @playwright/mcp@latest
+
+<span class="hl-comment"># 3. Reinicia Claude Code y verifica</span>
+$ claude mcp list
+playwright    npx @playwright/mcp@latest    ✓ connected</code></pre></div>
+<p>Alternativa manual editando <code>~/.claude.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}</code></pre></div>
+<h3 id="2-setup-para-claude-desktop">2) Setup para Claude Desktop</h3>
+<p>Edita <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS) o <code>%APPDATA%\Claude\claude_desktop_config.json</code> (Windows):</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}</code></pre></div>
+<p>Cierra y reabre Claude Desktop. En el chat verás el icono 🔧 con las tools de Playwright disponibles.</p>
+<h3 id="3-setup-para-vs-code-copilot-agent">3) Setup para VS Code + Copilot Agent</h3>
+<p>Crea <code>.vscode/mcp.json</code> en la raíz de <code>playwright-course/</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "servers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}</code></pre></div>
+<p>Abre VS Code, activa <strong>Agent mode</strong> en el panel de Copilot Chat, y verifica que Playwright aparezca como tool disponible.</p>
+<h3 id="4-setup-para-gemini-cli">4) Setup para Gemini CLI</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ npm i -g @google/gemini-cli
+$ gemini auth login</code></pre></div>
+<p>Edita <code>~/.gemini/settings.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}</code></pre></div>
+<h3 id="5-setup-para-chatgpt">5) Setup para ChatGPT</h3>
+<p>ChatGPT no acepta un comando local arbitrario por seguridad. Las dos rutas viables son:</p>
+<ol>
+<li><strong>Connectors / Apps SDK</strong> — si tu org tiene OpenAI Business y publica el MCP server remoto.</li>
+<li><strong>MCP remoto via HTTP/SSE</strong> — corre <code>@playwright/mcp</code> con transport <code>--transport sse --port 9000</code> y conéctalo desde ChatGPT como custom connector.</li>
+</ol>
+<aside class="callout callout--tip"><p>💡 Si estás explorando solo, Claude Code, Claude Desktop, Copilot o Gemini CLI son más simples para empezar.</p>
+</aside>
+<hr>
+<h2 id="verificación-el-primer-quothola-navegadorquot">Verificación: el primer &quot;hola navegador&quot;</h2>
+<p>Con el cliente configurado, escribe este prompt:</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Abre https://omnipizza.onrender.com, espera a que cargue la home
+y dame una lista de los botones visibles en el header con sus
+atributos role + accessible name.</code></pre></div>
+<p>Lo que debe pasar:</p>
+<ol>
+<li>La IA invoca la tool <code>browser_navigate</code>.</li>
+<li>Se abre una ventana de Chromium (cabezas visible si no usaste <code>--headless</code>).</li>
+<li>Invoca <code>browser_snapshot</code> para leer el accessibility tree.</li>
+<li>Te devuelve la lista de botones con <code>getByRole(&#39;button&#39;, { name: &#39;...&#39; })</code> listos para pegar.</li>
+</ol>
+<aside class="callout callout--warn"><p>⚠️ <strong>Si OmniPizza está dormido</strong> (Render free tier), la primera carga tarda 30-40s — igual que en M01. La IA debe <strong>esperar el <code>load</code></strong>, no fallar al primer intento.</p>
+</aside>
+<hr>
+<h2 id="casos-de-uso-prácticos-lo-que-vas-a-usar-en-el-día-a-día">Casos de uso prácticos (lo que vas a usar en el día a día)</h2>
+<h3 id="caso-1-generar-un-test-desde-lenguaje-natural">Caso 1 — Generar un test desde lenguaje natural</h3>
+<p><strong>Prompt:</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Genera un test de Playwright que:
+1. Inicie sesión como user@test.com / Password123
+2. Agregue una Margherita grande al carrito
+3. Vaya al checkout
+4. Verifique que el total es mayor a 0
+
+Usa el patrón POM del proyecto (revisa pages/LoginPage.ts y pages/CatalogPage.ts).
+Pega el archivo en modulo-07-ia-mcp/sandbox/checkout.spec.ts.</code></pre></div>
+<p><strong>Qué hace la IA:</strong></p>
+<ul>
+<li>Lee tus POMs existentes (Claude/Copilot leen el filesystem).</li>
+<li>Navega OmniPizza, identifica selectors reales con MCP.</li>
+<li>Genera el spec usando <em>tus</em> convenciones, no plantillas genéricas.</li>
+</ul>
+<h3 id="caso-2-refactor-de-un-test-flaky">Caso 2 — Refactor de un test flaky</h3>
+<p><strong>Prompt:</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Este test falla 1 de cada 5 veces en CI con "locator timeout". Aquí está el código:
+
+&lt;&lt;pega el .spec.ts&gt;&gt;
+
+Aquí está el último trace de un fallo (test-results/.../trace.zip ya extraído).
+
+Encuentra la causa probable y dame el fix con web-first assertions.</code></pre></div>
+<h3 id="caso-3-migración-manual-automatizado">Caso 3 — Migración manual → automatizado</h3>
+<p><strong>Prompt:</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Tengo este caso de prueba manual:
+
+Título: "Aplicar cupón inválido"
+Pasos:
+1. Login como user@test.com
+2. Agregar 1 pizza al carrito
+3. Ir a checkout
+4. Aplicar cupón "INVALID123"
+5. Verificar mensaje de error rojo
+
+Conviértelo en un Playwright test. Antes de escribir, navega OmniPizza
+y confírmame los selectors reales del input de cupón y del mensaje de error.</code></pre></div>
+<h3 id="caso-4-generar-data-sintética-para-fixtures">Caso 4 — Generar data sintética para fixtures</h3>
+<p><strong>Prompt:</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Necesito 20 usuarios para data/users.json siguiendo este shape:
+
+{ email, password, market: 'us' | 'mx' | 'br', tier: 'free' | 'pro' }
+
+Distribución: 50% us, 30% mx, 20% br. 70% free, 30% pro.
+Genera el JSON listo para commitear.</code></pre></div>
+<p>(Para esto MCP no es estrictamente necesario, pero muestra la otra mitad del valor del LLM: ayudante para tareas tediosas alrededor del framework.)</p>
+<hr>
+<h2 id="buenas-prácticas-con-ia-playwright">Buenas prácticas con IA + Playwright</h2>
+<ol>
+<li><strong>No commitees código que la IA no haya probado.</strong> Si te genera un test, córrelo (<code>pnpm exec playwright test ...</code>) antes de hacer commit.</li>
+<li><strong>Pide locators role-based</strong>, no XPath ni CSS profundo. Tu prompt debe incluir <em>&quot;prefiere <code>getByRole</code>, <code>getByLabel</code>, <code>getByTestId</code>&quot;</em>.</li>
+<li><strong>Dale contexto del framework</strong>, no archivos sueltos. <em>&quot;Lee <code>playwright.config.ts</code> y <code>pages/BasePage.ts</code> antes de generar&quot;</em> funciona mejor que pegar fragmentos.</li>
+<li><strong>Limita el alcance.</strong> &quot;Genera 1 test para checkout&quot; → ✅. &quot;Genera la suite completa&quot; → ❌ (vas a obtener slop sin revisar).</li>
+<li><strong>Revisa el diff.</strong> La IA tiende a meter <code>waitForTimeout(3000)</code> y otros anti-patterns. Quítalos antes de mergear.</li>
+<li><strong>Cuidado con secrets.</strong> Nunca pegues <code>.env</code> real en el prompt. Usa placeholders (<code>&lt;API_TOKEN&gt;</code>).</li>
+<li><strong>MCP corre browsers reales.</strong> Si tu prompt dice &quot;borra todos los pedidos&quot;, la IA puede <em>de verdad</em> borrarlos. Apunta a <strong>staging</strong>, no producción.</li>
+</ol>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Tienes al menos <strong>un cliente MCP configurado</strong> (Claude, Copilot, ChatGPT o Gemini) y <code>mcp list</code> muestra <code>playwright ✓ connected</code>.</li>
+<li><input disabled="" type="checkbox"> Ejecutaste el prompt de verificación y la IA navegó OmniPizza con éxito.</li>
+<li><input disabled="" type="checkbox"> Generaste <strong>un test nuevo</strong> usando IA + MCP, lo corriste y pasó.</li>
+<li><input disabled="" type="checkbox"> Identificaste qué LLM se adapta mejor a tu flujo y por qué.</li>
+<li><input disabled="" type="checkbox"> Conoces los 7 anti-patterns para evitar al usar IA en tu suite.</li>
+</ul>
+<hr>
+<h2 id="reto">Reto</h2>
+<p>Resuelve <a href="../modulo-07-ia-mcp/reto.md"><code>reto.md</code></a> — generar un test E2E completo usando solo prompts, sin tocar código a mano.</p>
+<hr>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong></p>
+<ul>
+<li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP — README oficial</a> — lista completa de tools y opciones (<code>--isolated</code>, <code>--storage-state</code>, <code>--transport sse</code>)</li>
+<li><a href="https://modelcontextprotocol.io/specification">Model Context Protocol — Spec</a> — para entender cómo escribir tu propio MCP server (por ejemplo, exponer tu sistema de bug-tracking interno)</li>
+<li><a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — Building effective agents</a> — patrones para agentes que generan/mantienen tests</li>
+</ul>
+</aside>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m06.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M06 · CI/CD + debugging</div></a>
+      <span></span>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

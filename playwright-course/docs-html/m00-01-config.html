@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M00.1 · Configuración + 3 estados — Playwright Course</title>
+<style>:root { --accent: undefined; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" >M02</a><a href="m03.html" >M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#11-identidad-para-tus-commits">1.1 Identidad para tus commits</a></li>
+      <li><a href="#12-verificar-configuración">1.2 Verificar configuración</a></li>
+      <li><a href="#13-los-3-estados-de-un-archivo">1.3 Los 3 estados de un archivo</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 00.1</span>
+      <h1>Configuración + 3 estados</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 30-45 min
+        <br><strong>Pieza que suma al framework:</strong> Sublección del Módulo 00: Git esencial
+      </p>
+    </header>
+<h2 id="11-identidad-para-tus-commits">1.1 Identidad para tus commits</h2>
+<p>Cada commit queda firmado con tu nombre y correo. Configúralos <strong>antes</strong> del primer commit:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git config --global user.name "Tu Nombre"
+$ git config --global user.email "tu@correo.com"
+$ git config --global init.defaultBranch main</code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ Usa el mismo correo de tu cuenta de GitHub. De lo contrario, tus commits aparecen como &quot;autor desconocido&quot; en los Pull Requests.</p>
+</aside>
+<h2 id="12-verificar-configuración">1.2 Verificar configuración</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git config --list --global
+user.name=Tu Nombre
+user.email=tu@correo.com
+init.defaultBranch=main</code></pre></div>
+<p>Lo que pones con <code>--global</code> queda en <code>~/.gitconfig</code> y aplica a todos tus repos. Si trabajas con múltiples identidades (laboral / personal), puedes sobreescribir por repo con <code>--local</code> dentro de cada carpeta.</p>
+<h2 id="13-los-3-estados-de-un-archivo">1.3 Los 3 estados de un archivo</h2>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Idea grande:</strong> un archivo en Git <strong>siempre</strong> está en uno de 3 lugares. Saber en cuál estás es la mitad del trabajo — el resto son comandos para moverlo.</p>
+</aside>
+<p>Git mueve tus archivos por <strong>3 áreas</strong>:</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">  Working Directory   ───&gt;   Staging Area   ───&gt;   Repository (.git)
+   (lo que editas)             (sala de espera)         (historial)
+                  git add                    git commit</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Estado</th>
+<th>Qué es (en 1 línea)</th>
+<th>Cómo se llega</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Working</strong></td>
+<td>El archivo tal cual está en tu editor <em>ahora</em></td>
+<td>(editas con VS Code, vim, etc.)</td>
+</tr>
+<tr>
+<td><strong>Staging</strong></td>
+<td>Versión &quot;marcada&quot; para entrar al próximo commit</td>
+<td><code>git add &lt;archivo&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Repository</strong></td>
+<td>Versión guardada en el historial — ya no se pierde fácilmente</td>
+<td><code>git commit -m &quot;...&quot;</code></td>
+</tr>
+</tbody></table>
+<h3 id="ejemplo-paseado-un-test-viaja-por-los-3-estados">Ejemplo paseado: un test viaja por los 3 estados</h3>
+<p>Imagina que editas <code>login.spec.ts</code>:</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">1) Escribes el test en VS Code              →  Working
+   git status: "modified: login.spec.ts"
+
+2) Decides que ese cambio sí va al commit    →  Staging
+   git add login.spec.ts
+   git status: "Changes to be committed: login.spec.ts"
+
+3) Lo grabas en el historial                 →  Repository
+   git commit -m "test: add login happy path"
+   git status: "nothing to commit, working tree clean"</code></pre></div>
+<p>Después del paso 3, ese commit queda en <code>.git/</code> para siempre — aunque borres el archivo del editor, puedes recuperarlo.</p>
+<h3 id="por-qué-importa-el-staging">Por qué importa el staging</h3>
+<p>El staging es la <strong>sala de espera</strong> donde decides exactamente qué cambios entran al próximo commit. Si tocas 5 archivos pero sólo dos pertenecen a la misma feature, agregas sólo esos dos al staging y los commiteas juntos. Los otros tres quedan en working dir para un commit aparte.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Analogía QA — reporte de bugs:</strong></p>
+<ul>
+<li><em>Working</em> = bugs que detectas mientras pruebas, aún tienes la libreta abierta.</li>
+<li><em>Staging</em> = bugs ya validados y redactados que sí van al reporte final, pero el reporte todavía no se envía.</li>
+<li><em>Repository</em> = reporte enviado al equipo de desarrollo. Ya quedó registrado quién lo envió, cuándo y qué decía. &quot;Des-enviarlo&quot; implica un nuevo trámite, no se borra con <code>Ctrl+Z</code>.</li>
+</ul>
+</aside>
+<aside class="callout callout--warn"><p>⚠️ <strong>Confusión típica:</strong> &quot;ya guardé en VS Code, ¿por qué <code>git status</code> dice que tengo cambios sin commitear?&quot;. Porque guardar en el editor sólo afecta al <strong>Working Directory</strong>. Git necesita que pases por <code>add</code> (staging) y <code>commit</code> (repository) — son pasos distintos a propósito.</p>
+</aside>
+<hr>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-01-introduccion-git/06-primera-configuracion.md">Niveles de configuración (system / global / local)</a> · <a href="../git-github-course/modulo-01-introduccion-git/03-que-es-git.md">Snapshots vs deltas</a></p>
+</aside>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m00.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M00 · Git esencial</div></a>
+      <a href="m00-02-init-add-commit.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M00.2 · init, add, commit</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

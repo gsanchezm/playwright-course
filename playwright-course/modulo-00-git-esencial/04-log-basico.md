@@ -26,6 +26,26 @@ Cada commit muestra:
 
 > Sal del log con `q`. Avanza con `↓` o `Espacio`.
 
+### ¿Qué es un hash y para qué sirve?
+
+El hash (`a1b2c3d4e5f6...`) es una cadena de **40 caracteres hexadecimales** que Git genera para cada commit. Es **único e irrepetible** — equivale a la huella dactilar de ese commit.
+
+> 💡 **Analogía QA:** es el **ID de un ticket de Jira** (`QA-1234`). Cuando alguien te dice *"el bug que vimos en QA-1234"*, no necesita repetir el contexto — el ID apunta exactamente a ese ticket. En Git, cuando alguien te dice *"revierte el commit `a1b2c3d`"*, está señalando con precisión esa foto del proyecto.
+
+En la práctica casi siempre usas los **primeros 7 caracteres** (`a1b2c3d`); Git los reconoce mientras sean únicos en el repo.
+
+### Cómo leer `(HEAD -> main)`
+
+```
+commit a1b2c3d4...  (HEAD -> main)
+```
+
+- **`HEAD`** = "donde estás parado ahora". Es un puntero móvil que apunta al commit que estás viendo.
+- **`main`** = el nombre de tu rama (puntero a un commit).
+- **`HEAD -> main`** se lee: *"HEAD está apuntando a main, y main está en este commit"*. O sea, estás trabajando en `main` y el último commit de `main` es este.
+
+> 🎯 **En breve:** `HEAD` es como el cursor de tu editor — siempre marca dónde estás trabajando. `main` es el nombre de la rama. Cuando ambos coinciden en el mismo commit, lees `(HEAD -> main)`.
+
 ## 4.2 Versión compacta — la que más vas a usar
 
 ```bash

@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M00.3 · .gitignore para Playwright — Playwright Course</title>
+<style>:root { --accent: undefined; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" >M02</a><a href="m03.html" >M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#qué-es-gitignore">¿Qué es .gitignore?</a></li>
+      <li><a href="#31-crear-el-gitignore">3.1 Crear el .gitignore</a></li>
+      <li><a href="#32-verificar-que-funciona">3.2 Verificar que funciona</a></li>
+      <li><a href="#33-caso-típico-te-metiste-el-env-por-error">3.3 Caso típico: te metiste el .env por error</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 00.3</span>
+      <h1>.gitignore para Playwright</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 30-45 min
+        <br><strong>Pieza que suma al framework:</strong> Sublección del Módulo 00: Git esencial
+      </p>
+    </header>
+<h2 id="qué-es-gitignore">¿Qué es <code>.gitignore</code>?</h2>
+<p><code>.gitignore</code> es un archivo de texto plano (sin extensión) que vive en la raíz de tu repo y le dice a Git <strong>qué archivos jamás debe trackear</strong> — ni mostrarlos como &quot;untracked&quot;, ni dejarlos entrar a un commit aunque hagas <code>git add .</code>.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Analogía QA:</strong> es la <strong>lista negra</strong> que mantiene tu equipo de testing — &quot;estos endpoints jamás se prueban en producción&quot;, &quot;estas credenciales jamás se loguean en consola&quot;. <code>.gitignore</code> es la lista negra del repo: tú decides qué nunca debe salir publicado.</p>
+</aside>
+<h3 id="cómo-se-ve-un-repo-sin-gitignore-anti-ejemplo-real">Cómo se ve un repo <em>sin</em> <code>.gitignore</code> (anti-ejemplo real)</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git status
+Untracked files:
+  node_modules/           ← 200 MB de dependencias, regenerables
+  .env                    ← 🔥 contiene API_TOKEN=sk-live-...
+  playwright-report/      ← 50 MB de HTML que cambia cada corrida
+  test-results/           ← screenshots, videos, traces
+  .auth/user.json         ← 🔥 sesión activa, equivale a estar logueado
+  .DS_Store               ← basura de macOS</code></pre></div>
+<p>Si haces <code>git add .</code> aquí, <strong>commiteas todo eso al historial</strong> — incluyendo secretos. Y aunque después los borres, <strong>quedan en el historial para siempre</strong> (Git no olvida fácil). Por eso <code>.gitignore</code> se crea <strong>antes del primer commit</strong>.</p>
+<hr>
+<p>En un repo de Playwright, hay carpetas y archivos que <strong>nunca</strong> deben subirse:</p>
+<table>
+<thead>
+<tr>
+<th>No commitear</th>
+<th>Por qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>node_modules/</code></td>
+<td>Pesa cientos de MB; se reinstala con <code>pnpm install</code></td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>Contiene secretos (credenciales, tokens)</td>
+</tr>
+<tr>
+<td><code>.auth/</code></td>
+<td><code>storageState</code> con sesiones autenticadas</td>
+</tr>
+<tr>
+<td><code>playwright-report/</code></td>
+<td>HTML report que se regenera en cada corrida</td>
+</tr>
+<tr>
+<td><code>test-results/</code></td>
+<td>Screenshots, videos, traces de fallos</td>
+</tr>
+<tr>
+<td><code>blob-report/</code>, <code>traces/</code></td>
+<td>Artefactos intermedios</td>
+</tr>
+<tr>
+<td><code>*.log</code>, <code>.DS_Store</code></td>
+<td>Ruido del sistema operativo y procesos</td>
+</tr>
+</tbody></table>
+<h2 id="31-crear-el-gitignore">3.1 Crear el <code>.gitignore</code></h2>
+<p>En la <strong>raíz</strong> de tu repo, crea un archivo llamado <code>.gitignore</code> con este contenido (es el mismo que usa este curso):</p>
+<div class="code-block"><span class="code-lang">gitignore</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-gitignore"><span class="hl-comment"># Dependencias</span>
+node_modules/
+
+<span class="hl-comment"># Reportes y artefactos generados por Playwright</span>
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+traces/
+
+<span class="hl-comment"># Variables de entorno y secretos</span>
+.env
+.env.local
+.env.*.local
+
+<span class="hl-comment"># Sesiones autenticadas (storageState)</span>
+.auth/
+
+<span class="hl-comment"># Sistema operativo y editores</span>
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+<span class="hl-comment"># Logs</span>
+*.log</code></pre></div>
+<aside class="callout callout--tip"><p>💡 Compromete <code>.gitignore</code> en tu <strong>primer commit</strong>, antes de <code>pnpm install</code>. Si ya instalaste y <code>node_modules/</code> quedó trackeado, sácalo con: <code>git rm -r --cached node_modules/</code> y luego commitea.</p>
+</aside>
+<h2 id="32-verificar-que-funciona">3.2 Verificar que funciona</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git status
+On branch main
+nothing to commit, working tree clean</code></pre></div>
+<p>Si después de <code>pnpm install</code> ves esto (en lugar de <code>node_modules/</code> como untracked), tu <code>.gitignore</code> está bien configurado.</p>
+<h2 id="33-caso-típico-te-metiste-el-env-por-error">3.3 Caso típico: te metiste el <code>.env</code> por error</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add .env   # 🤦
+$ git status
+Changes to be committed:
+        new file:   .env</code></pre></div>
+<p>Sácalo del staging <strong>antes</strong> de commitear, sin perder el archivo:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git restore --staged .env</code></pre></div>
+<p>Si ya commiteaste y aún no pusheaste:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git rm --cached .env       # quita del repo, deja en disco
+$ git commit -m "chore: untrack .env"</code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ <strong>Si ya pusheaste un <code>.env</code> con secretos al remoto público, los secretos están comprometidos.</strong> Rotar credenciales inmediatamente. Borrar el commit del historial NO es suficiente — un fork pudo haberlo descargado.</p>
+</aside>
+<hr>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-02-git-basico/02-registrar-cambios.md">Casos avanzados de <code>.gitignore</code></a> · <a href="https://github.com/github/gitignore">Plantillas oficiales por lenguaje</a></p>
+</aside>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m00-02-init-add-commit.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M00.2 · init, add, commit</div></a>
+      <a href="m00-04-log.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M00.4 · git log básico</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

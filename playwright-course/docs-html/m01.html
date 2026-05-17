@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M01 · Smoke feo — Playwright Course</title>
+<style>:root { --accent: #d97706; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" class="active">M01</a><a href="m02.html" >M02</a><a href="m03.html" >M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
+      <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
+      <li><a href="#qué-aprenderás">¿Qué aprenderás?</a></li>
+      <li><a href="#conceptos-jit-con-analogía-qa">Conceptos JIT (con analogía QA)</a></li>
+      <li><a href="#paso-a-paso">Paso a paso</a></li>
+      <li><a href="#outcome-esperado">Outcome esperado</a></li>
+      <li><a href="#comandos-útiles-del-módulo">Comandos útiles del módulo</a></li>
+      <li><a href="#qué-viene-en-m02">¿Qué viene en M02?</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 01</span>
+      <h1>Smoke feo</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 60-90 min
+        <br><strong>Pieza que suma al framework:</strong> Primer test E2E sin abstracciones — sólo Playwright + OmniPizza
+      </p>
+    </header>
+<p><strong>Duración estimada:</strong> 45-60 min
+<strong>Pieza que suma al framework:</strong> <code>modulo-01-smoke-feo/ejemplo.spec.ts</code> plano, sin POM, sin fixtures, sin data-driven. <strong>Todo el dolor es deliberado.</strong></p>
+<hr>
+<h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
+<p>Este es el <strong>punto de partida del framework</strong>. Solo lo mínimo para que Playwright corra contra OmniPizza live:</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">playwright-course/
+├── .env                       ← 🆕 creas tú desde .env.example (gitignored)
+├── .env.example               ← 🆕 plantilla versionada de variables
+├── .gitignore                 ← excluye .env, .auth/, node_modules/, reportes
+├── package.json               ← scripts (pnpm m1…m6) + dotenv como dep
+├── playwright.config.ts       ← 🆕 import "dotenv/config" + baseURL + projects
+├── tsconfig.json
+└── modulo-01-smoke-feo/       ← 🆕 ESTE MÓDULO
+    ├── README.md
+    ├── ejemplo.spec.ts        ← 🆕 TC-001 login, TC-002 catálogo (con duplicación)
+    └── reto.spec.ts           ← 🆕 TC-003 filtrar por categoría "popular"</code></pre></div>
+<p><strong>Qué NO existe todavía</strong> (lo agregaremos en módulos siguientes):</p>
+<table>
+<thead>
+<tr>
+<th>Carpeta</th>
+<th>Llega en</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>data/</code>, <code>types/</code></td>
+<td>M02</td>
+<td>Datos tipados (mercados, usuarios)</td>
+</tr>
+<tr>
+<td><code>pages/</code></td>
+<td>M03</td>
+<td>Page Object Model</td>
+</tr>
+<tr>
+<td><code>tests/setup/</code>, <code>fixtures/</code>, <code>helpers/</code>, <code>.auth/</code></td>
+<td>M04</td>
+<td>Setup project + custom fixtures</td>
+</tr>
+<tr>
+<td><code>services/</code>, <code>tests/api/</code></td>
+<td>M05</td>
+<td>Capa de servicios para API testing</td>
+</tr>
+<tr>
+<td><code>.github/workflows/</code></td>
+<td>M06</td>
+<td>CI/CD en GitHub Actions</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> muestra esta tabla al inicio. Los alumnos suelen preguntar <em>&quot;¿y dónde van los Page Objects?&quot;</em> — esta tabla les da la respuesta: <strong>todavía no existen, y por eso vas a sentir el dolor</strong>.</p>
+</aside>
+<hr>
+<h2 id="analogía-de-apertura">Analogía de apertura</h2>
+<p>Vas a escribir tu primer caso de prueba automatizado <strong>como lo haría un tester manual copiando pasos en una hoja de Excel</strong>: todo en un bloque, locators inline, sin reutilización. Cuando escribas el segundo y tercer caso vas a sentir la duplicación en los dedos — <strong>esa sensación es el motor de los 5 módulos siguientes</strong>.</p>
+<hr>
+<h2 id="qué-aprenderás">¿Qué aprenderás?</h2>
+<ol>
+<li><strong>Setup mínimo:</strong> <code>playwright.config.ts</code>, <code>pnpm test</code>, UI mode.</li>
+<li><strong><code>dotenv</code> + <code>.env</code>:</strong> instalar la librería, crear el archivo y manejar secrets como un profesional desde el día 1.</li>
+<li><strong><code>test()</code> y <code>expect()</code></strong> — el TC y el resultado esperado.</li>
+<li><strong>Auto-waiting</strong> — Playwright es paciente; no usamos <code>sleep()</code>.</li>
+<li><strong><code>getByRole</code> vs <code>getByTestId</code></strong> — dos formas de localizar.</li>
+<li><strong>Workaround del cold start de Render</strong> — backend en free tier se duerme.</li>
+</ol>
+<hr>
+<h2 id="conceptos-jit-con-analogía-qa">Conceptos JIT (con analogía QA)</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Analogía</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>test(&#39;...&#39;, async ({ page }) =&gt; {...})</code></td>
+<td>Caso de prueba (TC-001) con sus pasos</td>
+</tr>
+<tr>
+<td><code>expect(locator).toBeVisible()</code></td>
+<td>Resultado esperado del TC documentado</td>
+</tr>
+<tr>
+<td><code>page.goto(&#39;/&#39;)</code></td>
+<td>Abrir el navegador en la URL inicial</td>
+</tr>
+<tr>
+<td><code>getByRole(&#39;button&#39;, { name: &#39;Login&#39; })</code></td>
+<td>Localizar como un lector de pantalla</td>
+</tr>
+<tr>
+<td><code>getByTestId(&#39;login-button&#39;)</code></td>
+<td>Localizar por el sticker que el dev puso</td>
+</tr>
+<tr>
+<td>Auto-waiting</td>
+<td>La paciencia del tester: espera a que cargue antes de clickear</td>
+</tr>
+<tr>
+<td><code>dotenv</code></td>
+<td>Librería npm que <strong>lee tu <code>.env</code> y mete sus valores en <code>process.env</code></strong></td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>La libreta personal del tester con URLs y passwords — <strong>NO se commitea</strong></td>
+</tr>
+<tr>
+<td>Cold start de Render</td>
+<td>El servidor de QA dormido: primer request tarda 30-40s</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="paso-a-paso">Paso a paso</h2>
+<h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
+<p>Antes de empezar, asegúrate de tener (revisa con <code>node -v</code> / <code>pnpm -v</code> / <code>git --version</code>):</p>
+<ul>
+<li><strong>Node.js 20.x</strong> (<code>node -v</code> → <code>v20.x.x</code>)</li>
+<li><strong>pnpm 9+</strong> (<code>pnpm -v</code> → <code>9.x.x</code> o superior)</li>
+<li><strong>Git</strong> instalado (<code>git --version</code>)</li>
+<li>Estar <strong>dentro de la carpeta del curso</strong>:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">cd playwright-course
+pwd   # debe terminar en /playwright-course</code></pre></div>
+</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> si alguien no tiene Node/pnpm, mándalo al módulo <a href="../../00-setup/"><code>00-setup/</code></a> del monorepo antes de continuar. No hagas troubleshooting de setup aquí.</p>
+</aside>
+<hr>
+<h3 id="paso-1-instalar-dependencias-incluye-dotenv">Paso 1 — Instalar dependencias (incluye <code>dotenv</code>)</h3>
+<p>Este módulo necesita <strong>4 paquetes</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Tipo</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@playwright/test</code></td>
+<td>dev</td>
+<td>El runner + librería de Playwright</td>
+</tr>
+<tr>
+<td><code>dotenv</code></td>
+<td>dev</td>
+<td>Lee <code>.env</code> y mete sus valores en <code>process.env</code></td>
+</tr>
+<tr>
+<td><code>typescript</code></td>
+<td>dev</td>
+<td>Compilador TS (lo usa <code>tsc --noEmit</code> y los IDEs)</td>
+</tr>
+<tr>
+<td><code>@types/node</code></td>
+<td>dev</td>
+<td>Tipos de Node (necesarios para <code>process.env</code>, <code>setTimeout</code>, etc)</td>
+</tr>
+</tbody></table>
+<h4 id="1a-verificar-si-ya-están-instaladas">1.A — Verificar si ya están instaladas</h4>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Comprueba qué está declarado en tu package.json</span>
+cat package.json | grep -E '"@playwright/test"|"dotenv"|"typescript"|"@types/node"'
+
+<span class="hl-comment"># Y qué está realmente resuelto en node_modules</span>
+pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null</code></pre></div>
+<p>Si las <strong>4 entradas aparecen</strong> con una versión: salta al paso 1.C.
+Si <strong>alguna falta</strong> (o no existe <code>package.json</code> aún): sigue con 1.B.</p>
+<h4 id="1b-bootstrap-desde-cero-si-empiezas-con-la-carpeta-vacía">1.B — Bootstrap desde cero (si empiezas con la carpeta vacía)</h4>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Inicializa package.json si no existe</span>
+test -f package.json || pnpm init
+
+<span class="hl-comment"># 2. Instala las dependencias dev (con `-D` queda registrado en devDependencies)</span>
+pnpm add -D @playwright/test dotenv typescript @types/node
+
+<span class="hl-comment"># 3. Verifica</span>
+pnpm list @playwright/test dotenv typescript @types/node
+<span class="hl-comment"># Debe listar las 4 con su versión.</span></code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>¿Por qué <code>-D</code> y no plano?</strong>
+Estos paquetes solo se usan durante desarrollo y testing — nunca en producción. <code>-D</code> los pone en <code>devDependencies</code>, así un build de producción los puede saltar. Para tests, es la convención correcta.</p>
+</aside>
+<aside class="callout callout--tip"><p>💡 <strong>¿Por qué no <code>npm install</code>?</strong>
+Este curso usa <strong>pnpm</strong> (más rápido, mejor con disk space, lockfile más estable). Si nunca lo usaste: <code>npm install -g pnpm</code> o <code>corepack enable &amp;&amp; corepack prepare pnpm@latest --activate</code>.</p>
+</aside>
+<h4 id="1c-si-packagejson-ya-existe-pero-nodemodules-no">1.C — Si <code>package.json</code> ya existe pero <code>node_modules/</code> no</h4>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm install
+<span class="hl-comment"># pnpm lee package.json + pnpm-lock.yaml y reconstruye node_modules.</span></code></pre></div>
+<h4 id="1d-instalar-los-navegadores-que-playwright-manejará">1.D — Instalar los navegadores que Playwright manejará</h4>
+<p>Los paquetes de npm <strong>no</strong> traen Chromium / Firefox / WebKit. Hay que descargarlos por separado:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec playwright install
+<span class="hl-comment"># Tarda 1-2 min la primera vez (descarga ~300 MB).</span>
+
+<span class="hl-comment"># Opción ligera: solo chromium</span>
+pnpm exec playwright install chromium</code></pre></div>
+<h4 id="1e-cómo-dotenv-se-engancha-al-curso">1.E — Cómo <code>dotenv</code> se engancha al curso</h4>
+<p>Para que <code>process.env.TEST_USER_USERNAME</code> funcione, <code>playwright.config.ts</code> <strong>debe</strong> importar <code>dotenv/config</code> al inicio:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import "dotenv/config";</code></pre></div>
+<p>Eso ejecuta <code>dotenv</code> automáticamente cada vez que Playwright arranca y carga <code>.env</code> en <code>process.env</code>. <strong>Si esa línea falta, tus tests reciben <code>undefined</code> al leer variables del <code>.env</code></strong>.</p>
+<p>Verás esa línea ya presente cuando creemos <code>playwright.config.ts</code> en el <strong>Paso 4</strong>.</p>
+<hr>
+<h3 id="paso-2-crear-tu-archivo-env">Paso 2 — Crear tu archivo <code>.env</code></h3>
+<p>El archivo <code>.env</code> <strong>no está en el repo</strong> (está listado en <code>.gitignore</code>). Lo creas tú a partir de la plantilla versionada <code>.env.example</code>:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando dentro de playwright-course/</span>
+cp .env.example .env
+
+<span class="hl-comment"># Confirma que existe</span>
+ls -la .env
+cat .env</code></pre></div>
+<p>Tu <code>.env</code> debería verse así (los valores ya están listos para OmniPizza, no necesitas cambiarlos):</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">BASE_URL=https://omnipizza-frontend.onrender.com
+API_URL=https://omnipizza-backend.onrender.com
+TEST_USER_USERNAME=standard_user
+TEST_USER_PASSWORD=pizza123
+DEFAULT_COUNTRY=MX</code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ <strong>Importante para el facilitador:</strong> abre <code>.gitignore</code> con los alumnos y muéstrales la línea <code>.env</code>. Repite en voz alta: <strong>&quot;el <code>.env</code> real NUNCA se commitea, solo el <code>.env.example</code>&quot;</strong>. Este es el momento de hablar de secrets, leaks de tokens en GitHub y por qué CI usa <code>secrets.*</code> (lo veremos en M06).</p>
+</aside>
+<p><strong>Mini-verificación de que <code>dotenv</code> está funcionando</strong> (opcional, 30 segundos):</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsx -e "import 'dotenv/config'; console.log('USERNAME =', process.env.TEST_USER_USERNAME)"
+<span class="hl-comment"># Debe imprimir: USERNAME = standard_user</span></code></pre></div>
+<p>Si imprime <code>USERNAME = undefined</code> significa que <code>.env</code> no se creó o está en otra carpeta.</p>
+<hr>
+<h3 id="paso-3-crear-gitignore">Paso 3 — Crear <code>.gitignore</code></h3>
+<p><strong>Antes</strong> de crear cualquier archivo más, asegúrate de que <code>.env</code> (con tus credenciales) <strong>no se commiteará</strong> por accidente. Crea <code>.gitignore</code> en la raíz del curso:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Si aún no existe</span>
+test -f .gitignore || cat &gt; .gitignore &lt;&lt;'EOF'
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.env
+.env.local
+.auth/
+.DS_Store
+EOF
+
+<span class="hl-comment"># Verifica</span>
+cat .gitignore</code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ <strong>Importante:</strong> las entradas <code>.env</code>, <code>.auth/</code> y <code>playwright-report/</code> son <strong>críticas</strong>. Si las olvidas, terminas pusheando secrets o gigabytes de reportes al repo.</p>
+</aside>
+<hr>
+<h3 id="paso-4-crear-playwrightconfigts">Paso 4 — Crear <code>playwright.config.ts</code></h3>
+<p>Este es <strong>el &quot;master test plan&quot;</strong> del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Verifica si ya existe</span>
+test -f playwright.config.ts &amp;&amp; echo "Ya existe — revisa su contenido" || echo "No existe — lo creamos"</code></pre></div>
+<p>Si NO existe, créalo con este contenido <strong>mínimo para M01</strong>:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M01
+// ------------------------------------
+// "master test plan" del framework. En módulos siguientes vamos
+// a agregar: projects para multi-browser (M04), setup project con
+// dependencies (M04), project api (M05), retries+workers para CI (M06).
+
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";   // ← carga .env en process.env
+
+export default defineConfig({
+  // --- Dónde buscar los tests ---
+  testDir: ".",
+  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+
+  // --- Timeouts (generosos por el cold start de Render free tier) ---
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+
+  // --- Reporteo ---
+  reporter: [["html", { open: "never" }], ["list"]],
+
+  // --- Defaults para todos los projects ---
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+
+  // --- Projects (en M01 solo uno: chromium en desktop) ---
+  projects: [
+    {
+      name: "ui-chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
+});</code></pre></div>
+<p><strong>Cosas que el facilitador debe señalar línea por línea:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Línea</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>import &quot;dotenv/config&quot;</code></td>
+<td>Lo único que conecta <code>.env</code> con <code>process.env</code></td>
+</tr>
+<tr>
+<td><code>testMatch: [/modulo-.*\/.*\.spec\.ts/]</code></td>
+<td>Patrón de archivos que cuentan como tests</td>
+</tr>
+<tr>
+<td><code>timeout: 60_000</code></td>
+<td>60s por TC — necesario para el cold start de Render</td>
+</tr>
+<tr>
+<td><code>baseURL</code></td>
+<td>El frontend live; <code>page.goto(&quot;/&quot;)</code> lo concatena</td>
+</tr>
+<tr>
+<td><code>trace: &quot;retain-on-failure&quot;</code></td>
+<td>Solo graba la caja negra cuando algo falla (ahorra disco)</td>
+</tr>
+<tr>
+<td><code>projects: [{ name: &quot;ui-chromium&quot;, ... }]</code></td>
+<td>El único navegador en M01. En M04 añadiremos firefox/webkit.</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="paso-5-crear-tsconfigjson">Paso 5 — Crear <code>tsconfig.json</code></h3>
+<p>TypeScript necesita saber cómo compilar tus specs. Crea el archivo en la raíz:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">test -f tsconfig.json &amp;&amp; echo "Ya existe" || cat &gt; tsconfig.json &lt;&lt;'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "modulo-*/**/*.ts"
+  ]
+}
+EOF</code></pre></div>
+<p><strong>Por qué cada opción importa:</strong></p>
+<ul>
+<li><code>&quot;strict&quot;: true</code> — bloquea <code>any</code> implícitos, null checks, etc. Es la base del tipado fuerte.</li>
+<li><code>&quot;resolveJsonModule&quot;: true</code> — necesario para <code>import marketsJson from &quot;../data/markets.json&quot;</code> en M02.</li>
+<li><code>&quot;types&quot;: [&quot;node&quot;, &quot;@playwright/test&quot;]</code> — sin esto, <code>process.env</code> y <code>test</code>/<code>expect</code> no tienen tipo.</li>
+</ul>
+<p>Verifica:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsc --noEmit
+<span class="hl-comment"># Si está limpio, no imprime nada. Si imprime errores, léelos y corrige antes de seguir.</span></code></pre></div>
+<hr>
+<h3 id="paso-6-añadir-el-script-m1-a-packagejson">Paso 6 — Añadir el script <code>m1</code> a <code>package.json</code></h3>
+<p>Para tener un atajo cómodo:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Ver scripts actuales</span>
+cat package.json | grep -A 20 '"scripts"'</code></pre></div>
+<p>Si no existen, añade los siguientes a la sección <code>&quot;scripts&quot;</code> de <code>package.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
+  "test": "playwright test",
+  "test:ui": "playwright test --ui",
+  "test:headed": "playwright test --headed",
+  "test:debug": "playwright test --debug",
+  "typecheck": "tsc --noEmit",
+  "report": "playwright show-report",
+  "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium"
+}</code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> explica que <code>pnpm m1</code> es <strong>azúcar sintáctica</strong> — equivale a <code>pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium</code>. Los alumnos pueden inspeccionar cualquier script con <code>cat package.json</code>.</p>
+</aside>
+<hr>
+<h3 id="paso-7-crear-tu-primer-spec-file">Paso 7 — Crear tu primer spec file</h3>
+<p>Ahora sí, <strong>el código del módulo</strong>. Crea la carpeta y el archivo:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Crea la carpeta del módulo (si no existe)</span>
+mkdir -p modulo-01-smoke-feo
+
+<span class="hl-comment"># 2. Crea el archivo del spec</span>
+touch modulo-01-smoke-feo/ejemplo.spec.ts</code></pre></div>
+<p>Abre <code>modulo-01-smoke-feo/ejemplo.spec.ts</code> en VS Code y <strong>escribe esto exactamente</strong> (no copies y pegues a ciegas — escribirlo a mano fija la sintaxis):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { test, expect } from "@playwright/test";
+
+// Credenciales leídas de .env (gracias a dotenv en playwright.config.ts)
+const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
+const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
+
+test.describe("Smoke OmniPizza — versión fea (M01)", () =&gt; {
+  test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) =&gt; {
+    // Paso 1 — abrir la pantalla de login
+    await page.goto("/");
+
+    // Paso 2 — seleccionar mercado (MX)
+    await page.getByTestId("market-MX").click();
+
+    // Paso 3 — llenar credenciales
+    await page.getByTestId("username-desktop").fill(USERNAME);
+    await page.getByTestId("password-desktop").fill(PASSWORD);
+
+    // Paso 4 — enviar formulario
+    await page.getByTestId("login-button-desktop").click();
+
+    // Resultado esperado — aterrizar en el catálogo
+    await expect(page).toHaveURL(/\/catalog/);
+  });
+});</code></pre></div>
+<p><strong>Anatomía línea por línea</strong> (el facilitador la repite en voz alta):</p>
+<table>
+<thead>
+<tr>
+<th>Línea</th>
+<th>Concepto</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>import { test, expect } from &quot;@playwright/test&quot;</code></td>
+<td>El runner y la librería de aserciones</td>
+</tr>
+<tr>
+<td><code>process.env.TEST_USER_USERNAME ?? &quot;standard_user&quot;</code></td>
+<td><code>dotenv</code> cargó esto; el <code>??</code> es el fallback si falta</td>
+</tr>
+<tr>
+<td><code>test.describe(...)</code></td>
+<td>Suite — agrupa varios <code>test()</code> con un nombre común</td>
+</tr>
+<tr>
+<td><code>test(&quot;TC-001 — ...&quot;, async ({ page }) =&gt; {...})</code></td>
+<td>Un caso de prueba; <code>page</code> es la pestaña inyectada por Playwright</td>
+</tr>
+<tr>
+<td><code>await page.goto(&quot;/&quot;)</code></td>
+<td>Concatena con <code>baseURL</code> del config → <code>https://omnipizza-frontend.onrender.com/</code></td>
+</tr>
+<tr>
+<td><code>await page.getByTestId(...)</code></td>
+<td>Locator nivel 3 de la jerarquía (M02 explica los otros niveles)</td>
+</tr>
+<tr>
+<td><code>await expect(page).toHaveURL(/\/catalog/)</code></td>
+<td>Aserción con regex; Playwright espera automáticamente</td>
+</tr>
+</tbody></table>
+<p><strong>Verifica que compila</strong> antes de ejecutarlo:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsc --noEmit
+<span class="hl-comment"># Sin output = sin errores = puedes correr el test.</span></code></pre></div>
+<blockquote><p>📌 <strong>Nota sobre el spec del repo:</strong> el archivo <code>ejemplo.spec.ts</code> que ya viene en el curso es <strong>más completo</strong> — incluye un <code>test.beforeAll</code> para warmup del backend dormido y un <code>TC-002</code> para validar el catálogo. <strong>No te lo entrego completo aquí a propósito</strong>: la idea del Paso 9 es que escribas TC-002 a mano y <strong>sientas la duplicación</strong> entre los dos tests. Si quieres el archivo final ya hecho, ábrelo desde el repo.</p>
+</blockquote>
+<hr>
+<h3 id="paso-8-ejecutar-el-ejemplo">Paso 8 — Ejecutar el ejemplo</h3>
+<p>Tres formas de correrlo, en orden de utilidad pedagógica:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># A) UI mode — RECOMENDADO para la primera vez (ves cada paso en vivo)</span>
+pnpm test:ui
+
+<span class="hl-comment"># B) Modo headed — abre el navegador real, sin UI mode</span>
+pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-chromium
+
+<span class="hl-comment"># C) Headless — la forma rápida (sin ventana)</span>
+pnpm m1</code></pre></div>
+<p><strong>Qué debería pasar:</strong></p>
+<ol>
+<li>La primera vez tarda 30-40 segundos (cold start de OmniPizza en Render free tier).</li>
+<li>Verás <strong>2 tests verdes</strong>: <code>TC-001</code> y <code>TC-002</code>.</li>
+<li>Si te falla con <code>TimeoutError</code> en el primer test, <strong>vuelve a correr el comando</strong> — el backend ya estará despierto.</li>
+</ol>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este es buen momento para abrir el <strong>HTML report</strong> (<code>pnpm exec playwright show-report</code>) y mostrar trazas, screenshots y video. Los alumnos suelen quedar enganchados con el Trace Viewer.</p>
+</aside>
+<hr>
+<h3 id="paso-9-observar-el-dolor-lectura-guiada-de-5-min">Paso 9 — Observar el dolor (lectura guiada de 5 min)</h3>
+<p>Abre <code>ejemplo.spec.ts</code> lado a lado con el alumno y haz que <strong>señalen con el dedo</strong>:</p>
+<ol>
+<li><strong>Líneas duplicadas entre TC-001 y TC-002:</strong><ul>
+<li><code>page.goto(&quot;/&quot;)</code> — repetida.</li>
+<li><code>page.getByTestId(&quot;market-MX&quot;).click()</code> — repetida.</li>
+<li><code>fill(USERNAME)</code> y <code>fill(PASSWORD)</code> — repetidas.</li>
+<li><code>click()</code> en <code>login-button-desktop</code> — repetido.</li>
+<li><code>expect(page).toHaveURL(/\/catalog/)</code> — repetido.</li>
+</ul>
+</li>
+<li><strong>Locators inline</strong> — el string <code>&quot;market-MX&quot;</code> está hardcoded; no hay un &quot;objeto LoginPage&quot; que lo encapsule.</li>
+<li><strong>El warmup del backend</strong> vive dentro del mismo spec (<code>beforeAll</code>) — en M04 esto se convierte en un <code>setup project</code> reutilizable.</li>
+<li><strong>Las credenciales</strong> se leen con <code>process.env.TEST_USER_USERNAME ?? &quot;standard_user&quot;</code> — el fallback existe por seguridad, pero <strong>la fuente real es <code>.env</code></strong>.</li>
+</ol>
+<p><strong>Pregunta al grupo:</strong> <em>&quot;si añadieran un tercer smoke, ¿cuántas líneas duplicarían?&quot;</em> — la respuesta esperada es <strong>~8</strong>. Esa es la deuda que M02 y M03 van a pagar.</p>
+<hr>
+<h3 id="paso-10-resolver-el-reto">Paso 10 — Resolver el reto</h3>
+<p>Abre <code>reto.spec.ts</code>. El objetivo es <strong>escribir TC-003 copiando deliberadamente</strong> las mismas líneas que ya viste duplicadas. <strong>No intentes ser elegante</strong> — el dolor es el ejercicio.</p>
+<p>Cada TODO en el reto tiene:</p>
+<ul>
+<li><strong>Qué hacer</strong> (la acción puntual).</li>
+<li><strong>Pista</strong> (el método de Playwright que necesitas).</li>
+<li><strong>Cómo verificar</strong> (qué deberías ver en UI mode o en el HTML report).</li>
+</ul>
+<p>Sigue los TODOs en orden. Cuando termines, corre el reto:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium</code></pre></div>
+<p><strong>Criterio de éxito:</strong> el test pasa en verde <strong>y</strong> al final del archivo puedes responder las 3 preguntas del comentario final.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> al cerrar el reto, abre <code>ejemplo.spec.ts</code> y <code>reto.spec.ts</code> lado a lado y pide al grupo contar las líneas idénticas entre TC-001 / TC-002 / TC-003. Anota el número en el pizarrón — lo vamos a destruir en M03.</p>
+</aside>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> <code>dotenv</code> instalado vía <code>pnpm install</code> y verificado con <code>pnpm list dotenv</code>.</li>
+<li><input disabled="" type="checkbox"> Archivo <code>.env</code> creado a partir de <code>.env.example</code> y <strong>excluido por <code>.gitignore</code></strong>.</li>
+<li><input disabled="" type="checkbox"> Test verde contra OmniPizza live (<code>TC-001</code> y <code>TC-002</code>).</li>
+<li><input disabled="" type="checkbox"> Entiendes por qué <code>sleep()</code> está prohibido (auto-waiting).</li>
+<li><input disabled="" type="checkbox"> Distingues <code>getByRole</code> de <code>getByTestId</code>.</li>
+<li><input disabled="" type="checkbox"> <strong>Puedes señalar con el dedo las líneas duplicadas</strong> entre los specs.</li>
+<li><input disabled="" type="checkbox"> Completaste TC-003 en <code>reto.spec.ts</code> y mediste cuántas líneas copiaste.</li>
+</ul>
+<hr>
+<h2 id="comandos-útiles-del-módulo">Comandos útiles del módulo</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Setup</span>
+pnpm install                                     # instala dotenv + Playwright + types
+pnpm exec playwright install                     # descarga navegadores
+cp .env.example .env                             # crea tu .env local
+
+<span class="hl-comment"># Correr</span>
+pnpm m1                                          # correr M01 (headless)
+pnpm test:ui                                     # UI mode
+pnpm exec playwright test --debug modulo-01-smoke-feo/ejemplo.spec.ts
+pnpm exec playwright test --headed --project=ui-chromium
+
+<span class="hl-comment"># Reportes</span>
+pnpm exec playwright show-report                 # último HTML report</code></pre></div>
+<hr>
+<h2 id="qué-viene-en-m02">¿Qué viene en M02?</h2>
+<p>En el próximo módulo vas a <strong>parametrizar</strong> este smoke para que un mismo test corra contra los 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado — primer paso para matar la duplicación.</p>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m00-04-log.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M00.4 · git log básico</div></a>
+      <a href="m02.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M02 · Locators & data</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

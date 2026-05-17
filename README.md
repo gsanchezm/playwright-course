@@ -134,6 +134,7 @@ Sitio público (React + Vite + Tailwind) que presenta los 3 cursos como rutas de
 - Grid de rutas (TypeScript / Git / Playwright).
 - **CodeShowcase con tabs** que muestran código real de cada carpeta del repo.
 - Sección de metodología y highlights.
+- **Documentación navegable en `/docs`** con los cursos completos de TypeScript (M1–M6) y Git/GitHub (M1–M6) en formato lección por lección.
 - Tests E2E con Playwright.
 - Deploy automático en Render.
 

@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M04 · Setup & fixtures — Playwright Course</title>
+<style>:root { --accent: #0d9488; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" >M02</a><a href="m03.html" >M03</a><a href="m04.html" class="active">M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
+      <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
+      <li><a href="#qué-aprenderás">¿Qué aprenderás?</a></li>
+      <li><a href="#conceptos-jit">Conceptos JIT</a></li>
+      <li><a href="#por-qué-este-patrón-y-no-globalsetup">Por qué este patrón (y no globalSetup)</a></li>
+      <li><a href="#paso-a-paso">Paso a paso</a></li>
+      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#outcome-esperado">Outcome esperado</a></li>
+      <li><a href="#git-break-sube-tu-trabajo-a-github-y-abre-un-pr">☁️ Git break — Sube tu trabajo a GitHub y abre un PR</a></li>
+      <li><a href="#git-break-cuando-algo-se-rompe">🔙 Git break — Cuando algo se rompe</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 04</span>
+      <h1>Setup & fixtures</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 60-90 min
+        <br><strong>Pieza que suma al framework:</strong> Setup project con storageState + fixtures de OmniPizza
+      </p>
+    </header>
+<p><strong>Duración estimada:</strong> 85-110 min (incluye dos <em>Git breaks</em> — push/PR y deshacer cambios)
+<strong>Piezas que suma al framework:</strong></p>
+<ul>
+<li><code>tests/setup/auth.setup.ts</code> — login vía API, persiste <code>storageState</code>.</li>
+<li><code>fixtures/omnipizza.ts</code> — fixtures de Page Objects + market/user inyectado.</li>
+<li><code>helpers/unique-data.ts</code> — identificadores únicos para paralelismo seguro.</li>
+<li><code>playwright.config.ts</code> con <code>projects</code> que declaran <code>dependencies: [&#39;setup&#39;]</code>.</li>
+<li>Demostración de <code>page.route()</code> para mocking de red.</li>
+</ul>
+<hr>
+<h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
+<p>El módulo más denso del curso: aparecen <strong>4 carpetas nuevas</strong> (<code>tests/setup/</code>, <code>fixtures/</code>, <code>helpers/</code>, <code>.auth/</code>) y <code>playwright.config.ts</code> se rediseña con projects que se depende uno de otro.</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">playwright-course/
+├── .auth/                         ← 🆕 (gitignored) badge persistido
+│   └── user.json                  ← 🆕 storageState generado por auth.setup.ts
+├── data/                          ← (M02)
+├── fixtures/                      ← 🆕 custom fixtures
+│   └── omnipizza.ts               ← 🆕 test.extend → loginPage, catalogPage, defaultMarket
+├── helpers/                       ← 🆕
+│   └── unique-data.ts             ← 🆕 uniqueEmail, uniqueOrderId (data isolation)
+├── pages/                         ← (M03)
+├── tests/
+│   └── setup/                     ← 🆕 setup project
+│       └── auth.setup.ts          ← 🆕 login vía API → guarda .auth/user.json
+├── types/                         ← (M02)
+├── modulo-04-setup-fixtures/      ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 fixtures + page.route() (mocking)
+│   └── reto.spec.ts               ← 🆕 admin.setup.ts + project paralelo
+└── playwright.config.ts           ← ✏️ projects con dependencies: ['setup']</code></pre></div>
+<p><strong>Project graph</strong> (cómo Playwright orquesta la ejecución):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">┌─────────────┐
+│   setup     │  ── ejecuta tests/setup/*.setup.ts
+│ (project)   │     genera .auth/user.json
+└──────┬──────┘
+       │ dependencies: ["setup"]
+       ▼
+┌─────────────────────────────────────────────────────┐
+│  ui-chromium │ ui-firefox │ ui-webkit (heredan      │
+│              │            │   storageState)         │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────┐         ┌────────────────┐
+│   api       │         │  anonymous     │
+│ (sin setup) │         │ (sin setup)    │
+└─────────────┘         └────────────────┘
+   ↑                       ↑
+   ↑ NO heredan cookies de UI — flujos negativos y API limpios</code></pre></div>
+<p><strong>Flujo del dato dentro de un test</strong> (cómo el fixture inyecta el POM):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">fixtures/omnipizza.ts ──► test.extend&lt;{loginPage, catalogPage, ...}&gt;()
+                                          │
+                                          ▼
+test("...", async ({ catalogPage }) =&gt; {  ◄── ya viene listo, sin "new"
+  await catalogPage.expectLoaded()
+})</code></pre></div>
+<p><strong>Qué NO existe todavía:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Carpeta</th>
+<th>Llega en</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>services/</code>, <code>tests/api/</code></td>
+<td>M05</td>
+<td>Suite de API pura (BaseService abstracta)</td>
+</tr>
+<tr>
+<td><code>.github/workflows/</code></td>
+<td>M06</td>
+<td>CI/CD con matrix por browser</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> dibuja el diagrama de &quot;project graph&quot; en el pizarrón antes de abrir el código. Los alumnos suelen confundir <strong>setup project</strong> con <strong>globalSetup</strong> — el diagrama hace ver que setup es un test más, no un hook escondido.</p>
+</aside>
+<hr>
+<h2 id="analogía-de-apertura">Analogía de apertura</h2>
+<p>El tester manual, antes de empezar una sesión, <strong>se registra en recepción</strong> (login vía API), recibe un <strong>badge</strong> (<code>storageState</code>) y con él entra a todos los módulos sin volver a autenticarse. Además, si varios testers trabajan en paralelo, <strong>cada uno usa datos propios</strong> (órdenes con su nombre, emails únicos) para que no se pisen.</p>
+<hr>
+<h2 id="qué-aprenderás">¿Qué aprenderás?</h2>
+<ol>
+<li><strong><code>auth.setup.ts</code> como project con <code>dependencies</code></strong> — el patrón 2026.</li>
+<li><strong>Login vía API</strong> (no UI) para sembrar sesión rápida y determinista.</li>
+<li><strong><code>storageState</code> por project</strong>, NO global — flujos negativos y API no lo heredan.</li>
+<li><strong>Custom fixtures</strong> con <code>test.extend</code> para inyectar Page Objects.</li>
+<li><strong>Worker vs test fixtures</strong> — cuándo usar cada uno.</li>
+<li><strong>Data isolation:</strong> <code>uniqueEmail(workerInfo)</code> para <code>fullyParallel: true</code>.</li>
+<li><strong><code>page.route()</code></strong> — mocking de red para casos de error deterministas.</li>
+</ol>
+<hr>
+<h2 id="conceptos-jit">Conceptos JIT</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Analogía</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>auth.setup.ts</code> project</td>
+<td>Registro en recepción: se hace 1 vez, el badge vale todo el día</td>
+</tr>
+<tr>
+<td><code>storageState</code> por project</td>
+<td>Badge compartido entre TCs del mismo project</td>
+</tr>
+<tr>
+<td><code>dependencies: [&#39;setup&#39;]</code></td>
+<td>&quot;No ejecutes hasta que setup haya terminado&quot; — precondición declarativa</td>
+</tr>
+<tr>
+<td><code>test.extend</code></td>
+<td>Adaptador custom del test runner</td>
+</tr>
+<tr>
+<td>Worker fixture</td>
+<td>1 instancia por worker (ej. <code>defaultMarket</code>)</td>
+</tr>
+<tr>
+<td>Test fixture</td>
+<td>1 instancia por TC (ej. <code>loginPage</code>)</td>
+</tr>
+<tr>
+<td><code>workerInfo.workerIndex</code></td>
+<td>El número del tester paralelo (0, 1, 2…)</td>
+</tr>
+<tr>
+<td><code>uniqueEmail()</code></td>
+<td>Cada worker genera sus propios folios de orden</td>
+</tr>
+<tr>
+<td><code>page.route(&#39;**/api/pizzas&#39;, ...)</code></td>
+<td>Stub en Postman Mock Server: tú decides la respuesta</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="por-qué-este-patrón-y-no-globalsetup">Por qué este patrón (y no <code>globalSetup</code>)</h2>
+<p>La v3 <strong>no usa <code>globalSetup</code> con login por UI</strong> porque:</p>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th><code>globalSetup</code> + UI login</th>
+<th><code>auth.setup.ts</code> project + API login</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Velocidad</td>
+<td>Lento (navegación completa)</td>
+<td>Rápido (1 POST)</td>
+</tr>
+<tr>
+<td>Determinismo</td>
+<td>Flaky (depende del DOM)</td>
+<td>Determinista (contrato API)</td>
+</tr>
+<tr>
+<td>Reutilización</td>
+<td>Difícil para múltiples roles</td>
+<td>Trivial (un <code>setup.ts</code> por rol)</td>
+</tr>
+<tr>
+<td>Visibilidad en reportes</td>
+<td>No aparece como test</td>
+<td>Aparece como test en el report</td>
+</tr>
+<tr>
+<td>Paralelismo</td>
+<td>Punto único</td>
+<td>Por project con <code>dependencies</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="paso-a-paso">Paso a paso</h2>
+<h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
+pnpm m3                    # los Page Objects ya funcionan
+pnpm typecheck             # debe pasar
+ls .auth 2&gt;&amp;1 || echo OK   # .auth/ debería estar vacío o no existir aún</code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este módulo introduce 3 conceptos pesados (setup project + fixtures + mocking) en una sola sesión. <strong>Da pausas cortas entre cada uno</strong> y no avances al siguiente hasta que el actual esté corriendo verde.</p>
+</aside>
+<hr>
+<h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
+<p><strong>M04 no añade paquetes npm nuevos.</strong> Los custom fixtures, <code>storageState</code> y <code>page.route()</code> viven dentro de <code>@playwright/test</code>.</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null
+<span class="hl-comment"># Las 4 deben aparecer. Si no:</span>
+<span class="hl-comment">#   pnpm install</span>
+<span class="hl-comment">#   o pnpm add -D @playwright/test dotenv typescript @types/node</span></code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ <strong>Asegúrate de que <code>.auth/</code> esté en <code>.gitignore</code></strong> — los storageStates contienen tokens válidos. Si tu <code>.gitignore</code> no lo tiene, añádelo ahora:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">grep -q "^\.auth/" .gitignore || echo ".auth/" &gt;&gt; .gitignore</code></pre></div>
+</aside>
+<hr>
+<h3 id="paso-2-crear-testssetup-fixtures-helpers">Paso 2 — Crear <code>tests/setup/</code>, <code>fixtures/</code>, <code>helpers/</code></h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p tests/setup fixtures helpers
+touch tests/setup/auth.setup.ts fixtures/omnipizza.ts helpers/unique-data.ts</code></pre></div>
+<p><strong>Esqueletos mínimos:</strong></p>
+<p>📄 <code>tests/setup/auth.setup.ts</code> — login vía API y persistir storageState:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { test as setup, expect } from "@playwright/test";
+import usersJson from "../../data/users.json";
+import type { User } from "../../types";
+
+const STORAGE = ".auth/user.json";
+const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
+const standard = (usersJson as User[]).find((u) =&gt; u.username === "standard_user")!;
+
+setup("authenticate via API and persist storageState", async ({ page, request }) =&gt; {
+  const res = await request.post(`${API_URL}/auth/login`, {
+    data: { username: standard.username, password: standard.password },
+  });
+  expect(res.ok()).toBeTruthy();
+  const { access_token } = await res.json();
+
+  await page.goto("/");
+  await page.evaluate((token) =&gt; localStorage.setItem("token", token), access_token);
+  await page.context().storageState({ path: STORAGE });
+});</code></pre></div>
+<p>📄 <code>fixtures/omnipizza.ts</code> — custom fixtures con <code>test.extend</code>:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { test as base, expect } from "@playwright/test";
+import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import marketsJson from "../data/markets.json";
+import type { Market } from "../types";
+
+type OmniFixtures = {
+  loginPage: LoginPage;
+  catalogPage: CatalogPage;
+  checkoutPage: CheckoutPage;
+};
+type OmniWorkerFixtures = { defaultMarket: Market };
+
+export const test = base.extend&lt;OmniFixtures, OmniWorkerFixtures&gt;({
+  loginPage: async ({ page }, use) =&gt; use(new LoginPage(page)),
+  catalogPage: async ({ page }, use) =&gt; use(new CatalogPage(page)),
+  checkoutPage: async ({ page }, use) =&gt; use(new CheckoutPage(page)),
+  defaultMarket: [
+    async ({}, use) =&gt; {
+      const m = (marketsJson as Market[]).find((x) =&gt; x.code === "MX")!;
+      await use(m);
+    },
+    { scope: "worker" },
+  ],
+});
+export { expect };</code></pre></div>
+<p>📄 <code>helpers/unique-data.ts</code> — data isolation para paralelismo:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { TestInfo } from "@playwright/test";
+
+export function uniqueEmail(info: TestInfo, prefix = "qa"): string {
+  return `${prefix}+w${info.workerIndex}-${Date.now()}@example.test`;
+}
+
+export function uniqueOrderId(info: TestInfo): string {
+  return `ORD-w${info.workerIndex}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}</code></pre></div>
+<hr>
+<h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m04-cambia-mucho">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M04 — <strong>CAMBIA MUCHO</strong>)</h3>
+<p>Este es el módulo donde <code>playwright.config.ts</code> <strong>se transforma de verdad</strong>. Reemplaza tu config con esta versión:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M04
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
+
+const STORAGE_STATE = ".auth/user.json";   // ← 🆕 ruta del badge
+
+export default defineConfig({
+  testDir: ".",
+  // ✏️ ampliado: ahora también buscamos los .setup.ts dentro de tests/
+  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
+
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  reporter: [["html", { open: "never" }], ["list"]],
+
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+
+  // 🆕 projects: setup (corre primero) → ui-* (heredan storageState)
+  projects: [
+    {
+      name: "setup",
+      testMatch: /tests\/setup\/.*\.setup\.ts/,
+    },
+    {
+      name: "ui-chromium",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/],
+    },
+    {
+      name: "ui-firefox",
+      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/],
+    },
+    {
+      name: "ui-webkit",
+      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/],
+    },
+  ],
+});</code></pre></div>
+<p><strong>Diff conceptual vs M03:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Cambio</th>
+<th>Por qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>testMatch</code> añade <code>tests/.*\.setup\.ts</code></td>
+<td>Para que el runner detecte <code>auth.setup.ts</code></td>
+</tr>
+<tr>
+<td>Nueva constante <code>STORAGE_STATE</code></td>
+<td>Centraliza la ruta <code>.auth/user.json</code></td>
+</tr>
+<tr>
+<td>Project <code>setup</code> (sin storageState)</td>
+<td>Genera el badge — corre antes que todos</td>
+</tr>
+<tr>
+<td>Projects <code>ui-*</code> con <code>dependencies: [&quot;setup&quot;]</code> + <code>storageState</code></td>
+<td>Heredan el badge, arrancan autenticados</td>
+</tr>
+<tr>
+<td><code>testIgnore</code> en cada <code>ui-*</code></td>
+<td>Evita que el <code>auth.setup.ts</code> corra dos veces</td>
+</tr>
+</tbody></table>
+<p>Añade los scripts nuevos al <code>package.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
+  "m4": "playwright test modulo-04-setup-fixtures --project=ui-chromium",
+  "test:setup": "playwright test --project=setup",
+  "test:chromium": "playwright test --project=ui-chromium",
+  "test:firefox": "playwright test --project=ui-firefox",
+  "test:webkit": "playwright test --project=ui-webkit"
+}</code></pre></div>
+<p>Y verifica que <code>tsconfig.json</code> incluya las carpetas nuevas:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "tests/**/*.ts",
+    "modulo-*/**/*.ts"
+  ]
+}</code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este es <strong>el</strong> punto del curso donde los alumnos suelen perderse. Pídeles que dibujen el flujo en su cuaderno: <em>&quot;setup project corre 1 vez → escribe <code>.auth/user.json</code> → ui-chromium lo lee → todos mis tests arrancan autenticados&quot;</em>. No avances hasta que cada alumno haya verbalizado el flujo.</p>
+</aside>
+<hr>
+<h3 id="paso-4-lectura-guiada-de-testssetupauthsetupts">Paso 4 — Lectura guiada de <code>tests/setup/auth.setup.ts</code></h3>
+<p>Abre el archivo con el grupo y señala:</p>
+<ol>
+<li><strong>Es un <code>setup.ts</code>, no un <code>spec.ts</code></strong> — el <code>testMatch</code> de <code>playwright.config.ts</code> los distingue.</li>
+<li>Hace <strong>login por API</strong> (un <code>POST /auth/login</code>), no por UI.</li>
+<li>Persiste cookies/localStorage en <code>.auth/user.json</code> con <code>storageState</code>.</li>
+<li><strong>NO aparece en <code>tests/</code> regulares</strong> — vive en <code>tests/setup/</code> para que el project <code>api</code> y los flujos negativos (<code>anonymous</code>) <strong>no lo hereden</strong>.</li>
+</ol>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> muestra <code>playwright.config.ts</code> donde se declara:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">{ name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ }
+{ name: "ui-chromium", dependencies: ["setup"], use: { storageState: ".auth/user.json" } }</code></pre></div>
+<p>Eso es lo que ata todo: <code>dependencies: [&#39;setup&#39;]</code> significa <strong>&quot;Playwright corre setup ANTES de mí; si setup falla, yo ni siquiera arranco&quot;</strong>.</p>
+</aside>
+<hr>
+<h3 id="paso-5-correr-sólo-el-setup-project">Paso 5 — Correr SÓLO el setup project</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm test:setup</code></pre></div>
+<p><strong>Qué debería pasar:</strong></p>
+<ol>
+<li>Verás un único test verde: <code>tests/setup/auth.setup.ts</code>.</li>
+<li>Tras la corrida, el archivo <code>.auth/user.json</code> aparece en disco:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">ls -la .auth/
+cat .auth/user.json | head -5</code></pre></div>
+</li>
+<li>Ese archivo contiene cookies + localStorage. <strong>Está en <code>.gitignore</code></strong> — nunca lo commitees.</li>
+</ol>
+<aside class="callout callout--tip"><p>💡 <strong>Si falla</strong> con <code>ECONNREFUSED</code> o <code>404</code>: probablemente OmniPizza está dormido. Vuelve a correr una segunda vez (el cold start despierta el backend).</p>
+</aside>
+<hr>
+<h3 id="paso-6-lectura-guiada-de-fixturesomnipizzats">Paso 6 — Lectura guiada de <code>fixtures/omnipizza.ts</code></h3>
+<p>Cosas que señalar:</p>
+<ul>
+<li><code>test.extend&lt;{...}, {...}&gt;()</code> — el primer genérico son <strong>test fixtures</strong> (1 por TC), el segundo son <strong>worker fixtures</strong> (1 por worker).</li>
+<li><code>loginPage</code>, <code>catalogPage</code>, <code>checkoutPage</code> son <strong>test fixtures</strong>: Playwright los crea por TC y los inyecta al callback.</li>
+<li><code>defaultMarket</code> es <strong>worker fixture</strong> (scope <code>&quot;worker&quot;</code>): se crea una vez por proceso paralelo.</li>
+<li>En el test ya <strong>no escribes <code>new LoginPage(page)</code></strong> — el fixture te lo entrega listo.</li>
+</ul>
+<hr>
+<h3 id="paso-7-correr-m04-completo">Paso 7 — Correr M04 completo</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># El project ui-chromium declara `dependencies: ['setup']`,</span>
+<span class="hl-comment"># así que Playwright correrá setup automáticamente primero.</span>
+pnpm m4</code></pre></div>
+<p><strong>Qué debería pasar:</strong></p>
+<ol>
+<li>Setup corre primero (genera/refresca <code>.auth/user.json</code>).</li>
+<li>Los TCs del módulo arrancan <strong>ya autenticados</strong>: en el primer test verás <code>page.goto(&quot;/catalog&quot;)</code> SIN paso de login previo.</li>
+<li>El test <code>uniqueEmail genera identificadores por worker</code> debe verificar que <code>email1 !== email2</code> y que ambos contengan <code>w&lt;workerIndex&gt;</code>.</li>
+</ol>
+<hr>
+<h3 id="paso-8-demostración-de-pageroute-mocking">Paso 8 — Demostración de <code>page.route()</code> (mocking)</h3>
+<p>Abre la sección <code>page.route() — mocking de red</code> en <code>ejemplo.spec.ts</code> con el grupo. Pasos clave:</p>
+<ol>
+<li><strong>El mock se registra ANTES de <code>page.goto()</code></strong> — si lo registras después, el primer request ya pasó.</li>
+<li><code>route.fulfill({...})</code> devuelve una respuesta totalmente inventada (status, headers, body).</li>
+<li><code>route.continue()</code> deja pasar el request al backend real (útil para introducir latencia, no para cambiar la respuesta).</li>
+</ol>
+<p><strong>Pregunta al grupo:</strong> <em>&quot;¿qué pasa si registras 2 mocks distintos al mismo URL?&quot;</em> — respuesta: gana el último registrado.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> los locators de error/empty en el ejemplo (<code>catalog-error</code>, <code>catalog-empty</code>) pueden no existir en OmniPizza tal cual. Es un PATRÓN a aprender, no un test que tenga que pasar perfectamente — está intencional como prototipo.</p>
+</aside>
+<hr>
+<h3 id="paso-9-cronometrar-el-ahorro">Paso 9 — Cronometrar el ahorro</h3>
+<p>Ejercicio rápido:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Sin setup project (M03)</span>
+time pnpm m3
+
+<span class="hl-comment"># Con setup project (M04)</span>
+time pnpm m4</code></pre></div>
+<p>El delta principal está en que <strong>no hay login por UI</strong> en cada TC. Anota en el pizarrón el tiempo de cada uno — convénceles con datos.</p>
+<hr>
+<h3 id="paso-10-resolver-el-reto">Paso 10 — Resolver el reto</h3>
+<p>El reto tiene <strong>2 partes</strong>, ambas con TODOs detallados:</p>
+<ol>
+<li><strong>Crear <code>admin.setup.ts</code></strong> + un project <code>ui-admin-chromium</code> con un <code>storageState</code> distinto (<code>.auth/admin.json</code>). Esto demuestra que el patrón <strong>escala a múltiples roles</strong>.</li>
+<li><strong>Mock con latencia simulada</strong> usando <code>page.route()</code> + <code>setTimeout</code> + <code>route.continue()</code>, y validar que la UI muestra un skeleton mientras tanto.</li>
+</ol>
+<p>Cada TODO sigue <strong>Qué hacer / Pista / Cómo verificar</strong>.</p>
+<hr>
+<h2 id="comandos-útiles">Comandos útiles</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm test:setup                                  # sólo el setup project
+pnpm m4                                          # el módulo (corre setup automáticamente)
+pnpm exec playwright test --list                 # lista tests sin ejecutar
+pnpm exec playwright test --workers=1 --debug    # 1 worker + inspector
+ls .auth/                                        # verifica que el storageState existe
+rm -rf .auth/ &amp;&amp; pnpm test:setup                 # regenerar storageState desde cero</code></pre></div>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> <code>.auth/user.json</code> se crea al correr setup.</li>
+<li><input disabled="" type="checkbox"> Los TCs del project <code>ui-chromium</code> arrancan <strong>ya autenticados</strong> (no hay login por UI en los specs).</li>
+<li><input disabled="" type="checkbox"> El project <code>api</code> <strong>NO hereda</strong> cookies de UI.</li>
+<li><input disabled="" type="checkbox"> Puedes explicar worker fixture vs test fixture con un ejemplo concreto.</li>
+<li><input disabled="" type="checkbox"> Sabes generar data única por worker con <code>uniqueEmail(info)</code>.</li>
+<li><input disabled="" type="checkbox"> Puedes mockear una respuesta con <code>page.route()</code> registrándolo <strong>antes</strong> del navigate.</li>
+<li><input disabled="" type="checkbox"> Completaste <code>admin.setup.ts</code> y un project paralelo <code>ui-admin-chromium</code>.</li>
+</ul>
+<hr>
+<h2 id="git-break-sube-tu-trabajo-a-github-y-abre-un-pr">☁️ Git break — Sube tu trabajo a GitHub y abre un PR</h2>
+<p>Hasta ahora todos tus commits viven sólo en tu máquina. Para que un compañero los revise, los necesitas en <strong>GitHub</strong>.</p>
+<h3 id="por-primera-vez-conectar-tu-repo-a-github">Por primera vez: conectar tu repo a GitHub</h3>
+<ol>
+<li>En github.com, click <strong>New repository</strong> → nombre (<code>qa-playwright-curso</code>), <strong>Private</strong> o <strong>Public</strong>, <strong>sin</strong> README inicial (ya tienes uno).</li>
+<li>GitHub te muestra los comandos. Los importantes son:</li>
+</ol>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git remote add origin git@github.com:tu-usuario/qa-playwright-curso.git
+$ git remote -v                                  # verifica que quedó
+origin  git@github.com:tu-usuario/qa-playwright-curso.git (fetch)
+origin  git@github.com:tu-usuario/qa-playwright-curso.git (push)
+$ git push -u origin main                        # primer push de main</code></pre></div>
+<p>El flag <code>-u</code> vincula tu rama local con la remota; las próximas veces basta con <code>git push</code>.</p>
+<h3 id="el-flujo-diario-rama-push-pr-review-merge">El flujo diario: rama → push → PR → review → merge</h3>
+<p>Asumiendo que ya estás en la rama <code>feature/m04-fixtures</code>:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Sube tu rama por primera vez</span>
+$ git push -u origin feature/m04-fixtures
+
+<span class="hl-comment"># 2. Abre el PR (vía web o con gh CLI)</span>
+$ gh pr create --base main --head feature/m04-fixtures \
+    --title "feat(m04): setup project + fixtures" \
+    --body "Agrega auth.setup.ts, fixtures de POM y data isolation"
+
+<span class="hl-comment"># 3. Si te piden cambios en el review, los aplicas y vuelves a pushear</span>
+$ # (editas)
+$ git add fixtures/omnipizza.ts
+$ git commit -m "review: address comments on fixtures"
+$ git push                                       # ya no necesita -u
+
+<span class="hl-comment"># 4. Cuando tenga aprobaciones suficientes, mergeas desde la web (o con gh)</span>
+$ gh pr merge --squash --delete-branch</code></pre></div>
+<h3 id="estrategias-de-merge-en-github">Estrategias de merge en GitHub</h3>
+<table>
+<thead>
+<tr>
+<th>Opción</th>
+<th>Qué hace</th>
+<th>Cuándo usar</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Merge commit</strong></td>
+<td>Preserva todos tus commits + uno extra de merge</td>
+<td>Equipos que valoran el historial detallado</td>
+</tr>
+<tr>
+<td><strong>Squash and merge</strong></td>
+<td>Aplana toda la rama en <strong>un solo commit</strong></td>
+<td>Default seguro: historial limpio sin esfuerzo</td>
+</tr>
+<tr>
+<td><strong>Rebase and merge</strong></td>
+<td>Aplica tus commits sobre <code>main</code> sin merge commit</td>
+<td>Equipos que rebasean estrictamente</td>
+</tr>
+</tbody></table>
+<p>Para empezar, <strong>squash and merge</strong> es la opción más fácil. Tu PR queda como un único commit en <code>main</code>, con título y descripción del PR.</p>
+<hr>
+<h2 id="git-break-cuando-algo-se-rompe">🔙 Git break — Cuando algo se rompe</h2>
+<p>Los fixtures con <code>.auth/</code>, <code>page.route()</code> y <code>storageState</code> son frágiles. Vas a romper cosas. Esta es la tabla decisión:</p>
+<table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>Comando</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modifiqué un archivo y quiero descartar los cambios</td>
+<td><code>git restore &lt;archivo&gt;</code></td>
+</tr>
+<tr>
+<td>Agregué algo al staging y no quería</td>
+<td><code>git restore --staged &lt;archivo&gt;</code></td>
+</tr>
+<tr>
+<td>Olvidé un archivo en el último commit local</td>
+<td><code>git add &lt;archivo&gt;</code> + <code>git commit --amend --no-edit</code></td>
+</tr>
+<tr>
+<td>Quiero deshacer el último commit local conservando los cambios</td>
+<td><code>git reset --soft HEAD~1</code></td>
+</tr>
+<tr>
+<td>El commit ya está pusheado y quiero deshacerlo</td>
+<td><code>git revert &lt;hash&gt;</code></td>
+</tr>
+<tr>
+<td>Hice <code>reset --hard</code> y me arrepentí</td>
+<td><code>git reflog</code> + <code>git reset --hard &lt;hash-original&gt;</code></td>
+</tr>
+</tbody></table>
+<h3 id="caso-típico-el-authsetupts-que-rompió-todo">Caso típico: el <code>auth.setup.ts</code> que rompió todo</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git log --oneline
+a1b2c3d (HEAD -&gt; feature/m04-fixtures) test: try mock for failed login
+7f8e9d0 feat(m04): add auth.setup.ts                ← este rompió todo
+3e4f5a6 chore: initial m04</code></pre></div>
+<p>Si el commit <code>7f8e9d0</code> aún <strong>no está pusheado</strong>:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git reset --soft HEAD~2     # deshace los dos últimos, deja los cambios en staging</code></pre></div>
+<p>Si <strong>ya está pusheado</strong> (otros pueden haberlo descargado):</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git revert 7f8e9d0          # crea un nuevo commit que deshace 7f8e9d0
+$ git push</code></pre></div>
+<p><code>revert</code> es <strong>siempre seguro</strong> en repos compartidos porque no reescribe el historial.</p>
+<aside class="callout callout--warn"><p>⚠️ <strong>Regla de oro:</strong> <strong>nunca</strong> uses <code>--amend</code>, <code>reset --hard</code> o <code>rebase</code> en commits que <strong>ya pusheaste</strong>. Reescribir historial publicado rompe el repo de tus compañeros.</p>
+</aside>
+<hr>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-06-github/01-configuracion-cuenta.md">Cuenta de GitHub + SSH</a> · <a href="../git-github-course/modulo-06-github/02-crear-subir-repo.md">Crear y subir un repo</a> · <a href="../git-github-course/modulo-06-github/03-pull-requests.md">PRs detallados (fork, plantilla, review)</a> · <a href="../git-github-course/modulo-03-undo-remotos-tags/01-deshacer-cambios.md">Manual completo de undo</a> · <a href="../git-github-course/modulo-03-undo-remotos-tags/02-remotos.md">Trabajar con remotos</a></p>
+</aside>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m03.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M03 · POM</div></a>
+      <a href="m05.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M05 · API layer</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

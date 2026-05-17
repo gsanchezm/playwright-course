@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>M02 · Locators & data — Playwright Course</title>
+<style>:root { --accent: #059669; }
+
+:root {
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --code-bg: #0f172a;
+  --code-text: #e2e8f0;
+  --code-comment: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --bg-elevated: #111827;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-soft: #cbd5e1;
+    --text-muted: #94a3b8;
+    --code-bg: #020617;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --bg-elevated: #111827;
+  --border: #1f2937;
+  --text: #e5e7eb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --code-bg: #020617;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Top nav */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+}
+.topnav__brand {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.topnav__modules {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  scrollbar-width: none;
+}
+.topnav__modules::-webkit-scrollbar { display: none; }
+.topnav__modules a {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.topnav__modules a.active {
+  color: var(--accent);
+  background: var(--bg-elevated);
+}
+.topnav__theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.topnav__theme:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  gap: 48px;
+}
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+.toc {
+  font-size: 14px;
+}
+@media (min-width: 1024px) {
+  .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .toc summary { list-style: none; pointer-events: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  details.toc[open] > summary,
+  details.toc > summary { pointer-events: none; }
+}
+.toc ol { list-style: none; padding-left: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a {
+  display: block;
+  padding: 4px 10px;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--text); text-decoration: none; border-left-color: var(--border); }
+.toc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+/* Body */
+.content { min-width: 0; max-width: 760px; }
+.hero {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-elevated);
+  padding: 28px 32px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  margin-bottom: 40px;
+}
+.hero__num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero__meta {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+.hero__meta strong { color: var(--text-soft); font-weight: 600; }
+
+/* Markdown body */
+.content h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+  padding-top: 16px;
+  color: var(--text);
+}
+.content h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+.content h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.content p { margin: 0 0 16px; color: var(--text); }
+.content ul, .content ol { padding-left: 24px; margin: 0 0 20px; }
+.content li { margin: 4px 0; }
+.content li > ul, .content li > ol { margin: 8px 0; }
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+.content strong { color: var(--text); font-weight: 600; }
+.content em { color: var(--text-soft); }
+
+/* Inline code */
+.content :not(pre) > code {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.88em;
+  border: 1px solid var(--border);
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: var(--radius);
+  margin: 0 0 20px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--code-comment);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.code-block:hover .code-copy { opacity: 1; }
+.code-copy:hover { background: rgba(255, 255, 255, 0.12); }
+.code-copy.is-copied { color: #86efac; }
+.code-block pre {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.code-block code { background: transparent; color: inherit; padding: 0; border: 0; font-size: inherit; }
+
+/* Tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.content th, .content td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-elevated);
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.content tr:last-child td { border-bottom: 0; }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  background: var(--bg-elevated);
+  padding: 12px 16px 12px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.callout p { margin: 0 0 8px; color: var(--text); }
+.callout p:last-child { margin-bottom: 0; }
+.callout ul, .callout ol { margin: 8px 0; padding-left: 20px; }
+.callout strong { color: var(--text); }
+.callout--tip { border-left-color: var(--accent); }
+.callout--warn { border-left-color: #dc2626; }
+.callout--big-idea { border-left-color: #0891b2; }
+.callout--learn-more { border-left-color: var(--text-muted); }
+
+/* Prev / Next */
+.prevnext {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 640px) {
+  .prevnext { grid-template-columns: 1fr 1fr; }
+}
+.prevnext a {
+  display: block;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prevnext a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-1px); }
+.prevnext__label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.prevnext__title { font-weight: 600; color: var(--text); }
+.prevnext a.is-next { text-align: right; }
+
+/* Index page */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.module-card {
+  display: block;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.18s ease;
+  border-left: 4px solid var(--accent-card);
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+.module-card__num { font-size: 12px; font-weight: 700; color: var(--accent-card); letter-spacing: 0.12em; text-transform: uppercase; }
+.module-card__title { font-size: 18px; font-weight: 600; margin: 4px 0 10px; color: var(--text); }
+.module-card__piece { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
+.module-card__duration { font-size: 12px; color: var(--text-muted); margin-top: 12px; display: block; font-variant-numeric: tabular-nums; }
+
+@media print {
+  .topnav, .toc, .code-copy, .prevnext { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  html { scroll-behavior: auto; }
+}
+.hl-comment { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+<body>
+<header class="topnav">
+  <a href="index.html" class="topnav__brand">Playwright Course</a>
+  <nav class="topnav__modules" aria-label="Módulos"><a href="m00.html" >M00</a><a href="m01.html" >M01</a><a href="m02.html" class="active">M02</a><a href="m03.html" >M03</a><a href="m04.html" >M04</a><a href="m05.html" >M05</a><a href="m06.html" >M06</a><a href="m07.html" >M07</a></nav>
+  <button class="topnav__theme" type="button" aria-label="Alternar tema claro/oscuro">🌙</button>
+</header>
+<div class="layout">
+  <details class="toc" open>
+    <summary>En esta página</summary>
+    <ol>
+      <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
+      <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
+      <li><a href="#qué-aprenderás">¿Qué aprenderás?</a></li>
+      <li><a href="#jerarquía-de-locators-regla-del-curso">Jerarquía de locators (regla del curso)</a></li>
+      <li><a href="#conceptos-jit">Conceptos JIT</a></li>
+      <li><a href="#utility-types-partialrecordcurrency-string-desglosado">🧩 Utility types: Partial&lt;Record&lt;Currency, string&gt;&gt; desglosado</a></li>
+      <li><a href="#paso-a-paso">Paso a paso</a></li>
+      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#outcome-esperado">Outcome esperado</a></li>
+    </ol>
+  </details>
+  <main class="content">
+    <header class="hero">
+      <span class="hero__num">Módulo 02</span>
+      <h1>Locators & data</h1>
+      <p class="hero__meta">
+        <strong>Duración:</strong> 60-90 min
+        <br><strong>Pieza que suma al framework:</strong> Locators robustos + data-driven con JSON
+      </p>
+    </header>
+<p><strong>Duración estimada:</strong> 45-60 min
+<strong>Pieza que suma al framework:</strong> <code>types/omnipizza.d.ts</code> + <code>data/users.json</code> + <code>data/markets.json</code>. El smoke de M01 se parametriza con <code>test.each()</code> contra los 4 mercados.</p>
+<hr>
+<h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
+<p>Aparecen <strong>dos carpetas nuevas</strong>: <code>data/</code> (los datasets) y <code>types/</code> (los contratos que validan esos datasets). El JSON deja de ser &quot;string suelto&quot; y pasa a ser <strong>dato tipado</strong>.</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">playwright-course/
+├── data/                          ← 🆕 datasets de prueba
+│   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, currency)
+│   └── users.json                 ← 🆕 standard_user, admin_user, ...
+├── types/                         ← 🆕 contratos del dominio
+│   ├── index.ts                   ← 🆕 barrel: re-exporta lo de omnipizza
+│   └── omnipizza.d.ts             ← 🆕 User, Market, Pizza, Currency, CountryCode
+├── modulo-01-smoke-feo/           ← (sin cambios)
+├── modulo-02-locators-data/       ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 test.each por mercado + lookup map
+│   └── reto.spec.ts               ← 🆕 añadir 5º mercado (CA) sin tocar el spec
+├── .env, .env.example, .gitignore
+├── package.json, tsconfig.json
+└── playwright.config.ts</code></pre></div>
+<p><strong>Flujo del dato</strong> (cómo viaja del JSON al test):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">data/markets.json  ──┐
+                     ├─► import marketsJson  ──► as Market[]  ──► for (const market of markets) test(...)
+types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-driven loop)</code></pre></div>
+<p><strong>Qué NO existe todavía:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Carpeta</th>
+<th>Llega en</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>pages/</code></td>
+<td>M03</td>
+<td>Page Object Model (matar la duplicación)</td>
+</tr>
+<tr>
+<td><code>tests/setup/</code>, <code>fixtures/</code>, <code>helpers/</code></td>
+<td>M04</td>
+<td>Setup project + fixtures</td>
+</tr>
+<tr>
+<td><code>services/</code>, <code>tests/api/</code></td>
+<td>M05</td>
+<td>API testing</td>
+</tr>
+<tr>
+<td><code>.github/workflows/</code></td>
+<td>M06</td>
+<td>CI/CD</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre <code>types/omnipizza.d.ts</code> y <code>data/markets.json</code> lado a lado y dibuja la flecha con el dedo: <strong>el <code>.d.ts</code> describe lo que <code>.json</code> debe contener</strong>. Si rompes el contrato (typo, campo faltante), TS lo detecta antes de correr.</p>
+</aside>
+<hr>
+<h2 id="analogía-de-apertura">Analogía de apertura</h2>
+<p>Un tester manual siempre trae consigo una <strong>hoja de datos de prueba</strong> (usuarios, ambientes, mercados). En este módulo construimos esa hoja como <strong>JSON tipado</strong> y la conectamos al TC con <code>test.each()</code> — un mismo caso ejecutado con N sets de datos distintos, como una matriz de regresión.</p>
+<hr>
+<h2 id="qué-aprenderás">¿Qué aprenderás?</h2>
+<ol>
+<li><strong>Jerarquía de locators</strong> con criterios de cuándo bajar nivel.</li>
+<li><strong>Filtros y combinadores:</strong> <code>.filter()</code>, <code>.nth()</code>, <code>locator.all()</code>.</li>
+<li><strong>Iterar locators</strong> con <code>for...of</code> para recorrer listas reales (pizzas del catálogo).</li>
+<li><strong><code>interface</code> como contrato:</strong> User, Market, Pizza — fallan en compile-time si el JSON no cumple.</li>
+<li><strong><code>test.each&lt;T&gt;()</code></strong> para data-driven.</li>
+<li><strong><code>import type</code></strong> — traer sólo la forma, no el código.</li>
+</ol>
+<hr>
+<h2 id="jerarquía-de-locators-regla-del-curso">Jerarquía de locators (regla del curso)</h2>
+<p>Escríbelo como escribirías un <strong>bug report bien hecho</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Prioridad</th>
+<th>Locator</th>
+<th>Cuándo usarlo</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1️⃣</td>
+<td><code>getByRole</code></td>
+<td>Casi siempre. Es accesible y semántico.</td>
+<td><code>page.getByRole(&#39;button&#39;, { name: &#39;Pagar&#39; })</code></td>
+</tr>
+<tr>
+<td>2️⃣</td>
+<td><code>getByLabel</code> / <code>getByText</code></td>
+<td>Formularios y contenido visible.</td>
+<td><code>page.getByLabel(&#39;Email&#39;)</code></td>
+</tr>
+<tr>
+<td>3️⃣</td>
+<td><code>getByTestId</code></td>
+<td>Cuando el DOM no coopera y el dev cooperó.</td>
+<td><code>page.getByTestId(&#39;pizza-card-123&#39;)</code></td>
+</tr>
+<tr>
+<td>4️⃣</td>
+<td>CSS selectors</td>
+<td>Cuando los testids son dinámicos o no existen.</td>
+<td><code>page.locator(&#39;[data-testid^=&quot;pizza-card-&quot;]&#39;)</code></td>
+</tr>
+<tr>
+<td>5️⃣</td>
+<td>XPath</td>
+<td>Último recurso. Frágil.</td>
+<td><code>page.locator(&#39;//button[@data-ready]&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>Importante:</strong> CSS y XPath <strong>no están prohibidos</strong>. Están al final porque son frágiles, no porque sean inválidos. En OmniPizza usamos CSS con prefijo (<code>[data-testid^=&quot;pizza-card-&quot;]</code>) para los testids dinámicos — es legítimo.</p>
+<hr>
+<h2 id="conceptos-jit">Conceptos JIT</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Analogía QA</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>interface User</code></td>
+<td>Contrato Swagger: un User DEBE tener username, password, role</td>
+</tr>
+<tr>
+<td><code>test.each&lt;Market&gt;(markets)(&#39;...&#39;, ...)</code></td>
+<td>Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones</td>
+</tr>
+<tr>
+<td><code>import type { User }</code></td>
+<td>Sólo traigo la forma, no el código</td>
+</tr>
+<tr>
+<td><code>locator.all()</code></td>
+<td>Obtener el array de locators — como pedir todas las filas de una tabla</td>
+</tr>
+<tr>
+<td><code>.filter({ hasText: &#39;Spicy&#39; })</code></td>
+<td>Filtrar por componente en Jira</td>
+</tr>
+<tr>
+<td><code>.nth(0)</code></td>
+<td>La primera fila de resultados</td>
+</tr>
+<tr>
+<td><code>Record&lt;K, V&gt;</code></td>
+<td>Matriz de datos esperados: TODAS las celdas obligatorias</td>
+</tr>
+<tr>
+<td><code>Partial&lt;T&gt;</code></td>
+<td>Filtro de búsqueda: cada campo es opcional</td>
+</tr>
+<tr>
+<td>Guard clause / fast return</td>
+<td>Salir temprano en vez de anidar <code>if/else</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="utility-types-partialltrecordltcurrency-stringgtgt-desglosado">🧩 Utility types: <code>Partial&lt;Record&lt;Currency, string&gt;&gt;</code> desglosado</h2>
+<p>En <code>ejemplo.spec.ts</code> aparece esta declaración:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">const currencySymbol: Partial&lt;Record&lt;Currency, string&gt;&gt; = {
+  MXN: "$",
+  JPY: "¥",
+};</code></pre></div>
+<p>Se lee <strong>de adentro hacia afuera</strong>. Son dos <em>utility types</em> anidados.</p>
+<h3 id="1-recordltk-vgt-quotobjeto-cuyas-llaves-son-k-y-los-valores-son-vquot">1. <code>Record&lt;K, V&gt;</code> — &quot;objeto cuyas llaves son <code>K</code> y los valores son <code>V</code>&quot;</h3>
+<p>Forma corta de declarar un diccionario/mapa donde las llaves están acotadas a un union type.</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">type Currency = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+
+// Esto:
+const symbols: Record&lt;Currency, string&gt; = {
+  MXN: "$",
+  USD: "$",
+  CHF: "Fr",
+  JPY: "¥",
+  CAD: "$",
+};
+
+// Es equivalente a:
+const symbols: {
+  MXN: string;
+  USD: string;
+  CHF: string;
+  JPY: string;
+  CAD: string;
+} = { /* ... */ };</code></pre></div>
+<p><strong>Para qué sirve:</strong> el compilador exige que las llaves sean <strong>exactamente</strong> los valores del union. Si escribes <code>MNX</code> (typo) o se te olvida <code>USD</code>, TypeScript falla.</p>
+<p><strong>Analogía QA:</strong> es la <strong>matriz de datos esperados</strong> del test plan. Las dimensiones (las 5 currencies del negocio) están cerradas; <code>Record</code> te obliga a llenar <strong>cada celda</strong>.</p>
+<h3 id="2-partiallttgt-quothaz-que-todas-las-propiedades-de-t-sean-opcionalesquot">2. <code>Partial&lt;T&gt;</code> — &quot;haz que todas las propiedades de <code>T</code> sean opcionales&quot;</h3>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">interface User {
+  username: string;
+  password: string;
+  role: string;
+}
+
+// Partial&lt;User&gt; es equivalente a:
+interface PartialUser {
+  username?: string;
+  password?: string;
+  role?: string;
+}</code></pre></div>
+<p><strong>Para qué sirve:</strong> cuando un objeto puede tener <strong>solo algunas</strong> de las llaves definidas en <code>T</code>, no todas.</p>
+<p><strong>Analogía QA:</strong> es el <strong>filtro de búsqueda</strong> de un formulario: el contrato dice &quot;estos son los campos posibles&quot;, pero el usuario llena solo los que le interesan.</p>
+<h3 id="3-juntos-partialltrecordltcurrency-stringgtgt">3. Juntos: <code>Partial&lt;Record&lt;Currency, string&gt;&gt;</code></h3>
+<ul>
+<li><strong><code>Record&lt;Currency, string&gt;</code></strong> → &quot;todas las currencies deben tener un símbolo&quot;.</li>
+<li><strong><code>Partial&lt;...&gt;</code></strong> envolviéndolo → &quot;pero cada una es opcional; puedo definir solo las que me interesan&quot;.</li>
+</ul>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">const currencySymbol: Partial&lt;Record&lt;Currency, string&gt;&gt; = {
+  MXN: "$",
+  JPY: "¥",
+  // USD, CHF, CAD se quedan SIN entrada — y TypeScript no se queja.
+};</code></pre></div>
+<p>Si hubiera sido <code>Record&lt;Currency, string&gt;</code> (sin <code>Partial</code>), TS habría exigido las 5 entradas y se habría quejado de las que faltan.</p>
+<p>Al leer el mapa:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">const symbol = currencySymbol[market.currency]; // tipo: string | undefined</code></pre></div>
+<p>Fíjate que <strong>el tipo inferido es <code>string | undefined</code></strong> — precisamente por el <code>Partial</code>. Esa <code>| undefined</code> es lo que <strong>justifica la guard clause</strong> que viene justo después:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">if (!symbol) return; // ← fast return: nada que validar para esta currency
+await expect(page.locator("body")).toContainText(symbol);</code></pre></div>
+<p>TS te <strong>obliga</strong> a manejar el caso &quot;no hay entrada para esta currency&quot;. El <code>Partial</code> no es decoración — está empujándote hacia la buena práctica del fast return.</p>
+<h3 id="comparativa-rápida">Comparativa rápida</h3>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Significado</th>
+<th>Llaves que faltan</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Record&lt;Currency, string&gt;</code></td>
+<td>Todas las currencies tienen símbolo</td>
+<td>❌ error de compilación</td>
+</tr>
+<tr>
+<td><code>Partial&lt;Record&lt;Currency, string&gt;&gt;</code></td>
+<td>Algunas currencies tienen símbolo</td>
+<td>✅ permitido, valor = <code>undefined</code></td>
+</tr>
+<tr>
+<td><code>{ [k in Currency]?: string }</code></td>
+<td>Idéntico al anterior, sintaxis larga</td>
+<td>✅ permitido</td>
+</tr>
+</tbody></table>
+<p>Las dos últimas son equivalentes; <code>Partial&lt;Record&lt;...&gt;&gt;</code> es la forma <strong>idiomática y más legible</strong>.</p>
+<h3 id="cuándo-elegir-cada-uno-en-este-curso">¿Cuándo elegir cada uno en este curso?</h3>
+<ul>
+<li>Si el dato <strong>debe</strong> tener todas las llaves (la matriz de regresión completa) → <code>Record&lt;K, V&gt;</code>.</li>
+<li>Si el dato <strong>podría</strong> tener un subconjunto (un mapa opcional, un override parcial, una config con defaults) → <code>Partial&lt;Record&lt;K, V&gt;&gt;</code>.</li>
+</ul>
+<p>En nuestro caso, <strong>no todas las currencies tienen un símbolo único conocido</strong> (USD, CHF y CAD usan <code>$</code> o <code>Fr</code> y la validación visual sería ambigua), así que es legítimo dejarlas fuera del mapa — <code>Partial</code> lo permite, y el <code>if (!symbol) return;</code> cierra el caso elegante.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este es un buen momento para hacer la pregunta inversa: <em>&quot;¿qué pasa si cambio <code>Partial&lt;Record&lt;...&gt;&gt;</code> a <code>Record&lt;...&gt;</code> en el spec?&quot;</em>. Respuesta: TS rompe la compilación pidiendo las 3 entradas faltantes (<code>USD</code>, <code>CHF</code>, <code>CAD</code>). Eso demuestra <strong>en vivo</strong> que <code>Partial</code> no es decorativo.</p>
+</aside>
+<hr>
+<h2 id="paso-a-paso">Paso a paso</h2>
+<h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
+<p>Antes de empezar verifica que <strong>M01 quedó funcional</strong>:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
+pnpm m1            # debe pasar TC-001 y TC-002 en verde
+ls .env            # debe existir (dotenv lo necesita)
+ls node_modules    # debe existir (pnpm install corrió)</code></pre></div>
+<p>Si M01 no corre, vuelve al módulo anterior — no avances sin esa base.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este módulo asume que <code>dotenv</code>, <code>.env</code> y la primera ejecución contra OmniPizza ya están resueltos. Si alguien todavía no tiene <code>.env</code>, mándalo al <strong>Paso 1 y 2 de M01</strong> antes de continuar.</p>
+</aside>
+<hr>
+<h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
+<p><strong>M02 no añade paquetes npm nuevos.</strong> Solo necesitas lo de M01 (<code>@playwright/test</code>, <code>dotenv</code>, <code>typescript</code>, <code>@types/node</code>).</p>
+<p>Verifica:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null</code></pre></div>
+<p>Si te falta alguno, vuelve al <strong>Paso 1 de M01</strong> (o ejecuta <code>pnpm install</code> si <code>package.json</code> ya los lista).</p>
+<hr>
+<h3 id="paso-2-crear-types-y-data-carpetas-nuevas">Paso 2 — Crear <code>types/</code> y <code>data/</code> (carpetas nuevas)</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p types data
+touch types/omnipizza.d.ts types/index.ts
+touch data/markets.json data/users.json</code></pre></div>
+<p><strong>Contenido mínimo</strong> de cada archivo:</p>
+<p>📄 <code>types/omnipizza.d.ts</code>:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// Union types acotados — el corazón del tipado fuerte de este curso.
+export type CountryCode = "MX" | "US" | "CH" | "JP";
+export type Currency = "MXN" | "USD" | "CHF" | "JPY";
+
+export interface Market {
+  code: CountryCode;
+  fullName: string;
+  currency: Currency;
+}
+
+export interface User {
+  username: string;
+  password: string;
+  role: "standard" | "admin";
+}
+
+export interface Pizza {
+  id: string | number;
+  name: string;
+  currency: Currency;
+  price: number;
+}</code></pre></div>
+<p>📄 <code>types/index.ts</code> (barrel — re-exporta para imports cortos):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export * from "./omnipizza";</code></pre></div>
+<p>📄 <code>data/markets.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">[
+  { "code": "MX", "fullName": "Mexico",        "currency": "MXN" },
+  { "code": "US", "fullName": "United States", "currency": "USD" },
+  { "code": "CH", "fullName": "Switzerland",   "currency": "CHF" },
+  { "code": "JP", "fullName": "Japan",         "currency": "JPY" }
+]</code></pre></div>
+<p>📄 <code>data/users.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">[
+  { "username": "standard_user", "password": "pizza123", "role": "standard" },
+  { "username": "admin_user",    "password": "pizza123", "role": "admin" }
+]</code></pre></div>
+<p><strong>Verifica el tipado</strong> ANTES de seguir:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsc --noEmit
+<span class="hl-comment"># Sin output = los tipos del .d.ts cuadran con el JSON.</span></code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> si el alumno escribe <code>&quot;code&quot;: &quot;MNX&quot;</code> por error, <code>tsc --noEmit</code> falla con <code>Type &#39;&quot;MNX&quot;&#39; is not assignable to type &#39;CountryCode&#39;</code>. Demuéstralo provocando el typo a propósito y mostrando el error.</p>
+</aside>
+<hr>
+<h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m02">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M02)</h3>
+<p><strong>M02 no requiere cambios al config</strong> — sigue el mismo de M01. Solo asegúrate de que <code>tsconfig.json</code> incluya los archivos nuevos.</p>
+<p>Abre tu <code>tsconfig.json</code> y verifica que la sección <code>include</code> contemple <code>types/</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "modulo-*/**/*.ts"
+  ]
+}</code></pre></div>
+<p>Si te faltan las entradas de <code>types/</code>, <strong>añádelas</strong> — sin ellas, los imports <code>import type { Market } from &quot;../types&quot;</code> van a fallar.</p>
+<p>Tu <code>playwright.config.ts</code> debe seguir viéndose como al final de M01:</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M02 (igual que M01)
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
+
+export default defineConfig({
+  testDir: ".",
+  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  reporter: [["html", { open: "never" }], ["list"]],
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+  projects: [
+    { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+  ],
+});</code></pre></div>
+<p>Y añade el script <code>m2</code> a <code>package.json</code>:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
+  "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium",
+  "m2": "playwright test modulo-02-locators-data --project=ui-chromium"
+}</code></pre></div>
+<hr>
+<h3 id="paso-4-inspeccionar-el-contrato-typesomnipizzadts">Paso 4 — Inspeccionar el contrato (<code>types/omnipizza.d.ts</code>)</h3>
+<p>Abre <code>types/omnipizza.d.ts</code> en el editor. Vas a ver <code>interface User</code>, <code>interface Market</code> y <code>interface Pizza</code>. Estos son los <strong>contratos</strong> que el JSON debe cumplir.</p>
+<p>Pregunta al grupo: <em>&quot;si el JSON tuviera un campo <code>username</code> con un número en vez de string, ¿qué pasaría?&quot;</em> — respuesta: <strong>TypeScript falla en compile-time</strong>, antes de correr el test.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre <code>types/omnipizza.d.ts</code> y <code>data/users.json</code> lado a lado y muestra el mapeo campo a campo. Esto fija la idea de &quot;contrato vs implementación&quot;.</p>
+</aside>
+<hr>
+<h3 id="paso-5-inspeccionar-la-data-datamarketsjson-y-datausersjson">Paso 5 — Inspeccionar la data (<code>data/markets.json</code> y <code>data/users.json</code>)</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">cat data/markets.json
+cat data/users.json</code></pre></div>
+<p>Cosas que el facilitador debe señalar:</p>
+<ul>
+<li><code>markets.json</code> tiene <strong>4 entradas</strong>: MX, US, CH, JP. Cada una con <code>code</code>, <code>fullName</code>, <code>currency</code>.</li>
+<li><code>users.json</code> tiene varios usuarios. Vamos a usar <code>standard_user</code>.</li>
+<li>Los valores de <code>code</code> y <code>currency</code> están restringidos por <strong>union types</strong> en <code>types/omnipizza.d.ts</code> (<code>&quot;MX&quot; | &quot;US&quot; | &quot;CH&quot; | &quot;JP&quot;</code>). Si añades <code>&quot;CA&quot;</code> sin ampliar el union, TS rechaza el cambio.</li>
+</ul>
+<hr>
+<h3 id="paso-6-ejecutar-el-ejemplo">Paso 6 — Ejecutar el ejemplo</h3>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Headless — el smoke parametrizado, 4 mercados de un solo TC</span>
+pnpm m2
+
+<span class="hl-comment"># UI mode — RECOMENDADO la primera vez</span>
+pnpm test:ui</code></pre></div>
+<p><strong>Qué debería pasar:</strong></p>
+<ul>
+<li>En la terminal verás <strong>4 tests</strong> corriendo, uno por mercado: <code>TC-MX</code>, <code>TC-US</code>, <code>TC-CH</code>, <code>TC-JP</code>.</li>
+<li>Todos pasan en verde (suelen tardar ~30-40s la primera vez por el cold start de Render).</li>
+<li>En UI mode, los 4 aparecen como hijos del mismo describe.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> después de la primera corrida, abre <code>pnpm exec playwright show-report</code> y muéstrale al grupo que <strong>es el mismo <code>test()</code> ejecutándose 4 veces</strong> — no son 4 tests copy/pasteados.</p>
+</aside>
+<hr>
+<h3 id="paso-7-lectura-guiada-del-forof-data-driven">Paso 7 — Lectura guiada del <code>for...of</code> data-driven</h3>
+<p>Abre <code>ejemplo.spec.ts</code> y haz que el grupo identifique:</p>
+<ol>
+<li><strong>El bucle <code>for (const market of markets)</code></strong> — un <code>test()</code> por cada elemento del array.</li>
+<li>El <strong>título dinámico</strong> del test: <code>`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`</code> — cada test tiene un nombre único.</li>
+<li>La <strong>validación condicional por mercado</strong> (símbolo <code>$</code> en MX, <code>¥</code> en JP) — lógica de negocio data-driven.</li>
+<li>El <strong>CSS selector legítimo</strong> <code>[data-testid^=&quot;pizza-card-&quot;]</code> — explica por qué baja al nivel 4 de la jerarquía: los testids son dinámicos.</li>
+</ol>
+<hr>
+<h3 id="paso-8-catálogo-de-locators-lectura-no-ejecución">Paso 8 — Catálogo de locators (lectura, no ejecución)</h3>
+<p>Al final de <code>ejemplo.spec.ts</code> hay un <code>test.skip(&quot;ejemplos de cada nivel&quot;, ...)</code>. <strong>No se ejecuta</strong>, es una <strong>referencia visual</strong> de cada nivel de la jerarquía con código real. Pídeles que lo escaneen — lo van a copiar para el reto.</p>
+<hr>
+<h3 id="paso-9-resolver-el-reto">Paso 9 — Resolver el reto</h3>
+<p>Abre <code>reto.spec.ts</code>. La meta es <strong>añadir un 5º mercado (<code>CA</code>, Canadá, <code>CAD</code>) sin tocar el spec</strong>. Vas a editar:</p>
+<ol>
+<li><code>data/markets.json</code> → añadir el nuevo objeto.</li>
+<li><code>types/omnipizza.d.ts</code> → ampliar el union (<code>CountryCode</code> y <code>Currency</code>).</li>
+<li>Completar los TODOs del reto para que la validación de currency sea data-driven (no hardcoded como en el ejemplo).</li>
+</ol>
+<p>Cada TODO indica <strong>Qué hacer / Pista / Cómo verificar</strong>.</p>
+<hr>
+<h2 id="comandos-útiles">Comandos útiles</h2>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m2                                          # corre el módulo
+pnpm exec playwright test modulo-02-locators-data --headed --project=ui-chromium
+pnpm typecheck                                   # verifica tipos sin correr tests
+pnpm exec playwright test --grep "@smoke"        # filtra por tag
+pnpm exec playwright show-report                 # último HTML report</code></pre></div>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Entiendes la jerarquía de locators y <strong>por qué</strong> no todo es <code>getByRole</code>.</li>
+<li><input disabled="" type="checkbox"> Puedes leer <code>markets.json</code> y explicar cómo el test lo consume.</li>
+<li><input disabled="" type="checkbox"> Sabes añadir un 5º mercado <strong>sin tocar el spec</strong>.</li>
+<li><input disabled="" type="checkbox"> <code>pnpm typecheck</code> queda en verde tras ampliar los union types.</li>
+<li><input disabled="" type="checkbox"> Reconoces cuándo un CSS selector es legítimo (testids dinámicos).</li>
+</ul>
+
+    <nav class="prevnext" aria-label="Navegación entre módulos">
+      <a href="m01.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M01 · Smoke feo</div></a>
+      <a href="m03.html" class="is-next"><div class="prevnext__label">Siguiente →</div><div class="prevnext__title">M03 · POM</div></a>
+    </nav>
+  </main>
+</div>
+<script>
+(function() {
+  // Theme toggle
+  const root = document.documentElement;
+  const btn = document.querySelector('.topnav__theme');
+  const stored = localStorage.getItem('docs-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  function refreshIcon() {
+    const t = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (btn) btn.textContent = t === 'dark' ? '☀' : '🌙';
+  }
+  refreshIcon();
+  if (btn) btn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('docs-theme', next);
+    refreshIcon();
+  });
+
+  // Copy to clipboard
+  document.querySelectorAll('.code-copy').forEach(button => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement.querySelector('code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        const prev = button.textContent;
+        button.textContent = 'Copiado ✓';
+        button.classList.add('is-copied');
+        setTimeout(() => { button.textContent = prev; button.classList.remove('is-copied'); }, 1400);
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Active TOC link on scroll
+  const links = Array.from(document.querySelectorAll('.toc a[href^="#"]'));
+  if (!links.length) return;
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      links.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + id));
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>

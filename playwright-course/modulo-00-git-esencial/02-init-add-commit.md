@@ -1,5 +1,19 @@
 # 2. Inicializar un repo y registrar cambios
 
+## 2.0 ¿Qué es un commit, exactamente?
+
+Un **commit** es una **fotografía completa** de tu proyecto en un momento dado, con tres datos pegados:
+
+1. **Qué archivos había** (no un "diff" — Git guarda el snapshot completo).
+2. **Quién la tomó** (autor + email — por eso configuras `user.name` y `user.email`).
+3. **Por qué** (el mensaje que escribes con `-m "..."`).
+
+> 💡 **Analogía QA:** un commit es como guardar el estado *"build #345 — green run"* en tu pipeline de CI. Si mañana alguien rompe algo, puedes regresar a la build verde exacta y comparar.
+
+Cuando alguien te diga *"hazme un commit"*, lo que pide es: **toma una foto del estado actual del proyecto, fírmala con tu nombre y déjale un mensaje a tu yo-del-futuro (o a un compañero)**.
+
+---
+
 Estos son los 4 comandos que vas a usar **decenas de veces al día**:
 
 | Comando | Qué hace |

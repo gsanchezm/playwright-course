@@ -7,9 +7,68 @@
 
 ---
 
+## 🏗️ Arquitectura al terminar este módulo
+
+Este módulo **no agrega código al framework** — agrega **disciplina de versionado**. El "antes y después" se ve en el repo, no en archivos nuevos:
+
+```
+ANTES (sandbox sin Git)             DESPUÉS (sandbox con Git habit)
+─────────────────────────           ───────────────────────────
+mi-carpeta/                         mi-carpeta/
+├── tests_v1/                       ├── .git/                  ← 🆕 historial completo
+├── tests_v2/                       ├── .gitignore             ← 🆕 excluye .env, .auth, etc
+├── tests_FINAL/                    ├── tests/
+└── tests_NO_TOCAR/                 │   └── login.spec.ts      ← 1 versión, N commits
+                                    └── .env                   ← presente, NO versionado
+```
+
+**Qué entrega este módulo al resto del curso:**
+
+| Habilidad | Cuándo se usa después |
+|---|---|
+| `git config --global` (identidad) | Siempre — todos los commits firmados |
+| `git init` + `status`/`add`/`commit` | M01 en adelante: versionas cada cambio |
+| `.gitignore` con `.env`, `.auth/`, `node_modules/` | M01 (creas `.env`) y M04 (creas `.auth/`) |
+| `git log --oneline` | M03 y M04 para revisar historia antes de mergear |
+
+**Lo que llega *just-in-time* después** (no se trata en M00):
+
+| Habilidad | Llega en | Por qué |
+|---|---|---|
+| Branches (`switch -c`, merge) | M03 | El refactor a POM toca varios archivos a la vez |
+| Resolución de conflictos | M03 | Dos personas editan `LoginPage.ts` |
+| Push, remotos, PRs | M04 | Necesitas que un compañero revise tus fixtures |
+| Deshacer cambios (`restore`, `reset`, `revert`) | M04 | `auth.setup.ts` puede romper todo |
+| Secrets en GitHub (`gh secret`) | M06 | CI necesita credenciales sin filtrarlas al repo |
+
+> 💡 **Para el facilitador:** este módulo es **el único que no toca el árbol del framework** — su producto es la disciplina del alumno. Mide el éxito al ver `git log --oneline` con commits limpios y semánticos al final del curso.
+
+---
+
 ## Analogía de apertura
 
-Tu suite de tests es código vivo: **siempre va a cambiar**. Sin Git eres un tester manual sin control de versiones de tus casos de prueba — un día borras un step, otro día sobreescribes una regresión, y nadie sabe quién rompió qué. Git es la **bitácora obligatoria** del automatizador.
+Tu suite de tests es código vivo: **siempre va a cambiar**. Sin Git eres un tester manual sin control de versiones de tus casos de prueba — un día borras un step, otro día sobreescribes una regresión, y nadie sabe quién rompió qué.
+
+> 🎯 **Imagen mental:** piensa en Git como la **caja negra de un avión**. No detiene los errores, pero **graba cada movimiento del piloto** (tú) sobre el código. Cuando algo se cae, puedes rebobinar al instante exacto, ver qué cambió y volver al estado anterior — sin perder lo que sí servía. Sin caja negra, el equipo de QA queda discutiendo "yo creo que fue Juan ayer" mientras la suite está rota en producción.
+
+Git es la **bitácora obligatoria** del automatizador: cada commit es una grabación con marca de tiempo, autor y descripción de qué cambió.
+
+---
+
+## Glosario rápido
+
+Antes de empezar, fija estos 6 términos. Vas a leerlos en cada bloque del módulo:
+
+| Término | En 1 línea | Analogía QA |
+|---|---|---|
+| **Repositorio (repo)** | Carpeta + su historial completo de cambios | Carpeta de evidencias de QA, pero con cada versión guardada automáticamente |
+| **Commit** | Una "foto" de tu proyecto en un momento dado, con mensaje y autor | Un *test report* firmado: dice qué se ejecutó, quién lo ejecutó y cuándo |
+| **Working directory** | Lo que ves en tu editor *ahora* | Bugs que estás detectando en este momento — aún no decides si van al reporte |
+| **Staging area** | "Sala de espera" de lo que entrará al próximo commit | Bugs ya validados que sí van al reporte final, pero aún no lo envías |
+| **Hash** | ID único de 40 caracteres (`a1b2c3d…`) por commit | Número de ticket en Jira: irrepetible, sirve para señalar exactamente "este" |
+| **Branch (rama)** | Línea de trabajo paralela sobre el mismo repo | Ambiente de QA aislado: pruebas algo sin tocar el ambiente principal |
+
+> 💡 Branches se trabajan a fondo en M03/M04 — por ahora basta con saber que existen.
 
 ---
 
