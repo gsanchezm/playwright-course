@@ -212,6 +212,43 @@ En nuestro caso, **no todas las currencies tienen un símbolo único conocido** 
 
 ---
 
+## 🌱 Semilla conceptual: ¿y si hubiera más de un ambiente? (múltiples `.env`)
+
+Hasta ahora el curso usa **un solo `.env`** (lo creaste en M01) cargado con `import "dotenv/config"` en `playwright.config.ts`. De ahí salen `BASE_URL`, `API_URL`, `TEST_USER_*` y `DEFAULT_COUNTRY`. **Para M02 esto sobra** — no toques nada. Pero conviene plantar la semilla de una pregunta que aparece en proyectos reales:
+
+> *"¿Y si OmniPizza tuviera un ambiente de **staging** además del de QA? ¿Mantengo dos `.env` y los intercambio a mano?"*
+
+**Analogía QA:** es la diferencia entre tener **una sola hoja de datos de prueba** y tener **una pestaña por ambiente** en el mismo Excel. El TC es idéntico; lo que cambia son URLs y credenciales según dónde lo ejecutes.
+
+El patrón se llama **base + override**: un `.env` con los defaults compartidos y un `.env.<ambiente>` que gana encima.
+
+```
+.env             ← defaults compartidos (TEST_USER_*, DEFAULT_COUNTRY)
+.env.qa          ← overrides de QA      (BASE_URL, API_URL)
+.env.staging     ← overrides de staging (BASE_URL, API_URL)
+.env.example     ← plantilla versionada (la ÚNICA que se commitea)
+```
+
+Orden de prioridad (quién gana, de menor a mayor):
+
+```
+.env (defaults)  <  .env.<ambiente>  <  variables ya en process.env (CI / shell)
+```
+
+Esa última regla es la clave de M06: **en CI no usas archivos `.env`** — GitHub Actions inyecta las variables directo vía `secrets.*` (ya lo anota tu `.env.example`), y como mandan sobre cualquier archivo, los secrets de CI ganan.
+
+| Situación | ¿Múltiples `.env`? | Por qué |
+|---|---|---|
+| Un solo ambiente (M01–M05) | ❌ No | Un `.env` + defaults en el config sobra. Complejidad sin beneficio. |
+| 2+ ambientes reales (QA / staging / prod) | ✅ Sí | Cada uno tiene URLs y credenciales distintas. |
+| CI/CD | ⚠️ No con archivos | Se inyectan vía `secrets.*`, no con `.env`. |
+
+**Regla del curso (coherente con "siente el dolor primero"):** no agregues `.env.qa` / `.env.staging` hasta que tengas un **segundo ambiente real**. Antes de eso es arquitectura especulativa. La implementación completa (carga por `TEST_ENV`, `override: true`, scripts y el detalle de Windows/PowerShell con `cross-env`) **se ve en M06**, donde el multi-entorno deja de ser hipótesis y se vuelve necesidad.
+
+> 💡 **Para el facilitador:** lanza la pregunta *"¿qué tocarías para correr el mismo smoke contra staging?"* y deja que el grupo lo razone. La respuesta NO es "duplicar specs" — es "cambiar de qué archivo sale `BASE_URL`". Fíjate que `playwright.config.ts` **ya está listo**: `baseURL: process.env.BASE_URL ?? ...` no cambiaría ni una línea. Eso refuerza el mismo principio del módulo: **el dato vive fuera del código; el código solo lo consume.**
+
+---
+
 ## Paso a paso
 
 ### Paso 0 — Pre-requisitos
@@ -320,6 +357,13 @@ pnpm exec tsc --noEmit
 ---
 
 ### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M02)
+
+> **📐 Config — cambios vs M01**
+> ```diff
+> # playwright.config.ts — SIN CAMBIOS vs M01
+> # (M02 añade DATOS tipados, no configuración del runner)
+> ```
+> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-chromium`). **Entra:** nada en el config — el incremental de M02 vive en `data/` y `types/`, no en `playwright.config.ts`. El único ajuste relacionado es el `include` de `tsconfig.json` para que vea `types/`.
 
 **M02 no requiere cambios al config** — sigue el mismo de M01. Solo asegúrate de que `tsconfig.json` incluya los archivos nuevos.
 
@@ -449,15 +493,59 @@ Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 
 ---
 
-## Comandos útiles
+## 🔍 Detalles que parecen obvios pero no lo son
 
-```bash
-pnpm m2                                          # corre el módulo
-pnpm exec playwright test modulo-02-locators-data --headed --project=ui-chromium
-pnpm typecheck                                   # verifica tipos sin correr tests
-pnpm exec playwright test --grep "@smoke"        # filtra por tag
-pnpm exec playwright show-report                 # último HTML report
-```
+Cosas del `ejemplo.spec.ts` que se leen "de pasada" pero esconden una decisión de diseño. Si las cambias por la alternativa "obvia", el test se rompe o pierdes seguridad de tipos.
+
+### `await expect(page).toHaveURL(/\/catalog/)`
+
+- **Qué es:** el argumento entre `/.../ ` es una **expresión regular** (regex), **no** un string. Un regex hace *match parcial*: la aserción pasa si la URL **contiene/matchea** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
+- **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL del catálogo —querystring (`?locale=`), ids, o el locale dentro del path (`/mx/catalog`)—. Con regex toleras todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
+- **Qué pasa si lo cambias:** si pones el string `"/catalog"`, la aserción exige **igualdad exacta de toda la URL**. Como la URL real es algo como `https://.../catalog?...`, nunca será literalmente `/catalog` y el test **truena** con un timeout de aserción.
+
+### `marketsJson as Market[]`
+
+- **Qué es:** una *type assertion* — le dices a TypeScript "trata este JSON como `Market[]`". Es una promesa que haces tú; **no** es validación en runtime. Al ejecutar, nadie revisa que el JSON realmente cumpla el contrato.
+- **Por qué así (y no la alternativa obvia):** importar un `.json` te da un tipo inferido amplio (y a veces `any`, según la config). El `as Market[]` te devuelve autocompletado y chequeo de `market.code`, `market.currency`, etc. en compile-time, que es donde queremos atrapar los errores.
+- **Qué pasa si lo cambias:** si quitas el `as Market[]`, el tipo pasa a ser el inferido del JSON (o `any`) y **pierdes el autocompletado y la seguridad** de `market.code` / `market.currency`. (Ojo: como es assertion, no validación, un JSON con datos basura sí compilaría — el contrato real lo defiende el `.d.ts` vía `tsc`, no este cast.)
+
+### `const allCards = await pizzaCards.all()`
+
+- **Qué es:** `.all()` devuelve `Promise<Locator[]>` — **materializa** la lista: consulta el DOM *ahora* y te entrega un array fijo de locators. Por eso lleva `await`.
+- **Por qué así (y no la alternativa obvia):** comparado con `pizzaCards.first()`, que **no** necesita `await` porque devuelve un `Locator` perezoso (lazy) — un puntero que recién resuelve el DOM cuando lo usas en una acción o aserción. `.all()` rompe esa pereza a propósito: necesitas el array concreto para iterarlo y contar (`allCards.length`).
+- **Qué pasa si lo cambias:** si omites el `await`, `allCards` queda como una `Promise`, no como array; `allCards.length` da `undefined` y el `for...of` no itera nada (o falla). Si en cambio creías que `.first()` necesita `await` y lo agregas, no rompe pero es ruido — el locator es perezoso por diseño.
+
+### `page.locator('[data-testid^="pizza-card-"]')`
+
+- **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
+- **Por qué así (y no la alternativa obvia):** los testids de las pizzas son **dinámicos** (`pizza-card-123`, `pizza-card-456`...), así que no puedes usar `getByTestId("pizza-card-123")` con un id fijo. Bajar al nivel 4 de la jerarquía (CSS) es **legítimo** justamente por eso (ver la tabla de jerarquía arriba). No es deuda técnica: es la herramienta correcta para testids variables.
+- **Qué pasa si lo cambias:** si usas `=` en vez de `^=` (`[data-testid="pizza-card-"]`), exiges igualdad exacta y no matcheas **ninguna** tarjeta. Si intentas un `getByTestId` con id fijo, solo encuentras una pizza concreta (frágil) o ninguna.
+
+### `for (const card of allCards) { await expect(card)... }`
+
+- **Qué es:** un bucle `for...of` que recorre el array de locators y hace una aserción `await` por cada tarjeta.
+- **Por qué así (y no la alternativa obvia):** `for...of` **serializa** los `await`: espera a que termine la aserción de una tarjeta antes de pasar a la siguiente. La alternativa "obvia" `allCards.forEach(async (card) => { await ... })` **no espera** las promesas — `forEach` ignora el valor de retorno del callback, así que los `await` de adentro se pierden y el test sigue de largo.
+- **Qué pasa si lo cambias:** con `forEach`, las aserciones se disparan en paralelo sin que el test las espere; un fallo puede ocurrir **después** de que el test ya terminó (unhandled rejection) y obtienes falsos verdes. `for...of` (o `Promise.all` si quieres paralelismo controlado) es lo correcto cuando hay `await` dentro.
+
+### `` test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...) ``
+
+- **Qué es:** el título del test se construye con un *template string* que interpola `market.code` en cada vuelta del `for...of` sobre `markets`.
+- **Por qué así (y no la alternativa obvia):** cada iteración del bucle registra un `test()` distinto, y Playwright **exige títulos únicos** dentro del mismo describe. El `${market.code}` garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP` — nombres distintos y legibles en el reporte. Además, el tag `@smoke` embebido en el título es lo que permite filtrar con `--grep @smoke`.
+- **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
+
+> 💡 **Para el facilitador:** el deep-dive de `Partial<Record<Currency, string>>` (la guard clause `if (!symbol) return;`) ya está más arriba (ver sección de utility types arriba); no lo repitas aquí — enlázalo si alguien pregunta por qué el `currencySymbol` es opcional.
+
+---
+
+## ▶️ Cómo ejecutar este módulo
+
+- **Comando del módulo:** `pnpm m2`
+- **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
+- **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-02-locators-data/reto.spec.ts`)
+- **Verificar tipos:** `pnpm typecheck`
+- **Ver el reporte:** `pnpm report`
+- **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m2` (no `VAR=x pnpm m2`, sintaxis bash que falla en PowerShell)
 
 ---
 
