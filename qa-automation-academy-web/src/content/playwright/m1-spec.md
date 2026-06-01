@@ -42,7 +42,7 @@ test.describe("Smoke OmniPizza — versión fea (M01)", () => {
 });
 ```
 
-**Anatomía línea por línea** (el facilitador la repite en voz alta):
+**Anatomía línea por línea:**
 
 | Línea | Concepto |
 |---|---|
@@ -86,13 +86,11 @@ pnpm m1
 2. Verás **2 tests verdes**: `TC-001` y `TC-002`.
 3. Si te falla con `TimeoutError` en el primer test, **vuelve a correr el comando** — el backend ya estará despierto.
 
-> 💡 **Para el facilitador:** este es buen momento para abrir el **HTML report** (`pnpm exec playwright show-report`) y mostrar trazas, screenshots y video. Los alumnos suelen quedar enganchados con el Trace Viewer.
-
 ---
 
 ## Paso 9 — Observar el dolor (lectura guiada de 5 min)
 
-Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el dedo**:
+Abre `ejemplo.spec.ts` y **señala con el dedo**:
 
 1. **Líneas duplicadas entre TC-001 y TC-002:**
    - `page.goto("/")` — repetida.
@@ -104,7 +102,7 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
 3. **El warmup del backend** vive dentro del mismo spec (`beforeAll`) — en M04 esto se convierte en un `setup project` reutilizable.
 4. **Las credenciales** se leen con `process.env.TEST_USER_USERNAME ?? "standard_user"` — el fallback existe por seguridad, pero **la fuente real es `.env`**.
 
-**Pregunta al grupo:** *"si añadieran un tercer smoke, ¿cuántas líneas duplicarían?"* — la respuesta esperada es **~8**. Esa es la deuda que M02 y M03 van a pagar.
+**Pregúntate:** *"si añadiera un tercer smoke, ¿cuántas líneas duplicaría?"* — la respuesta es **~8**. Esa es la deuda que M02 y M03 van a pagar.
 
 ---
 

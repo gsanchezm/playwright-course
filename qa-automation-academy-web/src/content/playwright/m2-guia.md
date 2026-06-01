@@ -44,8 +44,6 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 | `services/`, `tests/api/` | M05 | API testing |
 | `.github/workflows/` | M06 | CI/CD |
 
-> 💡 **Para el facilitador:** abre `types/omnipizza.d.ts` y `data/markets.json` lado a lado y dibuja la flecha con el dedo: **el `.d.ts` describe lo que `.json` debe contener**. Si rompes el contrato (typo, campo faltante), TS lo detecta antes de correr.
-
 ---
 
 ## Analogía de apertura
@@ -208,8 +206,6 @@ Las dos últimas son equivalentes; `Partial<Record<...>>` es la forma **idiomát
 
 En nuestro caso, **no todas las currencies tienen un símbolo único conocido** (USD, CHF y CAD usan `$` o `Fr` y la validación visual sería ambigua), así que es legítimo dejarlas fuera del mapa — `Partial` lo permite, y el `if (!symbol) return;` cierra el caso elegante.
 
-> 💡 **Para el facilitador:** este es un buen momento para hacer la pregunta inversa: *"¿qué pasa si cambio `Partial<Record<...>>` a `Record<...>` en el spec?"*. Respuesta: TS rompe la compilación pidiendo las 3 entradas faltantes (`USD`, `CHF`, `CAD`). Eso demuestra **en vivo** que `Partial` no es decorativo.
-
 ---
 
 ## 🌱 Semilla conceptual: ¿y si hubiera más de un ambiente? (múltiples `.env`)
@@ -245,8 +241,6 @@ Esa última regla es la clave de M06: **en CI no usas archivos `.env`** — GitH
 
 **Regla del curso (coherente con "siente el dolor primero"):** no agregues `.env.qa` / `.env.staging` hasta que tengas un **segundo ambiente real**. Antes de eso es arquitectura especulativa. La implementación completa (carga por `TEST_ENV`, `override: true`, scripts y el detalle de Windows/PowerShell con `cross-env`) **se ve en M06**, donde el multi-entorno deja de ser hipótesis y se vuelve necesidad.
 
-> 💡 **Para el facilitador:** lanza la pregunta *"¿qué tocarías para correr el mismo smoke contra staging?"* y deja que el grupo lo razone. La respuesta NO es "duplicar specs" — es "cambiar de qué archivo sale `BASE_URL`". Fíjate que `playwright.config.ts` **ya está listo**: `baseURL: process.env.BASE_URL ?? ...` no cambiaría ni una línea. Eso refuerza el mismo principio del módulo: **el dato vive fuera del código; el código solo lo consume.**
-
 ---
 
 ## Paso a paso (setup)
@@ -263,8 +257,6 @@ ls node_modules    # debe existir (pnpm install corrió)
 ```
 
 Si M01 no corre, vuelve al módulo anterior — no avances sin esa base.
-
-> 💡 **Para el facilitador:** este módulo asume que `dotenv`, `.env` y la primera ejecución contra OmniPizza ya están resueltos. Si alguien todavía no tiene `.env`, mándalo al **Paso 1 y 2 de M01** antes de continuar.
 
 ---
 
@@ -352,8 +344,6 @@ pnpm exec tsc --noEmit
 # Sin output = los tipos del .d.ts cuadran con el JSON.
 ```
 
-> 💡 **Para el facilitador:** si el alumno escribe `"code": "MNX"` por error, `tsc --noEmit` falla con `Type '"MNX"' is not assignable to type 'CountryCode'`. Demuéstralo provocando el typo a propósito y mostrando el error.
-
 ---
 
 ### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M02)
@@ -423,9 +413,7 @@ Y añade el script `m2` a `package.json`:
 
 Abre `types/omnipizza.d.ts` en el editor. Vas a ver `interface User`, `interface Market` y `interface Pizza`. Estos son los **contratos** que el JSON debe cumplir.
 
-Pregunta al grupo: *"si el JSON tuviera un campo `username` con un número en vez de string, ¿qué pasaría?"* — respuesta: **TypeScript falla en compile-time**, antes de correr el test.
-
-> 💡 **Para el facilitador:** abre `types/omnipizza.d.ts` y `data/users.json` lado a lado y muestra el mapeo campo a campo. Esto fija la idea de "contrato vs implementación".
+Pregúntate: *"si el JSON tuviera un campo `username` con un número en vez de string, ¿qué pasaría?"* — respuesta: **TypeScript falla en compile-time**, antes de correr el test.
 
 ---
 
@@ -436,7 +424,7 @@ cat data/markets.json
 cat data/users.json
 ```
 
-Cosas que el facilitador debe señalar:
+Cosas a observar:
 
 - `markets.json` tiene **4 entradas**: MX, US, CH, JP. Cada una con `code`, `fullName`, `currency`.
 - `users.json` tiene varios usuarios. Vamos a usar `standard_user`.

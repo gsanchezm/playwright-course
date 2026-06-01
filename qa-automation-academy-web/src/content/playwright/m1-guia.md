@@ -33,8 +33,6 @@ playwright-course/
 | `services/`, `tests/api/` | M05 | Capa de servicios para API testing |
 | `.github/workflows/` | M06 | CI/CD en GitHub Actions |
 
-> 💡 **Para el facilitador:** muestra esta tabla al inicio. Los alumnos suelen preguntar *"¿y dónde van los Page Objects?"* — esta tabla les da la respuesta: **todavía no existen, y por eso vas a sentir el dolor**.
-
 ---
 
 ## Analogía de apertura
@@ -84,8 +82,6 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   cd playwright-course
   pwd   # debe terminar en /playwright-course
   ```
-
-> 💡 **Para el facilitador:** si alguien no tiene Node/pnpm, mándalo al módulo **`00-setup/`** del monorepo antes de continuar. No hagas troubleshooting de setup aquí.
 
 ---
 
@@ -189,8 +185,6 @@ TEST_USER_PASSWORD=pizza123
 DEFAULT_COUNTRY=MX
 ```
 
-> ⚠️ **Importante para el facilitador:** abre `.gitignore` con los alumnos y muéstrales la línea `.env`. Repite en voz alta: **"el `.env` real NUNCA se commitea, solo el `.env.example`"**. Este es el momento de hablar de secrets, leaks de tokens en GitHub y por qué CI usa `secrets.*` (lo veremos en M06).
-
 **Mini-verificación de que `dotenv` está funcionando** (opcional, 30 segundos):
 
 ```bash
@@ -285,7 +279,7 @@ export default defineConfig({
 });
 ```
 
-**Cosas que el facilitador debe señalar línea por línea:**
+**Puntos clave a observar línea por línea:**
 
 | Línea | Qué hace |
 |---|---|
@@ -361,8 +355,6 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
   "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium"
 }
 ```
-
-> 💡 **Para el facilitador:** explica que `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium`. Los alumnos pueden inspeccionar cualquier script con `cat package.json`.
 
 ---
 

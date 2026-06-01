@@ -37,5 +37,3 @@ Cosas del `ejemplo.spec.ts` que se leen "de pasada" pero esconden una decisión 
 - **Qué es:** el título del test se construye con un *template string* que interpola `market.code` en cada vuelta del `for...of` sobre `markets`.
 - **Por qué así (y no la alternativa obvia):** cada iteración del bucle registra un `test()` distinto, y Playwright **exige títulos únicos** dentro del mismo describe. El `${market.code}` garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP` — nombres distintos y legibles en el reporte. Además, el tag `@smoke` embebido en el título es lo que permite filtrar con `--grep @smoke`.
 - **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
-
-> 💡 **Para el facilitador:** el deep-dive de `Partial<Record<Currency, string>>` (la guard clause `if (!symbol) return;`) ya está más arriba (ver sección de utility types arriba); no lo repitas aquí — enlázalo si alguien pregunta por qué el `currencySymbol` es opcional.

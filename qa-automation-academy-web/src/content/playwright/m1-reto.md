@@ -18,8 +18,6 @@ pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui
 
 **Criterio de éxito:** el test pasa en verde **y** al final del archivo puedes responder las 3 preguntas del comentario final.
 
-> 💡 **Para el facilitador:** al cerrar el reto, abre `ejemplo.spec.ts` y `reto.spec.ts` lado a lado y pide al grupo contar las líneas idénticas entre TC-001 / TC-002 / TC-003. Anota el número en el pizarrón — lo vamos a destruir en M03.
-
 ---
 
 ## Código completo de `reto.spec.ts`

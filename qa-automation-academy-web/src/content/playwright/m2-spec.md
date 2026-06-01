@@ -20,13 +20,11 @@ pnpm test:ui
 - Todos pasan en verde (suelen tardar ~30-40s la primera vez por el cold start de Render).
 - En UI mode, los 4 aparecen como hijos del mismo describe.
 
-> 💡 **Para el facilitador:** después de la primera corrida, abre `pnpm exec playwright show-report` y muéstrale al grupo que **es el mismo `test()` ejecutándose 4 veces** — no son 4 tests copy/pasteados.
-
 ---
 
 ## Paso 7 — Lectura guiada del `for...of` data-driven
 
-Abre `ejemplo.spec.ts` y haz que el grupo identifique:
+Abre `ejemplo.spec.ts` e identifica:
 
 1. **El bucle `for (const market of markets)`** — un `test()` por cada elemento del array.
 2. El **título dinámico** del test: `` `TC-${market.code} — login + catálogo en mercado ${market.code} @smoke` `` — cada test tiene un nombre único.
@@ -37,7 +35,7 @@ Abre `ejemplo.spec.ts` y haz que el grupo identifique:
 
 ## Paso 8 — Catálogo de locators (lectura, no ejecución)
 
-Al final de `ejemplo.spec.ts` hay un `test.skip("ejemplos de cada nivel", ...)`. **No se ejecuta**, es una **referencia visual** de cada nivel de la jerarquía con código real. Pídeles que lo escaneen — lo van a copiar para el reto.
+Al final de `ejemplo.spec.ts` hay un `test.skip("ejemplos de cada nivel", ...)`. **No se ejecuta**, es una **referencia visual** de cada nivel de la jerarquía con código real. Escanéalo — lo vas a copiar para el reto.
 
 ---
 
@@ -130,7 +128,7 @@ test.describe("Smoke parametrizado por mercado (M02)", () => {
 // ============================================================
 // M02 — Demostración de jerarquía de locators
 // ============================================================
-// Nota del instructor: el bloque siguiente NO se ejecuta como
+// Nota: el bloque siguiente NO se ejecuta como
 // test — es un catálogo de ejemplos de cada nivel de locator.
 //
 // Copia cualquiera y úsalo en el reto si te conviene.
