@@ -35,7 +35,7 @@ Abre `ejemplo.spec.ts` e identifica:
 
 ## Paso 8 — Catálogo de locators (lectura, no ejecución)
 
-Al final de `ejemplo.spec.ts` hay un `test.skip("ejemplos de cada nivel", ...)`. **No se ejecuta**, es una **referencia visual** de cada nivel de la jerarquía con código real. Escanéalo — lo vas a copiar para el reto.
+Al final de `ejemplo.spec.ts` hay dos bloques `test.skip` (uno para la pantalla de login y otro para el catálogo). **No se ejecutan**, son una **referencia visual** de cada nivel de la jerarquía con selectores reales — escanéalos, los vas a copiar para el reto.
 
 ---
 
@@ -44,7 +44,7 @@ Al final de `ejemplo.spec.ts` hay un `test.skip("ejemplos de cada nivel", ...)`.
 ```ts
 // @file modulo-02-locators-data/ejemplo.spec.ts
 // ============================================================
-// M02 — Locators jerárquicos + Data tipada con test.each()
+// M02 — Locators jerárquicos + Data tipada (bucle for...of)
 // ============================================================
 // Avance sobre M01: el smoke de login ahora corre contra los
 // 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado.
@@ -85,7 +85,10 @@ const currencySymbol: Partial<Record<Currency, string>> = {
 };
 
 test.describe("Smoke parametrizado por mercado (M02)", () => {
-  // test.each() — un mismo TC ejecutado N veces, una por dato.
+  // OJO: Playwright NO tiene `test.each()` (eso es de Jest/Vitest).
+  // Para parametrizar, un `for` recorre el array y REGISTRA un
+  // `test()` por dato → 4 TCs independientes (TC-MX, TC-US, ...),
+  // no un test que itera por dentro.
   for (const market of markets) {
     test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, async ({ page }) => {
       // --- PASO 1: Login ---
@@ -126,39 +129,103 @@ test.describe("Smoke parametrizado por mercado (M02)", () => {
 });
 
 // ============================================================
-// M02 — Demostración de jerarquía de locators
+// M02 — Catálogo de locators (REFERENCIA, no se ejecuta)
 // ============================================================
-// Nota: el bloque siguiente NO se ejecuta como
-// test — es un catálogo de ejemplos de cada nivel de locator.
+// Los dos bloques siguientes usan `test.skip`: son una CHULETA
+// viva de cada nivel de la jerarquía, con selectores REALES de
+// OmniPizza verificados contra el DOM. Copia el que necesites.
 //
-// Copia cualquiera y úsalo en el reto si te conviene.
+// Regla mental para TODOS los getBy*: te devuelven el ELEMENTO
+// sobre el que vas a actuar (input, botón, heading, imagen...),
+// NO un texto. Sirven para .click() / .fill() / expect(), no
+// para "leer la etiqueta". (Para leer texto está getByText).
 // ============================================================
 
 test.describe("Referencia — jerarquía de locators", () => {
-  test.skip("ejemplos de cada nivel", async ({ page }) => {
+  // ──────────────────────────────────────────────────────────
+  // BLOQUE A — Pantalla de login (no requiere autenticación)
+  // ──────────────────────────────────────────────────────────
+  test.skip("locators en la pantalla de login", async ({ page }) => {
     await page.goto("/");
 
-    // 1️⃣ getByRole — preferido
-    page.getByRole("button", { name: "Login" });
-    page.getByRole("textbox", { name: "Username" });
+    // 1️⃣ getByRole — PREFERIDO. Localiza por el rol de
+    //    accesibilidad (cómo "ve" la página un lector de pantalla)
+    //    + el "nombre accesible" (texto visible / aria-label / alt).
+    page.getByRole("button", { name: "Sign In" }); //   ✅ el botón de login REAL — su texto es "Sign In", NO "Login"
+    page.getByRole("button", { name: /sign in/i }); //   ✅ `name` acepta regex → match parcial e insensible a mayúsculas
+    page.getByRole("button", { name: "🇲🇽" }); //         ✅ las banderas de mercado son <button>; su nombre accesible es el emoji
+    page.getByRole("heading", { name: "Welcome back!", level: 2 }); // ✅ opción `level` → filtra h1..h6 (aquí un <h2>)
+    page.getByRole("heading", { level: 1 }); //          ✅ sin `name`: el único <h1> ("Crafting moments of pure flavor.")
+    page.getByRole("textbox", { name: "standard_user" }); // ✅ el input de usuario. Su nombre accesible NO es "Username":
+    //                                                       sale del PLACEHOLDER, porque el input no tiene <label>.
+    page.getByRole("textbox", { name: "Username" }); //   ❌ NO matchea nada — "Username" es sólo texto visible, no el nombre accesible.
 
-    // 2️⃣ getByLabel / getByText
-    page.getByLabel("Username");
-    page.getByText("Welcome");
+    // 2️⃣a getByLabel — devuelve el INPUT asociado a un <label>,
+    //     NO el <label> ni su texto. (El error típico: creer que
+    //     "obtienes el label"; en realidad obtienes el campo para
+    //     escribir en él). Requiere una de estas estructuras:
+    //
+    //        <label for="user">Username</label>
+    //        <input id="user">          ← getByLabel("Username") devuelve ESTE input
+    //
+    //     ...o <input aria-label="Username">, o el input ENVUELTO
+    //     por el <label>. ⚠️ En OmniPizza el login NO cumple esto:
+    //     "Username" es un <div> suelto (no un <label for>) y el
+    //     input no tiene aria-label → getByLabel no encuentra nada.
+    page.getByLabel("Username"); //                       ⚠️ patrón ILUSTRATIVO: sólo funciona si el input está bien etiquetado.
 
-    // 3️⃣ getByTestId
+    // 2️⃣b getByPlaceholder — la alternativa que SÍ funciona aquí,
+    //     porque los inputs de OmniPizza sí traen placeholder.
+    page.getByPlaceholder("standard_user"); //           ✅ el input de usuario (su placeholder es "standard_user")
+    page.getByPlaceholder("••••••••"); //                 ✅ el input de password
+
+    // 2️⃣c getByText — localiza por el TEXTO visible. Match parcial
+    //     por defecto; usa { exact: true } para igualdad exacta.
+    page.getByText("Welcome"); //                         ✅ parcial: matchea "Welcome back!"
+    page.getByText("Username"); //                        ✅ ESTE sí encuentra el texto "Username"... pero es un <div>: no sirve para escribir
+    page.getByText("Please enter your details.", { exact: true }); // ✅ igualdad exacta
+
+    // 3️⃣ getByTestId — cuando el dev cooperó con data-testid.
+    //     OmniPizza sufija -desktop (≥768px) / -responsive (<768px).
     page.getByTestId("username-desktop");
+    page.getByTestId("login-button-desktop");
 
-    // 4️⃣ CSS
-    page.locator('[data-testid^="pizza-card-"]');
-    page.locator(".btn-primary");
+    // 5️⃣ XPath — último recurso, frágil.
+    page.locator('//button[@data-testid="login-button-desktop"]');
+  });
 
-    // 5️⃣ XPath (último recurso)
-    page.locator("//button[@aria-label='Submit']");
+  // ──────────────────────────────────────────────────────────
+  // BLOQUE B — Catálogo (requiere login primero)
+  // ──────────────────────────────────────────────────────────
+  test.skip("locators en el catálogo", async ({ page }) => {
+    // Login mínimo para llegar al catálogo
+    await page.goto("/");
+    await page.getByTestId("market-MX").click();
+    await page.getByTestId("username-desktop").fill("standard_user");
+    await page.getByTestId("password-desktop").fill("pizza123");
+    await page.getByTestId("login-button-desktop").click();
+    await expect(page).toHaveURL(/\/catalog/);
 
-    // Filtros
-    page.getByRole("listitem").filter({ hasText: "Spicy" });
-    page.locator('[data-testid^="pizza-card-"]').nth(0);
+    // 1️⃣ getByRole con distintos roles y atributos
+    page.getByRole("textbox", { name: "Busca tu pizza favorita..." }); // ✅ el buscador (nombre accesible = su placeholder)
+    page.getByRole("link", { name: "Catálogo" }); //     ✅ los enlaces del menú tienen rol "link"
+    page.getByRole("button", { name: "Populares" }); //  ✅ botón de categoría
+    page.getByRole("heading", { name: "Pepperoni", level: 3 }); // ✅ cada pizza es un <h3>
+
+    // getByPlaceholder — el mismo buscador, por placeholder
+    page.getByPlaceholder("Busca tu pizza favorita...");
+
+    // getByAltText — localiza IMÁGENES por su atributo alt
+    page.getByAltText("Pepperoni"); //                   ✅ la foto de la pizza Pepperoni
+
+    // 4️⃣ CSS con prefijo — testids dinámicos (legítimo, ver README)
+    const pizzaCards = page.locator('[data-testid^="pizza-card-"]'); // pizza-card-123, pizza-card-456...
+
+    // Filtros y combinadores (encadenables sobre cualquier locator)
+    pizzaCards.first(); //                               la primera tarjeta
+    pizzaCards.nth(2); //                                la tercera (índice base 0)
+    pizzaCards.filter({ hasText: "Pepperoni" }); //      sólo las tarjetas que contengan ese texto
+    page.getByRole("heading", { level: 3 }).filter({ hasText: "Quesos" }); // → "Cuatro Quesos"
   });
 });
 ```
