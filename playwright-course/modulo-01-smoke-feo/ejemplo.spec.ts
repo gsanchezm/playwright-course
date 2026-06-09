@@ -18,14 +18,10 @@ const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
 test.describe("Smoke OmniPizza — versión fea (M01)", () => {
-  // beforeAll de warmup: OmniPizza vive en Render free tier y el
-  // primer request del día tarda 30-40s (cold start). En M04
-  // reemplazaremos esto por un `auth.setup.ts` project.
-  test.beforeAll(async ({ request }) => {
-    await request.get(`${process.env.API_URL}/health`).catch(() => {
-      // Si /health no responde aún, el primer navigate lo despertará igual.
-    });
-  });
+  // Nota: OmniPizza vive en Render free tier y el primer request del día
+  // tarda 30-40s (cold start). NO hacemos warmup explícito: los timeouts
+  // generosos del playwright.config.ts lo absorben. En M04 el backend se
+  // despierta de forma controlada con un `auth.setup.ts` project.
 
   test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) => {
     // Paso 1 — abrir la pantalla de login

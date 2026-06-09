@@ -7,6 +7,22 @@
 
 ---
 
+## 🧭 Reencuadre: CLI-first (lee esto antes de configurar nada)
+
+Antes de tocar MCP o Agents, ubica este módulo en el mapa del curso. **Los fundamentos AI-assisted *reales* — los que de verdad te hacen mejor automatizando — son CLI y ya viven en el core del curso:**
+
+| Herramienta AI-assisted (CLI) | Dónde la aprendiste | Para qué sirve |
+|---|---|---|
+| `playwright codegen <url>` | **M02** | Graba tus clics y **genera locators role-first** automáticamente |
+| `playwright test --debug` (Inspector) | **M01** | Pausa, ejecuta paso a paso, **te sugiere selectors** en vivo |
+| `playwright show-trace` (Trace Viewer) | **M06** | Reproduce el fallo con DOM/red/screenshots para **diagnosticar flakiness** |
+
+Esas tres no necesitan ningún LLM: son determinísticas, gratis y offline. **Son tu base.** M07 es el **apéndice acelerador**: MCP y Agents valen la pena *cuando ya dominas locators y el modelo mental del framework* — porque tú vas a revisar y endurecer lo que la IA genera. Si todavía no distingues un locator frágil de uno robusto, la IA te va a sepultar en slop sin que lo notes.
+
+> 🎯 **Lema del módulo:** **CLI para aprender · MCP + Agents para acelerar.** No saltes la columna izquierda de la tabla para llegar a la derecha; el orden importa.
+
+---
+
 ## 🏗️ Arquitectura al terminar este módulo
 
 M07 **no agrega archivos nuevos al framework de producción** — agrega una **capa de tooling** (MCP server + cliente LLM) que vive *afuera* del repo o en archivos de configuración locales (`.vscode/mcp.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, etc.).
@@ -38,7 +54,7 @@ TU MÁQUINA
 │                                          │ HTTP              │
 └──────────────────────────────────────────┼──────────────────┘
                                            ▼
-                              https://omnipizza.onrender.com
+                          https://omnipizza-frontend.onrender.com
                               (la app real, sobre la que la
                                IA explora y genera tests)
 ```
@@ -47,7 +63,7 @@ TU MÁQUINA
 
 | Antes de M07 | Después de M07 |
 |---|---|
-| Escribes selectors a mano viendo DevTools | Le pides a la IA *"abre la página de login y dame los locators role-based"* |
+| Escribes selectors a mano viendo DevTools | Le pides a la IA *"abre el catálogo y dame los locators role-based de las pizzas y los filtros"* |
 | Debug de tests flakey leyendo trace | Le pegas el trace a la IA, te explica la causa probable |
 | Migración de tests de Cypress / Selenium | Le pasas el test viejo + URL, te devuelve la versión en Playwright |
 | Mantenimiento cuando la UI cambia | La IA navega la nueva UI y actualiza locators rotos |
@@ -75,6 +91,22 @@ Con **Playwright MCP**, ese consultor **se sienta a tu lado y abre tu navegador*
 **Playwright MCP** (`@playwright/mcp` de Microsoft) expone Playwright **como tools MCP**: `navigate`, `click`, `fill`, `screenshot`, `evaluate`, etc. El LLM invoca esas tools como funciones; cada llamada **abre/manipula un browser real** en tu máquina.
 
 > 📚 Spec oficial: [Model Context Protocol](https://modelcontextprotocol.io/) · Repo: [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp)
+
+---
+
+## ⚠️ No confundas: tres cosas distintas con nombres parecidos
+
+El ecosistema "Playwright + IA" tiene **tres herramientas** cuyos nombres se confunden todo el tiempo. Sepáralas en tu cabeza desde ya:
+
+| Herramienta | Qué es | Cómo "ve" la página | Para quién / cuándo |
+|---|---|---|---|
+| **`npx playwright …`** (CLI clásico) | El binario de siempre: `test`, `codegen`, `show-trace`, `--debug`. **No usa IA.** | N/A (lo manejas tú) | **Todos**, siempre. Es el core (M01–M06). |
+| **`@playwright/mcp`** (MCP server) | Expone Playwright como **tools MCP**; el LLM las invoca para abrir/manipular un browser real. Lee la página vía **accessibility tree**. | Accessibility tree (texto estructurado, roles + nombres) | Un **cliente LLM con MCP** (Claude, Copilot agent, Gemini CLI). Es lo que configuras en este módulo. |
+| **`@playwright/cli`** (agent-cli) | El motor detrás de los **Playwright Agents** (planner/generator/healer). Da al agente **snapshots YAML** de la página. | Snapshots YAML | **Agentes de codegen** dentro de Claude Code / Copilot. Ver la sección "Playwright Agents" más abajo. |
+
+> 🎯 **Regla mnemónica:** `npx playwright` = *tú* manejas · `@playwright/mcp` = *el LLM* maneja un browser en vivo (accessibility-tree) · `@playwright/cli` = *el agente de codegen* trabaja sobre snapshots YAML. Las tres conviven; no son sustitutas.
+
+> 📚 Guía oficial de MCP con Playwright: [playwright.dev/docs/getting-started-mcp](https://playwright.dev/docs/getting-started-mcp).
 
 ---
 
@@ -211,12 +243,12 @@ ChatGPT no acepta un comando local arbitrario por seguridad. Las dos rutas viabl
 
 ## Verificación: el primer "hola navegador"
 
-Con el cliente configurado, escribe este prompt:
+Con el cliente configurado, escribe este prompt (cópialo en inglés — los modelos rinden mejor con prompts de tooling en inglés):
 
 ```
-Abre https://omnipizza.onrender.com, espera a que cargue la home
-y dame una lista de los botones visibles en el header con sus
-atributos role + accessible name.
+Open https://omnipizza-frontend.onrender.com, wait for the home page
+to finish loading, and give me a list of the buttons visible in the
+header with their role + accessible name attributes.
 ```
 
 Lo que debe pasar:
@@ -233,17 +265,19 @@ Lo que debe pasar:
 
 ### Caso 1 — Generar un test desde lenguaje natural
 
-**Prompt:**
+**Prompt (en inglés):**
 ```
-Genera un test de Playwright que:
-1. Inicie sesión como user@test.com / Password123
-2. Agregue una Margherita grande al carrito
-3. Vaya al checkout
-4. Verifique que el total es mayor a 0
+Generate a Playwright test that:
+1. Logs in as standard_user / pizza123
+2. Adds a large Margarita to the cart
+3. Goes to checkout
+4. Verifies the total is greater than 0
 
-Usa el patrón POM del proyecto (revisa pages/LoginPage.ts y pages/CatalogPage.ts).
-Pega el archivo en modulo-07-ia-mcp/sandbox/checkout.spec.ts.
+Use the project's POM pattern (read pages/LoginPage.ts and pages/CatalogPage.ts).
+Write the file to modulo-07-ia-mcp/sandbox/checkout.spec.ts.
 ```
+
+> 🔍 `standard_user` / `pizza123` es una de las 5 personas reales de OmniPizza (Quick-Login, estilo SauceDemo); la pizza se llama **Margarita** (no "Margherita"). El login usa **username**, no email.
 
 **Qué hace la IA:**
 - Lee tus POMs existentes (Claude/Copilot leen el filesystem).
@@ -252,48 +286,100 @@ Pega el archivo en modulo-07-ia-mcp/sandbox/checkout.spec.ts.
 
 ### Caso 2 — Refactor de un test flaky
 
-**Prompt:**
+**Prompt (en inglés):**
 ```
-Este test falla 1 de cada 5 veces en CI con "locator timeout". Aquí está el código:
+This test fails 1 out of every 5 runs in CI with "locator timeout".
+Here is the code:
 
-<<pega el .spec.ts>>
+<<paste the .spec.ts>>
 
-Aquí está el último trace de un fallo (test-results/.../trace.zip ya extraído).
+Here is the trace from the latest failure (test-results/.../trace.zip,
+already extracted).
 
-Encuentra la causa probable y dame el fix con web-first assertions.
+Find the most likely root cause and give me the fix using web-first assertions.
 ```
 
 ### Caso 3 — Migración manual → automatizado
 
-**Prompt:**
+**Prompt (en inglés):**
 ```
-Tengo este caso de prueba manual:
+I have this manual test case:
 
-Título: "Aplicar cupón inválido"
-Pasos:
-1. Login como user@test.com
-2. Agregar 1 pizza al carrito
-3. Ir a checkout
-4. Aplicar cupón "INVALID123"
-5. Verificar mensaje de error rojo
+Title: "Apply invalid coupon"
+Steps:
+1. Log in as standard_user / pizza123
+2. Add 1 pizza to the cart
+3. Go to checkout
+4. Apply coupon "INVALID123"
+5. Verify a red error message appears
 
-Conviértelo en un Playwright test. Antes de escribir, navega OmniPizza
-y confírmame los selectors reales del input de cupón y del mensaje de error.
+Convert it into a Playwright test. Before writing any code, navigate
+OmniPizza and confirm the real selectors for the coupon input and the
+error message.
 ```
 
 ### Caso 4 — Generar data sintética para fixtures
 
-**Prompt:**
+**Prompt (en inglés):**
 ```
-Necesito 20 usuarios para data/users.json siguiendo este shape:
+I need 12 sample shipping customers for data/customers.json following
+this shape:
 
-{ email, password, market: 'us' | 'mx' | 'br', tier: 'free' | 'pro' }
+{ fullName, phone, address, zipCode, market: 'MX' | 'US' | 'CH' | 'JP' }
 
-Distribución: 50% us, 30% mx, 20% br. 70% free, 30% pro.
-Genera el JSON listo para commitear.
+Distribution: 4 MX, 4 US, 2 CH, 2 JP. Use realistic localized data per market.
+Output the JSON, ready to commit.
 ```
+
+> 🔍 Ojo: NO le pidas regenerar `data/users.json` — ese archivo contiene las **5 personas reales** de OmniPizza (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`, todas con rol `customer`). Aquí generas data de *clientes* (direcciones de envío), que es lo tedioso de inventar a mano.
 
 (Para esto MCP no es estrictamente necesario, pero muestra la otra mitad del valor del LLM: ayudante para tareas tediosas alrededor del framework.)
+
+---
+
+## Playwright Agents (planner / generator / healer) — 🧪 experimental
+
+> ⚠️ **EXPERIMENTAL.** Esta feature llegó en **Playwright v1.56 (octubre 2025)**, tiene **bugs abiertos**, y requiere **VS Code 1.105+** (o un cliente compatible). La API y los archivos generados **van a cambiar**: cada vez que actualices Playwright, **regenera las definiciones**. No la lleves a producción todavía; aquí la conoces para estar listo cuando madure.
+
+Mientras MCP te da un **browser en vivo** controlado por el LLM (un copiloto operativo, paso a paso), los **Playwright Agents** son tres **roles especializados** que cubren el ciclo *plan → genera → mantén* de un test, cada uno con un prompt-chatmode propio:
+
+| Agente | Qué hace |
+|---|---|
+| 🧭 **planner** | Lee un requisito/PRD y lo descompone en un **plan de prueba** (escenarios, casos, pasos) — un `spec` en lenguaje estructurado, todavía sin código. |
+| 🎭 **generator** | Toma ese plan y **genera el código** del test (los `.spec.ts`), navegando la app real para anclar locators (sobre snapshots YAML de la página, vía `@playwright/cli`). |
+| 🔧 **healer** | Cuando un test **falla por un cambio de UI**, navega la nueva pantalla y **repara los locators rotos** en vez de borrarlos. Es el caso "mantenimiento" del flujo, automatizado. |
+
+> 🎯 **Diferencia clave con MCP:** MCP = *tú* conversas con un LLM que opera un browser. Agents = un **pipeline de roles** (plan → genera → cura) pensado para **codegen y mantenimiento a escala**, no para exploración manual.
+
+### Cómo inicializar los Agents (micro-pasos)
+
+**A.1 — Ejecuta el init**
+- **Qué hago:** desde la raíz del proyecto, corro el comando de scaffolding eligiendo tu cliente con `--loop`:
+  ```bash
+  $ npx playwright init-agents --loop=vscode
+  # alternativas según tu cliente:
+  $ npx playwright init-agents --loop=claude
+  $ npx playwright init-agents --loop=opencode
+  ```
+- **Por qué:** cada cliente (VS Code/Copilot, Claude Code, OpenCode) consume los chatmodes en un formato propio; `--loop` genera las definiciones **para ese loop concreto**. Elegir mal el loop = los agentes no aparecen en tu cliente.
+- **Cómo verifico:** el comando termina sin error y reporta los archivos creados (ver A.2).
+
+**A.2 — Revisa los archivos generados**
+- **Qué hago:** inspecciono lo que el init dejó en el repo:
+  - `.github/*.chatmode.md` — las definiciones de los tres agentes (planner/generator/healer) como **chatmodes** que tu cliente carga.
+  - `specs/` — carpeta donde el **planner** deja sus planes de prueba en lenguaje estructurado.
+  - `tests/seed.spec.ts` — un test **semilla** que da contexto al generator (convenciones, imports, patrón base del que partir).
+- **Por qué:** entender qué se generó evita tratarlo como caja negra; el `seed.spec.ts` es tu palanca para que el generator copie *tus* convenciones (igual que en MCP le pasas los POMs).
+- **Cómo verifico:** `ls .github/*.chatmode.md specs tests/seed.spec.ts` lista los tres; al abrir tu cliente compatible, los chatmodes **planner/generator/healer** aparecen seleccionables.
+
+**A.3 — Regenera al actualizar (recordatorio)**
+- **Qué hago:** cada vez que suba la versión de Playwright, vuelvo a correr `npx playwright init-agents --loop=<...>`.
+- **Por qué:** al ser experimental, el formato de los chatmodes y del seed cambia entre releases; definiciones viejas + Playwright nuevo = agentes que fallan en silencio.
+- **Cómo verifico:** `npx playwright --version` coincide con la versión para la que regeneraste; los agentes siguen respondiendo en tu cliente.
+
+> 📚 Doc oficial (sigue la **última** versión, no fijes un número): [playwright.dev/docs/test-agents](https://playwright.dev/docs/test-agents).
+
+> 💡 **Para el facilitador:** demuestra el flujo completo solo si el grupo ya tiene VS Code 1.105+ y la versión de Playwright que trae Agents; de lo contrario, muéstralo como *roadmap* y quédate en MCP, que es estable. El valor pedagógico aquí es el **modelo mental** (plan → genera → cura), no el tooling exacto, que aún se mueve.
 
 ---
 

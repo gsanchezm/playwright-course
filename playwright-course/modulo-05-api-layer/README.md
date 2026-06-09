@@ -133,7 +133,14 @@ tests/api/
 
 ## Paso a paso
 
+> Cada micro-paso lleva la tripleta **Qué hago / Por qué / Cómo verifico**, y dice **qué archivo se crea/edita** y en qué orden. El orden importa: primero `BaseService` (el contrato), luego las clases concretas que lo extienden, después el barrel y por último el config que las pone a correr.
+
 ### Paso 0 — Pre-requisitos
+
+**0.1 — Confirmar que M04 está sano**
+- **Qué hago:** desde `playwright-course/` corro `pnpm m4` y luego `pnpm typecheck`.
+- **Por qué:** M05 reutiliza `types/` (M02), `helpers/` (M04) y `data/`. Si M04 ya rompe, no quiero diagnosticar dos capas a la vez.
+- **Cómo verifico:** `pnpm m4` pasa en verde y `pnpm typecheck` no imprime errores.
 
 ```bash
 # Estando en playwright-course/
@@ -147,7 +154,10 @@ pnpm typecheck     # debe pasar
 
 ### Paso 1 — Dependencias requeridas
 
-**M05 no añade paquetes npm nuevos.** `APIRequestContext` ya viene en `@playwright/test`.
+**1.1 — Verificar que no falta nada (M05 no añade paquetes)**
+- **Qué hago:** corro `pnpm list @playwright/test dotenv typescript @types/node`.
+- **Por qué:** `APIRequestContext` ya viene dentro de `@playwright/test`. No hay `npm add` nuevo en este módulo — la capa de API se construye con lo que ya tienes.
+- **Cómo verifico:** las 4 dependencias aparecen listadas. Si alguna falta, `pnpm install` (si ya están en `package.json`) o `pnpm add -D @playwright/test dotenv typescript @types/node`.
 
 ```bash
 pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
@@ -160,6 +170,11 @@ pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
 
 ### Paso 2 — Crear `services/` y `tests/api/`
 
+**2.1 — Crear las carpetas y los archivos vacíos**
+- **Qué hago:** creo `services/` y `tests/api/`, y toco los 5 archivos de servicios + los 2 specs de API.
+- **Por qué:** `services/` es la **nueva capa** de este módulo (el cliente HTTP), `tests/api/` es la suite que la consume. Tenerlos vacíos primero me deja llenar el contrato (`BaseService`) antes que las hijas.
+- **Cómo verifico:** `ls services tests/api` muestra los 7 archivos.
+
 ```bash
 mkdir -p services tests/api
 touch services/BaseService.ts services/AuthService.ts services/OrderService.ts \
@@ -167,9 +182,10 @@ touch services/BaseService.ts services/AuthService.ts services/OrderService.ts \
 touch tests/api/auth.spec.ts tests/api/pizzas.spec.ts
 ```
 
-**Esqueletos mínimos:**
-
-📄 `services/BaseService.ts` — **primera clase abstracta del curso**:
+**2.2 — Escribir `services/BaseService.ts` (la clase abstracta — el contrato)**
+- **Qué hago:** escribo la primera **clase abstracta del curso**: un `protected constructor`, un `protected abstract basePath()` y los helpers compartidos `url()` y `dispose()`.
+- **Por qué:** las 3 hijas (`Auth`, `Order`, `Pizza`) comparten `api`, `baseURL`, `url()` y `dispose()`. `abstract` impide instanciar la base directa y **obliga** a cada hija a definir `basePath()`. Por eso este archivo va **primero**: es el molde que las demás extienden.
+- **Cómo verifico:** el editor no subraya en rojo; `pnpm exec tsc --noEmit` sigue verde (aún no hay hijas, pero el archivo solo compila).
 
 ```ts
 import type { APIRequestContext } from "@playwright/test";
@@ -193,43 +209,110 @@ export abstract class BaseService {
 }
 ```
 
-📄 `services/AuthService.ts` — primera clase concreta + factory async:
+> 🔷 **TypeScript — `abstract class` + métodos abstractos**
+> Una clase `abstract` **no se puede instanciar** (`new BaseService(...)` no compila) y puede declarar métodos sin cuerpo (`abstract basePath(): string`) que cada hija **está obligada** a implementar. Es la diferencia clave con una clase normal: una normal con un método "vacío" compila aunque la hija se olvide de él; `abstract` lo convierte en error de compilación.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/) (y el contrato que impone se ve a fondo en [TS · M06 — Interfaces](../../typescript-qa-course/modulo-06-interfaces/)). Aquí lo aplicas a `BaseService`, que fuerza a `AuthService`/`OrderService`/`PizzaService` a declarar su `basePath()`.
+
+> ⚠️ **Primera vez que aparece `abstract` en el curso — y a propósito.** En M03 `BasePage` era una clase **normal**: con una sola hija, `abstract` no aportaba nada. Aquí ya hay **3 servicios** que comparten comportamiento, así que el patrón por fin se gana su lugar. Ese es el sentido de *just-in-time*: el concepto entra cuando el problema lo reclama.
+
+**2.3 — Escribir `services/AuthService.ts` (primera clase concreta + factory async)**
+- **Qué hago:** creo `AuthService extends BaseService`, implemento `basePath()`, añado el factory `static async create(...)` y el método `login()`. Aquí también vive el helper `createAuthedContext(...)` que inyecta el Bearer.
+- **Por qué:** `AuthService` es la primera **hija concreta**: prueba que el contrato de `BaseService` funciona. El factory `create()` es `static async` porque crear el `APIRequestContext` requiere `await` — y un `constructor` no puede ser `async`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde; el editor reconoce `AuthService.create` y `auth.login`.
 
 ```ts
-import { request } from "@playwright/test";
+import { request, type APIRequestContext } from "@playwright/test";
 import { BaseService } from "./BaseService";
-import type { User } from "../types";
-
-export async function createAuthedContext(
-  baseURL: string,
-  token: string,
-  extra: Record<string, string> = {},
-) {
-  return await request.newContext({
-    baseURL,
-    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extra },
-  });
-}
+import type { LoginResponse, User } from "../types";
 
 export class AuthService extends BaseService {
-  protected basePath() { return "/api/auth"; }
+  protected basePath(): string {
+    return "/api/auth";
+  }
 
+  // Factory — crea una instancia con un APIRequestContext listo.
   static async create(baseURL: string): Promise<AuthService> {
     const api = await request.newContext({ baseURL });
     return new AuthService(api, baseURL);
   }
 
-  async login(user: User): Promise<{ access_token: string }> {
+  // Login con usuario/contraseña. Devuelve el token o lanza.
+  async login(user: User): Promise<LoginResponse> {
     const res = await this.api.post(this.url("/login"), {
       data: { username: user.username, password: user.password },
     });
-    if (!res.ok()) throw new Error(`login failed (${res.status()}): ${await res.text()}`);
-    return await res.json();
+    if (!res.ok()) {
+      const body = await res.text();
+      throw new Error(`Login failed (${res.status()}): ${body}`);
+    }
+    return (await res.json()) as LoginResponse;
+  }
+}
+
+// Utilidad — crea un APIRequestContext ya autenticado con Bearer.
+export async function createAuthedContext(
+  baseURL: string,
+  token: string,
+  extraHeaders: Record<string, string> = {},
+): Promise<APIRequestContext> {
+  return request.newContext({
+    baseURL,
+    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extraHeaders },
+  });
+}
+```
+
+> 🔷 **TypeScript — factory con `static`**
+> Un método `static` pertenece a la **clase**, no a la instancia: se llama como `AuthService.create(...)`, sin haber creado nada todavía. Lo usamos porque la construcción es **asíncrona** (`await request.newContext(...)`) y un `constructor` en TS/JS **no puede ser `async`**. El factory `static async create()` envuelve ese `await` y devuelve la instancia ya armada.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo aplicas para construir cada servicio con su `APIRequestContext` (y, en las hijas con auth, sus headers) ya conectado.
+
+> 🔷 **TypeScript — genéricos `Promise<T>`**
+> `Promise<LoginResponse>` es un **genérico**: `Promise` es el contenedor y `<LoginResponse>` el tipo que resuelve dentro. Al hacer `await auth.login(user)` TypeScript ya sabe que tienes un `LoginResponse` (con su `access_token`), no un `any`. Cambia el `<LoginResponse>` del retorno de `login()` por `<any>` y verás que el tipo del genérico deja de propagarse: quien hace `await` pierde el autocompletado de `access_token`.
+> 📚 Lo viste en [TS · M03 — Funciones](../../typescript-qa-course/modulo-03-functions/) (`async`/`await` y el tipo de retorno `Promise<T>`). Aquí lo aplicas a cada método de servicio para que el `await` devuelva el contrato correcto y no `any`.
+
+**2.4 — Escribir `services/PizzaService.ts` y `services/OrderService.ts` (mismo molde, con auth)**
+- **Qué hago:** creo las otras dos hijas. Ambas implementan `basePath()` y un factory `create(baseURL, token, country)` que usa `createAuthedContext` para meter `Authorization: Bearer` + `X-Country-Code`.
+- **Por qué:** `Pizza` y `Order` necesitan **token y mercado**, a diferencia de `Auth` (que aún no tiene token). El header `X-Country-Code` hace que el backend filtre por mercado. `PizzaService` es la base del **reto** (le añadirás métodos después).
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde con las 3 hijas implementadas.
+
+```ts
+import { BaseService } from "./BaseService";
+import { createAuthedContext } from "./AuthService";
+import type { CountryCode, Pizza, PizzasResponse } from "../types";
+
+export class PizzaService extends BaseService {
+  protected basePath(): string {
+    return "/api/pizzas";
+  }
+
+  static async create(
+    baseURL: string,
+    token: string,
+    country: CountryCode,
+  ): Promise<PizzaService> {
+    const api = await createAuthedContext(baseURL, token, {
+      "X-Country-Code": country,
+    });
+    return new PizzaService(api, baseURL);
+  }
+
+  async list(): Promise<Pizza[]> {
+    const res = await this.api.get(this.url(""));
+    if (!res.ok()) {
+      throw new Error(`list pizzas failed (${res.status()}): ${await res.text()}`);
+    }
+    const body = (await res.json()) as PizzasResponse;
+    return body.pizzas ?? [];
   }
 }
 ```
 
-📄 `services/index.ts` (barrel):
+`OrderService.ts` sigue exactamente el mismo molde (`basePath() → "/api/orders"`, factory con auth, `createOrder()` y `listMine()`).
+
+**2.5 — Escribir `services/index.ts` (barrel export)**
+- **Qué hago:** reexporto las 3 clases y el helper desde un solo `index.ts`.
+- **Por qué:** así los specs importan `from "../services"` en una línea, en vez de cuatro rutas distintas. Es la fachada pública de la capa.
+- **Cómo verifico:** en `ejemplo.spec.ts`, `import { AuthService, PizzaService } from "../services"` resuelve sin error.
 
 ```ts
 export { BaseService } from "./BaseService";
@@ -237,8 +320,6 @@ export { AuthService, createAuthedContext } from "./AuthService";
 export { OrderService } from "./OrderService";
 export { PizzaService } from "./PizzaService";
 ```
-
-(`PizzaService` y `OrderService` siguen el mismo molde — los completas con el ejemplo.)
 
 ---
 
@@ -258,9 +339,10 @@ export { PizzaService } from "./PizzaService";
 > ```
 > **Se mantiene:** projects `setup` + 3 browsers. **Entra:** project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API); y el `testIgnore` de los ui-* ahora excluye también los tests de API para que no se corran como UI.
 
-Hay que **añadir el project `api`**. NO depende del setup ni hereda storageState.
-
-Diff sobre el config de M04: dentro del array `projects`, agrega:
+**3.1 — Añadir el project `api` (sin `storageState`, sin `dependencies`)**
+- **Qué hago:** dentro del array `projects` agrego un cuarto project `api` que solo fija `baseURL` (el backend) y su `testMatch`.
+- **Por qué:** los tests de API se autentican solos (`AuthService.create()` hace login). NO deben heredar las cookies de UI ni esperar al setup project — el aislamiento es intencional.
+- **Cómo verifico:** `pnpm exec playwright test --list --project=api` lista los specs de `tests/api/` y de `modulo-05-api-layer/`.
 
 ```ts
 {
@@ -272,7 +354,10 @@ Diff sobre el config de M04: dentro del array `projects`, agrega:
 },
 ```
 
-Y **excluye** la carpeta del módulo 5 de los `ui-*` (para que no la corran sin headers de API):
+**3.2 — Excluir la carpeta del módulo y `tests/api/` de los `ui-*`**
+- **Qué hago:** amplío el `testIgnore` de `ui-chromium`, `ui-firefox` y `ui-webkit` para que ignoren `tests/api/` y `modulo-05-api-layer/`.
+- **Por qué:** sin esto, los projects de UI intentarían correr los tests de API **sin headers de API** (y arrancando un navegador inútil). Un mismo archivo pertenece o no a un project según las reglas de match/ignore.
+- **Cómo verifico:** `pnpm exec playwright test --list --project=ui-chromium` ya **no** muestra los specs de API.
 
 ```ts
 {
@@ -334,7 +419,10 @@ export default defineConfig({
 });
 ```
 
-Añade los scripts de M05 al `package.json`:
+**3.3 — Añadir los scripts de M05 a `package.json`**
+- **Qué hago:** agrego `m5` (corre solo este módulo en el project api) y `test:api` (la suite API completa).
+- **Por qué:** atajos memorables para el alumno; `--project=api` evita arrancar UI/setup sin querer.
+- **Cómo verifico:** `pnpm m5` y `pnpm test:api` arrancan sin "missing script".
 
 ```json
 "scripts": {
@@ -343,7 +431,10 @@ Añade los scripts de M05 al `package.json`:
 }
 ```
 
-Y verifica que `tsconfig.json` incluya `services/`:
+**3.4 — Confirmar que `tsconfig.json` incluye `services/`**
+- **Qué hago:** reviso que el array `include` de `tsconfig.json` tenga `"services/**/*.ts"`.
+- **Por qué:** si la nueva carpeta no está en `include`, `pnpm typecheck` no la chequea y los errores de tipo de los servicios pasarían desapercibidos.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` reporta errores de `services/` cuando los introduces a propósito (y ninguno cuando el código está bien).
 
 ```json
 {
@@ -372,30 +463,28 @@ Y verifica que `tsconfig.json` incluya `services/`:
 
 ### Paso 4 — Lectura guiada de `services/BaseService.ts`
 
-Abre el archivo y señala punto por punto:
-
-1. **`export abstract class BaseService`** — la palabra **`abstract` aparece por primera vez en el curso**. Hazlo explícito en voz alta.
-2. **`protected constructor(...)`** — protegido, no público. Eso significa que **no puedes hacer `new BaseService(...)` desde fuera**. Solo las hijas pueden llamarlo (vía `super(...)`).
-3. **`protected abstract basePath(): string`** — método sin implementación. Cada hijo DEBE proveerlo o TS no compila.
-4. **`url(path)`** — helper compartido por todas las hijas: junta `baseURL + basePath() + path`.
-5. **`dispose()`** — cierra el `APIRequestContext`. Si no lo llamas, hay leaks.
-
-> 💡 **Pruébalo en vivo:** abre un editor y escribe `const x = new BaseService(...)`. TypeScript debe quejarse con **"Cannot create an instance of an abstract class"**. Eso es el valor de `abstract` en una sola línea. (No guardes el archivo — es solo para demostrarlo).
+**4.1 — Leer el contrato línea por línea**
+- **Qué hago:** abro `BaseService.ts` y señalo en voz alta: `export abstract class` (primera vez en el curso), `protected constructor` (nadie de fuera puede `new`), `protected abstract basePath()` (cada hija lo DEBE definir), `url()` (helper compartido) y `dispose()` (cierra el contexto HTTP).
+- **Por qué:** entender el molde antes de ver las hijas hace obvio por qué `AuthService` "solo" declara `basePath()` y el factory: todo lo demás lo heredó.
+- **Cómo verifico (en vivo):** escribo `const x = new BaseService(...)` en un editor; TypeScript se queja con **"Cannot create an instance of an abstract class"**. Ese error en una línea es el valor de `abstract`. (No guardo el archivo — es solo demostración.)
 
 ---
 
 ### Paso 5 — Lectura guiada de `AuthService.ts` y `PizzaService.ts`
 
-Cosas que señalar:
-
-- **`static async create(...)`** — el factory. Reemplaza al `new ServiceX(...)` directo porque necesita **construcción async** (Playwright crea el `APIRequestContext` con `await playwright.request.newContext(...)`).
-- **`createAuthedContext(baseURL, token, extraHeaders)`** — helper que inyecta `Authorization: Bearer <token>` y `X-Country-Code` en TODAS las requests del contexto.
-- Cada servicio **implementa `basePath()`** — TS no compila sin eso.
-- Tras usar, **siempre `await service.dispose()`** — recuérdalo al grupo varias veces.
+**5.1 — Identificar el patrón factory + auth + dispose**
+- **Qué hago:** recorro las hijas y marco: `static async create(...)` (el factory, porque la construcción es `async`); `createAuthedContext(baseURL, token, extraHeaders)` (inyecta `Authorization: Bearer` + `X-Country-Code` en TODAS las requests); cada servicio implementa `basePath()` (sin eso TS no compila); y `await service.dispose()` al final de cada uso.
+- **Por qué:** es el patrón que se repite en los 3 servicios — "un servicio por endpoint family, factory async, dispose siempre". Reconocerlo aquí evita explicarlo 3 veces.
+- **Cómo verifico:** en el editor, autocompletar `pizzas.` muestra `list`, `create` y `dispose`; `AuthService.create` aparece como `static`.
 
 ---
 
 ### Paso 6 — Correr la suite API
+
+**6.1 — Ejecutar solo el project `api`**
+- **Qué hago:** corro `pnpm test:api` (o `pnpm exec playwright test --project=api`).
+- **Por qué:** valida que servicios + config + specs encajan, sin arrancar UI ni setup. Son llamadas HTTP puras: por eso corren en <1s cada una.
+- **Cómo verifico:** el HTML report muestra los tests de `tests/api/*.spec.ts` **y** el `ejemplo.spec.ts` de este módulo en verde, sin que se abra ningún navegador. (La primera corrida del día puede tardar 30-40s por el cold start de Render.)
 
 ```bash
 # Solo el project api (sin UI projects ni setup)
@@ -405,23 +494,18 @@ pnpm test:api
 pnpm exec playwright test --project=api
 ```
 
-**Qué debería pasar:**
-
-- Verás los tests de `tests/api/*.spec.ts` + el `ejemplo.spec.ts` de este módulo.
-- Los tests **no abren navegador** — son llamadas HTTP puras. Por eso son rápidos.
-- En la primera corrida del día puede tardar 30-40s (cold start de Render).
-
 ---
 
 ### Paso 7 — Lectura guiada del flujo del `ejemplo.spec.ts`
 
-Identifica el patrón con el grupo:
+**7.1 — Trazar el flujo auth → list por mercado**
+- **Qué hago:** identifico con el grupo las 3 fases del test: (1) **Auth** — `AuthService.create(API_URL)` → `auth.login(user)` → guardo el `access_token` → `auth.dispose()`; (2) **Reutilización del token** — el mismo token alimenta cada `PizzaService.create(...)`; (3) **Iteración por mercado** — `for (const market of markets)` crea un `PizzaService` por mercado, lista pizzas, valida `currency`, dispose.
+- **Por qué:** es el patrón canónico de la capa de API — *"un servicio por endpoint family, factory async, dispose siempre"*. El `for...of` sobre `markets` es data-driven puro (un `for`, no una API mágica de Playwright).
+- **Cómo verifico:** `pnpm exec playwright test modulo-05-api-layer/ejemplo.spec.ts --project=api` pasa en verde; el report muestra el flujo completo sin abrir navegador.
 
-1. **Auth**: `AuthService.create(API_URL)` → `auth.login(user)` → guardas el `access_token` → `auth.dispose()`.
-2. **Reutilización del token**: el mismo token se usa en cada `PizzaService.create(...)`.
-3. **Iteración por mercado**: el bucle `for (const market of markets)` crea un `PizzaService` por mercado, lista pizzas, valida currency, dispose.
-
-**Patrón clave que repetir en voz alta:** *"un servicio por endpoint family, factory async, dispose siempre"*.
+> 🔷 **TypeScript — union types para errores (`Order | ApiError`)**
+> Un **union type** dice "esto es A **o** B": `Order | ApiError` modela que un endpoint puede devolver la entidad esperada **o** un objeto de error. TypeScript te obliga a **estrechar** (narrow) el tipo antes de usar campos específicos de uno u otro — por eso el guard `if (!res.ok()) throw ...` es tan importante: separa el camino feliz (`Order`) del de error (`ApiError`) **antes** de leer propiedades.
+> 📚 Lo viste en [TS · M04 — Tipos de objetos](../../typescript-qa-course/modulo-04-objects-types/) (uniones y forma de objetos; el contrato `ApiError` vive en `types/omnipizza.d.ts`). Aquí lo aplicas para distinguir una respuesta válida de un error del backend.
 
 ---
 
@@ -442,9 +526,29 @@ Mide en el pizarrón:
 
 ### Paso 9 — Resolver el reto
 
-Tienes que extender `PizzaService` con DOS métodos nuevos: `getByMarket(market)` y `getById(id)`. Y luego escribir un test que los use juntos.
+**9.1 — Extender `PizzaService` con `getByMarket` y `getById`, y escribir el test**
+- **Qué hago:** abro `modulo-05-api-layer/reto.spec.ts` y sigo sus TODOs. Añado **dos métodos públicos** a `services/PizzaService.ts` (`getByMarket(market)` y `getById(id)`) junto al `list()` existente, y luego escribo un test que los use juntos.
+- **Por qué:** practica el patrón "un método por endpoint" dentro de una hija concreta de `BaseService`. El reto **conserva sus TODOs** a propósito — el dolor de implementarlo es el ejercicio; no lo resuelvas aquí.
+- **Cómo verifico:** `pnpm typecheck` pasa con los métodos nuevos, y `pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api` queda en verde (tras quitar el `test.skip`).
 
-El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando dónde escribir cada método dentro de `services/PizzaService.ts`.
+> El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando dónde escribir cada método dentro de `services/PizzaService.ts`. Los TODOs se quedan sin resolver en este README — vívelos en el archivo.
+
+---
+
+### Paso 10 — Versiona tu trabajo (Git JIT)
+
+**10.1 — Commitear la capa de API**
+- **Qué hago:** agrego solo lo que toca este módulo y commiteo con un mensaje convencional.
+- **Por qué:** la capa de servicios + su config + el módulo son una unidad coherente. Un commit por capa deja un historial legible (y, en M06, fácil de revertir en CI).
+- **Cómo verifico:** `git log --oneline -1` muestra el commit `feat(m05): ...` en la cima.
+
+```bash
+git add services tests/api playwright.config.ts modulo-05-api-layer
+git commit -m "feat(m05): API layer con BaseService abstracta"
+git log --oneline -1
+```
+
+> 🪟 **Windows / PowerShell:** los comandos `git` son idénticos; no necesitas escapar nada aquí.
 
 ---
 

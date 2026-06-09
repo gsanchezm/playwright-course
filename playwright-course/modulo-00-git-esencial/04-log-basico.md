@@ -4,6 +4,11 @@
 
 ## 4.1 Lo mínimo que debes saber
 
+**4.1.1 — Ver el historial completo**
+- **Qué hago:** `git log`
+- **Por qué:** es la vista detallada de la bitácora — cada commit con su hash completo, autor, fecha y mensaje. La usas cuando necesitas el contexto completo de un cambio (no solo el título).
+- **Cómo verifico:** se abre un pager con un bloque por commit como este:
+
 ```bash
 $ git log
 commit a1b2c3d4e5f67890abcdef1234567890abcdef12 (HEAD -> main)
@@ -48,6 +53,11 @@ commit a1b2c3d4...  (HEAD -> main)
 
 ## 4.2 Versión compacta — la que más vas a usar
 
+**4.2.1 — Ver el historial en una línea por commit**
+- **Qué hago:** `git log --oneline`
+- **Por qué:** es la vista que usarás el 90% del tiempo: hash corto + mensaje, sin ruido. Perfecta para revisar rápido qué se hizo esta semana o confirmar tu último commit.
+- **Cómo verifico:** una línea por commit, el más reciente arriba:
+
 ```bash
 $ git log --oneline
 a1b2c3d (HEAD -> main) test: add user profile happy path
@@ -55,15 +65,12 @@ a1b2c3d (HEAD -> main) test: add user profile happy path
 3e4f5a6 chore: initial framework
 ```
 
-Una línea por commit. Perfecto para revisar rápido qué se hizo esta semana.
-
 ## 4.3 Ver qué cambió en un commit específico
 
-```bash
-$ git log -p tests/checkout.spec.ts
-```
-
-`-p` agrega el **diff** de cada commit que tocó ese archivo. Útil para responder "¿quién cambió este selector y por qué?".
+**4.3.1 — Ver el diff de cada commit que tocó un archivo**
+- **Qué hago:** `git log -p tests/checkout.spec.ts`
+- **Por qué:** `-p` añade el **diff** (las líneas `-`/`+` de la lección 2) de cada commit que tocó ese archivo, con autor y fecha. Es la pieza que cierra la pregunta de QA: "¿**quién** cambió este selector, **cuándo** y **a qué**?".
+- **Cómo verifico:** por cada commit verás su encabezado (hash/autor/fecha) seguido del diff de ese archivo. Sal del pager con `q`.
 
 ## 4.4 Otras variantes que vas a querer cuando duela
 

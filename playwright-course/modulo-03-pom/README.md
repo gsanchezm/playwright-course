@@ -1,6 +1,6 @@
 # Módulo 03 — Refactor a POM (OOP incremental)
 
-**Duración estimada:** 80-105 min (incluye dos *Git breaks* — branches y conflictos)
+**Duración estimada:** 80-105 min (incluye Git JIT — branches y conflictos, tejidos en el flujo del refactor)
 **Pieza que suma al framework:** `pages/BasePage.ts` + `LoginPage.ts` + `CatalogPage.ts` + `CheckoutPage.ts`. El spec de M02 se refactoriza y se nota cuánto se limpia.
 
 ---
@@ -120,108 +120,224 @@ pages/
 
 ## Paso a paso
 
-### Paso 0 — Pre-requisitos
+> **Cómo leer esta sección:** cada paso grande se parte en **micro-pasos** `N.M` con la tripleta **Qué hago / Por qué / Cómo verifico**. Cada micro-paso dice qué archivo se crea/edita y en qué orden, para que la `🏗️ Arquitectura` de arriba se construya pieza por pieza. Los recuadros `🔷 TypeScript` aparecen la **primera vez** que un concepto del lenguaje entra en juego y enlazan al curso de TS.
 
-```bash
-# Estando en playwright-course/
-pnpm m2            # debe pasar los 4 mercados en verde
-pnpm typecheck     # debe pasar limpio
-ls types/ data/    # ambas carpetas existen (vienen de M02)
-```
+---
 
-Si M02 no corre, vuelve al módulo anterior. Este módulo asume que la data tipada y los locators jerárquicos ya están internalizados.
+### Paso 0 — Pre-requisitos y rama de trabajo
+
+**0.1 — Verifica que M02 corre en verde**
+- **Qué hago:** estando en `playwright-course/`, ejecuto `pnpm m2` y `pnpm typecheck`.
+- **Por qué:** M03 refactoriza el spec de M02. Si la data tipada (`types/`, `data/`) y los locators jerárquicos no funcionan, el refactor parte de una base rota y no sabrás si un fallo es del POM o heredado.
+- **Cómo verifico:** `pnpm m2` pasa los 4 mercados en verde; `pnpm typecheck` termina sin errores; `ls types/ data/` muestra ambas carpetas.
+
+**0.2 — Aísla el refactor en una rama de feature**
+- **Qué hago:** antes de tocar una sola clase, creo una rama dedicada:
+  ```bash
+  git switch main
+  git pull            # sólo si ya tienes remoto configurado
+  git switch -c feature/m03-pom
+  ```
+- **Por qué:** el refactor toca **varios archivos a la vez** (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`, `index.ts`, el spec). Si sale mal, descartas la rama y `main` queda intacto. Esta es la diferencia entre "experimentar con red" y "experimentar sobre la rama que demuestras en clase".
+- **Cómo verifico:** `git status` dice `On branch feature/m03-pom`; `git branch` la muestra con el asterisco.
 
 > 💡 **Para el facilitador:** repite en voz alta los nombres de los Page Objects que vamos a usar — `LoginPage`, `CatalogPage`, `CheckoutPage` — y enséñales que viven en `pages/`. Lo van a oír cien veces en los próximos 90 minutos.
+
+> 🌿 **Git JIT — por qué una rama aquí**
+> El refactor cruza varios archivos a la vez; aislarlo en `feature/m03-pom` protege `main`. Más abajo, al cerrar el módulo (Paso 10), harás el merge a `main` y verás un conflicto a propósito.
 
 ---
 
 ### Paso 1 — Dependencias requeridas
 
-**M03 no añade paquetes npm nuevos.** Las clases TS se compilan con el `typescript` que ya tienes.
-
-```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
-# Si las 4 aparecen, listo. Si no, ejecuta:
-#   pnpm install            (si package.json ya las lista)
-#   pnpm add -D @playwright/test dotenv typescript @types/node  (si no)
-```
+**1.1 — Confirma que no hace falta instalar nada**
+- **Qué hago:** ejecuto `pnpm list @playwright/test dotenv typescript @types/node`.
+- **Por qué:** **M03 no añade paquetes npm nuevos.** Las clases TS se compilan con el `typescript` que ya tienes desde M01. El incremental de este módulo es de arquitectura de código, no de dependencias.
+- **Cómo verifico:** las 4 dependencias aparecen listadas. Si falta alguna: `pnpm install` (si `package.json` ya las lista) o `pnpm add -D @playwright/test dotenv typescript @types/node`.
 
 ---
 
-### Paso 2 — Crear `pages/` (el Page Object Model)
+### Paso 2 — Reactivar el dolor (el ritual)
 
-```bash
-mkdir -p pages
-touch pages/BasePage.ts pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts
-```
+**2.1 — Marca y cuenta la duplicación de M02**
+- **Qué hago:** ejecuto el **Ritual de apertura** de arriba: abro `modulo-02-locators-data/ejemplo.spec.ts` y marco con resaltador cada línea repetida entre mercados (login, selección de mercado, validación de URL). Cuento las líneas duplicadas y anoto el número.
+- **Por qué:** el POM se justifica **por contraste**. Si no sientes primero la duplicación, vas a leer el POM como "abstracción innecesaria" y lo abandonarás en tu trabajo real. Este es el spine pedagógico del curso: smoke feo → dolor → refactor.
+- **Cómo verifico:** tienes un número anotado y completaste la frase *"Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más."*
 
-**Esqueleto mínimo** de cada archivo (el alumno los llena durante el módulo):
-
-📄 `pages/BasePage.ts` — clase normal (NO abstract; eso llega en M05):
-
-```ts
-import type { Page, Locator } from "@playwright/test";
-
-export class BasePage {
-  constructor(protected readonly page: Page) {}
-
-  protected tid(testId: string): Locator {
-    return this.page.getByTestId(testId);
-  }
-
-  async waitForUrl(pattern: RegExp): Promise<void> {
-    await this.page.waitForURL(pattern);
-  }
-}
-```
-
-📄 `pages/LoginPage.ts` — primera clase concreta:
-
-```ts
-import { BasePage } from "./BasePage";
-import type { CountryCode, User } from "../types";
-
-export class LoginPage extends BasePage {
-  private get usernameInput() { return this.tid("username-desktop"); }
-  private get passwordInput() { return this.tid("password-desktop"); }
-  private get signInButton()  { return this.tid("login-button-desktop"); }
-
-  async goto(): Promise<void> {
-    await this.page.goto("/");
-  }
-
-  async selectMarket(code: CountryCode): Promise<void> {
-    await this.tid(`market-${code}`).click();
-  }
-
-  async loginAs(user: User): Promise<void> {
-    await this.usernameInput.fill(user.username);
-    await this.passwordInput.fill(user.password);
-    await this.signInButton.click();
-  }
-
-  async loginInMarket(user: User, code: CountryCode): Promise<void> {
-    await this.goto();
-    await this.selectMarket(code);
-    await this.loginAs(user);
-  }
-}
-```
-
-📄 `pages/index.ts` (barrel — facilita el import en los specs):
-
-```ts
-export { BasePage } from "./BasePage";
-export { LoginPage } from "./LoginPage";
-export { CatalogPage } from "./CatalogPage";
-export { CheckoutPage } from "./CheckoutPage";
-```
-
-(Los esqueletos completos de `CatalogPage` y `CheckoutPage` los construirás guiado por el ejemplo y el reto.)
+> 💡 **Para el facilitador:** **no te saltes el ritual.** Es lo que convierte el POM en una solución a un dolor real y no en teoría de OOP.
 
 ---
 
-### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M03)
+### Paso 3 — Crear `pages/BasePage.ts` (la clase base)
+
+**3.1 — Crea la carpeta `pages/` y el archivo base**
+- **Qué hago:** creo la carpeta y el primer archivo:
+  ```bash
+  mkdir -p pages
+  # PowerShell: New-Item -ItemType File pages/BasePage.ts
+  ```
+- **Por qué:** `BasePage` va **primero** porque todos los demás Pages la van a `extends`. Si no existe, `LoginPage extends BasePage` ni siquiera compila. Construimos de la raíz de la jerarquía hacia abajo.
+- **Cómo verifico:** `ls pages/` muestra `BasePage.ts`.
+
+**3.2 — Escribe la clase y su constructor**
+- **Qué hago:** escribo `pages/BasePage.ts` como **clase normal** (NO abstract — eso llega en M05):
+  ```ts
+  import type { Page, Locator } from "@playwright/test";
+
+  export class BasePage {
+    // `protected` → visible sólo para clases hijas, no para los tests.
+    // `readonly` → el Page se amarra a una pestaña y no salta a otra.
+    constructor(protected readonly page: Page) {}
+
+    // Helper viewport-aware: añade "-desktop" (≥768px) o "-responsive".
+    protected tid(base: string): Locator {
+      const size = this.page.viewportSize();
+      const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
+      return this.page.getByTestId(`${base}${suffix}`);
+    }
+
+    protected async waitForUrl(pattern: RegExp, timeout = 15_000): Promise<void> {
+      await this.page.waitForURL(pattern, { timeout });
+    }
+
+    async screenshot(name: string): Promise<void> {
+      await this.page.screenshot({ path: `test-results/${name}.png` });
+    }
+  }
+  ```
+- **Por qué:** `tid()` resuelve el sufijo de viewport en **un solo lugar**: las hijas no duplican esa lógica. `waitForUrl` centraliza la espera "paciente" (sin `sleep`). Que `tid` y `waitForUrl` sean `protected` los hace herramientas internas: las ven las hijas, no los tests.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` no marca errores en `BasePage.ts`; el editor no subraya en rojo.
+
+> 🔷 **TypeScript — `class`**
+> Una `class` es una plantilla que agrupa datos (propiedades) y comportamiento (métodos). En QA es tu "mapa de pantalla": `BasePage` define lo que **toda** pantalla comparte.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo aplicas para crear el cimiento del Page Object Model.
+
+> 🔷 **TypeScript — constructor shorthand (`protected readonly page: Page`)**
+> Poner un modificador (`protected`/`readonly`/`private`/`public`) en un parámetro del constructor **declara y asigna** la propiedad en una sola línea — equivale a `this.page = page` más la declaración del campo. Sin el modificador, el parámetro sería una variable local que se pierde al terminar el constructor (gotcha clásico).
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo usas para inyectar la pestaña `page` de Playwright en cada Page Object.
+
+> 🔷 **TypeScript — modificadores `private` / `protected` / `public`**
+> `public` (default) → visible para todos, incluido el test. `private` → sólo dentro de la misma clase. `protected` → la misma clase y sus hijas, **pero no** los tests. El gotcha: si olvidas el modificador, TS asume `public` y rompes la encapsulación sin darte cuenta.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí `tid()` es `protected` para que `LoginPage` lo herede pero el spec no pueda construir locators a mano.
+
+> 🔷 **TypeScript — return type `Promise<void>`**
+> Una función `async` siempre devuelve una `Promise`. `Promise<void>` significa "es asíncrona pero no resuelve ningún valor útil — sólo señala cuándo terminó". El gotcha: si olvidas `await` al llamarla, el test sigue antes de que la acción termine (flaky garantizado).
+> 📚 Lo viste en [TS · M03 — Funciones](../../typescript-qa-course/modulo-03-functions/). Aquí casi todos los métodos de acción (`goto`, `loginAs`…) devuelven `Promise<void>`.
+
+---
+
+### Paso 4 — Crear `pages/LoginPage.ts` (la primera clase concreta)
+
+**4.1 — Crea el archivo y extiende `BasePage`**
+- **Qué hago:** creo `pages/LoginPage.ts` y declaro `export class LoginPage extends BasePage`.
+- **Por qué:** `extends` es **herencia**: `LoginPage` recibe gratis `page`, `tid()` y `waitForUrl()` de `BasePage`. No copio esos helpers — los reutilizo. Ese es el punto de tener una base.
+- **Cómo verifico:** el editor autocompleta `this.tid(...)` dentro de `LoginPage` sin importarlo (viene heredado).
+
+> 🔷 **TypeScript — `extends` y `super`**
+> `class Hija extends Padre` hereda propiedades y métodos del padre. Si la hija define su propio `constructor`, debe llamar `super(...)` para inicializar la parte del padre **antes** de usar `this`. Aquí `LoginPage` **no** declara constructor propio, así que TS usa el de `BasePage` automáticamente — por eso no ves `super()` explícito.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí cada Page `extends BasePage` para reutilizar los helpers comunes.
+
+**4.2 — Declara los locators como `private get` y las acciones públicas**
+- **Qué hago:** escribo el cuerpo de `LoginPage`:
+  ```ts
+  import { expect, type Locator } from "@playwright/test";
+  import { BasePage } from "./BasePage";
+  import type { CountryCode, User } from "../types";
+
+  export class LoginPage extends BasePage {
+    readonly path = "/";
+
+    // --- Locators privados: documentación interna del Page ---
+    private get usernameInput(): Locator { return this.tid("username"); }
+    private get passwordInput(): Locator { return this.tid("password"); }
+    private get signInButton(): Locator  { return this.tid("login-button"); }
+    private get errorMessage(): Locator   { return this.page.getByTestId("login-error"); }
+    private marketFlag(code: CountryCode): Locator {
+      return this.page.getByTestId(`market-${code}`);
+    }
+
+    // --- Acciones públicas: la interfaz del POM ---
+    async goto(): Promise<void> {
+      await this.page.goto(this.path);
+    }
+    async selectMarket(code: CountryCode): Promise<void> {
+      await this.marketFlag(code).click();
+    }
+    async loginAs(user: User): Promise<void> {
+      await this.usernameInput.fill(user.username);
+      await this.passwordInput.fill(user.password);
+      await this.signInButton.click();
+    }
+    async loginInMarket(user: User, code: CountryCode): Promise<void> {
+      await this.goto();
+      await this.selectMarket(code);
+      await this.loginAs(user);
+      await this.waitForUrl(/\/catalog/);
+    }
+  }
+  ```
+- **Por qué:** los locators son **`private get`** para que el test no pueda hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio. Que sean `get` (no campos asignados en el constructor) los resuelve **perezosamente**: `tid()` consulta el viewport en el momento del uso, no al construir el Page. `loginInMarket` encapsula los 5 pasos que en M02 estaban inline en cada test. Las testids base (`"username"`, `"password"`, `"login-button"`, `market-${code}`) usan `tid()`, que les añade el sufijo `-desktop`/`-responsive`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` sigue limpio; si intentas escribir `new LoginPage(page).usernameInput` en el spec, el editor lo subraya en rojo ("propiedad privada").
+
+> 💡 **Para el facilitador:** justo aquí, intenta en vivo escribir `loginPage.usernameInput.fill(...)` en el spec y muestra el subrayado rojo. Sentir que el compilador **bloquea** el atajo es más convincente que decir "los locators son privados".
+
+---
+
+### Paso 5 — Crear `pages/CatalogPage.ts` y `pages/CheckoutPage.ts`
+
+**5.1 — Construye `CatalogPage` (catálogo `/catalog`)**
+- **Qué hago:** creo `pages/CatalogPage.ts`, también `extends BasePage`, con sus locators privados (`pizza-card-*`, `add-to-cart-*`, `nav-cart-count`) y acciones (`waitForCatalog`, `addFirstPizza`, `getPizzaNames`, `expectLoaded`, `expectHasPizzas`, `expectCartCount`).
+- **Por qué:** las cards de pizza tienen testids **dinámicos**, así que el locator usa el prefijo `[data-testid^="pizza-card-"]` (selector legítimo, no inventado). Cada pizza es un `h3`; `getPizzaNames()` los lee con `getByRole("heading")`. Estos son los selectores OmniPizza verificados — no hay rol `list`/`listitem`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `CatalogPage` exporta también el tipo `Category` para los filtros.
+
+**5.2 — Construye `CheckoutPage` (checkout `/checkout`)**
+- **Qué hago:** creo `pages/CheckoutPage.ts`, `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, `order-confirmation`, y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
+- **Por qué:** `CheckoutPage` es la pantalla que usarás en el **reto**. Sus métodos ya están listos para que el reto se enfoque en **orquestar** el flujo E2E, no en escribir locators. `fillWithMarket(market)` rellena los 4 campos con datos coherentes por mercado.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; los métodos públicos aparecen al autocompletar `checkoutPage.` en el spec.
+
+**5.3 — Crea el barrel `pages/index.ts`**
+- **Qué hago:** creo `pages/index.ts` para reexportar las 4 clases (y el tipo `Category`):
+  ```ts
+  export { BasePage } from "./BasePage";
+  export { LoginPage } from "./LoginPage";
+  export { CatalogPage, type Category } from "./CatalogPage";
+  export { CheckoutPage } from "./CheckoutPage";
+  ```
+- **Por qué:** el barrel deja que el spec importe con una sola línea — `import { LoginPage, CatalogPage } from "../pages"` — en vez de un import por archivo. Mantiene los specs limpios y desacopla el spec de la ubicación física de cada clase.
+- **Cómo verifico:** desde un spec, `import { LoginPage, CatalogPage, CheckoutPage } from "../pages"` resuelve sin error.
+
+---
+
+### Paso 6 — Versiona el POM antes de tocar el spec
+
+**6.1 — Commitea los Page Objects por pasos**
+- **Qué hago:** desde la rama `feature/m03-pom`, hago commits incrementales:
+  ```bash
+  git add pages/BasePage.ts
+  git commit -m "refactor(m03): add BasePage with shared helpers"
+
+  git add pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts
+  git commit -m "refactor(m03): extract Login, Catalog and Checkout Page Objects"
+  ```
+- **Por qué:** commits pequeños y descriptivos hacen el `git log --graph` legible y te dan puntos de retorno. Si el spec refactorizado sale mal, vuelves al commit donde los Pages ya estaban bien sin perderlos.
+- **Cómo verifico:** `git log --oneline -2` muestra ambos commits en orden.
+
+> 🌿 **Git JIT — convención de mensajes de commit**
+> El prefijo `refactor(m03):` es la convención del curso (igual que `feat(mXX):`). "Refactor" comunica que **cambias estructura sin cambiar comportamiento**: los mismos 4 tests deben seguir pasando tras el commit.
+
+---
+
+### Paso 7 — Verificar `tsconfig.json` y `package.json`
+
+**7.1 — Confirma que `tsconfig.json` incluye `pages/`**
+- **Qué hago:** abro `tsconfig.json` y verifico que `"pages/**/*.ts"` esté en `include`.
+- **Por qué:** si TS no compila `pages/`, los errores de tipo en tus clases pasan inadvertidos y `pnpm typecheck` te da un falso verde.
+- **Cómo verifico:** el `include` contiene `"pages/**/*.ts"` (ya está en el `tsconfig.json` del repo, junto con `types/`, `helpers/`, `services/`, `fixtures/`, `tests/` y `modulo-*`).
+
+**7.2 — Confirma el script `m3` en `package.json`**
+- **Qué hago:** verifico que exista `"m3": "playwright test modulo-03-pom --project=ui-chromium"`.
+- **Por qué:** es el atajo del módulo. Sin él, tendrías que escribir el comando completo cada vez.
+- **Cómo verifico:** `pnpm m3` arranca el runner sobre `modulo-03-pom`.
 
 > **📐 Config — cambios vs M02**
 > ```diff
@@ -230,31 +346,7 @@ export { CheckoutPage } from "./CheckoutPage";
 > ```
 > **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-chromium`). **Entra:** nada en el config — el incremental de M03 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M04**.
 
-**M03 no requiere cambios al config.** Sigue siendo el mismo de M01/M02.
-
-Solo asegúrate de que `tsconfig.json` incluya `pages/`:
-
-```json
-{
-  "include": [
-    "playwright.config.ts",
-    "types/**/*.ts",
-    "types/**/*.d.ts",
-    "pages/**/*.ts",
-    "modulo-*/**/*.ts"
-  ]
-}
-```
-
-Añade `m3` a `package.json`:
-
-```json
-"scripts": {
-  "m3": "playwright test modulo-03-pom --project=ui-chromium"
-}
-```
-
-Tu `playwright.config.ts` debe seguir como en M02:
+Tu `playwright.config.ts` sigue idéntico a M02:
 
 ```ts
 // playwright.config.ts — Estado en M03 (igual que M01/M02)
@@ -284,82 +376,118 @@ export default defineConfig({
 
 ---
 
-### Paso 4 — Hacer el ritual (5-10 min)
+### Paso 8 — Refactorizar el spec y ejecutarlo
 
-(Ver la sección "Ritual de apertura" arriba.) **No saltes este paso.** Es lo que justifica todo lo demás.
+**8.1 — Reescribe `ejemplo.spec.ts` usando los Page Objects**
+- **Qué hago:** edito `modulo-03-pom/ejemplo.spec.ts` para que el bucle de mercados instancie los Pages y llame a sus acciones:
+  ```ts
+  import { test } from "@playwright/test";
+  import { LoginPage, CatalogPage } from "../pages";
+  import type { Market, User } from "../types";
+  import marketsJson from "../data/markets.json";
+  import usersJson from "../data/users.json";
 
----
+  const markets = marketsJson as Market[];
+  const users = usersJson as User[];
+  const standardUser = users.find((u) => u.username === "standard_user")!;
 
-### Paso 5 — Lectura guiada de `pages/BasePage.ts`
+  test.describe("POM — login + catálogo por mercado (M03)", () => {
+    for (const market of markets) {
+      test(`TC-${market.code} — flow limpio en ${market.fullName} @smoke`, async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        const catalogPage = new CatalogPage(page);
 
-Abre `pages/BasePage.ts` con el grupo y señala:
+        await loginPage.loginInMarket(standardUser, market.code);
+        await catalogPage.expectLoaded();
+        await catalogPage.expectHasPizzas();
+      });
+    }
+  });
+  ```
+- **Por qué:** el spec ahora se lee como **user story**, no como instrucción técnica: `loginInMarket(user, code)` reemplaza el bloque de ~5 líneas inline de M02. Nota que el bucle es un `for...of` sobre `markets` con un `test()` adentro — **no** existe ningún `test.each()` en Playwright; esto es un `for` clásico.
+- **Cómo verifico:** `pnpm m3` corre los **mismos 4 tests** que M02 (uno por mercado) en verde.
 
-- `protected readonly page: Page` — todas las hijas la heredan, los tests no la tocan.
-- `protected tid(name: string)` — método helper interno; las hijas lo usan para construir testids consistentes.
-- `async waitForUrl(...)` — la espera "paciente" centralizada (sin `sleep`).
-- **Por qué no es `abstract`:** porque por sí sola sigue siendo útil para crear hijas. En M05 vas a ver el caso donde `abstract` sí es indispensable.
+**8.2 — Ejecuta el ejemplo en UI mode**
+- **Qué hago:** corro `pnpm m3` (headless) y `pnpm test:ui` (recomendado la primera vez).
+- **Por qué:** UI mode te deja ver el flujo limpio paso a paso y confirmar que el comportamiento no cambió — solo la estructura.
+- **Cómo verifico:** el HTML report / la lista muestran 4 verdes (más el segundo `describe` "uso de acciones granulares"). Ese segundo bloque demuestra que el POM **no obliga** a usar siempre el método de alto nivel: puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
 
----
-
-### Paso 6 — Lectura guiada de `pages/LoginPage.ts`
-
-Cosas que el facilitador debe señalar:
-
-- Los **locators son `private get`** — el test no debería poder hacer `loginPage.usernameInput.fill(...)`. Si lo necesitara, es señal de que el Page no expone una acción de alto nivel.
-- Las **acciones públicas** se leen como user story:
-  - `loginAs(user)`
-  - `loginInMarket(user, code)`
-  - `selectMarket(code)`
-- El método `loginInMarket` **encapsula los 5 pasos** que en M02 estaban inline en cada test.
-
-> 💡 **Para el facilitador:** abre M02 `ejemplo.spec.ts` y M03 `ejemplo.spec.ts` lado a lado. Cuenta las líneas: ~18 por test en M02, ~3 en M03. Ese delta es el argumento del módulo.
-
----
-
-### Paso 7 — Ejecutar el ejemplo
-
-```bash
-# Headless
-pnpm m3
-
-# UI mode (recomendado para ver el flujo limpio)
-pnpm test:ui
-```
-
-**Qué esperar:**
-
-- Los **mismos 4 tests** que en M02 (uno por mercado) corren en verde.
-- En el spec verás `loginPage.loginInMarket(user, 'MX')` en lugar del bloque de 5 líneas.
-- Hay un segundo `describe` ("uso de acciones granulares") que muestra que el POM **no obliga** a usar siempre el método de alto nivel — puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
+**8.3 — Comparativa antes/después**
+- **Qué hago:** abro M02 y M03 lado a lado y respondo: (1) si `username` cambia de testid, ¿cuántos archivos toco? (2) ¿dónde viviría un "logout"? (3) ¿por qué los locators son `private`?
+- **Por qué:** el delta de líneas (~18/test en M02 → ~3/test en M03) y "1 línea vs 4 tests" ante un cambio de testid **son** el argumento del módulo.
+- **Cómo verifico:** puedes contestar: (1) **1 línea** en `LoginPage.ts` vs 4 tests; (2) método público en `CatalogPage` (o un `LogoutPage` si crece); (3) para que el test no dependa del DOM interno — encapsulación.
 
 ---
 
-### Paso 8 — Comparativa antes/después (5 min)
+### Paso 9 — Resolver el reto (CheckoutPage)
 
-Pide al grupo abrir M02 y M03 simultáneamente y responder:
-
-1. ¿Qué pasa si el campo `username-desktop` cambia de testid?
-   - En M02: **modificas 4 tests**.
-   - En M03: **modificas 1 línea** en `LoginPage.ts`.
-2. Si añadieras un nuevo flujo "logout" desde el catálogo, ¿dónde viviría?
-   - Respuesta: como método público en `CatalogPage` (o un nuevo `LogoutPage` si fuera más grande).
-3. ¿Por qué los locators son `private`?
-   - Para que el test **no sepa** cómo está el DOM por dentro. Eso es encapsulación.
+**9.1 — Completa el E2E del reto**
+- **Qué hago:** abro `modulo-03-pom/reto.spec.ts` y completo el flujo E2E **login → catálogo → addToCart → checkout → confirmación**, parametrizado por mercado, usando los métodos públicos de `CheckoutPage` ya disponibles:
+  - `fillWithMarket(market)` — rellena el form.
+  - `placeOrder()` — submit.
+  - `checkoutWith(market)` — atajo: fill + placeOrder.
+  - `expectLoaded()` / `expectConfirmation()` / `expectTotalContains(symbol)`.
+- **Por qué:** el reto te hace **orquestar** Pages sin escribir locators inline (la única línea inline esperada es la del `nav-checkout-desktop`). Es donde compruebas que internalizaste la "regla de oro": si necesitas un locator que no existe, lo añades al Page, no al spec.
+- **Cómo verifico:** los 4 tests del reto terminan en verde (`Reto-MX`, `Reto-US`, `Reto-CH`, `Reto-JP`). Cada `TODO` del reto trae su propio formato **Qué hacer / Pista / Cómo verificar** — resuélvelos tú; el README no los resuelve por ti.
 
 ---
 
-### Paso 9 — Resolver el reto
+### Paso 10 — Cerrar la rama: merge a `main`
 
-Abre `reto.spec.ts`. Tu trabajo es completar un flujo E2E **login → catálogo → addToCart → checkout → confirmación** usando los Page Objects ya construidos.
+**10.1 — Versiona el spec refactorizado**
+- **Qué hago:** commiteo el refactor del spec en la rama:
+  ```bash
+  git add modulo-03-pom/ejemplo.spec.ts modulo-03-pom/reto.spec.ts
+  git commit -m "feat(m03): refactor specs to use Page Object Model"
+  ```
+- **Por qué:** cierras la rama con el trabajo completo y commiteado antes de integrarlo.
+- **Cómo verifico:** `git status` está limpio (`nothing to commit`); `git log --oneline -1` muestra el commit del refactor.
 
-`CheckoutPage` ya tiene métodos listos (revísalos primero):
+**10.2 — Mergea `feature/m03-pom` a `main`**
+- **Qué hago:** vuelvo a `main` e integro:
+  ```bash
+  git switch main
+  git merge feature/m03-pom
+  git branch -d feature/m03-pom
+  ```
+- **Por qué:** el refactor ya está probado en verde; integrarlo a `main` lo hace oficial. Borrar la rama mergeada mantiene el repo limpio.
+- **Cómo verifico:** `git log --oneline --graph -5` muestra los commits del POM en `main`. Si `main` no avanzó desde que ramificaste, verás un **fast-forward** (sin commit extra); si avanzó, un **merge commit** con dos padres. Ambos son correctos.
 
-- `checkoutWith(market)` — atajo: fill + placeOrder.
-- `fillWithMarket(market)` — sólo rellena el form.
-- `placeOrder()` — submit.
-- `expectLoaded()` / `expectConfirmation()` / `expectTotalContains(symbol)`.
+> | Prefijo de rama | Uso |
+> |---|---|
+> | `feature/` | Nueva capacidad (POM, fixture, test) |
+> | `fix/` | Arreglar un test flaky o bug del framework |
+> | `chore/` | Upgrade de dependencias, limpieza |
+> | `refactor/` | Reestructurar sin cambiar comportamiento |
 
-Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
+**10.3 — (Opcional, demostración) Provoca y resuelve un conflicto**
+- **Qué hago:** para *practicar* conflictos, simulo dos cambios al mismo método. En la rama cambio un locator de `LoginPage`:
+  ```typescript
+  // En feature/m03-pom
+  get emailInput() { return this.page.getByLabel('Correo'); }
+  ```
+  y en `main` alguien ya mergeó otra versión del mismo método:
+  ```typescript
+  // El cambio que llegó primero a main
+  get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
+  ```
+  Al `git merge feature/m03-pom`, Git no puede decidir:
+  ```bash
+  Auto-merging pages/LoginPage.ts
+  CONFLICT (content): Merge conflict in pages/LoginPage.ts
+  Automatic merge failed; fix conflicts and then commit the result.
+  ```
+- **Por qué:** un conflicto NO es un error — es Git pidiéndote que decidas qué cambio gana cuando dos ramas tocaron la misma línea. Verlo a propósito, en un caso controlado, te quita el miedo cuando aparezca de verdad en equipo.
+- **Cómo verifico:** el archivo muestra los marcadores `<<<<<<< HEAD` (lo de `main`) `=======` (separador) `>>>>>>> feature/m03-pom` (tu rama). Para resolver: editas a mano, **borras los tres marcadores**, y:
+  ```bash
+  git add pages/LoginPage.ts
+  git commit            # abre el editor con el mensaje pre-escrito; guarda y cierra
+  ```
+  Si te arrepientes a mitad: `git merge --abort` regresa el repo al estado previo.
+
+> 💡 **VS Code** muestra botones inline **Accept Current**, **Accept Incoming**, **Accept Both** sobre cada bloque en conflicto. Úsalos para evitar borrar mal los marcadores a mano.
+
+> 📚 **Profundización opcional Git:** [Conceptos de ramas](../../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md) · [Flujo feature-branch detallado](../../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md) · [Tipos de merge](../../git-github-course/modulo-04-ramas-y-merge/04-merge.md) · [Conflictos avanzados](../../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md) · [Workflows de equipo y rebase](../../git-github-course/modulo-05-workflows-rebase/)
 
 ---
 
@@ -420,116 +548,10 @@ Cada uno de estos aparece tal cual en `pages/BasePage.ts`, `pages/LoginPage.ts` 
 - [ ] **Puedes contar las líneas eliminadas** vs M02.
 - [ ] Completaste el reto E2E con `CheckoutPage`.
 - [ ] Sabes que `abstract` llega en M05 — no lo introdujimos aquí.
+- [ ] Aislaste el refactor en `feature/m03-pom` y lo mergeaste a `main`.
 
 ---
 
-## 🌿 Git break — Refactoriza en una rama (no en `main`)
+## ¿Qué viene en M04?
 
-Vas a tocar varios archivos a la vez (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`). Esto es **el momento perfecto** para una rama dedicada: si el refactor sale mal, descartas la rama y `main` queda intacto.
-
-### El flujo
-
-```bash
-# 1. Asegúrate de estar en main al día
-$ git switch main
-$ git pull            # sólo si ya tienes remoto configurado
-
-# 2. Crea tu rama de feature
-$ git switch -c feature/m03-pom
-
-# 3. Trabaja, commitea por pasos
-$ git add pages/BasePage.ts
-$ git commit -m "refactor: add BasePage with shared helpers"
-
-$ git add pages/LoginPage.ts pages/CatalogPage.ts
-$ git commit -m "refactor: extract Login and Catalog Page Objects"
-
-# 4. Cuando el refactor está listo, vuelve a main y mergea
-$ git switch main
-$ git merge feature/m03-pom
-
-# 5. Borra la rama ya mergeada
-$ git branch -d feature/m03-pom
-```
-
-### Convención de nombres de rama
-
-| Prefijo | Uso |
-|---|---|
-| `feature/` | Nueva capacidad (POM, fixture, test) |
-| `fix/` | Arreglar un test flaky o bug del framework |
-| `chore/` | Upgrade de dependencias, limpieza |
-| `refactor/` | Reestructurar sin cambiar comportamiento |
-
-### Fast-forward vs merge commit
-
-Cuando `main` no tiene commits nuevos desde que creaste tu rama, Git hace **fast-forward** (avanza el puntero, sin commit extra). Si `main` avanzó (porque alguien más mergeó), Git crea un **merge commit** con dos padres. Ambos están bien — sólo es bueno saber qué estás viendo cuando lees `git log --graph`.
-
----
-
-## ⚔️ Git break — Resolver un conflicto
-
-Imagina que tú estás en `feature/m03-pom` y cambiaste el locator del input de email en `LoginPage`:
-
-```typescript
-// Tu cambio
-get emailInput() { return this.page.getByLabel('Correo'); }
-```
-
-Mientras tanto, una compañera ya mergeó otro cambio al mismo método en `main`:
-
-```typescript
-// El cambio en main que llegó primero
-get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
-```
-
-Cuando intentas mergear, Git no puede decidir y te avisa:
-
-```bash
-$ git switch main
-$ git merge feature/m03-pom
-Auto-merging pages/LoginPage.ts
-CONFLICT (content): Merge conflict in pages/LoginPage.ts
-Automatic merge failed; fix conflicts and then commit the result.
-```
-
-### Cómo se ve el archivo en conflicto
-
-```typescript
-export class LoginPage extends BasePage {
-<<<<<<< HEAD
-  get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
-=======
-  get emailInput() { return this.page.getByLabel('Correo'); }
->>>>>>> feature/m03-pom
-}
-```
-
-- `<<<<<<< HEAD` = lo que está en `main` ahora.
-- `=======` = separador.
-- `>>>>>>> feature/m03-pom` = lo que trae tu rama.
-
-### Cómo lo resuelves
-
-1. Decide manualmente cuál se queda (o combinas ambos).
-2. **Borra los marcadores** (`<<<<<<<`, `=======`, `>>>>>>>`).
-3. Marca el archivo como resuelto y termina el merge:
-
-```bash
-$ git add pages/LoginPage.ts
-$ git commit                # abre el editor con el mensaje pre-escrito; guarda y cierra
-```
-
-### Si te arrepientes
-
-```bash
-$ git merge --abort
-```
-
-Esto regresa el repo al estado previo, como si el merge nunca hubiera pasado.
-
-> 💡 **VS Code** tiene botones inline **Accept Current**, **Accept Incoming**, **Accept Both** sobre cada bloque en conflicto. Úsalos para evitar errores manuales.
-
----
-
-> 📚 **Profundización opcional:** [Conceptos de ramas](../../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md) · [Flujo feature-branch detallado](../../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md) · [Tipos de merge](../../git-github-course/modulo-04-ramas-y-merge/04-merge.md) · [Conflictos avanzados](../../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md) · [Workflows de equipo y rebase](../../git-github-course/modulo-05-workflows-rebase/)
+En M03 el login todavía corre por UI en **cada** test. En **M04 (setup + fixtures)** vas a eliminar ese login repetido: un `auth.setup.ts` se ejecuta **una sola vez**, guarda el estado de sesión en `.auth/`, y todos los TCs arrancan ya autenticados vía un **fixture** custom. También entra el primer cambio real al `playwright.config.ts` desde M01 (un `project` de `setup` con dependencias) y, en Git, el ciclo `push → PR → code review → deshacer` (`git restore` / `git revert`) porque tocar `auth.setup.ts` puede romper toda la suite.

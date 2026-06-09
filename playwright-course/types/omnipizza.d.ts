@@ -10,7 +10,11 @@
 
 export type CountryCode = "MX" | "US" | "CH" | "JP";
 export type Currency = "MXN" | "USD" | "CHF" | "JPY";
-export type Role = "customer" | "admin";
+// OmniPizza sólo expone usuarios "customer". Las personas
+// (standard / locked_out / problem / performance_glitch / error)
+// se distinguen por COMPORTAMIENTO de login, no por privilegios.
+// NO existe un rol admin en la app.
+export type Role = "customer";
 
 export interface User {
   username: string;

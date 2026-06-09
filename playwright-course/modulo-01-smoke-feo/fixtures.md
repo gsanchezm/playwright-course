@@ -5,10 +5,9 @@
 >
 > ```ts
 > test("TC-001 ...", async ({ page }) => { ... });
-> test.beforeAll(async ({ request }) => { ... });
 > ```
 >
-> Ese `{ page }` y `{ request }` que recibes en cada test **son fixtures**. Lo que aún no tienes son fixtures **propios** (esos llegan en M04). Antes de llegar ahí, conviene entender qué es lo que ya estás usando sin darte cuenta.
+> Ese `{ page }` que recibes en cada test **es un fixture**. Lo que aún no tienes son fixtures **propios** (esos llegan en M04). Antes de llegar ahí, conviene entender qué es lo que ya estás usando sin darte cuenta.
 
 ---
 
@@ -45,7 +44,7 @@ Playwright trae varios fixtures ya hechos. Estos son los más usados:
 | Fixture | Tipo | Para qué sirve | ¿En M01 lo usas? |
 |---|---|---|---|
 | `page` | `Page` | Una pestaña del navegador, aislada por test | ✅ Sí, en TC-001 y TC-002 |
-| `request` | `APIRequestContext` | Cliente HTTP (GET/POST/etc) sin navegador | ✅ Sí, en el `beforeAll` de warmup |
+| `request` | `APIRequestContext` | Cliente HTTP (GET/POST/etc) sin navegador | ❌ Aún no (lo usarás en M05, API layer) |
 | `context` | `BrowserContext` | Sesión incógnita (cookies/storage propios) | ❌ Aún no (M03/M04) |
 | `browser` | `Browser` | La instancia del navegador para todo el worker | ❌ Aún no |
 | `browserName` | `'chromium' \| 'firefox' \| 'webkit'` | El nombre del navegador actual (para condicionales) | ❌ Aún no |
@@ -74,13 +73,13 @@ Lo que pasa por debajo, paso a paso:
 4. Ejecutas el cuerpo del test.
 5. **Después** del test: Playwright cierra la `Page` y el `BrowserContext` (cookies se borran). El `Browser` se queda vivo para el siguiente test del mismo worker.
 
-Si pides **dos** fixtures, Playwright te construye los dos:
+Si pides **dos** fixtures, Playwright te construye los dos (ejemplo **genérico**, no es código de M01):
 
 ```ts
-test("ejemplo doble", async ({ page, request }) => {
+test("ejemplo doble", async ({ page, context }) => {
   // page: navegador listo
-  // request: cliente HTTP listo
-  const res = await request.get("/api/health");
+  // context: la sesión incógnito que aloja a esa page
+  await context.clearCookies();
   await page.goto("/");
 });
 ```
@@ -99,7 +98,7 @@ Un fixture vive durante una **ventana de tiempo**. Esa ventana se llama **scope*
 | **`worker`** | Se crea una vez por proceso worker; sobrevive entre tests | `browser`, `browserName` | Cosas caras de construir (un cliente DB, un browser) que pueden compartirse sin contaminar tests |
 
 > 💡 **Por qué importa para M01:**
-> El `beforeAll` que despierta el backend de Render usa el fixture `request`, que **es `test`-scoped por default**. Por eso lo envolvemos en `beforeAll` — para que el warmup corra **una sola vez por archivo**, no antes de cada test. En M04 vamos a reemplazar esto por un `setup project` con un fixture `worker`-scoped, que es la forma "correcta".
+> El fixture `page` que usan TC-001 y TC-002 es **`test`-scoped por default**: Playwright te da una pestaña **nueva y limpia** en cada test. Por eso ambos tests repiten el login desde cero — no comparten sesión, y ese aislamiento es justo lo que te hace **sentir la duplicación**. En cambio `browser` es **`worker`-scoped**: se construye una sola vez por proceso y se reutiliza entre tests porque abrir un navegador es caro. En M04 aprovecharás el scope `worker` con un `setup project` que loguea **una vez** y comparte el `storageState`.
 
 ---
 
@@ -116,7 +115,7 @@ Ambos sirven para preparar/limpiar. ¿Cuál uso?
 | Ideal cuando | El setup es trivial y local a un archivo | El setup se repite en muchos archivos |
 
 **Regla pragmática del curso:**
-- M01–M02 → usamos hooks (`beforeAll` para warmup). Es suficiente.
+- M01–M02 → solo usamos los fixtures **built-in** (`page`) y, cuando hace falta repetir setup, hooks como `beforeEach`. Es suficiente.
 - M04 → migramos a fixtures custom (`authenticatedPage`, `apiClient`). Ahí sentirás la ganancia.
 
 ---
@@ -207,7 +206,7 @@ Anatomía sin entrar a fondo (esto se profundiza en M04):
 ## 9. Resumen de 30 segundos
 
 1. **Un fixture es un objeto que Playwright te prepara, te inyecta y limpia.**
-2. **Ya usas dos en M01 sin saberlo:** `page` y `request`.
+2. **Ya usas uno en M01 sin saberlo:** `page` (el `request` para API llega en M05).
 3. **El scope decide cuánto vive:** `test` (por TC) o `worker` (por proceso).
 4. **Hooks ≠ fixtures.** Hooks ejecutan código; fixtures **además te entregan un objeto tipado y reutilizable entre archivos**.
 5. **Cuando sientas que copias las mismas 6 líneas en cada test → ese es el momento de crear un fixture custom.** Ese momento llega oficialmente en M04.

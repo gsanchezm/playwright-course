@@ -22,42 +22,42 @@ Todos los archivos generados por la IA caen en `modulo-07-ia-mcp/sandbox/` (ya e
 
 ### 1. Verifica conexión MCP
 
-Prompt:
+Prompt (en inglés):
 ```
-Llama a la tool "browser_navigate" con url "https://example.com",
-después "browser_snapshot" y dime cuántos enlaces tiene la página.
+Call the "browser_navigate" tool with url "https://example.com",
+then "browser_snapshot", and tell me how many links the page has.
 ```
 
 ✅ **Cómo verificar:** la IA debe responder con un número concreto (ej. "1 enlace: More information..."). Si responde sin invocar tool, **MCP no está conectado** — revisa el setup.
 
 ### 2. Genera el test de "happy path checkout"
 
-Prompt (cópialo tal cual y adáptalo a tu cliente):
+Prompt (cópialo tal cual en inglés y adáptalo a tu cliente):
 ```
-CONTEXTO: estoy en el repo playwright-course. Lee estos archivos antes de generar:
+CONTEXT: I am in the playwright-course repo. Read these files before generating:
 - playwright.config.ts
 - pages/BasePage.ts
 - pages/LoginPage.ts
 - pages/CatalogPage.ts
-- pages/CheckoutPage.ts (si existe; si no, ignora)
+- pages/CheckoutPage.ts (if it exists; otherwise ignore)
 - tests/setup/auth.setup.ts
 
-TAREA: genera modulo-07-ia-mcp/sandbox/checkout-happy.spec.ts que:
-1. Use el storageState de .auth/user.json (no haga login desde UI).
-2. Navegue al catálogo.
-3. Agregue al carrito 1 Margherita talla "Large".
-4. Vaya al checkout.
-5. Aserte con web-first assertions que:
-   - El total mostrado es > 0
-   - El item "Margherita" aparece en el resumen del pedido
+TASK: generate modulo-07-ia-mcp/sandbox/checkout-happy.spec.ts that:
+1. Uses the storageState from .auth/user.json (does NOT log in via the UI).
+2. Navigates to the catalog.
+3. Adds 1 "Large" Margarita to the cart.
+4. Goes to checkout.
+5. Asserts with web-first assertions that:
+   - The displayed total is > 0
+   - The "Margarita" item appears in the order summary
 
-REGLAS:
-- Locators role-based (getByRole, getByLabel, getByTestId). Nada de CSS profundo.
-- Nada de waitForTimeout. Si necesitas esperar, usa expect(...).toBeVisible() o waitFor.
-- Sigue las convenciones de naming del repo (en inglés para identificadores, comentarios en español).
-- Antes de escribir, navega OmniPizza con MCP y confírmame los selectors reales.
+RULES:
+- Role-based locators (getByRole, getByLabel, getByTestId). No deep CSS.
+- No waitForTimeout. If you need to wait, use expect(...).toBeVisible() or waitFor.
+- Follow the repo naming conventions (English for identifiers, Spanish for comments).
+- Before writing any code, navigate OmniPizza with MCP and confirm the real selectors.
 
-ENTREGA: solo el archivo .spec.ts; no me expliques, lo voy a leer.
+DELIVERY: only the .spec.ts file; do not explain, I will read it.
 ```
 
 ✅ **Cómo verificar:** la IA debe **abrir el browser via MCP** (lo ves en tu pantalla o reporta la URL navegada), **luego** escribir el spec. Si genera sin navegar, los selectors van a estar inventados.
@@ -74,43 +74,48 @@ $ pnpm exec playwright test modulo-07-ia-mcp/sandbox/checkout-happy.spec.ts --pr
 
 ### 4. Genera el caso negativo
 
-Prompt:
+Prompt (en inglés):
 ```
-Genera modulo-07-ia-mcp/sandbox/checkout-empty-cart.spec.ts:
-- Storage state autenticado (igual que el anterior).
-- Va directo a /checkout SIN agregar nada al carrito.
-- Aserta que aparece un mensaje "Tu carrito está vacío" (o el equivalente real, navega para confirmarlo).
-- Aserta que el botón "Confirmar pedido" está disabled o no existe.
+Generate modulo-07-ia-mcp/sandbox/checkout-empty-cart.spec.ts:
+- Authenticated storage state (same as the previous one).
+- Goes straight to /checkout WITHOUT adding anything to the cart.
+- Asserts that an empty-cart message appears (navigate first to confirm
+  the real text, e.g. "Tu carrito está vacío" or its real equivalent).
+- Asserts that the "Confirmar pedido" button is disabled or absent.
 
-Mismas reglas que antes.
+Same rules as before.
 ```
 
 ✅ **Cómo verificar:** corre el spec. Pasa o fallida-pero-con-fix-evidente en una iteración.
 
 ### 5. Refactor a fixture
 
-Prompt:
+Prompt (en inglés):
 ```
-Los dos specs en sandbox/ repiten el storageState load. Refactor:
-- Crea sandbox/fixtures.ts exportando un test extendido que ya viene autenticado.
-- Modifica los dos specs para usar ese fixture.
-- No cambies las aserciones.
+Both specs in sandbox/ repeat the storageState load. Refactor:
+- Create sandbox/fixtures.ts exporting an extended test that comes
+  already authenticated.
+- Modify both specs to use that fixture.
+- Do not change the assertions.
 
-Corre los tests después; si fallan, dame el fix antes de mostrarme el código final.
+Run the tests afterwards; if they fail, give me the fix before showing me
+the final code.
 ```
 
 ✅ **Cómo verificar:** ambos tests verdes; los specs son más cortos; el fixture no duplica lógica que ya esté en `fixtures/omnipizza.ts`.
 
 ### 6. Bonus — bug hunting
 
-Prompt:
+Prompt (en inglés):
 ```
-Quiero que explores OmniPizza buscando bugs reales. Sin mi guía:
-1. Navega como usuario anónimo y prueba cosas raras (carrito infinito, cupones aleatorios, refresh entre pasos).
-2. Captura screenshots de cualquier estado inesperado.
-3. Dame una lista priorizada de 3 bugs con: descripción, pasos para reproducir, severidad, screenshot.
+I want you to explore OmniPizza looking for real bugs. Without my guidance:
+1. Navigate as an anonymous user and try weird things (infinite cart,
+   random coupons, refreshing between steps).
+2. Capture screenshots of any unexpected state.
+3. Give me a prioritized list of 3 bugs with: description, steps to
+   reproduce, severity, screenshot.
 
-No generes tests para esto — solo el reporte.
+Do not generate tests for this — just the report.
 ```
 
 ✅ **Cómo verificar:** recibes un reporte estructurado. Aunque ningún "bug" sea real, mide qué tan bien explora.

@@ -55,6 +55,10 @@ test.describe("Smoke parametrizado por mercado (M02)", () => {
       await page.getByTestId("login-button-desktop").click();
 
       // --- PASO 2: Validar que llegamos al catálogo ---
+      // El argumento es un REGEX (match PARCIAL, robusto): pasa si la
+      // URL CONTIENE "/catalog" — tolera ?query, locale o slash final.
+      // Un string se fusiona con baseURL vía new URL() y se compara por
+      // IGUALDAD exacta → frágil. El \/ escapa el delimitador del regex.
       await expect(page).toHaveURL(/\/catalog/);
 
       // --- PASO 3: Iterar el listado de pizzas (ciclo real) ---

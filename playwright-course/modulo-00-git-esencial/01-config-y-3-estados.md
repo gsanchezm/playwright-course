@@ -2,7 +2,8 @@
 
 ## 1.1 Identidad para tus commits
 
-Cada commit queda firmado con tu nombre y correo. Configúralos **antes** del primer commit:
+**1.1.1 — Configura tu nombre, correo y rama por defecto**
+- **Qué hago:** tres comandos `git config --global`, **antes** de tu primer commit:
 
 ```bash
 $ git config --global user.name "Tu Nombre"
@@ -10,9 +11,17 @@ $ git config --global user.email "tu@correo.com"
 $ git config --global init.defaultBranch main
 ```
 
-> ⚠️ Usa el mismo correo de tu cuenta de GitHub. De lo contrario, tus commits aparecen como "autor desconocido" en los Pull Requests.
+- **Por qué:** cada commit queda **firmado** con tu nombre y correo (es lo que verás en `git log` y en los Pull Requests). Si no lo configuras antes del primer commit, Git puede fallar o firmar con datos basura. `init.defaultBranch main` hace que cada `git init` nuevo arranque en `main` (en vez del antiguo `master`).
+- **Cómo verifico:** lo confirmas en el paso 1.2 con `git config --list --global`.
+
+> ⚠️ Usa el mismo correo de tu cuenta de GitHub. De lo contrario, tus commits aparecen como "autor desconocido" en los Pull Requests y no se enlazan a tu perfil.
 
 ## 1.2 Verificar configuración
+
+**1.2.1 — Confirma que la identidad quedó registrada**
+- **Qué hago:** `git config --list --global`
+- **Por qué:** quieres ver, antes de seguir, que tu nombre y correo realmente quedaron guardados. Lo que pones con `--global` vive en `~/.gitconfig` (Windows: `C:\Users\<tú>\.gitconfig`) y aplica a **todos** tus repos.
+- **Cómo verifico:** la salida incluye tus tres líneas:
 
 ```bash
 $ git config --list --global
@@ -21,7 +30,7 @@ user.email=tu@correo.com
 init.defaultBranch=main
 ```
 
-Lo que pones con `--global` queda en `~/.gitconfig` y aplica a todos tus repos. Si trabajas con múltiples identidades (laboral / personal), puedes sobreescribir por repo con `--local` dentro de cada carpeta.
+> 💡 ¿Trabajas con dos identidades (laboral / personal)? Puedes sobreescribir el correo **por repo** con `git config --local user.email "..."` dentro de cada carpeta — el `--local` gana sobre el `--global` solo en ese repo.
 
 ## 1.3 Los 3 estados de un archivo
 
@@ -43,22 +52,24 @@ Git mueve tus archivos por **3 áreas**:
 
 ### Ejemplo paseado: un test viaja por los 3 estados
 
-Imagina que editas `login.spec.ts`:
+Imagina que editas `login.spec.ts`. Cada parada tiene su comando y su señal observable:
 
-```
-1) Escribes el test en VS Code              →  Working
-   git status: "modified: login.spec.ts"
+**1.3.1 — Working: editas en el editor**
+- **Qué hago:** escribes/cambias el test en VS Code y guardas (`Ctrl+S`).
+- **Por qué:** guardar en el editor solo afecta al **working directory**. Git lo ve, pero todavía no lo sigue para el próximo commit.
+- **Cómo verifico:** `git status` dice `modified: login.spec.ts` (en rojo, bajo *Changes not staged*).
 
-2) Decides que ese cambio sí va al commit    →  Staging
-   git add login.spec.ts
-   git status: "Changes to be committed: login.spec.ts"
+**1.3.2 — Staging: marcas que ese cambio sí va**
+- **Qué hago:** `git add login.spec.ts`
+- **Por qué:** mueves el archivo a la **sala de espera**. Estás declarando "esto entra al próximo commit" — pero aún no está grabado.
+- **Cómo verifico:** `git status` ahora lo lista bajo `Changes to be committed:` (en verde).
 
-3) Lo grabas en el historial                 →  Repository
-   git commit -m "test: add login happy path"
-   git status: "nothing to commit, working tree clean"
-```
+**1.3.3 — Repository: lo grabas en el historial**
+- **Qué hago:** `git commit -m "test: add login happy path"`
+- **Por qué:** tomas la **foto definitiva** de lo que estaba en staging y la guardas en `.git/`. A partir de aquí, aunque borres el archivo del editor, puedes recuperarlo.
+- **Cómo verifico:** `git status` dice `nothing to commit, working tree clean`.
 
-Después del paso 3, ese commit queda en `.git/` para siempre — aunque borres el archivo del editor, puedes recuperarlo.
+Después del paso 1.3.3, ese commit queda en `.git/` para siempre — la foto ya no se pierde con un `Ctrl+Z`.
 
 ### Por qué importa el staging
 

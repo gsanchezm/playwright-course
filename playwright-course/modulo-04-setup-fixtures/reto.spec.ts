@@ -1,12 +1,16 @@
 // ============================================================
-// 🚩 Reto M04 — Admin setup + project paralelo + mock con latencia
+// 🚩 Reto M04 — Login negativo (persona bloqueada) + mock con latencia
 // ============================================================
 // Tiene DOS partes independientes:
 //
-//   PARTE A — Crear un setup project para el rol "admin":
-//     · `tests/setup/admin.setup.ts` con login de admin_user
-//     · `.auth/admin.json` como storageState distinto
-//     · project `ui-admin-chromium` en playwright.config.ts
+//   PARTE A — Login NEGATIVO con `locked_out_user`:
+//     · OmniPizza NO tiene admin: sus personas son todas `customer`
+//       y se distinguen por COMPORTAMIENTO de login, no por permisos.
+//     · `locked_out_user` está bloqueado → el login se RECHAZA con el
+//       texto exacto "Invalid credentials" (un <div> inline SIN
+//       role=alert → se asserta con page.getByText, NO getByRole alert).
+//     · Como NO autentica, NO es un setup project con storageState:
+//       es un test de UI de autenticación fallida.
 //
 //   PARTE B — Mock con latencia y validar el skeleton/loader:
 //     · usar page.route() + setTimeout + route.continue()
@@ -18,81 +22,88 @@
 //   ✔ pnpm m4 corre en verde
 //   ✔ Conoces fixtures/omnipizza.ts y sabes qué hace `dependencies`
 //
-// ▶ Cómo correr SOLO este reto (parte B):
+// ▶ Cómo correr SOLO este reto:
 //   pnpm exec playwright test modulo-04-setup-fixtures/reto.spec.ts \
 //     --headed --project=ui-chromium
 //
-//   Para la parte A, primero tendrás un NUEVO project (ui-admin-chromium)
-//   y correrás:
-//     pnpm exec playwright test --project=ui-admin-chromium
+//   ⚠️ PARTE A corre bajo `ui-chromium`, que HEREDA el badge de
+//      standard_user (.auth/user.json). Para VER el formulario de
+//      login hay que renunciar a esa sesión con
+//      `test.use({ storageState: undefined })` — si no, el test
+//      arranca ya autenticado y el login ni siquiera se renderiza.
 // ============================================================
 
 import { test, expect } from "../fixtures/omnipizza";
 
 // ============================================================
-// PARTE A — Admin setup project
+// PARTE A — Login negativo con persona bloqueada (locked_out_user)
 // ============================================================
-test.describe("Reto M04 — PARTE A: admin setup", () => {
-  test.skip("TODO — implementar admin.setup.ts + ui-admin-chromium", async ({
+//
+// ⚠️ RENUNCIA AL BADGE HEREDADO.
+// Este archivo importa `test` desde ../fixtures/omnipizza y corre bajo
+// `ui-chromium`, que declara `storageState: ".auth/user.json"` — o sea,
+// arranca con la sesión de standard_user ya cargada. Si no la anulamos,
+// la app te lleva directo a /catalog y NUNCA verás el formulario de
+// login que queremos probar. `storageState: undefined` lo desactiva
+// SOLO para este describe (es el reverso del 🔍 "storageState por
+// project" del README).
+test.describe("Reto M04 — PARTE A: login negativo (locked_out_user)", () => {
+  test.use({ storageState: undefined });
+
+  test.skip("TODO — login bloqueado muestra 'Invalid credentials'", async ({
     page,
   }) => {
     // ────────────────────────────────────────────────────────
-    // TODO A1 — Crear `tests/setup/admin.setup.ts`
+    // TODO A1 — Llenar el formulario con locked_out_user
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Copia `tests/setup/auth.setup.ts` y modifícalo:
-    //     · usa el usuario `admin_user` (de data/users.json)
-    //     · guarda el storageState en `.auth/admin.json`
+    //   Navega a /login y llena usuario/contraseña con la persona
+    //   bloqueada de data/users.json (locked_out_user / pizza123).
     //
-    // Pista (esqueleto):
-    //   import { test as setup } from "@playwright/test";
-    //   import usersJson from "../../data/users.json";
-    //   import type { User } from "../../types";
-    //
-    //   const admin = (usersJson as User[]).find(u => u.username === "admin_user")!;
-    //
-    //   setup("auth admin", async ({ page, request }) => {
-    //     // POST /auth/login con admin
-    //     // Guardar storageState en .auth/admin.json
-    //   });
+    // Pista (los inputs de OmniPizza NO tienen label accesible — su
+    //        nombre = el placeholder — así que getByRole/getByLabel
+    //        FALLAN; baja de nivel a testid):
+    //   await page.goto("/login");
+    //   await page.getByTestId("username-desktop").fill("locked_out_user");
+    //   await page.getByTestId("password-desktop").fill("pizza123");
     //
     // Cómo verificar:
-    //   pnpm exec playwright test tests/setup/admin.setup.ts --project=setup
-    //   → genera `.auth/admin.json` (`ls .auth/`).
+    //   Con --headed ves los dos campos llenos antes de enviar.
 
 
     // ────────────────────────────────────────────────────────
-    // TODO A2 — Añadir el project `ui-admin-chromium` al config
+    // TODO A2 — Enviar y asertar el rechazo
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   En playwright.config.ts, dentro del array `projects`, añade:
-    //     {
-    //       name: "ui-admin-chromium",
-    //       use: { ...devices["Desktop Chrome"], storageState: ".auth/admin.json" },
-    //       dependencies: ["setup"],
-    //       testIgnore: [/tests\/setup\//, /tests\/api\//, /modulo-05-api-layer\//],
-    //     }
+    //   Haz clic en "Sign In" (este botón SÍ tiene role) y verifica que
+    //   el login se rechaza con el texto EXACTO "Invalid credentials".
+    //
+    // ⚠️ El error se renderiza en un <div> inline SIN role=alert →
+    //    getByRole("alert") NO lo encuentra. Usa getByText:
+    //   await page.getByTestId("login-button-desktop").click();
+    //   await expect(page.getByText("Invalid credentials")).toBeVisible();
     //
     // Cómo verificar:
-    //   pnpm exec playwright test --list --project=ui-admin-chromium
-    //   → debe listar los tests del módulo sin error.
+    //   El test pasa y el mensaje aparece en rojo en el formulario.
 
 
     // ────────────────────────────────────────────────────────
-    // TODO A3 — Validar que el admin ve funcionalidades extra
+    // TODO A3 — Confirmar que NO entró a la app
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Ya autenticado como admin (vía storageState), abre el catálogo
-    //   y verifica que aparece un elemento exclusivo de admin
-    //   (ej. botón "Admin panel", banner "ADMIN MODE", etc).
+    //   Un login negativo no solo muestra el error: tampoco debe dejarte
+    //   pasar. Verifica que la URL SIGUE en /login (no saltó a /catalog).
     //
     // Pista:
-    //   await page.goto("/catalog");
-    //   await expect(page.getByTestId("admin-panel-link")).toBeVisible();
+    //   await expect(page).toHaveURL(/\/login/);
     //
-    // 💡 Si OmniPizza no expone diferencias visuales entre rol y rol,
-    //    valida al menos que el `role` del JWT decodificado es "admin"
-    //    (puedes inspeccionar localStorage con page.evaluate).
+    // 💡 Nota conceptual: locked_out_user NUNCA autentica, así que no hay
+    //    storageState que guardar — por eso esto es un test de auth
+    //    fallida, NO un setup project. El patrón de setup project (la
+    //    PARTE A original montaba un admin INEXISTENTE) sí escala a un
+    //    2º rol AUTENTICADO: copia auth.setup.ts apuntando a una persona
+    //    que SÍ entra (problem_user / performance_glitch_user), guarda en
+    //    .auth/<persona>.json y declara su project con dependencies:["setup"].
     expect(true).toBe(true);
   });
 });
@@ -169,12 +180,15 @@ test.describe("Reto M04 — PARTE B: mock con latencia @regression", () => {
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. PARTE A — ¿Cuántos archivos tocaste para añadir el rol admin?
-//      (Esperado: 2 — `admin.setup.ts` + `playwright.config.ts`.)
+//   1. PARTE A — ¿Por qué locked_out_user NO puede ser un setup project
+//      con storageState? (Esperado: nunca autentica, así que no hay
+//      badge que guardar — es un caso de aserción de error de UI.)
 //
-//   2. PARTE A — ¿Cómo evitarías duplicar el código de
-//      `auth.setup.ts` y `admin.setup.ts`? Pista: una función
-//      `loginAndSave(user, path)` en `helpers/`.
+//   2. PARTE A — Si necesitaras un 2º rol AUTENTICADO, ¿cuántos archivos
+//      tocarías y cómo evitarías duplicar `auth.setup.ts`? (Esperado: 2
+//      — un `<persona>.setup.ts` con problem_user/performance_glitch_user
+//      + el project en `playwright.config.ts`; factoriza el login común
+//      en una función `loginAndSave(user, path)` en `helpers/`.)
 //
 //   3. PARTE B — Si el mock NO existiera (latencia real del backend),
 //      ¿el test sería determinista? (Esperado: NO — el tiempo real

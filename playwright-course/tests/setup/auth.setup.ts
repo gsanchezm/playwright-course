@@ -12,7 +12,8 @@
 // Ventajas vs globalSetup con UI login:
 //   ✅ Mucho más rápido (1 POST vs navegación completa)
 //   ✅ Determinista (sin flakiness de UI)
-//   ✅ Reutilizable — el mismo pattern para admin, user, etc.
+//   ✅ Reutilizable — el mismo pattern para otras personas que
+//      autentican (problem_user, performance_glitch_user…), no sólo standard.
 // ============================================================
 
 import { test as setup, expect } from "@playwright/test";

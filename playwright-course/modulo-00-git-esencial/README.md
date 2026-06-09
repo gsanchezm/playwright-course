@@ -9,18 +9,19 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Este módulo **no agrega código al framework** — agrega **disciplina de versionado**. El "antes y después" se ve en el repo, no en archivos nuevos:
+Este módulo **no agrega código de tests** al framework — pero sí **nace el proyecto real**: aquí creas `playwright_architecture` (el MISMO repo que M01 llenará con `pnpm create playwright`) y le das **disciplina de versionado**. El "antes y después" se ve en el repo:
 
 ```
-ANTES (sandbox sin Git)             DESPUÉS (sandbox con Git habit)
-─────────────────────────           ───────────────────────────
-mi-carpeta/                         mi-carpeta/
+ANTES (sin Git, sin proyecto)       DESPUÉS (playwright_architecture con Git habit)
+─────────────────────────           ───────────────────────────────────────────────
+proyecto-suelto/                    playwright_architecture/
 ├── tests_v1/                       ├── .git/                  ← 🆕 historial completo
-├── tests_v2/                       ├── .gitignore             ← 🆕 excluye .env, .auth, etc
-├── tests_FINAL/                    ├── tests/
-└── tests_NO_TOCAR/                 │   └── login.spec.ts      ← 1 versión, N commits
-                                    └── .env                   ← presente, NO versionado
+├── tests_v2/                       ├── .gitignore             ← 🆕 mínimo (.env, node_modules/)
+├── tests_FINAL/                    ├── login.spec.ts          ← 1 versión, N commits
+└── tests_NO_TOCAR/                 └── .env                   ← presente, NO versionado
 ```
+
+> 🎯 En **M01** entrarás a esta misma carpeta y correrás `pnpm create playwright` — el installer la poblará (`tests/`, `playwright.config.ts`, su propio `.gitignore`) **encima de este historial**, sin perder tus commits de M00.
 
 **Qué entrega este módulo al resto del curso:**
 
@@ -28,7 +29,7 @@ mi-carpeta/                         mi-carpeta/
 |---|---|
 | `git config --global` (identidad) | Siempre — todos los commits firmados |
 | `git init` + `status`/`add`/`commit` | M01 en adelante: versionas cada cambio |
-| `.gitignore` con `.env`, `.auth/`, `node_modules/` | M01 (creas `.env`) y M04 (creas `.auth/`) |
+| `.gitignore` mínimo (`.env`, `node_modules/`) | M01 lo consolida (el installer trae el suyo + añades `.env`/`.auth/`) |
 | `git log --oneline` | M03 y M04 para revisar historia antes de mergear |
 
 **Lo que llega *just-in-time* después** (no se trata en M00):
@@ -100,8 +101,9 @@ Branches, push, Pull Requests y deshacer cambios entran *just-in-time* en M03 y 
 
 - [ ] `git config --list --global` muestra tu nombre y correo.
 - [ ] Puedes explicar working dir / staging / repository.
-- [ ] Hiciste tu primer commit en una carpeta sandbox.
-- [ ] Tu `.gitignore` excluye `node_modules/`, `.env`, `.auth/`, `playwright-report/`, `test-results/`.
+- [ ] Hiciste el primer commit real del proyecto `playwright_architecture`.
+- [ ] Tu `.gitignore` mínimo excluye `node_modules/` y `.env` (el definitivo se completa en M01).
+- [ ] Sabes leer un diff: líneas `-`/`+` y el encabezado de hunk `@@ -a,b +c,d @@`.
 - [ ] Puedes leer `git log --oneline` y entender qué pasó.
 
 ---

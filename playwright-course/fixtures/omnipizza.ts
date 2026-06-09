@@ -7,7 +7,7 @@
 //
 // Nota importante: el `page` autenticado lo provee el `storageState`
 // del project (definido en playwright.config.ts). Aquí sólo añadimos
-// fixtures extra (adminPage, marketContext) o helpers cross-test.
+// fixtures extra (marketContext, fixtures por persona) o helpers cross-test.
 // ============================================================
 
 import { test as base, expect } from "@playwright/test";

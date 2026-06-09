@@ -150,24 +150,30 @@ pnpm exec playwright show-trace path/to/trace.zip
 
 ## Paso a paso
 
+> **Cómo leer esta sección.** Cada paso grande se parte en **micro-pasos `N.M`** con la tripleta **Qué hago / Por qué / Cómo verifico**. El micro-paso te dice exactamente **qué archivo creas o editas** y en qué orden, para que el árbol de `🏗️ Arquitectura` se construya solo. Las acciones de Git/GitHub Actions no van en un bloque aparte: aparecen **inline**, en el micro-paso donde el flujo las pide.
+
 ### Paso 0 — Pre-requisitos
 
-Antes de tocar CI:
+Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local** y de que tienes las herramientas de GitHub listas.
 
-```bash
-# Estando en playwright-course/
-pnpm m5            # API layer corre en verde
-pnpm typecheck     # sin errores
+**0.1 — Verifica que M05 está verde**
+- **Qué hago:** desde `playwright-course/`, corro la suite anterior y el typecheck.
+  ```bash
+  pnpm m5            # API layer corre en verde
+  pnpm typecheck     # sin errores
+  ```
+- **Por qué:** CI sólo amplifica lo que ya tienes. Si M05 falla en tu laptop, va a fallar en 7 jobs paralelos a la vez — y vas a debuggear en el peor sitio (un runner remoto) en vez de en tu máquina.
+- **Cómo verifico:** ambos comandos terminan en verde; `pnpm typecheck` no imprime errores.
 
-# Para los pasos de GitHub vas a necesitar:
-gh --version       # GitHub CLI (recomendado: 2.40+)
-gh auth status     # debes estar logueado
-git remote -v      # debe haber un `origin` apuntando a GitHub
-```
-
-Si no tienes `gh`, instálalo: macOS → `brew install gh`; Linux → ver [`cli.github.com`](https://cli.github.com/).
-
-Si no tienes remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
+**0.2 — Verifica las herramientas de GitHub**
+- **Qué hago:** confirmo que `gh` está instalado, que estoy logueado y que hay un remoto `origin`.
+  ```bash
+  gh --version       # GitHub CLI (recomendado: 2.40+)
+  gh auth status     # debes estar logueado
+  git remote -v      # debe haber un `origin` apuntando a GitHub
+  ```
+- **Por qué:** todo el módulo (secrets, push, PR, descargar artefactos) se apoya en `gh` y en un repo remoto. Sin `origin` en GitHub, **no hay CI** que observar.
+- **Cómo verifico:** `gh auth status` dice *"Logged in"*; `git remote -v` lista un `origin` apuntando a `github.com`. Si falta `gh`: macOS → `brew install gh`; Linux → [`cli.github.com`](https://cli.github.com/). Si falta el remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
 
 > 💡 **Para el facilitador:** este módulo asume que el repo ya tiene `origin` en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup de SSH antes de continuar — sin remoto no hay CI.
 
@@ -177,29 +183,42 @@ Si no tienes remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
 
 **M06 no añade paquetes npm.** Lo que se agrega es **YAML** (workflows) y un reporter adicional (`junit`) que ya viene en `@playwright/test`.
 
-```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
-# Las 4 deben aparecer. Si no, ver M01 Paso 1.
-```
+**1.1 — Confirma las dependencias de Playwright**
+- **Qué hago:** listo los 4 paquetes que ya instalaste en M01.
+  ```bash
+  pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+  ```
+- **Por qué:** M06 no instala nada nuevo de npm; sólo necesita que la base de M01 siga ahí. El reporter `junit` y el `github` no son paquetes: vienen dentro de `@playwright/test`.
+- **Cómo verifico:** las 4 dependencias aparecen listadas. Si falta alguna, vuelve a M01 Paso 1.
 
-Herramientas externas que SÍ necesitas:
+**1.2 — Confirma las herramientas externas (no son npm)**
+- **Qué hago:** reviso que tengo `gh`, un remoto y permisos de escritura sobre el repo.
 
-| Herramienta | Cómo verificar | Cómo instalar si falta |
-|---|---|---|
-| `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
-| `git` con remoto | `git remote -v` | M04 Git break — conectar repo a GitHub |
-| Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
+  | Herramienta | Cómo verificar | Cómo instalar si falta |
+  |---|---|---|
+  | `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
+  | `git` con remoto | `git remote -v` | M04 Git break — conectar repo a GitHub |
+  | Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
+- **Por qué:** estas tres viven fuera de `package.json`. Si te falta el permiso `write`, el push y los secrets funcionan, pero el reto (crear issues automáticos) fallará con `403`.
+- **Cómo verifico:** los tres comandos responden sin error; `gh repo view --json viewerPermission` devuelve `ADMIN` o `WRITE`.
 
 ---
 
-### Paso 2 — Crear `.github/workflows/playwright.yml`
+### Paso 2 — Crear `.github/workflows/playwright.yml` (Git JIT — el robot)
 
-```bash
-mkdir -p .github/workflows
-touch .github/workflows/playwright.yml
-```
+Aquí entra la **carpeta `.github/workflows/`**, el último directorio del framework. Es una acción de **GitHub Actions tejida en el flujo**, no un bloque de Git aparte: el workflow es el archivo que convierte tu suite local en un pipeline.
 
-📄 `.github/workflows/playwright.yml` — pipeline matrix:
+**2.1 — Crear el archivo del workflow**
+- **Qué hago:** creo la carpeta y el archivo vacío del pipeline.
+  ```bash
+  mkdir -p .github/workflows
+  touch .github/workflows/playwright.yml
+  ```
+- **Por qué:** GitHub busca workflows **únicamente** en `.github/workflows/*.yml`. La ruta es una convención dura: un archivo fuera de ahí no se ejecuta nunca. Este es el archivo que faltaba en el árbol de `🏗️ Arquitectura`.
+- **Cómo verifico:** `ls .github/workflows/` muestra `playwright.yml`.
+
+**2.2 — Escribir el pipeline matrix**
+- **Qué hago:** pego el contenido del workflow en `.github/workflows/playwright.yml`.
 
 ```yaml
 name: Playwright
@@ -264,7 +283,14 @@ jobs:
           retention-days: 7
 ```
 
+- **Por qué:** la `matrix` (`project × shard`) es lo que multiplica un solo job en **7 jobs paralelos**. El `exclude` saca `api` del shard 2 (la API no se reparte). Las claves `env:` mapean cada credencial a un `secrets.*` que configurarás en el Paso 5 — el workflow **referencia** los secrets, pero no los contiene.
+- **Cómo verifico:** `gh workflow list` muestra `Playwright` (puede tardar un minuto en indexar tras el primer push). En local, un linter de YAML no marca errores de indentación.
+
 > ⚠️ **`if: always()` es crítico:** sin esa línea, los artefactos solo se suben cuando el job pasa — exactamente al revés de lo que necesitas. Las trazas de los jobs FALLIDOS son las que te interesan.
+
+> 🔷 **TypeScript — template literals `${...}` vs interpolación de Actions `${{ ... }}`**
+> Cuidado con las **dos** sintaxis de interpolación: en TS un template literal usa **una** llave — `` `shard ${n}` `` — y se evalúa en tu código; en este YAML, `${{ secrets.BASE_URL }}` usa **dobles** llaves y lo evalúa el motor de GitHub Actions, no TypeScript. El único TS de este módulo vive en `playwright.config.ts` (siguiente paso); el workflow es YAML.
+> 📚 Lo viste en [TS · M02 — types y template literals](../../typescript-qa-course/modulo-02-types/). Aquí lo aplicas para no confundir el `${...}` de TS con el `${{ ... }}` de Actions.
 
 ---
 
@@ -292,7 +318,50 @@ jobs:
 > ```
 > **Se mantiene:** projects `setup` + 3 browsers + `api`. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI), `video: "retain-on-failure"`, y el 5º project `anonymous` (flujos sin sesión: login negativo, signup).
 
-M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `anonymous` para flujos negativos.
+M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `anonymous` para flujos negativos. Editas **un solo archivo** (`playwright.config.ts`) en tres micro-pasos.
+
+**3.1 — Añadir los flags de comportamiento en CI**
+- **Qué hago:** agrego `fullyParallel`, `forbidOnly`, `retries` y `workers` al objeto que pasa `defineConfig({ ... })`.
+  ```ts
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
+  ```
+- **Por qué:** estos cuatro flags hacen que el **mismo** config se comporte distinto en local y en pipeline sin scripts duplicados. `process.env.CI` no lo defines tú: GitHub Actions lo inyecta como `CI=true`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` sigue verde; en local `pnpm m6` corre con 0 retries (no ves reintentos en la salida).
+
+> 🔷 **TypeScript — operador ternario `cond ? a : b`**
+> `process.env.CI ? 2 : 0` es una **expresión** que devuelve un valor (no un `if` que ejecuta sentencias): se usa donde la propiedad espera un número. El gotcha: `process.env.CI` es un `string | undefined`, así que el ternario lee su *truthiness* (la cadena vacía o `undefined` cuentan como falso). Por eso `forbidOnly` usa `!!process.env.CI` para forzarlo a un `boolean` real.
+> 📚 Lo viste en [TS · M03 — funciones y lógica](../../typescript-qa-course/modulo-03-functions/). Aquí lo aplicas para que `retries`, `workers` y los reporters cambien según el entorno.
+
+**3.2 — Añadir reporters condicionales y `video` al fallar**
+- **Qué hago:** condiciono el `reporter` y agrego `video: "retain-on-failure"` dentro de `use`.
+  ```ts
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }], ["junit", { outputFile: "results.xml" }]]
+    : [["html", { open: "never" }], ["list"]],
+  // ...dentro de use:
+  video: "retain-on-failure",
+  ```
+- **Por qué:** en CI quieres `github` (anota el PR con los fallos) y `junit` (para integraciones externas); en local quieres `list` (salida legible en la terminal). El `video` sólo se graba cuando un test falla, igual que el `trace`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde; al simular CI (`$env:CI="true"; pnpm m6` en PowerShell) ves anotaciones estilo GitHub en la salida.
+
+**3.3 — Añadir el 5º project `anonymous`**
+- **Qué hago:** agrego un quinto objeto al array `projects[]`, sin `storageState`.
+  ```ts
+  {
+    name: "anonymous",   // 🆕 para tests sin sesión (login negativo, etc.)
+    use: { ...devices["Desktop Chrome"] },
+    testMatch: /tests\/.*\.anon\.spec\.ts/,
+  },
+  ```
+- **Por qué:** los tests negativos (login fallido, signup) necesitan empezar **sin sesión**. Si heredaran el `storageState` del `setup`, llegarían ya logueados y el caso negativo no tendría sentido.
+- **Cómo verifico:** `pnpm exec playwright test --list --project=anonymous` no lanza error de proyecto desconocido (lista 0 tests mientras no exista un `*.anon.spec.ts`, lo cual es correcto).
+
+> 🔷 **TypeScript — config tipado (`PlaywrightTestConfig` / `projects[]`)**
+> `defineConfig(...)` no es decorativo: aplica el tipo `PlaywrightTestConfig`, así que el editor te autocompleta `retries`, `workers`, `projects[]` y te marca en rojo si escribes una clave inexistente o un valor del tipo equivocado (p.ej. `trace: "siempre"`). `projects` es un **array tipado** de objetos con forma fija: cada entrada debe tener `name`, y opcionalmente `use`, `dependencies`, `testMatch`/`testIgnore`. Esa forma fija es lo que una `interface` describe.
+> 📚 Lo viste en [TS · M06 — interfaces y contratos de objetos](../../typescript-qa-course/modulo-06-interfaces/). Aquí lo aplicas: cada objeto de `projects[]` cumple el contrato que Playwright espera.
 
 **Estado completo del config en M06 (= estado final del framework):**
 
@@ -376,15 +445,17 @@ export default defineConfig({
 | `video: "retain-on-failure"` | Video disponible en el HTML report cuando algo se cae |
 | Project `anonymous` | Tests sin storageState (login negativo, signup flows) |
 
-Añade los scripts de M06 al `package.json`:
-
-```json
-"scripts": {
-  "m6": "playwright test modulo-06-ci-debugging --project=ui-chromium",
-  "test:smoke": "playwright test --grep @smoke",
-  "test:regression": "playwright test --grep @regression"
-}
-```
+**3.4 — Añadir los scripts de M06 al `package.json`**
+- **Qué hago:** agrego tres scripts al bloque `"scripts"` de `package.json`.
+  ```json
+  "scripts": {
+    "m6": "playwright test modulo-06-ci-debugging --project=ui-chromium",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression"
+  }
+  ```
+- **Por qué:** `pnpm m6` es el atajo del módulo; `test:smoke` / `test:regression` filtran por las etiquetas `@smoke` / `@regression` que `ejemplo.spec.ts` ya usa en sus `describe`. Las mismas etiquetas las consume el reto (canary diario con `--grep @smoke`).
+- **Cómo verifico:** `pnpm test:smoke` corre **solo** el `describe("M06 — smoke canary @smoke")`; `pnpm m6` corre el módulo en `ui-chromium`.
 
 > 💡 **Para el facilitador:** explica el patrón `process.env.CI ? X : Y` — GitHub Actions **siempre** expone `CI=true` como variable de entorno. Eso permite tener un solo config que se comporta distinto en local vs en pipeline, sin condicionales feas en cada script.
 
@@ -392,63 +463,70 @@ Añade los scripts de M06 al `package.json`:
 
 ### Paso 4 — Lectura guiada de `.github/workflows/playwright.yml`
 
-Abre el workflow con el grupo y señala:
-
-1. **`on:`** — qué dispara el job (`push`, `pull_request`, `workflow_dispatch` para correr a mano).
-2. **`strategy.matrix`** — la combinación `project × shard` que produce los N jobs paralelos.
-3. **`steps:`** — `checkout` → `setup-node` → `pnpm install` → `playwright install` → `playwright test --shard ...` → upload artifacts.
-4. **`env:`** + **`secrets.*`** — cómo viajan `BASE_URL`, `API_URL`, `TEST_USER_*` sin estar en plaintext.
-5. **`if: always()`** en el `upload-artifact` — sube reports incluso cuando el test falla (es cuando más los necesitas).
-
-> 💡 **Pregunta al grupo:** *"¿qué pasa si elimino la línea `if: always()`?"* — respuesta: en jobs fallidos NO se suben los artefactos, así que no puedes investigar. Es el bug más típico de pipelines de testing.
+**4.1 — Recorrer las 5 piezas clave del workflow**
+- **Qué hago:** abro `.github/workflows/playwright.yml` y localizo, en orden, las cinco anclas que hacen funcionar el pipeline.
+  1. **`on:`** — qué dispara el job (`push`, `pull_request`, `workflow_dispatch` para correr a mano).
+  2. **`strategy.matrix`** — la combinación `project × shard` que produce los N jobs paralelos.
+  3. **`steps:`** — `checkout` → `setup-node` → `pnpm install` → `playwright install` → `playwright test --shard ...` → upload artifacts.
+  4. **`env:`** + **`secrets.*`** — cómo viajan `BASE_URL`, `API_URL`, `TEST_USER_*` sin estar en plaintext.
+  5. **`if: always()`** en el `upload-artifact` — sube reports incluso cuando el test falla (es cuando más los necesitas).
+- **Por qué:** antes de pushear necesitas un modelo mental del archivo. Si no entiendes qué dispara los jobs ni de dónde salen las credenciales, un fallo de pipeline será un misterio en vez de un bug localizable.
+- **Cómo verifico:** puedes señalar cada una de las 5 piezas en tu archivo y explicar en una frase qué hace. Pregunta de control: *"¿qué pasa si elimino la línea `if: always()`?"* → en jobs fallidos NO se suben los artefactos, así que no puedes investigar. Es el bug más típico de pipelines de testing.
 
 ---
 
-### Paso 5 — Configurar los secrets
+### Paso 5 — Configurar los secrets (Git JIT — la caja fuerte)
 
-Antes de pushear, configura los secrets en el repo. **Una sola vez:**
+El workflow **referencia** `secrets.*`, pero esos valores aún no existen en GitHub. Aquí los cargas con `gh secret set` — una acción de GitHub tejida en el flujo, justo antes del primer push.
 
-```bash
-# Desde la raíz del repo:
-gh secret set BASE_URL --body "https://omnipizza-frontend.onrender.com"
-gh secret set API_URL --body "https://omnipizza-backend.onrender.com"
-gh secret set TEST_USER_USERNAME --body "standard_user"
-gh secret set TEST_USER_PASSWORD --body "pizza123"
-
-# Verifica
-gh secret list
-# Esperado: 4 secrets listados, sin mostrar el valor.
-```
-
-**Alternativa por UI:** Settings → Secrets and variables → Actions → New repository secret.
+**5.1 — Cargar los 4 secrets con `gh secret set`**
+- **Qué hago:** desde la raíz del repo, registro las 4 credenciales en GitHub (una sola vez).
+  ```bash
+  gh secret set BASE_URL --body "https://omnipizza-frontend.onrender.com"
+  gh secret set API_URL --body "https://omnipizza-backend.onrender.com"
+  gh secret set TEST_USER_USERNAME --body "standard_user"
+  gh secret set TEST_USER_PASSWORD --body "pizza123"
+  ```
+- **Por qué:** el `.env` local está en `.gitignore` y **nunca** se commitea, así que CI no tiene esas variables. Los secrets son la versión encriptada que GitHub inyecta como `env:` durante el job y borra al terminar. Sin ellos, el login del `setup` falla en CI y todos los `ui-*` se caen.
+- **Cómo verifico:**
+  ```bash
+  gh secret list
+  # Esperado: 4 secrets listados, SIN mostrar el valor.
+  ```
+  Alternativa por UI: Settings → Secrets and variables → Actions → New repository secret.
 
 > ⚠️ **Para el facilitador:** repite tres veces: *"el `.env` local nunca se commitea; en CI los valores viven en `secrets`, que GitHub inyecta como variables de entorno durante la corrida y luego desaparecen"*. Este es el mensaje de seguridad más importante del módulo.
 
 ---
 
-### Paso 6 — Forzar una traza local (sin CI todavía)
+### Paso 6 — Forzar una traza local y leerla en Trace Viewer (protagonista)
 
-Antes de confiar en CI, practica leer una traza en local:
+Antes de confiar en CI, practica leer una traza en local. **Ningún concepto del módulo importa más que esto.**
 
-```bash
-# 1. Forzar traza ON en una corrida normal
-pnpm exec playwright test modulo-01-smoke-feo --trace=on --project=ui-chromium
+**6.1 — Generar una traza con `--trace=on`**
+- **Qué hago:** corro un módulo cualquiera forzando la grabación de la traza.
+  ```bash
+  pnpm exec playwright test modulo-01-smoke-feo --trace=on --project=ui-chromium
+  ```
+- **Por qué:** por defecto el config usa `trace: "retain-on-failure"` (sólo graba al fallar). `--trace=on` fuerza la grabación aunque el test pase, para que tengas material que abrir sin tener que romper nada primero.
+- **Cómo verifico:**
+  ```bash
+  ls test-results/
+  # Verás carpetas tipo `modulo-01-smoke-feo-...-chromium` con un trace.zip dentro.
+  ```
 
-# 2. Listar los resultados generados
-ls test-results/
-# Verás carpetas tipo `modulo-01-smoke-feo-...-chromium`
-
-# 3. Abrir el trace
-pnpm exec playwright show-trace test-results/<carpeta>/trace.zip
-```
-
-**Qué explorar en el Trace Viewer:**
-
-- **Timeline** (arriba): cada acción del test como una franja temporal.
-- **DOM snapshot**: estado del DOM en cada paso (click derecho → "Show element").
-- **Network**: cada request HTTP con headers + response.
-- **Console**: lo que la app imprimió en `console.log`.
-- **Source**: el código del test sincronizado con el paso.
+**6.2 — Abrir la traza en Trace Viewer**
+- **Qué hago:** abro el `trace.zip` generado.
+  ```bash
+  pnpm exec playwright show-trace test-results/<carpeta>/trace.zip
+  ```
+- **Por qué:** Trace Viewer es la **caja negra del avión**: reconstruye el test paso a paso sin tener que reproducirlo a mano. Es la herramienta que convierte "el test falló en CI" en "veo exactamente qué pasó".
+- **Cómo verifico:** se abre una ventana del navegador. Explora las 5 zonas:
+  - **Timeline** (arriba): cada acción del test como una franja temporal.
+  - **DOM snapshot:** estado del DOM en cada paso (click derecho → "Show element").
+  - **Network:** cada request HTTP con headers + response.
+  - **Console:** lo que la app imprimió en `console.log`.
+  - **Source:** el código del test sincronizado con el paso.
 
 > 💡 **Para el facilitador:** dedica 5 minutos aquí. **Ningún concepto del módulo importa más que ver una traza**. Si el grupo no asimila el Trace Viewer, todo lo demás suena a "más CI".
 
@@ -456,80 +534,110 @@ pnpm exec playwright show-trace test-results/<carpeta>/trace.zip
 
 ### Paso 7 — Forzar un fallo intencional y leer su traza
 
-`ejemplo.spec.ts` tiene un test `@debug` que **falla a propósito** si activas la flag `DEMO_FAIL=1`:
+`ejemplo.spec.ts` tiene un test `@debug` que **falla a propósito** si activas la flag `DEMO_FAIL=1` (el `test.skip(!process.env.DEMO_FAIL, ...)` lo salta mientras la flag esté apagada).
 
-```bash
-DEMO_FAIL=1 pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium
-# El test va a fallar después de 2s.
+**7.1 — Disparar el fallo controlado**
+- **Qué hago:** corro el módulo con la flag de demo encendida.
+  ```bash
+  DEMO_FAIL=1 pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium
+  ```
+  (En PowerShell: `$env:DEMO_FAIL="1"; pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium`.)
+- **Por qué:** quieres ver cómo se ve un fallo **antes** de que ocurra de verdad en un PR. El test busca `#this-does-not-exist`, un locator que nunca aparece, así que falla tras 2s y graba su traza.
+- **Cómo verifico:** la corrida termina en rojo con 1 test fallido; en `test-results/` aparece una carpeta nueva con el `trace.zip` del fallo.
 
-# Abre la traza generada:
-pnpm exec playwright show-trace test-results/<carpeta-debug>/trace.zip
-```
-
-Muestra al grupo cómo en el último paso se ve el screenshot final + el locator que nunca apareció. **Eso es lo que recibes en un PR fallido**.
-
----
-
-### Paso 8 — Pushear y observar el pipeline
-
-```bash
-# 1. Crea una rama (si no estás ya en una)
-git switch -c feature/m06-ci
-
-# 2. Commit (si tienes cambios)
-git add .
-git commit -m "feat(m06): habilita CI workflow"
-
-# 3. Push
-git push -u origin feature/m06-ci
-
-# 4. Abre el PR
-gh pr create --base main --head feature/m06-ci \
-  --title "feat(m06): habilita CI workflow" \
-  --body "Pipeline matrix sobre 3 browsers + API"
-
-# 5. Sigue los checks en vivo
-gh pr checks --watch
-```
-
-**Qué deberías ver:** **7 jobs** corriendo en paralelo (3 browsers × 2 shards + 1 api). Cuando terminen, todos en verde.
+**7.2 — Leer la traza del fallo**
+- **Qué hago:** abro la traza generada por el test roto.
+  ```bash
+  pnpm exec playwright show-trace test-results/<carpeta-debug>/trace.zip
+  ```
+- **Por qué:** **esto es exactamente lo que recibes en un PR fallido.** Practicarlo en local quita el pánico del primer fallo real en CI.
+- **Cómo verifico:** en el último paso del Timeline ves el **screenshot final** + el **locator que nunca apareció** resaltado. Eso, y no el log de texto, es lo que te dice dónde se rompió.
 
 ---
 
-### Paso 9 — Descargar artefactos de un PR
+### Paso 8 — Versionar, pushear y observar el pipeline (Git JIT)
 
-Si algún job falla:
+Aquí se juntan las acciones de Git: aíslas el trabajo en una rama, lo commiteas, lo subes y abres el PR que **dispara el workflow** que escribiste.
 
-```bash
-# Lista las corridas recientes
-gh run list --workflow=playwright.yml --limit 5
+**8.1 — Aislar el trabajo en una rama**
+- **Qué hago:** creo una rama para el módulo (si no estás ya en una).
+  ```bash
+  git switch -c feature/m06-ci
+  ```
+- **Por qué:** el primer push de un workflow nuevo a veces falla por un secret olvidado o un typo en el YAML. Trabajar en una rama mantiene `main` verde mientras iteras el pipeline en el PR.
+- **Cómo verifico:** `git branch --show-current` imprime `feature/m06-ci`.
 
-# Descarga todos los artefactos de una corrida
-gh run download <run-id>
+**8.2 — Versionar tu trabajo (commit)**
+- **Qué hago:** agrego los archivos del módulo y los de infraestructura, y commiteo.
+  ```bash
+  git add .github/workflows/playwright.yml playwright.config.ts package.json modulo-06-ci-debugging
+  git commit -m "feat(m06): habilita CI workflow + flags de CI en config"
+  ```
+- **Por qué:** el workflow sólo corre si el archivo `.github/workflows/playwright.yml` está **commiteado y en GitHub**; un archivo sin trackear no dispara nada. Commitea también `playwright.config.ts` y `package.json` (los flags de CI y los scripts nuevos).
+- **Cómo verifico:** `git log --oneline -1` muestra tu commit `feat(m06): ...`.
 
-# Lo descarga a carpetas por nombre de artefacto:
-ls
-# playwright-report-ui-chromium-shard1/
-# playwright-traces-ui-chromium-shard1/
-# ...
+**8.3 — Pushear la rama**
+- **Qué hago:** subo la rama a `origin`.
+  ```bash
+  git push -u origin feature/m06-ci
+  ```
+- **Por qué:** el push lleva el workflow a GitHub, donde el motor de Actions lo descubre. El `-u` deja la rama rastreando su remoto para futuros `git push` sin argumentos.
+- **Cómo verifico:** `git status` dice *"Your branch is up to date with 'origin/feature/m06-ci'"*.
 
-# Abre el trace del job fallido:
-pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/*/trace.zip
-```
+**8.4 — Abrir el PR y observar los 7 jobs**
+- **Qué hago:** abro el PR contra `main` y sigo los checks en vivo.
+  ```bash
+  gh pr create --base main --head feature/m06-ci \
+    --title "feat(m06): habilita CI workflow" \
+    --body "Pipeline matrix sobre 3 browsers + API"
+
+  gh pr checks --watch
+  ```
+- **Por qué:** el PR es el disparador `pull_request` del workflow. `gh pr checks --watch` te muestra el pipeline en tiempo real sin abrir el navegador.
+- **Cómo verifico:** ves **7 jobs** corriendo en paralelo (3 browsers × 2 shards + 1 api). Cuando terminen, todos en verde.
+
+---
+
+### Paso 9 — Descargar artefactos de un job fallido (Git JIT)
+
+**9.1 — Localizar la corrida y descargar sus artefactos**
+- **Qué hago:** listo las corridas recientes del workflow y descargo los artefactos de la que me interesa.
+  ```bash
+  gh run list --workflow=playwright.yml --limit 5
+  gh run download <run-id>
+  ```
+- **Por qué:** cuando un job falla en CI no tienes la traza en tu disco — vive como artefacto en GitHub. `gh run download` la trae a tu máquina, en carpetas nombradas por artefacto (`playwright-traces-ui-chromium-shard1/`, etc.). El `if: always()` del Paso 2 es lo que garantiza que esos artefactos existan aunque el job haya fallado.
+- **Cómo verifico:** `ls` muestra las carpetas `playwright-report-...` y `playwright-traces-...` descargadas.
+
+**9.2 — Abrir la traza del job fallido**
+- **Qué hago:** abro el `trace.zip` descargado, igual que en local.
+  ```bash
+  pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/*/trace.zip
+  ```
+- **Por qué:** cierra el ciclo *"PR rojo → descargo artefactos → leo la traza"*. La traza de CI se lee idéntica a la local (Paso 6) — el Trace Viewer no distingue de dónde viene.
+- **Cómo verifico:** se abre Trace Viewer con el Timeline del fallo remoto; identificas el paso roto sin haber reproducido nada a mano.
 
 > 💡 **Para el facilitador:** insiste en que el flujo *"PR rojo → descargo artefactos → leo la traza"* es el día a día de un automatizador. Practicarlo aquí evita pánico en el primer fallo real en su trabajo.
 
 ---
 
-### Paso 10 — Resolver el reto
+### Paso 10 — Resolver el reto (TODOs en `reto.md`)
 
-El reto pide crear un **segundo workflow** que corra **diariamente** (cron) un subset de smoke contra el deploy live, y abra un **issue automático** si falla.
+El reto pide crear un **segundo workflow** que corra **diariamente** (cron) un subset de smoke contra el deploy live, y abra un **issue automático** si falla. Este es el patrón *canary in the coal mine*.
 
-Los pasos están documentados con detalle en `reto.md`. Síguelos en orden y entrega:
-
-1. `.github/workflows/smoke-daily.yml` con cron + `workflow_dispatch`.
-2. Un issue de ejemplo (puedes forzar fallo con `DEMO_FAIL=1`).
-3. El badge del workflow en el `README.md` principal.
+**10.1 — Seguir los TODOs de `reto.md`**
+- **Qué hago:** abro `reto.md` y completo sus pasos en orden (el esqueleto del YAML viene como **pista**, no resuelto; tú lo terminas).
+  1. `.github/workflows/smoke-daily.yml` con `schedule` (cron `'0 14 * * *'`) + `workflow_dispatch`.
+  2. Un step `if: failure()` con `actions/github-script@v7` que abre un issue automático (necesita `permissions: issues: write`).
+  3. El badge del workflow en el `README.md` principal.
+- **Por qué:** el reto es práctica deliberada: el README **no** te entrega la solución completa para que sientas el flujo de programar un workflow y depurar permisos. El esqueleto de `reto.md` es punto de partida, no copia-pega final.
+- **Cómo verifico (lo dice `reto.md`):**
+  ```bash
+  gh workflow run smoke-daily.yml     # dispararlo a mano
+  gh run list --workflow=smoke-daily.yml --limit 1
+  gh issue list --label canary        # tras forzar un fallo, debe haber 1 issue nuevo
+  ```
+  El badge debe renderizar su estado en el README abierto en GitHub.
 
 ---
 

@@ -84,8 +84,8 @@ import { uniqueEmail } from "../helpers/unique-data";
 
 test("uniqueEmail genera identificadores por worker", async ({}, testInfo) => {
   const email1 = uniqueEmail(testInfo);
-  const email2 = uniqueEmail(testInfo, "admin");
+  const email2 = uniqueEmail(testInfo, "locked");
   expect(email1).toContain(`w${testInfo.workerIndex}`);
   expect(email1).not.toBe(email2);
-  expect(email2).toContain("admin+");
+  expect(email2).toContain("locked+");
 });
