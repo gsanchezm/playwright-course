@@ -7,16 +7,18 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Este es el **punto de partida del framework**. Solo lo mínimo para que Playwright corra contra OmniPizza live:
+Este es el **punto de partida del framework**. Lo llenas con el **installer oficial** (`pnpm create playwright`) y luego lo **moldeas** a la arquitectura incremental del curso:
 
 ```
 playwright-course/
 ├── .env                       ← 🆕 creas tú desde .env.example (gitignored)
 ├── .env.example               ← 🆕 plantilla versionada de variables
-├── .gitignore                 ← excluye .env, .auth/, node_modules/, reportes
+├── .gitignore                 ← lo trae el installer; le añades .env y .auth/
 ├── package.json               ← scripts (pnpm m1…m6) + dotenv como dep
-├── playwright.config.ts       ← 🆕 import "dotenv/config" + baseURL + projects
-├── tsconfig.json
+├── playwright.config.ts       ← 🆕 lo genera el installer; lo reconcilias al estado M01
+├── tsconfig.json              ← 🆕 lo creas tú (el installer NO lo genera)
+├── .github/workflows/         ← lo deja el installer; LATENTE hasta M06
+│   └── playwright.yml
 └── modulo-01-smoke-feo/       ← 🆕 ESTE MÓDULO
     ├── README.md
     ├── ejemplo.spec.ts        ← 🆕 TC-001 login, TC-002 catálogo (con duplicación)
@@ -31,7 +33,7 @@ playwright-course/
 | `pages/` | M03 | Page Object Model |
 | `tests/setup/`, `fixtures/`, `helpers/`, `.auth/` | M04 | Setup project + custom fixtures |
 | `services/`, `tests/api/` | M05 | Capa de servicios para API testing |
-| `.github/workflows/` | M06 | CI/CD en GitHub Actions |
+| `.github/workflows/` (uso real) | M06 | CI/CD en GitHub Actions (el installer lo deja latente) |
 
 ---
 
@@ -43,12 +45,13 @@ Vas a escribir tu primer caso de prueba automatizado **como lo haría un tester 
 
 ## ¿Qué aprenderás?
 
-1. **Setup mínimo:** `playwright.config.ts`, `pnpm test`, UI mode.
-2. **`dotenv` + `.env`:** instalar la librería, crear el archivo y manejar secrets como un profesional desde el día 1.
+1. **Installer oficial + reconciliación:** `pnpm create playwright` y cómo moldear el starter genérico a la arquitectura del curso.
+2. **`dotenv` + `.env`:** activar el hook que el installer dejó comentado, crear el archivo y manejar secrets como un profesional desde el día 1.
 3. **`test()` y `expect()`** — el TC y el resultado esperado.
 4. **Auto-waiting** — Playwright es paciente; no usamos `sleep()`.
 5. **`getByRole` vs `getByTestId`** — dos formas de localizar.
-6. **Workaround del cold start de Render** — backend en free tier se duerme.
+6. **Cold start de Render absorbido por timeouts generosos** — el backend en free tier se duerme; no hacemos warmup explícito, los timeouts del config aguantan el primer request lento.
+7. **Depurar y reportar:** `--debug` (Playwright Inspector) y el HTML report (`show-report`).
 
 ---
 
@@ -59,7 +62,7 @@ Vas a escribir tu primer caso de prueba automatizado **como lo haría un tester 
 | `test('...', async ({ page }) => {...})` | Caso de prueba (TC-001) con sus pasos |
 | `expect(locator).toBeVisible()` | Resultado esperado del TC documentado |
 | `page.goto('/')` | Abrir el navegador en la URL inicial |
-| `getByRole('button', { name: 'Login' })` | Localizar como un lector de pantalla |
+| `getByRole('button', { name: 'Sign In' })` | Localizar como un lector de pantalla |
 | `getByTestId('login-button')` | Localizar por el sticker que el dev puso |
 | Auto-waiting | La paciencia del tester: espera a que cargue antes de clickear |
 | `dotenv` | Librería npm que **lee tu `.env` y mete sus valores en `process.env`** |
@@ -85,70 +88,62 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 
 ---
 
-### Paso 1 — Instalar dependencias (incluye `dotenv`)
+### Paso 1 — Instalar Playwright con el installer oficial
 
-Este módulo necesita **4 paquetes**:
+No instalamos Playwright "a mano". Usamos el **installer oficial** ([`pnpm create playwright`](https://playwright.dev/docs/intro)) y luego **moldeamos** lo que genera a la arquitectura incremental del curso. El installer te da un *starter genérico* (3 navegadores, `testDir: "./tests"`, workflow de CI…); tu trabajo en los Pasos 3-4 es **reconciliarlo** al estado mínimo de M01. Aprender a leer y recortar un scaffold es una habilidad real de QA.
 
-| Paquete | Tipo | Para qué |
+#### 1.A — Lanzar el installer oficial
+
+Desde la raíz del curso, corre:
+
+```bash
+pnpm create playwright
+```
+
+Responde los **prompts interactivos**:
+
+| Prompt | Qué elegir | Por qué |
 |---|---|---|
-| `@playwright/test` | dev | El runner + librería de Playwright |
-| `dotenv` | dev | Lee `.env` y mete sus valores en `process.env` |
-| `typescript` | dev | Compilador TS (lo usa `tsc --noEmit` y los IDEs) |
-| `@types/node` | dev | Tipos de Node (necesarios para `process.env`, `setTimeout`, etc) |
+| **TypeScript or JavaScript?** | `TypeScript` | Todo el curso es TS tipado |
+| **Where to put your tests?** | `tests` (default) | Lo aceptas; en el Paso 4 cambiamos el `testMatch` |
+| **Add a GitHub Actions workflow?** | `true` | Lo deja **latente**; lo activamos de verdad en M06 |
+| **Install Playwright browsers?** | `true` | Descarga Chromium/Firefox/WebKit (~300 MB) |
 
-#### 1.A — Verificar si ya están instaladas
+Un solo comando instala `@playwright/test`, descarga los navegadores, genera `playwright.config.ts`, `tests/example.spec.ts`, un `.gitignore` propio y el workflow de GitHub Actions — todo según la **versión más reciente** de Playwright (no fijes una versión a mano; el installer trae la última).
 
-```bash
-# Comprueba qué está declarado en tu package.json
-cat package.json | grep -E '"@playwright/test"|"dotenv"|"typescript"|"@types/node"'
-
-# Y qué está realmente resuelto en node_modules
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
-```
-
-Si las **4 entradas aparecen** con una versión: salta al paso 1.C.
-Si **alguna falta** (o no existe `package.json` aún): sigue con 1.B.
-
-#### 1.B — Bootstrap desde cero (si empiezas con la carpeta vacía)
+Verifica:
 
 ```bash
-# 1. Inicializa package.json si no existe
-test -f package.json || pnpm init
-
-# 2. Instala las dependencias dev (con `-D` queda registrado en devDependencies)
-pnpm add -D @playwright/test dotenv typescript @types/node
-
-# 3. Verifica
-pnpm list @playwright/test dotenv typescript @types/node
-# Debe listar las 4 con su versión.
+pnpm list @playwright/test     # aparece, con la versión que instaló el installer
+ls playwright.config.ts tests/ # el config y la carpeta tests existen
 ```
 
-> 💡 **¿Por qué `-D` y no plano?**
-> Estos paquetes solo se usan durante desarrollo y testing — nunca en producción. `-D` los pone en `devDependencies`, así un build de producción los puede saltar. Para tests, es la convención correcta.
+> 💡 **¿Por qué `pnpm` y no `npm`/`npx`?**
+> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). `pnpm create playwright` es el equivalente a `npm init playwright@latest`. Si nunca usaste pnpm: `corepack enable && corepack prepare pnpm@latest --activate`.
 
-> 💡 **¿Por qué no `npm install`?**
-> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). Si nunca lo usaste: `npm install -g pnpm` o `corepack enable && corepack prepare pnpm@latest --activate`.
-
-#### 1.C — Si `package.json` ya existe pero `node_modules/` no
+#### 1.B — Mirar lo que el installer dejó (antes de tocar nada)
 
 ```bash
-pnpm install
-# pnpm lee package.json + pnpm-lock.yaml y reconstruye node_modules.
+ls -la                       # .gitignore, playwright.config.ts, package.json, tests/, .github/
+cat playwright.config.ts     # testDir "./tests", 3 projects, un bloque dotenv COMENTADO
+cat .gitignore               # trae /playwright/.auth/ … pero NO trae .env
 ```
 
-#### 1.D — Instalar los navegadores que Playwright manejará
+Tres cosas que vas a tocar en los Pasos 3-4: (1) el `.gitignore` del installer **no** ignora `.env`; (2) el config trae un bloque `dotenv` **comentado** — el installer ya te dejó el hook, solo hay que encenderlo; (3) `testDir` apunta a `./tests`, pero el curso vive en `modulo-*/`.
 
-Los paquetes de npm **no** traen Chromium / Firefox / WebKit. Hay que descargarlos por separado:
+#### 1.C — Añadir la única dependencia que el installer NO trae: `dotenv`
 
 ```bash
-pnpm exec playwright install
-# Tarda 1-2 min la primera vez (descarga ~300 MB).
-
-# Opción ligera: solo chromium
-pnpm exec playwright install chromium
+pnpm add -D dotenv
 ```
 
-#### 1.E — Cómo `dotenv` se engancha al curso
+El installer instaló `@playwright/test` y los navegadores, pero `dotenv` (para leer `.env` → `process.env`) **no** viene en el scaffold. El config trae el *hook comentado* pero falta la librería. Con `-D` queda en `devDependencies` (solo desarrollo/testing).
+
+```bash
+pnpm list dotenv     # aparece con su versión
+```
+
+#### 1.D — Cómo `dotenv` se engancha al curso
 
 Para que `process.env.TEST_USER_USERNAME` funcione, `playwright.config.ts` **debe** importar `dotenv/config` al inicio:
 
@@ -156,9 +151,7 @@ Para que `process.env.TEST_USER_USERNAME` funcione, `playwright.config.ts` **deb
 import "dotenv/config";
 ```
 
-Eso ejecuta `dotenv` automáticamente cada vez que Playwright arranca y carga `.env` en `process.env`. **Si esa línea falta, tus tests reciben `undefined` al leer variables del `.env`**.
-
-Verás esa línea ya presente cuando creemos `playwright.config.ts` en el **Paso 4**.
+El installer dejó esa línea **comentada**; en el **Paso 4** la descomentas. Eso ejecuta `dotenv` automáticamente cada vez que Playwright arranca y carga `.env` en `process.env`. **Si esa línea falta, tus tests reciben `undefined` al leer variables del `.env`**.
 
 ---
 
@@ -196,60 +189,70 @@ Si imprime `USERNAME = undefined` significa que `.env` no se creó o está en ot
 
 ---
 
-### Paso 3 — Crear `.gitignore`
+### Paso 3 — Reconciliar el `.gitignore` (1ª pieza del recorte)
 
-**Antes** de crear cualquier archivo más, asegúrate de que `.env` (con tus credenciales) **no se commiteará** por accidente. Crea `.gitignore` en la raíz del curso:
+**No lo creas desde cero**: el installer ya generó uno (con `/playwright/.cache/`, `/playwright/.auth/`, `/test-results/`, `/playwright-report/`, `/blob-report/`). El problema: **NO ignora `.env`**. Lo arreglas ahora — **antes de tu primer commit** — para que las credenciales del `.env` que creaste nunca entren al staging por accidente.
 
 ```bash
-# Si aún no existe
-test -f .gitignore || cat > .gitignore <<'EOF'
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+# 1. Ver lo que el installer dejó ignorado (no verás .env en la lista)
+cat .gitignore
+
+# 2. Añadir (NO reemplazar) las líneas de secretos al final
+cat >> .gitignore <<'EOF'
+
+# --- Añadido en M01: secrets y storageState ---
 .env
 .env.local
 .auth/
-.DS_Store
 EOF
 
-# Verifica
-cat .gitignore
+# 3. Verifica que .env queda ignorado
+git check-ignore .env     # imprime ".env" → está siendo ignorado
 ```
 
-> ⚠️ **Importante:** las entradas `.env`, `.auth/` y `playwright-report/` son **críticas**. Si las olvidas, terminas pusheando secrets o gigabytes de reportes al repo.
+El `.gitignore` del installer ya cubre los reportes y `node_modules/`, y trae `/playwright/.auth/` (lo usaremos en M04). Lo que **falta** son las dos líneas críticas de secretos: `.env` y `.auth/`. (`.auth/` aún no existe, pero lo dejas listo: en M04 guardará el `storageState` de sesión.)
+
+> ⚠️ **Importante:** `git check-ignore .env` debe imprimir `.env`. Si no imprime nada, el `.env` **no** está ignorado y tus credenciales se commitearían. Las entradas `.env` y `.auth/` son **críticas**: si las olvidas, terminas pusheando secrets al repo.
 
 ---
 
-### Paso 4 — Crear `playwright.config.ts`
+### Paso 4 — Reconciliar `playwright.config.ts` (el recorte principal)
 
-> **📐 El config nace aquí**
-> Este es el **punto de partida** — no hay módulo anterior contra qué comparar. A partir de **M04** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
+> **📐 El config NO nace en blanco: lo genera el installer**
+> El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M04** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
 >
-> **En M01 contiene lo mínimo:** `import "dotenv/config"`, `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-chromium`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni flags de CI (M06).
+> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-chromium`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni flags de CI (M06).
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
-```bash
-# Verifica si ya existe
-test -f playwright.config.ts && echo "Ya existe — revisa su contenido" || echo "No existe — lo creamos"
-```
+**El diff: de lo generado al estado M01.** Esta es la tabla de reconciliación (la lección del módulo):
 
-Si NO existe, créalo con este contenido **mínimo para M01**:
+| Lo que genera el installer | Lo dejamos en M01 como | Por qué |
+|---|---|---|
+| `testDir: "./tests"` | `testDir: "."` + `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | El curso vive en `modulo-*/`, no en `tests/` |
+| `projects: [chromium, firefox, webkit]` | **solo** `ui-chromium` | Multi-browser distrae en M01; **firefox/webkit vuelven en M04** |
+| bloque `dotenv` **comentado** | **descomentado** → `import "dotenv/config"` | El installer dejó el hook; solo lo enciendes (ya instalaste `dotenv` en 1.C) |
+| `trace: "on-first-retry"` | `trace: "retain-on-failure"` | En M01 no hay `retries`; con `on-first-retry` nunca verías el trace al fallar |
+| (sin timeouts custom) | `timeout` + `expect.timeout` + `actionTimeout`/`navigationTimeout` generosos | Render free tier despierta en 30-40s; sin esto el 1er run sería flaky |
+| `reporter: "html"` | `reporter: [["html",…], ["list"]]` | `list` te da feedback en la terminal **mientras** corre |
+| `fullyParallel`/`forbidOnly`/`retries`/`workers` (CI) | se quedan **latentes** | La matrix real de CI llega en **M06**; en M01 no estorban |
+
+Abre el `playwright.config.ts` generado y **reemplaza su contenido** por este (el resultado de aplicar la tabla de arriba):
 
 ```ts
-// playwright.config.ts — Estado en M01
-// ------------------------------------
-// "master test plan" del framework. En módulos siguientes vamos
-// a agregar: projects para multi-browser (M04), setup project con
-// dependencies (M04), project api (M05), retries+workers para CI (M06).
+// playwright.config.ts — Estado en M01 (reconciliado desde el scaffold)
+// ---------------------------------------------------------------------
+// "master test plan" del framework. Partimos del config que generó
+// `pnpm create playwright` y lo recortamos a lo mínimo de M01. En
+// módulos siguientes vamos a agregar de nuevo: projects multi-browser
+// (M04), setup project con dependencies (M04), project api (M05),
+// retries+workers+CI flags reales (M06).
 
 import { defineConfig, devices } from "@playwright/test";
-import "dotenv/config";   // ← carga .env en process.env
+import "dotenv/config";   // ← descomentado: carga .env en process.env
 
 export default defineConfig({
-  // --- Dónde buscar los tests ---
+  // --- Dónde buscar los tests (el installer ponía "./tests") ---
   testDir: ".",
   testMatch: [/modulo-.*\/.*\.spec\.ts/],
 
@@ -257,19 +260,19 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
 
-  // --- Reporteo ---
+  // --- Reporteo (html del installer + list para feedback en terminal) ---
   reporter: [["html", { open: "never" }], ["list"]],
 
   // --- Defaults para todos los projects ---
   use: {
     baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
-    trace: "retain-on-failure",
+    trace: "retain-on-failure",   // el installer ponía "on-first-retry"
     screenshot: "only-on-failure",
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
   },
 
-  // --- Projects (en M01 solo uno: chromium en desktop) ---
+  // --- Projects (en M01 solo uno; el installer traía chromium+firefox+webkit) ---
   projects: [
     {
       name: "ui-chromium",
@@ -283,18 +286,26 @@ export default defineConfig({
 
 | Línea | Qué hace |
 |---|---|
-| `import "dotenv/config"` | Lo único que conecta `.env` con `process.env` |
-| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Patrón de archivos que cuentan como tests |
-| `timeout: 60_000` | 60s por TC — necesario para el cold start de Render |
+| `import "dotenv/config"` | Lo único que conecta `.env` con `process.env` (estaba comentado en el scaffold) |
+| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Patrón de archivos que cuentan como tests (reemplaza el `testDir: "./tests"`) |
+| `timeout: 60_000` | 60s por TC — necesario para el cold start de Render (el scaffold no lo traía) |
 | `baseURL` | El frontend live; `page.goto("/")` lo concatena |
-| `trace: "retain-on-failure"` | Solo graba la caja negra cuando algo falla (ahorra disco) |
-| `projects: [{ name: "ui-chromium", ... }]` | El único navegador en M01. En M04 añadiremos firefox/webkit. |
+| `trace: "retain-on-failure"` | Graba la caja negra al fallar (el scaffold usaba `on-first-retry`, inútil sin retries) |
+| `projects: [{ name: "ui-chromium", ... }]` | El único navegador en M01. En M04 vuelven firefox/webkit. |
+
+**Borra el `tests/example.spec.ts` del installer:**
+
+```bash
+rm -rf tests/
+```
+
+El installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M06.)
 
 ---
 
 ### Paso 5 — Crear `tsconfig.json`
 
-TypeScript necesita saber cómo compilar tus specs. Crea el archivo en la raíz:
+**Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso. TypeScript necesita saber cómo compilar tus specs. Crea el archivo en la raíz:
 
 ```bash
 test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
@@ -362,20 +373,23 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 
 - **Comando del módulo:** `pnpm m1`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
-- **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
+- **Headed:** `pnpm test:headed`
+- **Depurar (Playwright Inspector):** `pnpm test:debug` (o `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug`) — pausa antes de cada acción y resalta el locator exacto
 - **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
-- **Ver el reporte:** `pnpm report`
+- **Ver el HTML report:** `pnpm report` (o `pnpm exec playwright show-report`) — el artefacto compartible con pasos, trace, screenshot y video
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m1` (no `VAR=x pnpm m1`, que es sintaxis de bash y falla en PowerShell)
 
 ---
 
 ## Outcome esperado
 
-- [ ] `dotenv` instalado vía `pnpm install` y verificado con `pnpm list dotenv`.
-- [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`**.
+- [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` con `pnpm add -D dotenv`.
+- [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-chromium`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
+- [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`** (al que le añadiste `.env` + `.auth/`).
 - [ ] Test verde contra OmniPizza live (`TC-001` y `TC-002`).
 - [ ] Entiendes por qué `sleep()` está prohibido (auto-waiting).
 - [ ] Distingues `getByRole` de `getByTestId`.
+- [ ] Sabes depurar con `--debug` (Playwright Inspector) y abrir el HTML report con `show-report`.
 - [ ] **Puedes señalar con el dedo las líneas duplicadas** entre los specs.
 - [ ] Completaste TC-003 en `reto.spec.ts` y mediste cuántas líneas copiaste.
 

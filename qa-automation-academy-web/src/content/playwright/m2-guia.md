@@ -1,7 +1,7 @@
 # M02 · Guía del módulo: Locators + Data tipada
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M01 se parametriza con `test.each()` contra los 4 mercados.
+**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M01 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 4 mercados.
 
 ---
 
@@ -13,14 +13,14 @@ Aparecen **dos carpetas nuevas**: `data/` (los datasets) y `types/` (los contrat
 playwright-course/
 ├── data/                          ← 🆕 datasets de prueba
 │   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, currency)
-│   └── users.json                 ← 🆕 standard_user, admin_user, ...
+│   └── users.json                 ← 🆕 5 personas reales: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 ├── types/                         ← 🆕 contratos del dominio
 │   ├── index.ts                   ← 🆕 barrel: re-exporta lo de omnipizza
 │   └── omnipizza.d.ts             ← 🆕 User, Market, Pizza, Currency, CountryCode
 ├── modulo-01-smoke-feo/           ← (sin cambios)
 ├── modulo-02-locators-data/       ← 🆕 ESTE MÓDULO
 │   ├── README.md
-│   ├── ejemplo.spec.ts            ← 🆕 test.each por mercado + lookup map
+│   ├── ejemplo.spec.ts            ← 🆕 for...of por mercado + lookup map
 │   └── reto.spec.ts               ← 🆕 añadir 5º mercado (CA) sin tocar el spec
 ├── .env, .env.example, .gitignore
 ├── package.json, tsconfig.json
@@ -48,18 +48,21 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 
 ## Analogía de apertura
 
-Un tester manual siempre trae consigo una **hoja de datos de prueba** (usuarios, ambientes, mercados). En este módulo construimos esa hoja como **JSON tipado** y la conectamos al TC con `test.each()` — un mismo caso ejecutado con N sets de datos distintos, como una matriz de regresión.
+Un tester manual siempre trae consigo una **hoja de datos de prueba** (usuarios, ambientes, mercados). En este módulo construimos esa hoja como **JSON tipado** y la conectamos al TC con un **bucle `for...of`** que **registra un `test()` por cada fila de datos** — un mismo caso de prueba ejecutado con N sets distintos, como una matriz de regresión.
+
+> ⚠️ **Ojo con `test.each()`:** si vienes de Jest o Vitest, ahí existe `test.each()` para parametrizar. **Playwright NO lo tiene.** En Playwright parametrizas con un `for` normal de JavaScript que recorre el array y llama a `test()` adentro — cada vuelta del bucle **registra** un caso independiente. No es magia del runner: es un `for` y un `test()`.
 
 ---
 
 ## ¿Qué aprenderás?
 
-1. **Jerarquía de locators** con criterios de cuándo bajar nivel.
+1. **Jerarquía de locators** con criterios de cuándo bajar nivel — y por qué `getByRole` es preferencia, no ley (caso real: el login de OmniPizza).
 2. **Filtros y combinadores:** `.filter()`, `.nth()`, `locator.all()`.
-3. **Iterar locators** con `for...of` para recorrer listas reales (pizzas del catálogo).
-4. **`interface` como contrato:** User, Market, Pizza — fallan en compile-time si el JSON no cumple.
-5. **`test.each<T>()`** para data-driven.
-6. **`import type`** — traer sólo la forma, no el código.
+3. **Codegen** (`pnpm exec playwright codegen`) como herramienta para **descubrir** locators role-first.
+4. **Iterar locators** con `for...of` para recorrer listas reales (pizzas del catálogo).
+5. **`interface` como contrato:** User, Market, Pizza — fallan en compile-time si el JSON no cumple.
+6. **Data-driven con `for...of` + `test()`** — registrar N casos desde un array de datos (el patrón que en Jest/Vitest harías con `test.each`, aquí es un `for`).
+7. **`import type`** — traer sólo la forma, no el código.
 
 ---
 
@@ -69,13 +72,63 @@ Escríbelo como escribirías un **bug report bien hecho**:
 
 | Prioridad | Locator | Cuándo usarlo | Ejemplo |
 |---|---|---|---|
-| 1️⃣ | `getByRole` | Casi siempre. Es accesible y semántico. | `page.getByRole('button', { name: 'Pagar' })` |
-| 2️⃣ | `getByLabel` / `getByText` | Formularios y contenido visible. | `page.getByLabel('Email')` |
-| 3️⃣ | `getByTestId` | Cuando el DOM no coopera y el dev cooperó. | `page.getByTestId('pizza-card-123')` |
+| 1️⃣ | `getByRole` | **Preferencia por defecto.** Accesible y semántico. | `page.getByRole('button', { name: 'Pagar' })` |
+| 2️⃣ | `getByLabel` / `getByText` / `getByPlaceholder` | Formularios y contenido visible. | `page.getByLabel('Email')` |
+| 3️⃣ | `getByTestId` | Cuando el DOM no coopera y el dev cooperó. | `page.getByTestId('login-button-desktop')` |
 | 4️⃣ | CSS selectors | Cuando los testids son dinámicos o no existen. | `page.locator('[data-testid^="pizza-card-"]')` |
 | 5️⃣ | XPath | Último recurso. Frágil. | `page.locator('//button[@data-ready]')` |
 
-**Importante:** CSS y XPath **no están prohibidos**. Están al final porque son frágiles, no porque sean inválidos. En OmniPizza usamos CSS con prefijo (`[data-testid^="pizza-card-"]`) para los testids dinámicos — es legítimo.
+**`getByRole` es una PREFERENCIA, no una ley.** La regla dice "empieza por `getByRole` y baja de nivel sólo cuando algo te obliga". El "algo que te obliga" no es raro: una app **mal instrumentada** (sin labels, con inputs anónimos, con botones icon-only) te empuja al nivel 2/3 — y reconocer cuándo pasa es una habilidad real de QA, no una derrota. Lo verás abajo: el **catálogo** de OmniPizza está bien instrumentado y vives en `getByRole`; el **login** no lo está y bajas a `getByTestId` sin culpa.
+
+**CSS y XPath no están prohibidos.** Están al final porque son frágiles, no porque sean inválidos. En OmniPizza usamos CSS con prefijo (`[data-testid^="pizza-card-"]`) para los testids dinámicos — es legítimo.
+
+---
+
+## getByRole en OmniPizza: dónde SÍ y dónde NO
+
+La misma app puede ser un paraíso de `getByRole` en una pantalla y un pantano en otra. OmniPizza lo demuestra. (Todos estos selectores están verificados contra el DOM real y viven como chuleta ejecutable en el `test.skip` de `ejemplo.spec.ts`, Paso 8.)
+
+### ✅ Catálogo (`/catalog`) — bien instrumentado, `getByRole` manda
+
+| Elemento | Locator role-first | Por qué funciona |
+|---|---|---|
+| Nombre de pizza | `getByRole("heading", { name: "Pepperoni", level: 3 })` | Cada pizza es un `<h3>` con texto visible = nombre accesible |
+| Filtro de categoría | `getByRole("button", { name: "Populares" })` | Botón con texto → rol `button` + nombre accesible |
+| Enlace de menú | `getByRole("link", { name: "Catálogo" })` | `<a>` con texto → rol `link` |
+| Buscador | `getByRole("textbox", { name: "Busca tu pizza favorita..." })` | `<input>` cuyo nombre accesible sale del **placeholder** (sí matchea aquí) |
+
+### ❌ Login — mal instrumentado, `getByRole` en los inputs FALLA
+
+| Elemento | Lo que parece obvio | Lo que pasa | Lo que SÍ funciona |
+|---|---|---|---|
+| Input usuario | `getByRole("textbox", { name: "Username" })` | ❌ no matchea — "Username" es texto visible (un `<div>`), no el nombre accesible | `getByTestId("username-desktop")` |
+| | `getByLabel("Username")` | ❌ no hay `<label for>` ni `aria-label` | (o `getByPlaceholder("standard_user")`) |
+| Input password | `getByLabel("Password")` | ❌ mismo problema | `getByTestId("password-desktop")` |
+| Botón de login | — | ✅ **"Sign In" SÍ tiene rol** | `getByRole("button", { name: "Sign In" })` |
+| Bandera de mercado | `getByRole("button", { name: "México" })` | ❌ el nombre accesible es el **emoji** 🇲🇽, no el país | `getByTestId("market-MX")` |
+| Add-to-cart (catálogo) | `getByRole("button", { name: "Agregar" })` | ❌ es **icon-only** sin texto → sin nombre accesible | scope en la card → `card.getByRole("button")` |
+
+**La moraleja:** el nombre accesible de un input mal etiquetado **es su placeholder, no el texto que ves al lado.** `getByRole("textbox", { name: "Username" })` y `getByLabel("Username")` fallan porque "Username" es un `<div>` decorativo, no un `<label for>`. Por eso el login del ejemplo usa `getByTestId(...)`: no es pereza, es la respuesta correcta a un DOM que no coopera. El botón **"Sign In"**, en cambio, sí expone su rol — así que ahí SÍ usamos `getByRole`. **Misma pantalla, dos niveles de jerarquía distintos, según qué cooperó.**
+
+---
+
+## 🎥 Codegen: deja que Playwright DESCUBRA los locators por ti
+
+Existe una herramienta que **graba tus clics y genera el código de los locators automáticamente**, respetando la jerarquía (role-first). Se llama **Codegen** y es, en la práctica, **el inspector de elementos del mundo Playwright**: tú interactúas con la página real, y Playwright te escribe el locator que usaría — empezando por `getByRole`, bajando de nivel sólo cuando el DOM no coopera (exactamente la regla de este módulo).
+
+> 📚 Doc oficial: https://playwright.dev/docs/codegen
+
+Abres Codegen apuntando a la URL del frontend:
+
+```bash
+pnpm exec playwright codegen https://omnipizza-frontend.onrender.com
+```
+
+Se abre un navegador + la ventana **Playwright Inspector**. A medida que actúas (login: clic en bandera → usuario → password → "Sign In", luego clic en una pizza), el panel del Inspector va escribiendo líneas como `await page.getByTestId('username-desktop').fill('standard_user')` y `await page.getByRole('heading', { name: 'Pepperoni' }).click()`.
+
+**Cómo se relaciona con la jerarquía:** Codegen aplica internamente la misma prioridad que enseñamos (`getByRole` → `getByLabel`/`getByText` → `getByTestId` → CSS). Por eso, cuando grabas en el **catálogo** te genera `getByRole("heading", { name: "Pepperoni" })`; pero cuando grabas en el **login** (mal instrumentado), te genera `getByTestId("username-desktop")` o un CSS — porque ahí no hay rol ni label que ofrecer. **Codegen es un buen espejo de la calidad del DOM.**
+
+> ⚠️ **Advertencia — Codegen es un punto de partida, no la última palabra.** En DOMs sucios genera locators **frágiles** — `nth-child` posicionales, textos que cambian con el idioma, o un `getByText` sobre un `<div>` decorativo en vez del input real. Tu trabajo es *endurecer* lo grabado: preferir un testid estable a un `nth-child`, acotar con scoping (`card.getByRole(...)`) en vez de un selector global, y borrar los pasos de ruido (clics accidentales). Codegen descubre; el humano decide.
 
 ---
 
@@ -84,7 +137,7 @@ Escríbelo como escribirías un **bug report bien hecho**:
 | Concepto | Analogía QA |
 |---|---|
 | `interface User` | Contrato Swagger: un User DEBE tener username, password, role |
-| `test.each<Market>(markets)('...', ...)` | Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones |
+| `for (const market of markets) { test(...) }` | Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones (un `test()` registrado por vuelta) |
 | `import type { User }` | Sólo traigo la forma, no el código |
 | `locator.all()` | Obtener el array de locators — como pedir todas las filas de una tabla |
 | `.filter({ hasText: 'Spicy' })` | Filtrar por componente en Jira |
@@ -239,7 +292,45 @@ Esa última regla es la clave de M06: **en CI no usas archivos `.env`** — GitH
 | 2+ ambientes reales (QA / staging / prod) | ✅ Sí | Cada uno tiene URLs y credenciales distintas. |
 | CI/CD | ⚠️ No con archivos | Se inyectan vía `secrets.*`, no con `.env`. |
 
-**Regla del curso (coherente con "siente el dolor primero"):** no agregues `.env.qa` / `.env.staging` hasta que tengas un **segundo ambiente real**. Antes de eso es arquitectura especulativa. La implementación completa (carga por `TEST_ENV`, `override: true`, scripts y el detalle de Windows/PowerShell con `cross-env`) **se ve en M06**, donde el multi-entorno deja de ser hipótesis y se vuelve necesidad.
+**Regla del curso (coherente con "siente el dolor primero"):** no agregues `.env.qa` / `.env.staging` hasta que tengas un **segundo ambiente real** — no lo necesitas hasta entonces. Antes de eso es arquitectura especulativa. **Para M02 NO toques tu config** — sigue idéntico a M01. Lo que viene a continuación es **ilustrativo y opcional**: enseña *cómo se vería* la implementación el día que la necesites, para que la semilla no quede en el aire.
+
+### Implementación real (opcional — sólo cuando exista un 2º ambiente)
+
+El truco es cargar `dotenv` **dos veces**: primero el `.env` base (defaults), luego el `.env.<ambiente>` con `override: true` para que **gane** sobre los defaults. La selección del ambiente sale de una variable `TEST_ENV` (con default `"qa"`):
+
+```ts
+// @file playwright.config.ts
+// patrón base + override (NO lo apliques hasta tener staging real)
+import { defineConfig } from "@playwright/test";
+import dotenv from "dotenv";
+
+// 1) Defaults compartidos (TEST_USER_*, DEFAULT_COUNTRY).
+dotenv.config({ path: ".env" });
+
+// 2) Overrides del ambiente seleccionado — GANAN sobre el base.
+//    TEST_ENV elige el archivo; default "qa" si no la defines.
+const env = process.env.TEST_ENV ?? "qa";
+dotenv.config({ path: `.env.${env}`, override: true });
+
+export default defineConfig({
+  use: { baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com" },
+  // ...resto igual que M01
+});
+```
+
+> ⚠️ **`override: true` es la línea clave.** Sin él, `dotenv` **no** pisa una variable que ya esté definida (el primer `.config` gana y el segundo se ignora). Con `override: true` inviertes la regla para el archivo de ambiente: el `.env.staging` machaca al `.env` base. Las variables que ya viven en `process.env` (shell / CI) siguen mandando sobre ambos archivos — por eso en CI los `secrets.*` ganan sin tocar este código.
+
+**Cómo eliges el ambiente (convención del curso: PowerShell):**
+
+```powershell
+# Windows / PowerShell — define la variable en la MISMA línea, separada por ';'
+$env:TEST_ENV="staging"; pnpm m2     # corre M02 contra .env.staging
+pnpm m2                               # sin TEST_ENV → usa el default "qa"
+```
+
+> 🪟 **No usamos `cross-env`.** En PowerShell la sintaxis nativa `$env:VAR="x"; comando` ya hace el trabajo; `cross-env` añade una dependencia que el curso evita. (La sintaxis bash `TEST_ENV=staging pnpm m2` **falla** en PowerShell.)
+
+**Reconciliación con M06:** este mismo patrón reaparece en M06, pero allí deja de ser opcional: el pipeline de CI corre contra varios ambientes y, además, **no usa archivos `.env`** — GitHub Actions inyecta las variables vía `secrets.*` directo en `process.env` (que, como viste arriba, mandan sobre cualquier archivo). En M02 esto es una semilla; en M06 es necesidad operativa.
 
 ---
 
@@ -291,6 +382,12 @@ touch data/markets.json data/users.json
 export type CountryCode = "MX" | "US" | "CH" | "JP";
 export type Currency = "MXN" | "USD" | "CHF" | "JPY";
 
+// OmniPizza sólo expone usuarios "customer". Las 5 personas
+// (standard / locked_out / problem / performance_glitch / error)
+// se distinguen por COMPORTAMIENTO de login, no por privilegios.
+// NO existe un rol admin en la app.
+export type Role = "customer";
+
 export interface Market {
   code: CountryCode;
   fullName: string;
@@ -300,7 +397,8 @@ export interface Market {
 export interface User {
   username: string;
   password: string;
-  role: "standard" | "admin";
+  role: Role;
+  description?: string;
 }
 
 export interface Pizza {
@@ -328,14 +426,19 @@ export * from "./omnipizza";
 ]
 ```
 
-📄 `data/users.json`:
+📄 `data/users.json` (las 5 personas reales de OmniPizza, todas `role: "customer"`):
 
 ```json
 [
-  { "username": "standard_user", "password": "pizza123", "role": "standard" },
-  { "username": "admin_user",    "password": "pizza123", "role": "admin" }
+  { "username": "standard_user",            "password": "pizza123", "role": "customer", "description": "Usuario estándar para flujos happy path" },
+  { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)" },
+  { "username": "problem_user",             "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero con bugs visuales intencionales" },
+  { "username": "performance_glitch_user",  "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts" },
+  { "username": "error_user",               "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero dispara errores en acciones específicas" }
 ]
 ```
+
+**No hay rol admin en OmniPizza:** las 5 personas comparten `role: "customer"` y se diferencian por **comportamiento de login** (estilo SauceDemo), no por privilegios. El smoke de M02 usa `standard_user` (el único que llega limpio a `/catalog`).
 
 **Verifica el tipado** ANTES de seguir:
 
@@ -427,7 +530,7 @@ cat data/users.json
 Cosas a observar:
 
 - `markets.json` tiene **4 entradas**: MX, US, CH, JP. Cada una con `code`, `fullName`, `currency`.
-- `users.json` tiene varios usuarios. Vamos a usar `standard_user`.
+- `users.json` lista las **5 personas** de OmniPizza (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`. Vamos a usar `standard_user`.
 - Los valores de `code` y `currency` están restringidos por **union types** en `types/omnipizza.d.ts` (`"MX" | "US" | "CH" | "JP"`). Si añades `"CA"` sin ampliar el union, TS rechaza el cambio.
 
 ---
@@ -446,7 +549,8 @@ Cosas a observar:
 
 ## Outcome esperado
 
-- [ ] Entiendes la jerarquía de locators y **por qué** no todo es `getByRole`.
+- [ ] Entiendes la jerarquía de locators y **por qué** `getByRole` es preferencia, no ley (caso login de OmniPizza).
+- [ ] Sabes usar `pnpm exec playwright codegen <url>` para **descubrir** locators y **endurecer** lo que genera.
 - [ ] Puedes leer `markets.json` y explicar cómo el test lo consume.
 - [ ] Sabes añadir un 5º mercado **sin tocar el spec**.
 - [ ] `pnpm typecheck` queda en verde tras ampliar los union types.

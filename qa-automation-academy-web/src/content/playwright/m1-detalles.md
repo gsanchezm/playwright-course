@@ -16,8 +16,8 @@ Antes de pasar a los comandos, estos son los detalles del spec que un ojo entren
 
 ## `await page.getByTestId("login-button-desktop").click()`
 
-- **Qué es:** el spec localiza el botón de login por su **test id** (`data-testid="login-button-desktop"`), no por su rol accesible (`getByRole("button", { name: "Login" })`).
-- **Por qué así (y no la alternativa obvia):** `getByTestId` apunta a un **sticker que el dev puso a propósito** para testing — es estable aunque cambie el texto o el idioma del botón. `getByRole(..., { name })` localiza como un lector de pantalla y depende del **texto visible**; el `name` es lo que cambia todo: si el botón pasa de "Login" a "Iniciar sesión", el `getByRole` rompe y el `getByTestId` no.
+- **Qué es:** el spec localiza el botón de login por su **test id** (`data-testid="login-button-desktop"`), no por su rol accesible (`getByRole("button", { name: "Sign In" })`).
+- **Por qué así (y no la alternativa obvia):** `getByTestId` apunta a un **sticker que el dev puso a propósito** para testing — es estable aunque cambie el texto o el idioma del botón. `getByRole(..., { name })` localiza como un lector de pantalla y depende del **texto visible**; el `name` es lo que cambia todo: si el botón pasa de "Sign In" a "Iniciar sesión", el `getByRole` rompe y el `getByTestId` no.
 - **Qué pasa si lo cambias:** migrar a `getByRole` te acerca a probar accesibilidad real (bueno), pero acoplas el test al copy de la UI. En M02 verás la jerarquía de locators completa; en M01 usamos `getByTestId` porque OmniPizza ya trae esos ids y queremos que el smoke sea inmune al texto.
 
 ## `await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 })`

@@ -58,7 +58,7 @@ pnpm m4
 
 1. Setup corre primero (genera/refresca `.auth/user.json`).
 2. Los TCs del módulo arrancan **ya autenticados**: en el primer test verás `page.goto("/catalog")` SIN paso de login previo.
-3. El test `uniqueEmail genera identificadores por worker` debe verificar que `email1 !== email2` y que ambos contengan `w<workerIndex>`.
+3. El test `uniqueEmail genera identificadores por worker` debe verificar que `email1 !== email2` y que `email1` contenga `w<workerIndex>`; `email2` usa el prefijo `locked+`.
 
 ---
 
@@ -103,14 +103,14 @@ const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 const standard = (usersJson as User[]).find((u) => u.username === "standard_user")!;
 
 setup("authenticate via API and persist storageState", async ({ page, request }) => {
-  const res = await request.post(`${API_URL}/auth/login`, {
+  const res = await request.post(`${API_URL}/api/auth/login`, {
     data: { username: standard.username, password: standard.password },
   });
   expect(res.ok()).toBeTruthy();
   const { access_token } = await res.json();
 
   await page.goto("/");
-  await page.evaluate((token) => localStorage.setItem("token", token), access_token);
+  await page.evaluate((token) => localStorage.setItem("access_token", token), access_token);
   await page.context().storageState({ path: STORAGE });
 });
 ```
@@ -257,9 +257,9 @@ import { uniqueEmail } from "../helpers/unique-data";
 
 test("uniqueEmail genera identificadores por worker", async ({}, testInfo) => {
   const email1 = uniqueEmail(testInfo);
-  const email2 = uniqueEmail(testInfo, "admin");
+  const email2 = uniqueEmail(testInfo, "locked");
   expect(email1).toContain(`w${testInfo.workerIndex}`);
   expect(email1).not.toBe(email2);
-  expect(email2).toContain("admin+");
+  expect(email2).toContain("locked+");
 });
 ```

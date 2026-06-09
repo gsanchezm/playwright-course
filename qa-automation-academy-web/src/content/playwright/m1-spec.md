@@ -61,7 +61,7 @@ pnpm exec tsc --noEmit
 # Sin output = sin errores = puedes correr el test.
 ```
 
-> 📌 **Nota sobre el spec del repo:** el archivo `ejemplo.spec.ts` que ya viene en el curso es **más completo** — incluye un `test.beforeAll` para warmup del backend dormido y un `TC-002` para validar el catálogo. **No te lo entrego completo aquí a propósito**: la idea del Paso 9 es que escribas TC-002 a mano y **sientas la duplicación** entre los dos tests. Si quieres el archivo final ya hecho, ábrelo desde el repo.
+> 📌 **Nota sobre el spec del repo:** el archivo `ejemplo.spec.ts` que ya viene en el curso es **más completo** — incluye un `TC-002` para validar el catálogo. **No te lo entrego completo aquí a propósito**: la idea del Paso 9 es que escribas TC-002 a mano y **sientas la duplicación** entre los dos tests. Si quieres el archivo final ya hecho, ábrelo desde el repo. (No hay `beforeAll` de warmup: el cold start de Render lo absorben los timeouts generosos del config.)
 
 ---
 
@@ -86,6 +86,28 @@ pnpm m1
 2. Verás **2 tests verdes**: `TC-001` y `TC-002`.
 3. Si te falla con `TimeoutError` en el primer test, **vuelve a correr el comando** — el backend ya estará despierto.
 
+### Depurar paso a paso con `--debug` (Playwright Inspector)
+
+Cuando un locator no encuentra nada o quieres ver **qué hace cada `await`**, corre el smoke en modo depuración:
+
+```bash
+pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug
+# (o el atajo del curso: pnpm test:debug)
+```
+
+Se abre el **Playwright Inspector** (una ventana aparte) junto al navegador. `--debug` **pausa** la ejecución antes de cada acción y resalta en el navegador **el locator exacto** que Playwright va a usar. Usa **▶ (Resume)** para avanzar entre acciones y **⤼ (Step over)** para ejecutar **una sola** línea a la vez. Cada `await` es el "breakpoint" implícito donde puedes detenerte: ves en vivo si el selector matchea 0, 1 o varios elementos, sin adivinar. Además puedes editar y probar locators en el panel del Inspector.
+
+### Abrir el HTML report (`show-report`)
+
+Después de una corrida (con `pnpm m1`, no con UI mode), abre el reporte HTML:
+
+```bash
+pnpm exec playwright show-report
+# (o el atajo del curso: pnpm report)
+```
+
+Se abre en el navegador en `http://localhost:9323`. El config genera el reporter `html` (lo dejaste en el Paso 4); es el **artefacto compartible** del resultado: en CI (M06) lo subiremos como artifact para que el equipo lo revise sin re-correr nada. Click en un test → verás sus **pasos** expandibles, y si falló, su **trace** (el **Trace Viewer**: timeline, snapshot del DOM por acción, network y consola), **screenshot** y **video**. Si dice *"No report found"*, corre primero `pnpm m1`.
+
 ---
 
 ## Paso 9 — Observar el dolor (lectura guiada de 5 min)
@@ -99,7 +121,7 @@ Abre `ejemplo.spec.ts` y **señala con el dedo**:
    - `click()` en `login-button-desktop` — repetido.
    - `expect(page).toHaveURL(/\/catalog/)` — repetido.
 2. **Locators inline** — el string `"market-MX"` está hardcoded; no hay un "objeto LoginPage" que lo encapsule.
-3. **El warmup del backend** vive dentro del mismo spec (`beforeAll`) — en M04 esto se convierte en un `setup project` reutilizable.
+3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M04 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
 4. **Las credenciales** se leen con `process.env.TEST_USER_USERNAME ?? "standard_user"` — el fallback existe por seguridad, pero **la fuente real es `.env`**.
 
 **Pregúntate:** *"si añadiera un tercer smoke, ¿cuántas líneas duplicaría?"* — la respuesta es **~8**. Esa es la deuda que M02 y M03 van a pagar.
@@ -130,14 +152,10 @@ const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
 test.describe("Smoke OmniPizza — versión fea (M01)", () => {
-  // beforeAll de warmup: OmniPizza vive en Render free tier y el
-  // primer request del día tarda 30-40s (cold start). En M04
-  // reemplazaremos esto por un `auth.setup.ts` project.
-  test.beforeAll(async ({ request }) => {
-    await request.get(`${process.env.API_URL}/health`).catch(() => {
-      // Si /health no responde aún, el primer navigate lo despertará igual.
-    });
-  });
+  // Nota: OmniPizza vive en Render free tier y el primer request del
+  // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
+  // timeouts generosos del playwright.config.ts lo absorben. En M04 el
+  // backend se despierta de forma controlada con un `auth.setup.ts`.
 
   test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) => {
     // Paso 1 — abrir la pantalla de login

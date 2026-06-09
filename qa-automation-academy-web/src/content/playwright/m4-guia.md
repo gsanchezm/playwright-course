@@ -31,7 +31,7 @@ playwright-course/
 ├── modulo-04-setup-fixtures/      ← 🆕 ESTE MÓDULO
 │   ├── README.md
 │   ├── ejemplo.spec.ts            ← 🆕 fixtures + page.route() (mocking)
-│   └── reto.spec.ts               ← 🆕 admin.setup.ts + project paralelo
+│   └── reto.spec.ts               ← 🆕 login negativo (locked_out_user) + mock con latencia
 └── playwright.config.ts           ← ✏️ projects con dependencies: ['setup']
 ```
 
@@ -177,14 +177,14 @@ const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 const standard = (usersJson as User[]).find((u) => u.username === "standard_user")!;
 
 setup("authenticate via API and persist storageState", async ({ page, request }) => {
-  const res = await request.post(`${API_URL}/auth/login`, {
+  const res = await request.post(`${API_URL}/api/auth/login`, {
     data: { username: standard.username, password: standard.password },
   });
   expect(res.ok()).toBeTruthy();
   const { access_token } = await res.json();
 
   await page.goto("/");
-  await page.evaluate((token) => localStorage.setItem("token", token), access_token);
+  await page.evaluate((token) => localStorage.setItem("access_token", token), access_token);
   await page.context().storageState({ path: STORAGE });
 });
 ```
@@ -371,7 +371,7 @@ Y verifica que `tsconfig.json` incluya las carpetas nuevas:
 - [ ] Puedes explicar worker fixture vs test fixture con un ejemplo concreto.
 - [ ] Sabes generar data única por worker con `uniqueEmail(info)`.
 - [ ] Puedes mockear una respuesta con `page.route()` registrándolo **antes** del navigate.
-- [ ] Completaste `admin.setup.ts` y un project paralelo `ui-admin-chromium`.
+- [ ] Resolviste el login negativo con `locked_out_user` (error exacto `Invalid credentials`) renunciando al badge heredado con `test.use({ storageState: undefined })`.
 
 ---
 

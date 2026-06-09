@@ -23,62 +23,53 @@ Si haces `git add .` aquí, **commiteas todo eso al historial** — incluyendo s
 
 ---
 
-En un repo de Playwright, hay carpetas y archivos que **nunca** deben subirse:
+En un repo de Playwright **completo** (el que tendrás al final del curso), estos son todos los archivos y carpetas que **nunca** deben subirse. Es tu mapa de referencia — pero ojo: la mayoría aún **no existe** en tu carpeta. En M00 solo necesitas el subconjunto mínimo (`node_modules/`, `.env`); el resto se cubre en M01/M04 cuando esas carpetas nacen.
 
-| No commitear | Por qué |
-|---|---|
-| `node_modules/` | Pesa cientos de MB; se reinstala con `pnpm install` |
-| `.env` | Contiene secretos (credenciales, tokens) |
-| `.auth/` | `storageState` con sesiones autenticadas |
-| `playwright-report/` | HTML report que se regenera en cada corrida |
-| `test-results/` | Screenshots, videos, traces de fallos |
-| `blob-report/`, `traces/` | Artefactos intermedios |
-| `*.log`, `.DS_Store` | Ruido del sistema operativo y procesos |
+| No commitear | Por qué | Nace en |
+|---|---|---|
+| `node_modules/` | Pesa cientos de MB; se reinstala con `pnpm install` | M01 (`pnpm install`) |
+| `.env` | Contiene secretos (credenciales, tokens) | M01 |
+| `.auth/` | `storageState` con sesiones autenticadas | M04 (`auth.setup.ts`) |
+| `playwright-report/` | HTML report que se regenera en cada corrida | M01 (1ª corrida) |
+| `test-results/` | Screenshots, videos, traces de fallos | M01 (1er fallo) |
+| `blob-report/`, `traces/` | Artefactos intermedios | M06 (CI) |
+| `*.log`, `.DS_Store` | Ruido del sistema operativo y procesos | — |
 
-## 3.1 Crear el `.gitignore`
+## 3.1 Crear un `.gitignore` mínimo (el definitivo llega en M01)
 
-En la **raíz** de tu repo, crea un archivo llamado `.gitignore` con este contenido (es el mismo que usa este curso):
+> 🎯 **Secuencia importante:** en M00 creas un `.gitignore` **mínimo** — lo justo para que tu primer commit del proyecto no arrastre secretos ni dependencias. El `.gitignore` **definitivo y completo** se consolida en **M01**: cuando corras `pnpm create playwright`, el installer trae su propio `.gitignore` (con `/test-results/`, `/playwright-report/`, `/playwright/.auth/`, etc.) y en M01 solo le **añades** `.env` y `.auth/`. **No dupliques aquí la lista final** — la armas una vez, bien, en M01.
+
+En la **raíz** de `playwright_architecture`, crea un archivo llamado exactamente `.gitignore` (sin extensión) con este contenido mínimo:
 
 ```gitignore
-# Dependencias
+# Dependencias (cientos de MB, se reinstalan con pnpm install)
 node_modules/
 
-# Reportes y artefactos generados por Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-traces/
-
-# Variables de entorno y secretos
+# Variables de entorno y secretos (¡nunca al repo!)
 .env
 .env.local
-.env.*.local
-
-# Sesiones autenticadas (storageState)
-.auth/
-
-# Sistema operativo y editores
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Logs
-*.log
 ```
+
+Estas dos líneas cubren los dos riesgos reales que ya tienes hoy: `node_modules/` (peso) y `.env` (secretos). Lo demás (`test-results/`, `playwright-report/`, `.auth/`) todavía **no existe** en tu carpeta — esas carpetas nacen en M01/M04, y allí el installer + tú las cubrirán.
 
 > 💡 Compromete `.gitignore` en tu **primer commit**, antes de `pnpm install`. Si ya instalaste y `node_modules/` quedó trackeado, sácalo con: `git rm -r --cached node_modules/` y luego commitea.
 
 ## 3.2 Verificar que funciona
 
+La única forma de confiar en un `.gitignore` es probarlo: crea un `.env` de prueba y comprueba que **desaparece** de la lista de untracked.
+
 ```bash
+$ echo "API_TOKEN=supersecreto" > .env
 $ git status
 On branch main
-nothing to commit, working tree clean
+
+Untracked files:
+        .gitignore        ← este SÍ lo versionamos
+
+# .env NO aparece → .gitignore está funcionando
 ```
 
-Si después de `pnpm install` ves esto (en lugar de `node_modules/` como untracked), tu `.gitignore` está bien configurado.
+Más adelante, cuando corras `pnpm install`, `node_modules/` tampoco aparecerá como untracked. Esa es la señal de que tu `.gitignore` está bien configurado.
 
 ## 3.3 Caso típico: te metiste el `.env` por error
 

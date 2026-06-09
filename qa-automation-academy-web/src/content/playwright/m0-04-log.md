@@ -63,7 +63,7 @@ Una línea por commit. Perfecto para revisar rápido qué se hizo esta semana.
 $ git log -p tests/checkout.spec.ts
 ```
 
-`-p` agrega el **diff** de cada commit que tocó ese archivo. Útil para responder "¿quién cambió este selector y por qué?".
+`-p` agrega el **diff** (las líneas `-`/`+` de la sección 2) de cada commit que tocó ese archivo, con autor y fecha. Es la pieza que cierra la pregunta de QA: "¿**quién** cambió este selector, **cuándo** y **a qué**?".
 
 ## 4.4 Otras variantes que vas a querer cuando duela
 
