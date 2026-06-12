@@ -9,7 +9,7 @@ El reto tiene **2 partes** independientes, ambas con TODOs detallados:
 
 Cada TODO sigue **Qué hacer / Pista / Cómo verificar**.
 
-> **Nota para el alumno:** la PARTE A te enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** es un setup project con `storageState` (no hay badge que guardar): es un **test de UI de autenticación fallida**. **(b)** Este spec corre bajo `ui-chromium`, que ya hereda el badge de `standard_user`; para ver el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo inverso al de la sección `storageState por project`.
+> **Nota para el alumno:** la PARTE A te enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** es un setup project con `storageState` (no hay badge que guardar): es un **test de UI de autenticación fallida**. **(b)** Este spec corre bajo `ui-chromium`, que ya hereda el badge de `standard_user`; para ver el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo inverso al `storageState` por project que configuraste en el Paso 3 de la guía.
 
 > El patrón de setup project **sí** escala a un 2º rol, pero solo a personas que **autentican**. Si algún día necesitas un segundo `storageState` autenticado, copia `auth.setup.ts` apuntando a una persona que **sí** entra (`problem_user` o `performance_glitch_user`), guarda en `.auth/<persona>.json` y declara su project con `dependencies: ["setup"]`. `locked_out_user` no sirve para eso justamente porque nunca llega a generar un badge — por eso aquí es un caso de **aserción de error**, no de setup.
 
@@ -44,8 +44,7 @@ Cada TODO sigue **Qué hacer / Pista / Cómo verificar**.
 //   ✔ Conoces fixtures/omnipizza.ts y sabes qué hace `dependencies`
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-04-setup-fixtures/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-04-setup-fixtures/reto.spec.ts --headed --project=ui-chromium
 //
 //   ⚠️ PARTE A corre bajo `ui-chromium`, que HEREDA el badge de
 //      standard_user (.auth/user.json). Para VER el formulario de
@@ -67,7 +66,7 @@ import { test, expect } from "../fixtures/omnipizza";
 // la app te lleva directo a /catalog y NUNCA verás el formulario de
 // login que queremos probar. `storageState: undefined` lo desactiva
 // SOLO para este describe (es el reverso del "storageState por
-// project").
+// project" que configuraste en el paso 3.1 del README).
 test.describe("Reto M04 — PARTE A: login negativo (locked_out_user)", () => {
   test.use({ storageState: undefined });
 
@@ -120,8 +119,9 @@ test.describe("Reto M04 — PARTE A: login negativo (locked_out_user)", () => {
     //
     // 💡 Nota conceptual: locked_out_user NUNCA autentica, así que no hay
     //    storageState que guardar — por eso esto es un test de auth
-    //    fallida, NO un setup project. El patrón de setup project sí escala
-    //    a un 2º rol AUTENTICADO: copia auth.setup.ts apuntando a una persona
+    //    fallida, NO un setup project. El patrón de setup project (la
+    //    PARTE A original montaba un admin INEXISTENTE) sí escala a un
+    //    2º rol AUTENTICADO: copia auth.setup.ts apuntando a una persona
     //    que SÍ entra (problem_user / performance_glitch_user), guarda en
     //    .auth/<persona>.json y declara su project con dependencies:["setup"].
     expect(true).toBe(true);

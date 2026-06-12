@@ -53,7 +53,8 @@ nothing to commit (create/copy files and use "git add" to track)
 
 > 💡 **¿Y si el proyecto ya existe en GitHub?** En equipos reales muchas veces clonas en vez de iniciar de cero:
 > ```bash
-> $ git clone git@github.com:miempresa/qa-playwright.git && cd qa-playwright
+> $ git clone git@github.com:miempresa/qa-playwright.git
+> $ cd qa-playwright
 > ```
 > `git clone` hace `init` + descarga el historial completo + configura el remoto, todo de un golpe. Para este curso usamos `git init` porque el proyecto nace contigo.
 

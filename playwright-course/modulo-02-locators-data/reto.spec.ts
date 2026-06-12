@@ -15,8 +15,7 @@
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-chromium
 //
 //   (o con UI mode:)
 //   pnpm test:ui

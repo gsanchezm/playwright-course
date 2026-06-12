@@ -418,10 +418,14 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
       <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
       <li><a href="#qué-aprenderás">¿Qué aprenderás?</a></li>
       <li><a href="#jerarquía-de-locators-regla-del-curso">Jerarquía de locators (regla del curso)</a></li>
+      <li><a href="#getbyrole-en-omnipizza-dónde-sí-y-dónde-no">getByRole en OmniPizza: dónde SÍ y dónde NO</a></li>
+      <li><a href="#combinadores-y-filtros-del-muchos-elementos-a-exactamente-este">Combinadores y filtros: del &quot;muchos elementos&quot; a &quot;exactamente este&quot;</a></li>
       <li><a href="#conceptos-jit">Conceptos JIT</a></li>
+      <li><a href="#codegen-deja-que-playwright-descubra-los-locators-por-ti">🎥 Codegen: deja que Playwright DESCUBRA los locators por ti</a></li>
       <li><a href="#utility-types-partialrecordcurrency-string-desglosado">🧩 Utility types: Partial&lt;Record&lt;Currency, string&gt;&gt; desglosado</a></li>
+      <li><a href="#semilla-conceptual-y-si-hubiera-más-de-un-ambiente-múltiples-env">🌱 Semilla conceptual: ¿y si hubiera más de un ambiente? (múltiples .env)</a></li>
       <li><a href="#paso-a-paso">Paso a paso</a></li>
-      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</a></li>
       <li><a href="#outcome-esperado">Outcome esperado</a></li>
     </ol>
   </details>
@@ -434,22 +438,23 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Locators robustos + data-driven con JSON
       </p>
     </header>
+<h1 id="módulo-02-locators-data-tipada">Módulo 02 — Locators + Data tipada</h1>
 <p><strong>Duración estimada:</strong> 45-60 min
-<strong>Pieza que suma al framework:</strong> <code>types/omnipizza.d.ts</code> + <code>data/users.json</code> + <code>data/markets.json</code>. El smoke de M01 se parametriza con <code>test.each()</code> contra los 4 mercados.</p>
+<strong>Pieza que suma al framework:</strong> <code>types/omnipizza.d.ts</code> + <code>data/users.json</code> + <code>data/markets.json</code>. El smoke de M01 se parametriza con un <strong>bucle <code>for...of</code> que registra un <code>test()</code> por mercado</strong> contra los 4 mercados.</p>
 <hr>
 <h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
 <p>Aparecen <strong>dos carpetas nuevas</strong>: <code>data/</code> (los datasets) y <code>types/</code> (los contratos que validan esos datasets). El JSON deja de ser &quot;string suelto&quot; y pasa a ser <strong>dato tipado</strong>.</p>
 <div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">playwright-course/
 ├── data/                          ← 🆕 datasets de prueba
 │   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, currency)
-│   └── users.json                 ← 🆕 standard_user, admin_user, ...
+│   └── users.json                 ← 🆕 5 personas reales: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 ├── types/                         ← 🆕 contratos del dominio
 │   ├── index.ts                   ← 🆕 barrel: re-exporta lo de omnipizza
 │   └── omnipizza.d.ts             ← 🆕 User, Market, Pizza, Currency, CountryCode
 ├── modulo-01-smoke-feo/           ← (sin cambios)
 ├── modulo-02-locators-data/       ← 🆕 ESTE MÓDULO
 │   ├── README.md
-│   ├── ejemplo.spec.ts            ← 🆕 test.each por mercado + lookup map
+│   ├── ejemplo.spec.ts            ← 🆕 for...of por mercado + lookup map
 │   └── reto.spec.ts               ← 🆕 añadir 5º mercado (CA) sin tocar el spec
 ├── .env, .env.example, .gitignore
 ├── package.json, tsconfig.json
@@ -492,15 +497,18 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 </aside>
 <hr>
 <h2 id="analogía-de-apertura">Analogía de apertura</h2>
-<p>Un tester manual siempre trae consigo una <strong>hoja de datos de prueba</strong> (usuarios, ambientes, mercados). En este módulo construimos esa hoja como <strong>JSON tipado</strong> y la conectamos al TC con <code>test.each()</code> — un mismo caso ejecutado con N sets de datos distintos, como una matriz de regresión.</p>
+<p>Un tester manual siempre trae consigo una <strong>hoja de datos de prueba</strong> (usuarios, ambientes, mercados). En este módulo construimos esa hoja como <strong>JSON tipado</strong> y la conectamos al TC con un <strong>bucle <code>for...of</code></strong> que <strong>registra un <code>test()</code> por cada fila de datos</strong> — un mismo caso de prueba ejecutado con N sets distintos, como una matriz de regresión.</p>
+<aside class="callout callout--warn"><p>⚠️ <strong>Ojo con <code>test.each()</code>:</strong> si vienes de Jest o Vitest, ahí existe <code>test.each()</code> para parametrizar. <strong>Playwright NO lo tiene.</strong> En Playwright parametrizas con un <code>for</code> normal de JavaScript que recorre el array y llama a <code>test()</code> adentro — cada vuelta del bucle <strong>registra</strong> un caso independiente. No es magia del runner: es un <code>for</code> y un <code>test()</code>.</p>
+</aside>
 <hr>
 <h2 id="qué-aprenderás">¿Qué aprenderás?</h2>
 <ol>
-<li><strong>Jerarquía de locators</strong> con criterios de cuándo bajar nivel.</li>
-<li><strong>Filtros y combinadores:</strong> <code>.filter()</code>, <code>.nth()</code>, <code>locator.all()</code>.</li>
+<li><strong>Jerarquía de locators</strong> con criterios de cuándo bajar nivel — y por qué <code>getByRole</code> es preferencia, no ley (caso real: el login de OmniPizza).</li>
+<li><strong>Filtros y combinadores:</strong> <code>.filter({ hasText })</code>, <code>.nth()</code>, <code>.first()</code>, <code>.and()</code>, <code>.or()</code>, <code>getByRole(...).filter(...)</code> y <strong>scoping</strong> dentro de una card para botones icon-only.</li>
+<li><strong>Codegen</strong> (<code>pnpm exec playwright codegen</code>) como herramienta para <strong>descubrir</strong> locators role-first.</li>
 <li><strong>Iterar locators</strong> con <code>for...of</code> para recorrer listas reales (pizzas del catálogo).</li>
 <li><strong><code>interface</code> como contrato:</strong> User, Market, Pizza — fallan en compile-time si el JSON no cumple.</li>
-<li><strong><code>test.each&lt;T&gt;()</code></strong> para data-driven.</li>
+<li><strong>Data-driven con <code>for...of</code> + <code>test()</code></strong> — registrar N casos desde un array de datos (el patrón que en Jest/Vitest harías con <code>test.each</code>, aquí es un <code>for</code>).</li>
 <li><strong><code>import type</code></strong> — traer sólo la forma, no el código.</li>
 </ol>
 <hr>
@@ -518,12 +526,12 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <tbody><tr>
 <td>1️⃣</td>
 <td><code>getByRole</code></td>
-<td>Casi siempre. Es accesible y semántico.</td>
+<td><strong>Preferencia por defecto.</strong> Accesible y semántico.</td>
 <td><code>page.getByRole(&#39;button&#39;, { name: &#39;Pagar&#39; })</code></td>
 </tr>
 <tr>
 <td>2️⃣</td>
-<td><code>getByLabel</code> / <code>getByText</code></td>
+<td><code>getByLabel</code> / <code>getByText</code> / <code>getByPlaceholder</code></td>
 <td>Formularios y contenido visible.</td>
 <td><code>page.getByLabel(&#39;Email&#39;)</code></td>
 </tr>
@@ -531,7 +539,7 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <td>3️⃣</td>
 <td><code>getByTestId</code></td>
 <td>Cuando el DOM no coopera y el dev cooperó.</td>
-<td><code>page.getByTestId(&#39;pizza-card-123&#39;)</code></td>
+<td><code>page.getByTestId(&#39;login-button-desktop&#39;)</code></td>
 </tr>
 <tr>
 <td>4️⃣</td>
@@ -546,7 +554,181 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <td><code>page.locator(&#39;//button[@data-ready]&#39;)</code></td>
 </tr>
 </tbody></table>
-<p><strong>Importante:</strong> CSS y XPath <strong>no están prohibidos</strong>. Están al final porque son frágiles, no porque sean inválidos. En OmniPizza usamos CSS con prefijo (<code>[data-testid^=&quot;pizza-card-&quot;]</code>) para los testids dinámicos — es legítimo.</p>
+<p><strong><code>getByRole</code> es una PREFERENCIA, no una ley.</strong> La regla dice &quot;empieza por <code>getByRole</code> y baja de nivel sólo cuando algo te obliga&quot;. El &quot;algo que te obliga&quot; no es raro: una app <strong>mal instrumentada</strong> (sin labels, con inputs anónimos, con botones icon-only) te empuja al nivel 2/3 — y reconocer cuándo pasa es una habilidad real de QA, no una derrota. Lo verás en vivo más abajo: el <strong>catálogo</strong> de OmniPizza está bien instrumentado y vives en <code>getByRole</code>; el <strong>login</strong> no lo está y bajas a <code>getByTestId</code> sin culpa.</p>
+<p><strong>CSS y XPath no están prohibidos.</strong> Están al final porque son frágiles, no porque sean inválidos. En OmniPizza usamos CSS con prefijo (<code>[data-testid^=&quot;pizza-card-&quot;]</code>) para los testids dinámicos — es legítimo.</p>
+<hr>
+<h2 id="getbyrole-en-omnipizza-dónde-sí-y-dónde-no">getByRole en OmniPizza: dónde SÍ y dónde NO</h2>
+<p>Esta es la lección que ningún tutorial de juguete te da: <strong>la misma app puede ser un paraíso de <code>getByRole</code> en una pantalla y un pantano en otra.</strong> OmniPizza lo demuestra. (Todos estos selectores están verificados contra el DOM real y viven como chuleta ejecutable en el <code>test.skip</code> de <code>ejemplo.spec.ts</code>, Paso 8.)</p>
+<h3 id="catálogo-catalog-bien-instrumentado-getbyrole-manda">✅ Catálogo (<code>/catalog</code>) — bien instrumentado, <code>getByRole</code> manda</h3>
+<table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Locator role-first</th>
+<th>Por qué funciona</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Nombre de pizza</td>
+<td><code>getByRole(&quot;heading&quot;, { name: &quot;Pepperoni&quot;, level: 3 })</code></td>
+<td>Cada pizza es un <code>&lt;h3&gt;</code> con texto visible = nombre accesible</td>
+</tr>
+<tr>
+<td>Filtro de categoría</td>
+<td><code>getByRole(&quot;button&quot;, { name: &quot;Populares&quot; })</code></td>
+<td>Botón con texto → rol <code>button</code> + nombre accesible</td>
+</tr>
+<tr>
+<td>Enlace de menú</td>
+<td><code>getByRole(&quot;link&quot;, { name: &quot;Catálogo&quot; })</code></td>
+<td><code>&lt;a&gt;</code> con texto → rol <code>link</code></td>
+</tr>
+<tr>
+<td>Buscador</td>
+<td><code>getByRole(&quot;textbox&quot;, { name: &quot;Busca tu pizza favorita...&quot; })</code></td>
+<td><code>&lt;input&gt;</code> cuyo nombre accesible sale del <strong>placeholder</strong> (sí matchea aquí)</td>
+</tr>
+</tbody></table>
+<h3 id="login-mal-instrumentado-getbyrole-en-los-inputs-falla">❌ Login — mal instrumentado, <code>getByRole</code> en los inputs FALLA</h3>
+<table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Lo que parece obvio</th>
+<th>Lo que pasa</th>
+<th>Lo que SÍ funciona</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Input usuario</td>
+<td><code>getByRole(&quot;textbox&quot;, { name: &quot;Username&quot; })</code></td>
+<td>❌ no matchea — &quot;Username&quot; es texto visible (un <code>&lt;div&gt;</code>), no el nombre accesible</td>
+<td><code>getByTestId(&quot;username-desktop&quot;)</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>getByLabel(&quot;Username&quot;)</code></td>
+<td>❌ no hay <code>&lt;label for&gt;</code> ni <code>aria-label</code></td>
+<td>(o <code>getByPlaceholder(&quot;standard_user&quot;)</code>)</td>
+</tr>
+<tr>
+<td>Input password</td>
+<td><code>getByLabel(&quot;Password&quot;)</code></td>
+<td>❌ mismo problema</td>
+<td><code>getByTestId(&quot;password-desktop&quot;)</code></td>
+</tr>
+<tr>
+<td>Botón de login</td>
+<td>—</td>
+<td>✅ <strong>&quot;Sign In&quot; SÍ tiene rol</strong></td>
+<td><code>getByRole(&quot;button&quot;, { name: &quot;Sign In&quot; })</code></td>
+</tr>
+<tr>
+<td>Bandera de mercado</td>
+<td><code>getByRole(&quot;button&quot;, { name: &quot;México&quot; })</code></td>
+<td>❌ el nombre accesible es el <strong>emoji</strong> 🇲🇽, no el país</td>
+<td><code>getByTestId(&quot;market-MX&quot;)</code></td>
+</tr>
+<tr>
+<td>Add-to-cart (catálogo)</td>
+<td><code>getByRole(&quot;button&quot;, { name: &quot;Agregar&quot; })</code></td>
+<td>❌ es <strong>icon-only</strong> sin texto → sin nombre accesible</td>
+<td>scope en la card → <code>card.getByRole(&quot;button&quot;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>La moraleja:</strong> el nombre accesible de un input mal etiquetado <strong>es su placeholder, no el texto que ves al lado.</strong> <code>getByRole(&quot;textbox&quot;, { name: &quot;Username&quot; })</code> y <code>getByLabel(&quot;Username&quot;)</code> fallan porque &quot;Username&quot; es un <code>&lt;div&gt;</code> decorativo, no un <code>&lt;label for&gt;</code>. Por eso el login del ejemplo usa <code>getByTestId(...)</code>: no es pereza, es la respuesta correcta a un DOM que no coopera. El botón <strong>&quot;Sign In&quot;</strong>, en cambio, sí expone su rol — así que ahí SÍ usamos <code>getByRole</code>. <strong>Misma pantalla, dos niveles de jerarquía distintos, según qué cooperó.</strong></p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre el catálogo con <code>pnpm exec playwright codegen &lt;url&gt;</code> (ver sección Codegen abajo) y haz clic en una pizza: Codegen genera <code>getByRole(&quot;heading&quot;, { name: &quot;Pepperoni&quot; })</code>. Luego haz clic en el input de usuario del login: Codegen NO genera <code>getByRole</code> — cae a <code>getByTestId</code> o un CSS. Esa diferencia, en vivo, prueba que la calidad del locator depende de cómo el dev instrumentó el DOM, no de tu disciplina.</p>
+</aside>
+<hr>
+<h2 id="combinadores-y-filtros-del-quotmuchos-elementosquot-a-quotexactamente-estequot">Combinadores y filtros: del &quot;muchos elementos&quot; a &quot;exactamente este&quot;</h2>
+<p>Un <code>getByRole(&quot;heading&quot;, { level: 3 })</code> en el catálogo matchea <strong>todas</strong> las pizzas — eso es un <em>locator de muchos</em>. Para actuar sobre uno necesitas <strong>estrechar</strong>. Playwright te da un puñado de métodos encadenables que convierten un locator amplio en uno preciso, <strong>sin</strong> bajar a CSS frágil. Son la herramienta que mantiene a <code>getByRole</code> vivo incluso en listas repetidas. Todos están como chuleta ejecutable en el <code>test.skip</code> del catálogo (Paso 8).</p>
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Qué hace</th>
+<th>Ejemplo OmniPizza</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.first()</code></td>
+<td>El <strong>primer</strong> match (perezoso, sin <code>await</code>).</td>
+<td><code>pizzaCards.first()</code> → la primera tarjeta</td>
+</tr>
+<tr>
+<td><code>.nth(i)</code></td>
+<td>El match en <strong>índice <code>i</code></strong> (base 0).</td>
+<td><code>pizzaCards.nth(2)</code> → la tercera tarjeta</td>
+</tr>
+<tr>
+<td><code>.filter({ hasText })</code></td>
+<td>Sólo los que <strong>contienen</strong> ese texto.</td>
+<td><code>pizzaCards.filter({ hasText: &quot;Pepperoni&quot; })</code></td>
+</tr>
+<tr>
+<td><code>getByRole(...).filter(...)</code></td>
+<td>Estrecha un locator de role por texto.</td>
+<td><code>getByRole(&quot;heading&quot;, { level: 3 }).filter({ hasText: &quot;Quesos&quot; })</code> → &quot;Cuatro Quesos&quot;</td>
+</tr>
+<tr>
+<td><code>.filter({ has })</code></td>
+<td>Sólo los que <strong>contienen otro locator</strong> dentro.</td>
+<td><code>card.filter({ has: page.getByText(&quot;Vegetariana&quot;) })</code></td>
+</tr>
+<tr>
+<td><code>.and(otro)</code></td>
+<td>Cumple <strong>ambas</strong> condiciones a la vez.</td>
+<td><code>getByRole(&quot;button&quot;).and(page.getByTestId(&quot;market-MX&quot;))</code></td>
+</tr>
+<tr>
+<td><code>.or(otro)</code></td>
+<td>Cumple <strong>una u otra</strong> (fallback resiliente).</td>
+<td><code>getByText(&quot;Bienvenido&quot;).or(getByText(&quot;Welcome&quot;))</code></td>
+</tr>
+</tbody></table>
+<p><strong><code>.and()</code> y <code>.or()</code> reciben otro locator, no un string.</strong> <code>.or()</code> es el truco para <strong>UIs que cambian de idioma o estado</strong>: &quot;espera el saludo en español <em>o</em> en inglés, lo que aparezca primero&quot;. <code>.and()</code> exige que el mismo elemento satisfaga dos locators — útil para desambiguar (<code>el button que ADEMÁS tiene este testid</code>).</p>
+<h3 id="scoping-cómo-localizar-un-botón-icon-only-dentro-de-su-card">Scoping: cómo localizar un botón icon-only dentro de su card</h3>
+<p>El <strong>add-to-cart</strong> de cada pizza es un botón <strong>sin texto</strong> (sólo un ícono). <code>page.getByRole(&quot;button&quot;, { name: &quot;Agregar&quot; })</code> falla: no tiene nombre accesible. La solución correcta <strong>no</strong> es bajar a un CSS gigante — es <strong>acotar el contexto</strong>: primero localizas la card de <em>esa</em> pizza, y dentro de ella pides el botón. El scope reduce &quot;todos los botones de la página&quot; a &quot;el único botón de esta card&quot;.</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// 1) Acota a la card de la pizza que te interesa (filter por su &lt;h3&gt;)
+const card = page
+  .locator('[data-testid^="pizza-card-"]')
+  .filter({ hasText: "Pepperoni" });
+
+// 2) Dentro de ESE scope, el botón ya es inequívoco
+await card.getByRole("button").click();          // el add-to-cart de Pepperoni
+// (o por testid si el dev lo puso): card.getByTestId("add-to-cart")</code></pre></div>
+<p><strong>Por qué importa:</strong> <code>card.getByRole(&quot;button&quot;)</code> <strong>encadena</strong> el segundo locator dentro del primero — Playwright busca el botón <em>sólo</em> en el subárbol de la card, no en todo el <code>&lt;body&gt;</code>. Es el patrón que rescata <code>getByRole</code> cuando hay N elementos idénticos repetidos: no desambiguas por un selector más feo, desambiguas por <strong>contexto</strong>.</p>
+<h3 id="getbytext-vs-getbyrole-leer-texto-vs-accionar-un-elemento"><code>getByText</code> vs <code>getByRole</code>: leer texto vs accionar un elemento</h3>
+<p>Es el error conceptual #1 del módulo. Ambos &quot;encuentran texto&quot;, pero sirven para cosas distintas:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>getByText(&quot;Username&quot;)</code></th>
+<th><code>getByRole(&quot;textbox&quot;, { name: &quot;...&quot; })</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Devuelve</strong></td>
+<td>El <strong>nodo que contiene</strong> ese texto (aquí, un <code>&lt;div&gt;</code> decorativo)</td>
+<td>El <strong>input</strong> sobre el que vas a escribir</td>
+</tr>
+<tr>
+<td><strong>Sirve para</strong></td>
+<td><strong>Aserciones</strong> de contenido visible (<code>expect(...).toBeVisible()</code>)</td>
+<td><strong>Acciones</strong> (<code>.fill()</code>, <code>.click()</code>)</td>
+</tr>
+<tr>
+<td><strong>En el login</strong></td>
+<td>✅ encuentra el <code>&lt;div&gt;</code> &quot;Username&quot;… pero <code>.fill()</code> ahí no escribe nada</td>
+<td>❌ falla por el nombre accesible (ver tabla arriba) → usa <code>getByTestId</code></td>
+</tr>
+</tbody></table>
+<p>Regla mental: <strong>todos los <code>getBy*</code> te devuelven el ELEMENTO, no su texto.</strong> Usa <code>getByText</code> para <em>verificar que algo se ve</em>; usa <code>getByRole</code>/<code>getByTestId</code> para <em>interactuar</em>. Si intentas <code>.fill()</code> sobre un <code>getByText</code>, escribes sobre un <code>&lt;div&gt;</code> y el test no hace lo que crees.</p>
+<blockquote><p>🔷 <strong>TypeScript — encadenamiento de métodos (fluent API)</strong>
+<code>page.locator(...).filter(...).getByRole(...)</code> es una <strong>cadena fluida</strong>: cada método devuelve otro <code>Locator</code>, así que puedes seguir encadenando. TS te da autocompletado en cada eslabón porque conoce el tipo de retorno (<code>Locator</code>) en todo momento. Si un método devolviera <code>Promise&lt;Locator&gt;</code> (como <code>.all()</code>), la cadena se cortaría hasta que hagas <code>await</code>.
+📚 Es la misma idea de métodos que retornan <code>this</code>/un tipo encadenable que viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — classes</a>. Aquí lo aplicas para estrechar locators sin variables intermedias.</p>
+</blockquote>
 <hr>
 <h2 id="conceptos-jit">Conceptos JIT</h2>
 <table>
@@ -561,8 +743,8 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <td>Contrato Swagger: un User DEBE tener username, password, role</td>
 </tr>
 <tr>
-<td><code>test.each&lt;Market&gt;(markets)(&#39;...&#39;, ...)</code></td>
-<td>Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones</td>
+<td><code>for (const market of markets) { test(...) }</code></td>
+<td>Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones (un <code>test()</code> registrado por vuelta)</td>
 </tr>
 <tr>
 <td><code>import type { User }</code></td>
@@ -577,8 +759,20 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <td>Filtrar por componente en Jira</td>
 </tr>
 <tr>
-<td><code>.nth(0)</code></td>
+<td><code>.nth(0)</code> / <code>.first()</code></td>
 <td>La primera fila de resultados</td>
+</tr>
+<tr>
+<td><code>.and()</code> / <code>.or()</code></td>
+<td>&quot;el botón que ADEMÁS es X&quot; / &quot;el saludo en ES O en EN&quot; (fallback)</td>
+</tr>
+<tr>
+<td><code>card.getByRole(&#39;button&#39;)</code></td>
+<td>Scoping: buscar dentro de un contenedor, no en toda la página</td>
+</tr>
+<tr>
+<td><code>getByText</code> vs <code>getByRole</code></td>
+<td>Leer/aseverar texto visible vs accionar el elemento (escribir/clic)</td>
 </tr>
 <tr>
 <td><code>Record&lt;K, V&gt;</code></td>
@@ -593,6 +787,29 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 <td>Salir temprano en vez de anidar <code>if/else</code></td>
 </tr>
 </tbody></table>
+<hr>
+<h2 id="codegen-deja-que-playwright-descubra-los-locators-por-ti">🎥 Codegen: deja que Playwright DESCUBRA los locators por ti</h2>
+<p>Hasta aquí escribiste los locators a mano leyendo la chuleta. Pero existe una herramienta que <strong>graba tus clics y genera el código de los locators automáticamente</strong>, respetando la jerarquía (role-first). Se llama <strong>Codegen</strong> y es, en la práctica, <strong>el inspector de elementos del mundo Playwright</strong>: tú interactúas con la página real, y Playwright te escribe el locator que usaría — empezando por <code>getByRole</code>, bajando de nivel sólo cuando el DOM no coopera (exactamente la regla de este módulo).</p>
+<aside class="callout callout--learn-more"><p>📚 Doc oficial: <a href="https://playwright.dev/docs/codegen">https://playwright.dev/docs/codegen</a></p>
+</aside>
+<p><strong>Cómo se relaciona con la jerarquía:</strong> Codegen aplica internamente la misma prioridad que enseñamos (<code>getByRole</code> → <code>getByLabel</code>/<code>getByText</code> → <code>getByTestId</code> → CSS). Por eso, cuando grabas en el <strong>catálogo</strong> de OmniPizza, te genera <code>getByRole(&quot;heading&quot;, { name: &quot;Pepperoni&quot; })</code>; pero cuando grabas en el <strong>login</strong> (mal instrumentado), te genera <code>getByTestId(&quot;username-desktop&quot;)</code> o un CSS — porque ahí no hay rol ni label que ofrecer. <strong>Codegen es un buen espejo de la calidad del DOM.</strong></p>
+<aside class="callout callout--warn"><p>⚠️ <strong>Advertencia (por qué el humano endurece lo que Codegen genera):</strong> Codegen es un punto de partida, <strong>no</strong> la última palabra. En DOMs sucios genera locators <strong>frágiles</strong> — <code>nth-child</code> posicionales, textos que cambian con el idioma, o un <code>getByText</code> sobre un <code>&lt;div&gt;</code> decorativo en vez del input real. <strong>Tu trabajo:</strong> tomar lo grabado y <em>endurecerlo</em> — preferir un testid estable a un <code>nth-child</code>, acotar con scoping (<code>card.getByRole(...)</code>) en vez de un selector global, y borrar los pasos de ruido (clics accidentales). Codegen descubre; el humano decide.</p>
+</aside>
+<p><strong>C.1 — Graba una sesión contra OmniPizza</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro Codegen apuntando a la URL del frontend.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec playwright codegen https://omnipizza-frontend.onrender.com</code></pre></div>
+Se abre un navegador + la ventana <strong>Playwright Inspector</strong>. Hago login (clic en bandera → usuario → password → &quot;Sign In&quot;) y luego clic en una pizza del catálogo.</li>
+<li><strong>Por qué:</strong> ver cómo Playwright traduce cada acción a un locator role-first me enseña a &quot;pensar en roles&quot; sin memorizar la API. Es la forma más rápida de <strong>descubrir</strong> el locator correcto de un elemento que no conozco.</li>
+<li><strong>Cómo verifico:</strong> el panel del Inspector va mostrando líneas como <code>await page.getByTestId(&#39;username-desktop&#39;).fill(&#39;standard_user&#39;)</code> y <code>await page.getByRole(&#39;heading&#39;, { name: &#39;Pepperoni&#39; }).click()</code> a medida que actúo.</li>
+</ul>
+<p><strong>C.2 — Copia, endurece y descarta el ruido</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> copio del Inspector sólo los locators que necesito, reemplazo los frágiles (un <code>nth-child</code> por un testid; un <code>getByText</code> decorativo por el input real) y aplico scoping donde haya repetición.</li>
+<li><strong>Por qué:</strong> el código grabado incluye pasos accidentales y a veces selectores posicionales que se romperán cuando cambie el orden de las pizzas. Endurecerlo es lo que separa un script grabado de un test mantenible.</li>
+<li><strong>Cómo verifico:</strong> el locator final usa el nivel más alto posible de la jerarquía (role &gt; testid &gt; CSS) y sobrevive si reordeno la lista o cambio el idioma de la UI.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> Codegen es también el mejor antídoto contra la parálisis (&quot;¿qué locator uso?&quot;). Reto en vivo: pide al grupo que adivine qué locator generará Codegen para el botón add-to-cart (icon-only). Spoiler: como no tiene nombre accesible, Codegen cae a un CSS/posicional — y ahí enseñas a <strong>endurecerlo</strong> con scoping <code>card.getByRole(&quot;button&quot;)</code>. Codegen expone el problema; el humano aporta el patrón.</p>
+</aside>
 <hr>
 <h2 id="utility-types-partialltrecordltcurrency-stringgtgt-desglosado">🧩 Utility types: <code>Partial&lt;Record&lt;Currency, string&gt;&gt;</code> desglosado</h2>
 <p>En <code>ejemplo.spec.ts</code> aparece esta declaración:</p>
@@ -691,32 +908,124 @@ await expect(page.locator("body")).toContainText(symbol);</code></pre></div>
 <aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este es un buen momento para hacer la pregunta inversa: <em>&quot;¿qué pasa si cambio <code>Partial&lt;Record&lt;...&gt;&gt;</code> a <code>Record&lt;...&gt;</code> en el spec?&quot;</em>. Respuesta: TS rompe la compilación pidiendo las 3 entradas faltantes (<code>USD</code>, <code>CHF</code>, <code>CAD</code>). Eso demuestra <strong>en vivo</strong> que <code>Partial</code> no es decorativo.</p>
 </aside>
 <hr>
+<h2 id="semilla-conceptual-y-si-hubiera-más-de-un-ambiente-múltiples-env">🌱 Semilla conceptual: ¿y si hubiera más de un ambiente? (múltiples <code>.env</code>)</h2>
+<p>Hasta ahora el curso usa <strong>un solo <code>.env</code></strong> (lo creaste en M01) cargado con <code>import &quot;dotenv/config&quot;</code> en <code>playwright.config.ts</code>. De ahí salen <code>BASE_URL</code>, <code>API_URL</code>, <code>TEST_USER_*</code> y <code>DEFAULT_COUNTRY</code>. <strong>Para M02 esto sobra</strong> — no toques nada. Pero conviene plantar la semilla de una pregunta que aparece en proyectos reales:</p>
+<blockquote><p><em>&quot;¿Y si OmniPizza tuviera un ambiente de <strong>staging</strong> además del de QA? ¿Mantengo dos <code>.env</code> y los intercambio a mano?&quot;</em></p>
+</blockquote>
+<p><strong>Analogía QA:</strong> es la diferencia entre tener <strong>una sola hoja de datos de prueba</strong> y tener <strong>una pestaña por ambiente</strong> en el mismo Excel. El TC es idéntico; lo que cambia son URLs y credenciales según dónde lo ejecutes.</p>
+<p>El patrón se llama <strong>base + override</strong>: un <code>.env</code> con los defaults compartidos y un <code>.env.&lt;ambiente&gt;</code> que gana encima.</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">.env             ← defaults compartidos (TEST_USER_*, DEFAULT_COUNTRY)
+.env.qa          ← overrides de QA      (BASE_URL, API_URL)
+.env.staging     ← overrides de staging (BASE_URL, API_URL)
+.env.example     ← plantilla versionada (la ÚNICA que se commitea)</code></pre></div>
+<p>Orden de prioridad (quién gana, de menor a mayor):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">.env (defaults)  &lt;  .env.&lt;ambiente&gt;  &lt;  variables ya en process.env (CI / shell)</code></pre></div>
+<p>Esa última regla es la clave de M06: <strong>en CI no usas archivos <code>.env</code></strong> — GitHub Actions inyecta las variables directo vía <code>secrets.*</code> (ya lo anota tu <code>.env.example</code>), y como mandan sobre cualquier archivo, los secrets de CI ganan.</p>
+<table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>¿Múltiples <code>.env</code>?</th>
+<th>Por qué</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Un solo ambiente (M01–M05)</td>
+<td>❌ No</td>
+<td>Un <code>.env</code> + defaults en el config sobra. Complejidad sin beneficio.</td>
+</tr>
+<tr>
+<td>2+ ambientes reales (QA / staging / prod)</td>
+<td>✅ Sí</td>
+<td>Cada uno tiene URLs y credenciales distintas.</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>⚠️ No con archivos</td>
+<td>Se inyectan vía <code>secrets.*</code>, no con <code>.env</code>.</td>
+</tr>
+</tbody></table>
+<p><strong>Regla del curso (coherente con &quot;siente el dolor primero&quot;):</strong> no agregues <code>.env.qa</code> / <code>.env.staging</code> hasta que tengas un <strong>segundo ambiente real</strong>. Antes de eso es arquitectura especulativa. <strong>Para M02 NO toques tu config</strong> — sigue idéntico a M01. Lo que viene a continuación es <strong>ilustrativo y opcional</strong>: enseña <em>cómo se vería</em> la implementación el día que la necesites, para que la semilla no quede en el aire.</p>
+<h3 id="implementación-real-opcional-sólo-cuando-exista-un-2-ambiente">Implementación real (opcional — sólo cuando exista un 2º ambiente)</h3>
+<p>El truco es cargar <code>dotenv</code> <strong>dos veces</strong>: primero el <code>.env</code> base (defaults), luego el <code>.env.&lt;ambiente&gt;</code> con <code>override: true</code> para que <strong>gane</strong> sobre los defaults. La selección del ambiente sale de una variable <code>TEST_ENV</code> (con default <code>&quot;qa&quot;</code>):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — patrón base + override (NO lo apliques hasta tener staging real)
+import { defineConfig } from "@playwright/test";
+import dotenv from "dotenv";
+
+// 1) Defaults compartidos (TEST_USER_*, DEFAULT_COUNTRY).
+dotenv.config({ path: ".env" });
+
+// 2) Overrides del ambiente seleccionado — GANAN sobre el base.
+//    TEST_ENV elige el archivo; default "qa" si no la defines.
+const env = process.env.TEST_ENV ?? "qa";
+dotenv.config({ path: `.env.${env}`, override: true });
+
+export default defineConfig({
+  use: { baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com" },
+  // ...resto igual que M01
+});</code></pre></div>
+<aside class="callout callout--warn"><p>⚠️ <strong><code>override: true</code> es la línea clave.</strong> Sin él, <code>dotenv</code> <strong>no</strong> pisa una variable que ya esté definida (el primer <code>.config</code> gana y el segundo se ignora). Con <code>override: true</code> inviertes la regla para el archivo de ambiente: el <code>.env.staging</code> machaca al <code>.env</code> base. Las variables que ya viven en <code>process.env</code> (shell / CI) siguen mandando sobre ambos archivos — por eso en CI los <code>secrets.*</code> ganan sin tocar este código.</p>
+</aside>
+<p><strong>Cómo eliges el ambiente (convención del curso: PowerShell):</strong></p>
+<div class="code-block"><span class="code-lang">powershell</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-powershell"># Windows / PowerShell — define la variable en la MISMA línea, separada por ';'
+$env:TEST_ENV="staging"; pnpm m2     # corre M02 contra .env.staging
+pnpm m2                               # sin TEST_ENV → usa el default "qa"</code></pre></div>
+<blockquote><p>🪟 <strong>No usamos <code>cross-env</code>.</strong> En PowerShell la sintaxis nativa <code>$env:VAR=&quot;x&quot;; comando</code> ya hace el trabajo; <code>cross-env</code> añade una dependencia que el curso evita. (La sintaxis bash <code>TEST_ENV=staging pnpm m2</code> <strong>falla</strong> en PowerShell — ver <code>▶️ Cómo ejecutar</code>.)</p>
+</blockquote>
+<p><strong>Reconciliación con M06:</strong> este patrón es el mismo que verás en M06, pero allí deja de ser opcional: el pipeline de CI corre contra varios ambientes y, además, <strong>no usa archivos <code>.env</code></strong> — GitHub Actions inyecta las variables vía <code>secrets.*</code> directo en <code>process.env</code> (que, como viste arriba, mandan sobre cualquier archivo). En M02 esto es una semilla; en M06 es necesidad operativa.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> lanza la pregunta <em>&quot;¿qué tocarías para correr el mismo smoke contra staging?&quot;</em> y deja que el grupo lo razone. La respuesta NO es &quot;duplicar specs&quot; — es &quot;cambiar de qué archivo sale <code>BASE_URL</code>&quot;. Fíjate que <code>playwright.config.ts</code> <strong>ya está listo</strong>: <code>baseURL: process.env.BASE_URL ?? ...</code> no cambiaría ni una línea con el patrón de arriba. Eso refuerza el mismo principio del módulo: <strong>el dato vive fuera del código; el código solo lo consume.</strong></p>
+</aside>
+<hr>
 <h2 id="paso-a-paso">Paso a paso</h2>
+<blockquote><p><strong>Cómo leer esta sección.</strong> Cada paso grande se parte en <strong>micro-pasos <code>N.M</code></strong> con la tripleta <strong>Qué hago / Por qué / Cómo verifico</strong>. Sigue el orden: los archivos se crean en la secuencia exacta en que el flujo los necesita. El &quot;Cómo verifico&quot; siempre es algo <strong>ejecutable u observable</strong> (un comando, una señal en el editor, un verde en el reporte).</p>
+</blockquote>
 <h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
-<p>Antes de empezar verifica que <strong>M01 quedó funcional</strong>:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
-pnpm m1            # debe pasar TC-001 y TC-002 en verde
+<p><strong>0.1 — Confirma que M01 quedó funcional</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> desde <code>playwright-course/</code>, corro el smoke de M01 y verifico que existan <code>.env</code> y <code>node_modules</code>.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m1            # debe pasar TC-001 y TC-002 en verde
 ls .env            # debe existir (dotenv lo necesita)
 ls node_modules    # debe existir (pnpm install corrió)</code></pre></div>
-<p>Si M01 no corre, vuelve al módulo anterior — no avances sin esa base.</p>
+</li>
+<li><strong>Por qué:</strong> M02 <strong>no</strong> vuelve a montar dotenv ni el primer login contra OmniPizza; asume esa base. Si arrancas roto, vas a confundir un fallo de M01 con un fallo de tipado de M02.</li>
+<li><strong>Cómo verifico:</strong> los 2 TCs de M01 quedan en verde y los dos <code>ls</code> no dan &quot;No such file&quot;.</li>
+</ul>
 <aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este módulo asume que <code>dotenv</code>, <code>.env</code> y la primera ejecución contra OmniPizza ya están resueltos. Si alguien todavía no tiene <code>.env</code>, mándalo al <strong>Paso 1 y 2 de M01</strong> antes de continuar.</p>
 </aside>
 <hr>
 <h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
-<p><strong>M02 no añade paquetes npm nuevos.</strong> Solo necesitas lo de M01 (<code>@playwright/test</code>, <code>dotenv</code>, <code>typescript</code>, <code>@types/node</code>).</p>
-<p>Verifica:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null</code></pre></div>
-<p>Si te falta alguno, vuelve al <strong>Paso 1 de M01</strong> (o ejecuta <code>pnpm install</code> si <code>package.json</code> ya los lista).</p>
+<p><strong>1.1 — Verifica que no falta nada (M02 no añade paquetes)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> listo los paquetes que M02 reutiliza de M01.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> <strong>M02 no instala dependencias nuevas.</strong> El incremental de este módulo es <strong>datos tipados</strong>, no herramientas. Confirmar evita &quot;instalar por las dudas&quot;.</li>
+<li><strong>Cómo verifico:</strong> los 4 paquetes aparecen con versión. Si falta alguno, vuelve al <strong>Paso 1 de M01</strong> o corre <code>pnpm install</code>.</li>
+</ul>
 <hr>
 <h3 id="paso-2-crear-types-y-data-carpetas-nuevas">Paso 2 — Crear <code>types/</code> y <code>data/</code> (carpetas nuevas)</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p types data
-touch types/omnipizza.d.ts types/index.ts
-touch data/markets.json data/users.json</code></pre></div>
-<p><strong>Contenido mínimo</strong> de cada archivo:</p>
-<p>📄 <code>types/omnipizza.d.ts</code>:</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// Union types acotados — el corazón del tipado fuerte de este curso.
+<p>Este paso construye las <strong>dos carpetas nuevas</strong> de la arquitectura. Orden: primero los contratos (<code>types/</code>), luego los datos (<code>data/</code>) que esos contratos validan.</p>
+<p><strong>2.1 — Crea las carpetas y los archivos vacíos</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>types/</code> y <code>data/</code>, y abro cada archivo nuevo en VS Code (se crea en disco al guardarlo).<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir types
+mkdir data
+code types/omnipizza.d.ts
+code types/index.ts
+code data/markets.json
+code data/users.json</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> separar <strong>contrato</strong> (<code>types/</code>) de <strong>dato</strong> (<code>data/</code>) es la decisión central del módulo: el <code>.d.ts</code> describe la forma; el <code>.json</code> la rellena. Quien los mezcla pierde la red de seguridad de TS.</li>
+<li><strong>Cómo verifico:</strong> las 4 pestañas quedan abiertas en VS Code; tras guardarlas, <code>ls types</code> y <code>ls data</code> muestran los 4 archivos.</li>
+</ul>
+<p><strong>2.2 — Escribe el contrato del dominio (<code>types/omnipizza.d.ts</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> defino los union types y las <code>interface</code> del dominio.<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// Union types acotados — el corazón del tipado fuerte de este curso.
 export type CountryCode = "MX" | "US" | "CH" | "JP";
 export type Currency = "MXN" | "USD" | "CHF" | "JPY";
+
+// OmniPizza sólo expone usuarios "customer". Las 5 personas
+// (standard / locked_out / problem / performance_glitch / error)
+// se distinguen por COMPORTAMIENTO de login, no por privilegios.
+// NO existe un rol admin en la app.
+export type Role = "customer";
 
 export interface Market {
   code: CountryCode;
@@ -727,7 +1036,8 @@ export interface Market {
 export interface User {
   username: string;
   password: string;
-  role: "standard" | "admin";
+  role: Role;
+  description?: string;
 }
 
 export interface Pizza {
@@ -736,30 +1046,66 @@ export interface Pizza {
   currency: Currency;
   price: number;
 }</code></pre></div>
-<p>📄 <code>types/index.ts</code> (barrel — re-exporta para imports cortos):</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export * from "./omnipizza";</code></pre></div>
-<p>📄 <code>data/markets.json</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">[
+</li>
+<li><strong>Por qué:</strong> una <code>interface</code> es el <strong>contrato</strong> que el JSON debe cumplir; los <strong>union types</strong> acotan los valores legales (un <code>code</code> solo puede ser uno de esos 4, un <code>role</code> solo puede ser <code>&quot;customer&quot;</code>). Juntos, atrapan typos en compile-time en vez de en runtime.</li>
+<li><strong>Cómo verifico:</strong> el editor no subraya en rojo el archivo; los <code>export</code> aparecen en el autocompletado al importar desde otro archivo.</li>
+</ul>
+<blockquote><p>🔷 <strong>TypeScript — <code>interface</code></strong>
+Una <code>interface</code> describe la <strong>forma</strong> de un objeto (qué campos tiene y de qué tipo), sin generar código en runtime: es puro contrato de compilación. La alternativa obvia —no tipar nada y confiar en el JSON— te deja descubrir el campo faltante recién cuando el test revienta.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-06-interfaces/">TS · M06 — interfaces</a>. Aquí lo aplicas a <code>User</code>, <code>Market</code> y <code>Pizza</code>: el contrato que valida <code>data/*.json</code>.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — union / literal types (<code>&quot;MX&quot; | &quot;US&quot; | …</code>)</strong>
+Un <em>literal type</em> es un valor concreto usado como tipo; un <em>union</em> los encadena con <code>|</code>. <code>CountryCode = &quot;MX&quot; | &quot;US&quot; | &quot;CH&quot; | &quot;JP&quot;</code> significa &quot;solo estos 4 strings son válidos&quot; — más estricto que <code>string</code>, que aceptaría <code>&quot;MNX&quot;</code> o <code>&quot;&quot;</code> sin chistar.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-04-objects-types/">TS · M04 — objects &amp; types</a>. Aquí lo aplicas a <code>code</code> y <code>currency</code>: si añades un mercado con un código fuera del union, TS lo rechaza antes de correr.</p>
+</blockquote>
+<p><strong>2.3 — Crea el barrel (<code>types/index.ts</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> re-exporto todo el dominio desde un único punto de entrada.<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export * from "./omnipizza";</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el barrel permite imports cortos y estables (<code>from &quot;../types&quot;</code> en vez de <code>from &quot;../types/omnipizza&quot;</code>). Si mañana parto el dominio en varios <code>.d.ts</code>, los specs no cambian un solo import.</li>
+<li><strong>Cómo verifico:</strong> desde un spec, <code>import type { Market } from &quot;../types&quot;</code> autocompleta <code>Market</code>.</li>
+</ul>
+<p><strong>2.4 — Rellena los datasets (<code>data/markets.json</code>, <code>data/users.json</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> escribo los 4 mercados y los usuarios.<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">// data/markets.json
+[
   { "code": "MX", "fullName": "Mexico",        "currency": "MXN" },
   { "code": "US", "fullName": "United States", "currency": "USD" },
   { "code": "CH", "fullName": "Switzerland",   "currency": "CHF" },
   { "code": "JP", "fullName": "Japan",         "currency": "JPY" }
 ]</code></pre></div>
-<p>📄 <code>data/users.json</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">[
-  { "username": "standard_user", "password": "pizza123", "role": "standard" },
-  { "username": "admin_user",    "password": "pizza123", "role": "admin" }
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">// data/users.json — las 5 personas reales de OmniPizza (todas role "customer")
+[
+  { "username": "standard_user",            "password": "pizza123", "role": "customer", "description": "Usuario estándar para flujos happy path" },
+  { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)" },
+  { "username": "problem_user",             "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero con bugs visuales intencionales" },
+  { "username": "performance_glitch_user",  "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts" },
+  { "username": "error_user",               "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero dispara errores en acciones específicas" }
 ]</code></pre></div>
-<p><strong>Verifica el tipado</strong> ANTES de seguir:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsc --noEmit
-<span class="hl-comment"># Sin output = los tipos del .d.ts cuadran con el JSON.</span></code></pre></div>
-<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> si el alumno escribe <code>&quot;code&quot;: &quot;MNX&quot;</code> por error, <code>tsc --noEmit</code> falla con <code>Type &#39;&quot;MNX&quot;&#39; is not assignable to type &#39;CountryCode&#39;</code>. Demuéstralo provocando el typo a propósito y mostrando el error.</p>
+</li>
+<li><strong>Por qué:</strong> el dato vive <strong>fuera del código</strong>. Mañana QA puede agregar un mercado tocando solo el JSON; el spec ni se entera. <strong>No hay rol admin en OmniPizza:</strong> las 5 personas comparten <code>role: &quot;customer&quot;</code> y se diferencian por <strong>comportamiento de login</strong> (estilo SauceDemo), no por privilegios. Las credenciales (<code>standard_user</code> / <code>pizza123</code>) son las verificadas; el smoke de M02 usa <code>standard_user</code> (el único que llega limpio a <code>/catalog</code>).</li>
+<li><strong>Cómo verifico:</strong> <code>cat data/markets.json</code> muestra 4 entradas; el JSON es válido (sin comas colgantes ni comillas faltantes).</li>
+</ul>
+<p><strong>2.5 — Verifica el tipado ANTES de seguir</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> corro el chequeo de tipos del proyecto.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm exec tsc --noEmit
+<span class="hl-comment"># Sin output = los tipos del .d.ts cuadran con lo que el código consume.</span></code></pre></div>
+</li>
+<li><strong>Por qué:</strong> este es el &quot;verde&quot; que prueba que contrato y consumo encajan. Validarlo aquí evita arrastrar un error de tipos hasta la ejecución del test.</li>
+<li><strong>Cómo verifico:</strong> el comando termina sin output ni código de error.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> si el alumno escribe <code>&quot;code&quot;: &quot;MNX&quot;</code> y el spec lo consume como <code>Market[]</code> &quot;estrechado&quot; (no con <code>as</code>), <code>tsc --noEmit</code> falla con <code>Type &#39;&quot;MNX&quot;&#39; is not assignable to type &#39;CountryCode&#39;</code>. Provoca el typo a propósito para mostrar el error en vivo (con el <code>as Market[]</code> actual el cast lo enmascara — buen momento para explicar la diferencia entre <em>assertion</em> y <em>validación</em>; está desglosada en el recuadro 🔷 de arrays tipados del Paso 7).</p>
 </aside>
 <hr>
-<h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m02">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M02)</h3>
-<p><strong>M02 no requiere cambios al config</strong> — sigue el mismo de M01. Solo asegúrate de que <code>tsconfig.json</code> incluya los archivos nuevos.</p>
-<p>Abre tu <code>tsconfig.json</code> y verifica que la sección <code>include</code> contemple <code>types/</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+<h3 id="paso-3-config-y-scripts-estado-al-terminar-m02">Paso 3 — Config y scripts (estado al terminar M02)</h3>
+<blockquote><p><strong>📐 Config — cambios vs M01</strong></p>
+<div class="code-block"><span class="code-lang">diff</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-diff"><span class="hl-comment"># playwright.config.ts — SIN CAMBIOS vs M01</span>
+<span class="hl-comment"># (M02 añade DATOS tipados, no configuración del runner)</span></code></pre></div>
+<p><strong>Se mantiene:</strong> todo (dotenv, baseURL, timeouts, project <code>ui-chromium</code>). <strong>Entra:</strong> nada en el config — el incremental de M02 vive en <code>data/</code> y <code>types/</code>, no en <code>playwright.config.ts</code>. El único ajuste relacionado es el <code>include</code> de <code>tsconfig.json</code> para que vea <code>types/</code>.</p>
+</blockquote>
+<p><strong>3.1 — Asegura que <code>tsconfig.json</code> incluya <code>types/</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>tsconfig.json</code> y confirmo que <code>include</code> contemple los archivos de <code>types/</code>.<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
   "include": [
     "playwright.config.ts",
     "types/**/*.ts",
@@ -767,9 +1113,13 @@ export interface Pizza {
     "modulo-*/**/*.ts"
   ]
 }</code></pre></div>
-<p>Si te faltan las entradas de <code>types/</code>, <strong>añádelas</strong> — sin ellas, los imports <code>import type { Market } from &quot;../types&quot;</code> van a fallar.</p>
-<p>Tu <code>playwright.config.ts</code> debe seguir viéndose como al final de M01:</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M02 (igual que M01)
+</li>
+<li><strong>Por qué:</strong> sin estas entradas, TS no &quot;ve&quot; el <code>.d.ts</code> y los imports <code>import type { Market } from &quot;../types&quot;</code> fallan. Es el único ajuste de infraestructura que M02 necesita.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> sigue en verde y el editor resuelve el import sin marcarlo en rojo.</li>
+</ul>
+<p><strong>3.2 — Confirma que <code>playwright.config.ts</code> NO cambia respecto a M01</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> comparo mi config con el estado final de M01 (no debe haber diferencias).<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M02 (igual que M01)
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
@@ -790,78 +1140,170 @@ export default defineConfig({
     { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
   ],
 });</code></pre></div>
-<p>Y añade el script <code>m2</code> a <code>package.json</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
+</li>
+<li><strong>Por qué:</strong> M02 añade <strong>datos</strong>, no configuración del runner. Si tu config difiere de M01, algo se coló de otro módulo.</li>
+<li><strong>Cómo verifico:</strong> un diff mental contra M01 da cero cambios; <code>pnpm m2</code> arranca sin errores de config.</li>
+</ul>
+<p><strong>3.3 — Añade el script <code>m2</code> a <code>package.json</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> agrego el atajo del módulo.<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
   "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium",
   "m2": "playwright test modulo-02-locators-data --project=ui-chromium"
 }</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> un atajo por módulo mantiene los comandos cortos y consistentes con el resto del curso (<code>pnpm m1</code>, <code>pnpm m2</code>, …).</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m2 --list</code> lista los tests del módulo sin error de &quot;script not found&quot;.</li>
+</ul>
 <hr>
 <h3 id="paso-4-inspeccionar-el-contrato-typesomnipizzadts">Paso 4 — Inspeccionar el contrato (<code>types/omnipizza.d.ts</code>)</h3>
-<p>Abre <code>types/omnipizza.d.ts</code> en el editor. Vas a ver <code>interface User</code>, <code>interface Market</code> y <code>interface Pizza</code>. Estos son los <strong>contratos</strong> que el JSON debe cumplir.</p>
-<p>Pregunta al grupo: <em>&quot;si el JSON tuviera un campo <code>username</code> con un número en vez de string, ¿qué pasaría?&quot;</em> — respuesta: <strong>TypeScript falla en compile-time</strong>, antes de correr el test.</p>
-<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre <code>types/omnipizza.d.ts</code> y <code>data/users.json</code> lado a lado y muestra el mapeo campo a campo. Esto fija la idea de &quot;contrato vs implementación&quot;.</p>
+<p><strong>4.1 — Lee el <code>.d.ts</code> como contrato, no como código</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>types/omnipizza.d.ts</code> y reviso <code>interface User</code>, <code>interface Market</code>, <code>interface Pizza</code>.</li>
+<li><strong>Por qué:</strong> fijar la idea <strong>contrato vs implementación</strong>: el <code>.d.ts</code> dice qué campos y tipos debe tener cada objeto; el JSON es la implementación que los rellena. Si el JSON pone un número donde el contrato pide <code>string</code>, TS falla en compile-time.</li>
+<li><strong>Cómo verifico:</strong> puedo señalar, campo por campo, qué entrada del JSON corresponde a cada propiedad de la interface.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre <code>types/omnipizza.d.ts</code> y <code>data/users.json</code> lado a lado y muestra el mapeo campo a campo. Pregunta inversa: <em>&quot;si <code>username</code> fuera un número, ¿cuándo se entera el equipo?&quot;</em> — respuesta: en compile-time, no en producción.</p>
 </aside>
 <hr>
 <h3 id="paso-5-inspeccionar-la-data-datamarketsjson-y-datausersjson">Paso 5 — Inspeccionar la data (<code>data/markets.json</code> y <code>data/users.json</code>)</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">cat data/markets.json
-cat data/users.json</code></pre></div>
-<p>Cosas que el facilitador debe señalar:</p>
+<p><strong>5.1 — Lee los datasets y conéctalos al union type</strong></p>
 <ul>
-<li><code>markets.json</code> tiene <strong>4 entradas</strong>: MX, US, CH, JP. Cada una con <code>code</code>, <code>fullName</code>, <code>currency</code>.</li>
-<li><code>users.json</code> tiene varios usuarios. Vamos a usar <code>standard_user</code>.</li>
-<li>Los valores de <code>code</code> y <code>currency</code> están restringidos por <strong>union types</strong> en <code>types/omnipizza.d.ts</code> (<code>&quot;MX&quot; | &quot;US&quot; | &quot;CH&quot; | &quot;JP&quot;</code>). Si añades <code>&quot;CA&quot;</code> sin ampliar el union, TS rechaza el cambio.</li>
+<li><strong>Qué hago:</strong> imprimo ambos JSON y los confronto con los union types del <code>.d.ts</code>.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">cat data/markets.json
+cat data/users.json</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> entender que los valores de <code>code</code> y <code>currency</code> <strong>no son libres</strong>: están acotados por el union (<code>&quot;MX&quot; | &quot;US&quot; | &quot;CH&quot; | &quot;JP&quot;</code>). Si añades <code>&quot;CA&quot;</code> sin ampliar el union, TS rechaza el cambio — exactamente el mecanismo que protege el reto.</li>
+<li><strong>Cómo verifico:</strong> <code>markets.json</code> tiene 4 entradas (MX/US/CH/JP) con <code>code</code>/<code>fullName</code>/<code>currency</code>; <code>users.json</code> lista las 5 personas (<code>standard_user</code>, <code>locked_out_user</code>, <code>problem_user</code>, <code>performance_glitch_user</code>, <code>error_user</code>), todas con <code>role: &quot;customer&quot;</code>.</li>
 </ul>
 <hr>
 <h3 id="paso-6-ejecutar-el-ejemplo">Paso 6 — Ejecutar el ejemplo</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Headless — el smoke parametrizado, 4 mercados de un solo TC</span>
-pnpm m2
-
-<span class="hl-comment"># UI mode — RECOMENDADO la primera vez</span>
-pnpm test:ui</code></pre></div>
-<p><strong>Qué debería pasar:</strong></p>
+<p><strong>6.1 — Corre el smoke parametrizado</strong></p>
 <ul>
-<li>En la terminal verás <strong>4 tests</strong> corriendo, uno por mercado: <code>TC-MX</code>, <code>TC-US</code>, <code>TC-CH</code>, <code>TC-JP</code>.</li>
-<li>Todos pasan en verde (suelen tardar ~30-40s la primera vez por el cold start de Render).</li>
-<li>En UI mode, los 4 aparecen como hijos del mismo describe.</li>
+<li><strong>Qué hago:</strong> ejecuto el módulo, idealmente en UI mode la primera vez.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m2          # headless — 4 mercados de un solo TC
+pnpm test:ui     # UI mode — RECOMENDADO la 1ª vez</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> ver con tus ojos que <strong>un solo <code>test()</code> se registró 4 veces</strong> (uno por mercado) cierra el concepto data-driven. No son 4 tests copy/pasteados: es un <code>for</code> que llamó a <code>test()</code> cuatro veces.</li>
+<li><strong>Cómo verifico:</strong> la terminal muestra <strong>4 tests</strong> verdes — <code>TC-MX</code>, <code>TC-US</code>, <code>TC-CH</code>, <code>TC-JP</code> (suelen tardar ~30-40s la 1ª vez por el cold start de Render). En UI mode los 4 cuelgan del mismo describe.</li>
 </ul>
-<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> después de la primera corrida, abre <code>pnpm exec playwright show-report</code> y muéstrale al grupo que <strong>es el mismo <code>test()</code> ejecutándose 4 veces</strong> — no son 4 tests copy/pasteados.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> tras la primera corrida abre <code>pnpm exec playwright show-report</code> y muestra los 4 títulos distintos generados por el mismo <code>test()</code>. Recalca: <strong>Playwright NO tiene <code>test.each()</code></strong> — esos 4 casos los registró un <code>for</code> de JavaScript.</p>
 </aside>
 <hr>
 <h3 id="paso-7-lectura-guiada-del-forof-data-driven">Paso 7 — Lectura guiada del <code>for...of</code> data-driven</h3>
-<p>Abre <code>ejemplo.spec.ts</code> y haz que el grupo identifique:</p>
-<ol>
-<li><strong>El bucle <code>for (const market of markets)</code></strong> — un <code>test()</code> por cada elemento del array.</li>
-<li>El <strong>título dinámico</strong> del test: <code>`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`</code> — cada test tiene un nombre único.</li>
-<li>La <strong>validación condicional por mercado</strong> (símbolo <code>$</code> en MX, <code>¥</code> en JP) — lógica de negocio data-driven.</li>
-<li>El <strong>CSS selector legítimo</strong> <code>[data-testid^=&quot;pizza-card-&quot;]</code> — explica por qué baja al nivel 4 de la jerarquía: los testids son dinámicos.</li>
-</ol>
+<p><strong>7.1 — Identifica las 4 piezas del patrón en <code>ejemplo.spec.ts</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>ejemplo.spec.ts</code> y localizo, en este orden: (1) los imports tipados, (2) el bucle, (3) el título dinámico, (4) la validación por mercado y el CSS selector.<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { Market, User, Currency } from "../types";
+import marketsJson from "../data/markets.json";
+
+const markets = marketsJson as Market[];
+
+for (const market of markets) {
+  test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, async ({ page }) =&gt; {
+    // ...login, navegación al catálogo, validación de currency...
+    const symbol = currencySymbol[market.currency];
+    if (!symbol) return; // guard clause / fast return
+    await expect(page.locator("body")).toContainText(symbol);
+  });
+}</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el <code>for...of</code> recorre el array y <strong>registra</strong> un <code>test()</code> por elemento (no un test que itera por dentro). El título lleva <code>${market.code}</code> porque Playwright exige títulos únicos dentro del mismo describe. El CSS <code>[data-testid^=&quot;pizza-card-&quot;]</code> baja al nivel 4 de la jerarquía a propósito: los testids son dinámicos.</li>
+<li><strong>Cómo verifico:</strong> puedo explicar en voz alta por qué hay 4 tests y no 1; por qué el título cambia en cada vuelta; y por qué <code>toHaveURL</code> usa regex y no string.</li>
+</ul>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>await expect(page).toHaveURL(/\/catalog/)</code></strong>
+<strong>Qué es:</strong> (en el bloque de navegación al catálogo) el argumento entre <code>/.../</code> es una <strong>expresión regular</strong> (regex), <strong>no</strong> un string, y eso es deliberado. Un regex hace <em>match parcial</em>: la aserción pasa si la URL <strong>contiene/matchea</strong> <code>/catalog</code> en cualquier parte. Un string, en cambio, exige que la URL sea <strong>exactamente</strong> ese valor.
+<strong>Por qué así (y no la alternativa obvia):</strong> OmniPizza puede añadir cosas a la URL del catálogo —querystring (<code>?locale=</code>), ids, el locale dentro del path (<code>/mx/catalog</code>) o un slash final— y el regex tolera todo eso. El <code>\/</code> escapa la barra <code>/</code> porque en un literal regex de JS la <code>/</code> es el <strong>delimitador</strong> que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
+<strong>Qué pasa si lo cambias:</strong> si pones el string <code>&quot;/catalog&quot;</code>, Playwright lo <strong>resuelve contra <code>baseURL</code> con <code>new URL(&quot;/catalog&quot;, baseURL)</code></strong> y compara por <strong>IGUALDAD exacta</strong> de la URL resultante. Como la URL real es algo como <code>https://.../catalog?...</code> (o <code>/mx/catalog</code>), nunca será literalmente <code>https://.../catalog</code> y el test <strong>truena</strong> con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...)</code></strong>
+<strong>Qué es:</strong> el título del test es un <em>template string</em> que interpola <code>market.code</code> en cada vuelta del <code>for...of</code> — eso garantiza <code>TC-MX</code>, <code>TC-US</code>, <code>TC-CH</code>, <code>TC-JP</code>: nombres distintos y legibles en el reporte (la regla de títulos únicos ya la viste en el &quot;Por qué&quot;).
+<strong>Por qué así (y no la alternativa obvia):</strong> además, el tag <code>@smoke</code> va <strong>embebido en el título</strong> a propósito: es lo que permite filtrar con <code>--grep @smoke</code> (el atajo <code>pnpm test:smoke</code>).
+<strong>Qué pasa si lo cambias:</strong> si pones un título fijo (<code>&quot;TC catálogo&quot;</code>) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con <code>--grep</code> o <code>-g &quot;TC-MX&quot;</code>. Si quitas <code>@smoke</code>, el caso deja de aparecer en <code>pnpm test:smoke</code>.</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>page.locator(&#39;[data-testid^=&quot;pizza-card-&quot;]&#39;)</code></strong>
+<strong>Qué es:</strong> un CSS selector con el operador de atributo <code>^=</code>, que significa <strong>&quot;el atributo empieza con&quot;</strong>. Aquí matchea cualquier elemento cuyo <code>data-testid</code> arranque con <code>pizza-card-</code>.
+<strong>Por qué así (y no la alternativa obvia):</strong> los testids completos son dinámicos (<code>pizza-card-123</code>, <code>pizza-card-456</code>...), así que un <code>getByTestId(&quot;pizza-card-123&quot;)</code> con id fijo solo encontraría una pizza concreta (frágil) o ninguna. Bajar al nivel 4 es legítimo justamente por eso (ver la tabla de jerarquía arriba) — no es deuda técnica: es la herramienta correcta para testids variables.
+<strong>Qué pasa si lo cambias:</strong> si usas <code>=</code> en vez de <code>^=</code> (<code>[data-testid=&quot;pizza-card-&quot;]</code>), exiges igualdad exacta y no matcheas <strong>ninguna</strong> tarjeta.</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>const allCards = await pizzaCards.all()</code></strong>
+<strong>Qué es:</strong> <code>.all()</code> devuelve <code>Promise&lt;Locator[]&gt;</code> — <strong>materializa</strong> la lista: consulta el DOM <em>ahora</em> y te entrega un array fijo de locators. Por eso lleva <code>await</code>.
+<strong>Por qué así (y no la alternativa obvia):</strong> comparado con <code>pizzaCards.first()</code>, que <strong>no</strong> necesita <code>await</code> porque devuelve un <code>Locator</code> perezoso (lazy) — un puntero que recién resuelve el DOM cuando lo usas en una acción o aserción. <code>.all()</code> rompe esa pereza a propósito: necesitas el array concreto para iterarlo y contar (<code>allCards.length</code>).
+<strong>Qué pasa si lo cambias:</strong> si omites el <code>await</code>, <code>allCards</code> queda como una <code>Promise</code>, no como array; <code>allCards.length</code> da <code>undefined</code> y el <code>for...of</code> no itera nada (o falla). Si en cambio creías que <code>.first()</code> necesita <code>await</code> y lo agregas, no rompe pero es ruido — el locator es perezoso por diseño.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — <code>import type</code></strong>
+<code>import type { Market }</code> trae <strong>solo la forma</strong> (el tipo), no código ejecutable: el compilador la borra del bundle final. La alternativa <code>import { Market }</code> (sin <code>type</code>) también compila, pero arrastra una dependencia de valor innecesaria y puede crear ciclos de import en proyectos grandes.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-06-interfaces/">TS · M06 — interfaces</a>. Aquí lo aplicas a <code>Market</code>, <code>User</code> y <code>Currency</code>: contratos que solo existen en compile-time.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — arrays tipados (<code>Market[]</code> / <code>User[]</code>)</strong>
+<code>Type[]</code> significa &quot;array cuyos elementos son <code>Type</code>&quot;. <code>marketsJson as Market[]</code> le dice a TS &quot;trata este JSON como una lista de <code>Market</code>&quot;, lo que te da autocompletado de <code>market.code</code>/<code>market.currency</code> dentro del <code>for...of</code> — importar un <code>.json</code> a secas te da un tipo inferido amplio (y a veces <code>any</code>, según la config). Si quitas el <code>as Market[]</code>, vuelves a ese tipo inferido (o <code>any</code>) y pierdes el autocompletado y el chequeo.
+⚠️ <strong>Ojo: <code>as</code> es una <em>type assertion</em>, no una validación.</strong> Es una promesa que haces tú; en runtime <strong>nadie</strong> revisa que el JSON realmente cumpla el contrato — un JSON con datos basura compilaría igual. El contrato real lo defiende <code>types/omnipizza.d.ts</code> vía <code>tsc</code>, no este cast.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-02-types/">TS · M02 — types</a>. Aquí lo aplicas al array que alimenta el bucle data-driven.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — <code>for...of</code> para iterar</strong>
+<code>for (const x of array)</code> recorre los <strong>valores</strong> del array (no los índices, que sería <code>for...in</code>). En este módulo lo usas en dos niveles: para <strong>registrar</strong> un <code>test()</code> por mercado, y dentro del test para <strong>recorrer</strong> las tarjetas de pizza — ahí <code>for...of</code> <strong>serializa</strong> los <code>await</code>: espera a que termine la aserción de una tarjeta antes de pasar a la siguiente.
+La alternativa &quot;obvia&quot; <code>allCards.forEach(async …)</code> <strong>no espera</strong> los <code>await</code> internos: <code>forEach</code> ignora el valor de retorno del callback, así que las promesas se pierden, el test sigue de largo y las aserciones se disparan en paralelo sin que nadie las espere — un fallo puede explotar <strong>después</strong> de que el test ya terminó (unhandled rejection) y obtienes falsos verdes. Cuando hay <code>await</code> dentro, lo correcto es <code>for...of</code> (o <code>Promise.all</code> si quieres paralelismo controlado).
+📚 Es construcción base de JavaScript/TypeScript (lo usaste desde <a href="../../typescript-qa-course/modulo-03-functions/">TS · M03 — functions</a>). Aquí es el motor de la parametrización: un <code>for</code> reemplaza al inexistente <code>test.each()</code>.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — ternario / guard clause (<code>if (!symbol) return;</code>)</strong>
+El <em>fast return</em> (o guard clause) sale temprano cuando no hay nada que hacer, en vez de anidar <code>if/else</code>. Aquí <code>const symbol = currencySymbol[market.currency]</code> es <code>string | undefined</code> (por el <code>Partial</code>), y TS te <strong>obliga</strong> a manejar el <code>undefined</code>: <code>if (!symbol) return;</code> cierra el caso y deja el código plano.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-03-functions/">TS · M03 — functions</a> (control de flujo y <code>return</code>). Aquí lo aplicas a la validación de currency por mercado.</p>
+</blockquote>
 <hr>
 <h3 id="paso-8-catálogo-de-locators-lectura-no-ejecución">Paso 8 — Catálogo de locators (lectura, no ejecución)</h3>
-<p>Al final de <code>ejemplo.spec.ts</code> hay un <code>test.skip(&quot;ejemplos de cada nivel&quot;, ...)</code>. <strong>No se ejecuta</strong>, es una <strong>referencia visual</strong> de cada nivel de la jerarquía con código real. Pídeles que lo escaneen — lo van a copiar para el reto.</p>
+<p><strong>8.1 — Escanea la chuleta de locators</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> leo el <code>test.describe(&quot;Referencia — jerarquía de locators&quot;, …)</code> con sus dos <code>test.skip</code> al final de <code>ejemplo.spec.ts</code>.</li>
+<li><strong>Por qué:</strong> <strong>no se ejecuta</strong> (<code>test.skip</code>) — es una <strong>referencia viva</strong> de cada nivel de la jerarquía con selectores REALES de OmniPizza (<code>getByRole({ name: &quot;Sign In&quot; })</code>, <code>getByPlaceholder(&quot;standard_user&quot;)</code>, <code>getByTestId(&quot;login-button-desktop&quot;)</code>, <code>getByAltText(&quot;Pepperoni&quot;)</code>, <code>[data-testid^=&quot;pizza-card-&quot;]</code>). Vas a copiar de aquí para el reto.</li>
+<li><strong>Cómo verifico:</strong> identifico al menos un ejemplo por cada nivel (role → label/placeholder/text → testid → CSS → XPath).</li>
+</ul>
 <hr>
-<h3 id="paso-9-resolver-el-reto">Paso 9 — Resolver el reto</h3>
-<p>Abre <code>reto.spec.ts</code>. La meta es <strong>añadir un 5º mercado (<code>CA</code>, Canadá, <code>CAD</code>) sin tocar el spec</strong>. Vas a editar:</p>
-<ol>
-<li><code>data/markets.json</code> → añadir el nuevo objeto.</li>
-<li><code>types/omnipizza.d.ts</code> → ampliar el union (<code>CountryCode</code> y <code>Currency</code>).</li>
-<li>Completar los TODOs del reto para que la validación de currency sea data-driven (no hardcoded como en el ejemplo).</li>
-</ol>
-<p>Cada TODO indica <strong>Qué hacer / Pista / Cómo verificar</strong>.</p>
+<h3 id="paso-9-resolver-el-reto-todos-propios-no-se-resuelve-aquí">Paso 9 — Resolver el reto (TODOs propios — no se resuelve aquí)</h3>
+<p><strong>9.1 — Añade el 5º mercado SIN tocar el spec</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>reto.spec.ts</code> y, <strong>sin editar el spec</strong>, toco solo dos archivos: añado Canadá al JSON y amplío los union types.<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">// data/markets.json — añadir al final del array
+{ "code": "CA", "fullName": "Canada", "currency": "CAD" }</code></pre></div>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// types/omnipizza.d.ts — ampliar ambos union
+export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
+export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> es la prueba de fuego del data-driven: si la parametrización está bien hecha, un mercado nuevo aparece como un test extra <strong>sin escribir ni una línea de spec</strong>. Los TODOs (<code>TODO 1..4</code>) del reto siguen siendo tuyos — el README <strong>no</strong> los resuelve.</li>
+<li><strong>Cómo verifico:</strong><div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm typecheck                                                   # verde tras ampliar los union
+pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --list   # debe listar 5 tests</code></pre></div>
+</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> si <code>typecheck</code> se queja con <code>Type &#39;&quot;CA&quot;&#39; is not assignable to type &#39;CountryCode&#39;</code>, es señal de que aún no ampliaron el <code>.d.ts</code>. Ese error es la lección: el union type es la red de seguridad.</p>
+</aside>
 <hr>
-<h2 id="comandos-útiles">Comandos útiles</h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m2                                          # corre el módulo
-pnpm exec playwright test modulo-02-locators-data --headed --project=ui-chromium
-pnpm typecheck                                   # verifica tipos sin correr tests
-pnpm exec playwright test --grep "@smoke"        # filtra por tag
-pnpm exec playwright show-report                 # último HTML report</code></pre></div>
+<h3 id="paso-10-versiona-tu-trabajo-git-jit">Paso 10 — Versiona tu trabajo (Git JIT)</h3>
+<p><strong>10.1 — Commitea el incremento de M02</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> agrego solo lo que cambió en este módulo y lo commiteo con un mensaje convencional.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add types data modulo-02-locators-data
+git commit -m "feat(m02): data-driven con JSON tipado"</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> M02 introduce dos carpetas reusables (<code>types/</code>, <code>data/</code>) más el spec del módulo. Versionarlas en un commit atómico deja un punto de retorno limpio <strong>antes</strong> de que M03 empiece a refactorizar hacia POM. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan en M03/M04, cuando el flujo los pida.)</li>
+<li><strong>Cómo verifico:</strong><div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git log --oneline -1        # muestra el commit feat(m02) recién creado
+git status                  # working tree limpio para lo que tocaste</code></pre></div>
+</li>
+</ul>
+<hr>
+<h2 id="cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</h2>
+<ul>
+<li><strong>Comando del módulo:</strong> <code>pnpm m2</code></li>
+<li><strong>UI mode (recomendado la 1ª vez):</strong> <code>pnpm test:ui</code></li>
+<li><strong>Headed / debug:</strong> <code>pnpm test:headed</code> · <code>pnpm test:debug</code></li>
+<li><strong>Filtrar:</strong> por tag (<code>pnpm exec playwright test --grep &quot;@smoke&quot;</code>) o por archivo (<code>pnpm exec playwright test modulo-02-locators-data/reto.spec.ts</code>)</li>
+<li><strong>Verificar tipos:</strong> <code>pnpm typecheck</code></li>
+<li><strong>Ver el reporte:</strong> <code>pnpm report</code></li>
+<li><strong>🪟 Windows / PowerShell:</strong> para variables de entorno usa <code>$env:VAR=&quot;x&quot;; pnpm m2</code> (no <code>VAR=x pnpm m2</code>, sintaxis bash que falla en PowerShell)</li>
+</ul>
 <hr>
 <h2 id="outcome-esperado">Outcome esperado</h2>
 <ul>
-<li><input disabled="" type="checkbox"> Entiendes la jerarquía de locators y <strong>por qué</strong> no todo es <code>getByRole</code>.</li>
+<li><input disabled="" type="checkbox"> Entiendes la jerarquía de locators y <strong>por qué</strong> <code>getByRole</code> es preferencia, no ley (caso login de OmniPizza).</li>
+<li><input disabled="" type="checkbox"> Sabes estrechar un locator con <code>.filter</code>/<code>.nth</code>/<code>.first</code>/<code>.and</code>/<code>.or</code> y hacer <strong>scoping</strong> (<code>card.getByRole(&quot;button&quot;)</code>) para botones icon-only.</li>
+<li><input disabled="" type="checkbox"> Distingues <code>getByText</code> (leer/aseverar) de <code>getByRole</code>/<code>getByTestId</code> (accionar).</li>
+<li><input disabled="" type="checkbox"> Sabes usar <code>pnpm exec playwright codegen &lt;url&gt;</code> para <strong>descubrir</strong> locators y <strong>endurecer</strong> lo que genera.</li>
 <li><input disabled="" type="checkbox"> Puedes leer <code>markets.json</code> y explicar cómo el test lo consume.</li>
 <li><input disabled="" type="checkbox"> Sabes añadir un 5º mercado <strong>sin tocar el spec</strong>.</li>
 <li><input disabled="" type="checkbox"> <code>pnpm typecheck</code> queda en verde tras ampliar los union types.</li>
-<li><input disabled="" type="checkbox"> Reconoces cuándo un CSS selector es legítimo (testids dinámicos).</li>
+<li><input disabled="" type="checkbox"> Reconoces cuándo un CSS selector es legítimo (testids dinámicos) y por qué <code>toHaveURL</code> usa regex.</li>
 </ul>
 
     <nav class="prevnext" aria-label="Navegación entre módulos">

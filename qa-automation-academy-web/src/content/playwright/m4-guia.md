@@ -131,9 +131,9 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 
 ```bash
 # Estando en playwright-course/
-pnpm m3                    # los Page Objects ya funcionan
-pnpm typecheck             # debe pasar
-ls .auth 2>&1 || echo OK   # .auth/ debería estar vacío o no existir aún
+pnpm m3          # los Page Objects ya funcionan
+pnpm typecheck   # debe pasar
+ls .auth         # si da error, perfecto: aún no existe (se crea en este módulo)
 ```
 
 ---
@@ -143,95 +143,173 @@ ls .auth 2>&1 || echo OK   # .auth/ debería estar vacío o no existir aún
 **M04 no añade paquetes npm nuevos.** Los custom fixtures, `storageState` y `page.route()` viven dentro de `@playwright/test`.
 
 ```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+pnpm list @playwright/test dotenv typescript @types/node
 # Las 4 deben aparecer. Si no:
 #   pnpm install
 #   o pnpm add -D @playwright/test dotenv typescript @types/node
 ```
 
-> ⚠️ **Asegúrate de que `.auth/` esté en `.gitignore`** — los storageStates contienen tokens válidos. Si tu `.gitignore` no lo tiene, añádelo ahora:
-> ```bash
-> grep -q "^\.auth/" .gitignore || echo ".auth/" >> .gitignore
-> ```
+> ⚠️ **Asegúrate de que `.auth/` esté en `.gitignore`** — los storageStates contienen tokens válidos. Si tu `.gitignore` no lo tiene, ábrelo en VS Code (`code .gitignore`) y añade la línea `.auth/` al final. Verifica con `git check-ignore .auth/`: imprime `.auth/` si la ruta quedó cubierta.
 
 ---
 
 ### Paso 2 — Crear `tests/setup/`, `fixtures/`, `helpers/`
 
 ```bash
-mkdir -p tests/setup fixtures helpers
-touch tests/setup/auth.setup.ts fixtures/omnipizza.ts helpers/unique-data.ts
+mkdir tests
+mkdir tests/setup
+mkdir fixtures
+mkdir helpers
+code tests/setup/auth.setup.ts
+code fixtures/omnipizza.ts
+code helpers/unique-data.ts
 ```
 
-**Esqueletos mínimos:**
+VS Code abre cada archivo nuevo: pega en cada uno el contenido que sigue y guárdalo.
 
-📄 `tests/setup/auth.setup.ts` — login vía API y persistir storageState:
+**El contenido de los tres archivos** (es el mismo código que vive en el repo, con comentarios abreviados):
+
+📄 `tests/setup/auth.setup.ts` — login vía API y persistir el `storageState`. Tiene **dos tests en modo serial**: un warmup que despierta el backend (Render free tier lo duerme tras 15 min) y el login real:
 
 ```ts
 import { test as setup, expect } from "@playwright/test";
-import usersJson from "../../data/users.json";
-import type { User } from "../../types";
+import fs from "node:fs";
+import path from "node:path";
 
-const STORAGE = ".auth/user.json";
+const AUTH_DIR = ".auth";
+const USER_FILE = path.join(AUTH_DIR, "user.json");
+
 const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
-const standard = (usersJson as User[]).find((u) => u.username === "standard_user")!;
+const BASE_URL = process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com";
+const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
+const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-setup("authenticate via API and persist storageState", async ({ page, request }) => {
-  const res = await request.post(`${API_URL}/api/auth/login`, {
-    data: { username: standard.username, password: standard.password },
+setup.describe.configure({ mode: "serial" });
+
+setup.beforeAll(() => {
+  if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
+});
+
+// 1) Despierta el backend (Render free tier duerme tras 15 min de inactividad).
+setup("wake up backend (warmup cold start)", async ({ request }) => {
+  setup.setTimeout(90_000);
+  const res = await request.get(`${API_URL}/health`, { timeout: 80_000 });
+  expect(res.ok(), "backend /health debe responder 200").toBeTruthy();
+});
+
+// 2) Login por API → siembra el token en localStorage → persiste el badge.
+setup("authenticate as standard_user", async ({ browser, request }) => {
+  const apiRes = await request.post(`${API_URL}/api/auth/login`, {
+    data: { username: USERNAME, password: PASSWORD },
   });
-  expect(res.ok()).toBeTruthy();
-  const { access_token } = await res.json();
+  expect(apiRes.ok(), `login API debe ser 200. Status: ${apiRes.status()}`).toBeTruthy();
+  const { access_token } = (await apiRes.json()) as { access_token: string };
+  expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
 
-  await page.goto("/");
-  await page.evaluate((token) => localStorage.setItem("access_token", token), access_token);
-  await page.context().storageState({ path: STORAGE });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(BASE_URL);
+  await page.evaluate(([token, username]) => {
+    window.localStorage.setItem("access_token", token);
+    window.localStorage.setItem("username", username);
+  }, [access_token, USERNAME]);
+
+  await context.storageState({ path: USER_FILE });   // ← el "badge"
+  await context.close();
 });
 ```
 
-📄 `fixtures/omnipizza.ts` — custom fixtures con `test.extend`:
+> ⚠️ Fíjate en los detalles que el código exige y son fáciles de equivocar: el endpoint es `POST /api/auth/login` (con `/api`), se siembran **dos** claves de `localStorage` (`access_token` **y** `username`), y se usa `browser.newContext()` → `context.storageState({ path: USER_FILE })` → `context.close()`, **no** `page.context()` del test.
+
+> 🔍 **Detalle que parece obvio — ``await request.post(`${API_URL}/api/auth/login`, { data: { username, password } })``**
+> **Qué es:** el login se hace con un **POST a la API** usando el fixture `request` (`APIRequestContext`), no llenando el formulario en la UI.
+> **Por qué así (y no la alternativa obvia):** es la tabla "Por qué este patrón (y no `globalSetup`)" en acción: llenar el formulario en UI suma navegación + render + clicks y depende del DOM, de animaciones y de selectores; un solo POST es **rápido y determinista** — prueba el contrato de la API y devuelve el `access_token` directo.
+> **Qué pasa si lo cambias:** si haces login por UI en el setup, recuperas toda la fragilidad que querías evitar — y la pagas **una vez por corrida del setup**, multiplicado si tienes varios roles. El UI login se prueba aparte (en su propio spec), no como precondición de toda la suite.
+
+📄 `fixtures/omnipizza.ts` — custom fixtures con `test.extend`: inyecta los Page Objects, el usuario estándar (`standardUser`) y el mercado por defecto (`defaultMarket`, worker-scoped):
 
 ```ts
 import { test as base, expect } from "@playwright/test";
 import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
-import type { Market } from "../types";
+import usersJson from "../data/users.json";
 
-type OmniFixtures = {
+const markets = marketsJson as Market[];
+const users = usersJson as User[];
+
+type PageFixtures = {
   loginPage: LoginPage;
   catalogPage: CatalogPage;
   checkoutPage: CheckoutPage;
+  standardUser: User;
 };
-type OmniWorkerFixtures = { defaultMarket: Market };
+type WorkerFixtures = {
+  defaultMarket: Market;   // worker-scoped: 1 vez por worker
+};
 
-export const test = base.extend<OmniFixtures, OmniWorkerFixtures>({
-  loginPage: async ({ page }, use) => use(new LoginPage(page)),
-  catalogPage: async ({ page }, use) => use(new CatalogPage(page)),
-  checkoutPage: async ({ page }, use) => use(new CheckoutPage(page)),
-  defaultMarket: [
-    async ({}, use) => {
-      const m = (marketsJson as Market[]).find((x) => x.code === "MX")!;
-      await use(m);
-    },
-    { scope: "worker" },
-  ],
+export const test = base.extend<PageFixtures, WorkerFixtures>({
+  // --- Worker fixture ---
+  // eslint-disable-next-line no-empty-pattern
+  defaultMarket: [async ({}, use) => {
+    const mx = markets.find((m) => m.code === "MX");
+    if (!mx) throw new Error("Mercado MX no encontrado en data/markets.json");
+    await use(mx);
+  }, { scope: "worker" }],
+
+  // --- Test fixtures ---
+  loginPage: async ({ page }, use) => { await use(new LoginPage(page)); },
+  catalogPage: async ({ page }, use) => { await use(new CatalogPage(page)); },
+  checkoutPage: async ({ page }, use) => { await use(new CheckoutPage(page)); },
+  // eslint-disable-next-line no-empty-pattern
+  standardUser: async ({}, use) => {
+    const u = users.find((u) => u.username === "standard_user");
+    if (!u) throw new Error("standard_user no encontrado en data/users.json");
+    await use(u);
+  },
 });
+
 export { expect };
+export type { Market, User };
 ```
 
-📄 `helpers/unique-data.ts` — data isolation para paralelismo:
+> 🔷 **TypeScript — inferencia de tipos en `test.extend<...>()`**
+> Al pasar los genéricos `base.extend<PageFixtures, WorkerFixtures>(...)`, TS **infiere** el tipo de cada fixture y lo propaga al callback del test: dentro de `async ({ catalogPage }) => {...}`, `catalogPage` **ya es** `CatalogPage`, sin casts. El gotcha: si declaras un fixture en el objeto pero lo olvidas en el genérico (o al revés), TS marca el desajuste en vez de fallar en runtime.
+> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page) y [TS · M06 — Interfaces](/docs/typescript/m6-api-response). Aquí los tipos `PageFixtures`/`WorkerFixtures` son el **contrato** que hace que `{ catalogPage }` venga tipado y autocompletado en cada TC.
+
+📄 `helpers/unique-data.ts` — data isolation para paralelismo (email, folio de orden y prefijo únicos por worker):
 
 ```ts
 import type { TestInfo } from "@playwright/test";
 
-export function uniqueEmail(info: TestInfo, prefix = "qa"): string {
-  return `${prefix}+w${info.workerIndex}-${Date.now()}@example.test`;
+// Email único por worker + timestamp. Ej: customer+w0-1714000000000@omnipizza.test
+export function uniqueEmail(info: TestInfo, prefix = "customer"): string {
+  return `${prefix}+w${info.workerIndex}-${Date.now()}@omnipizza.test`;
 }
 
+// Identificador único de orden. Ej: ORD-w0-1714000000000-4821
 export function uniqueOrderId(info: TestInfo): string {
-  return `ORD-w${info.workerIndex}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const random = Math.floor(Math.random() * 10_000);
+  return `ORD-w${info.workerIndex}-${Date.now()}-${random}`;
+}
+
+// Prefijo determinista por worker (sin timestamp), útil para seeds reproducibles.
+export function workerPrefix(info: TestInfo): string {
+  return `w${info.workerIndex}`;
 }
 ```
+
+> 🔷 **TypeScript — función tipada + parámetro `TestInfo`**
+> `uniqueEmail(info: TestInfo, ...): string` declara el **tipo de cada parámetro** y el **tipo de retorno**. `TestInfo` es el objeto que Playwright inyecta con metadata del test en curso (incluido `workerIndex`). El gotcha: si tipas el retorno como `string`, TS te avisa si por accidente devuelves `undefined` en algún branch.
+> 📚 Lo viste en [TS · M03 — Funciones](/docs/typescript/m3-login). Aquí lo aplicas para que cada helper de data isolation reciba el `TestInfo` correcto y devuelva siempre un `string`.
+
+> 🔷 **TypeScript — parámetro por defecto (`prefix = "customer"`)**
+> `prefix = "customer"` hace el parámetro **opcional**: si no lo pasas, vale `"customer"`. No necesitas escribir `prefix?: string` ni chequear `if (!prefix)` — el default cubre el caso. El gotcha: un parámetro con default debe ir **después** de los obligatorios.
+> 📚 Lo viste en [TS · M03 — Funciones](/docs/typescript/m3-navigate). Aquí lo aplicas para que `uniqueEmail(info)` use `"customer"` y `uniqueEmail(info, "locked")` use otro prefijo, sin sobrecargar la función.
+
+> 🔷 **TypeScript — template literals (`` `${prefix}+w${info.workerIndex}-...` ``)**
+> Las comillas invertidas (`` ` ``) permiten **interpolar** variables con `${...}` dentro del string, en vez de concatenar con `+`. El gotcha: dentro de `${}` puedes poner cualquier expresión (`info.workerIndex`, `Date.now()`), no solo variables sueltas.
+> 📚 Lo viste en [TS · M02 — Tipos](/docs/typescript/m2-strings). Aquí lo aplicas para componer el email/folio único en una sola línea legible.
 
 ---
 
@@ -320,6 +398,21 @@ export default defineConfig({
 | Projects `ui-*` con `dependencies: ["setup"]` + `storageState` | Heredan el badge, arrancan autenticados |
 | `testIgnore` en cada `ui-*` | Evita que el `auth.setup.ts` corra dos veces |
 
+> 🔍 **Detalle que parece obvio — `dependencies: ["setup"]`**
+> **Qué es:** la **precondición declarativa** de la tabla de Conceptos JIT, a nivel de project: "este project no arranca hasta que el project `setup` termine **en verde**".
+> **Por qué así (y no la alternativa obvia):** no es un `import`, ni un `globalSetup`, ni una llamada en un `beforeAll`. No ejecutas el login tú mismo — **declaras** el orden y Playwright construye el grafo de ejecución (por eso el setup aparece como un test en el reporte y se reutiliza por rol).
+> **Qué pasa si lo cambias:** si borras `dependencies`, los projects `ui-*` ya **no esperan** al setup. Pueden arrancar antes de que `.auth/user.json` exista (o con uno viejo) → tests que fallan con "sesión no encontrada" de forma intermitente, según quién gane la carrera.
+
+> 🔍 **Detalle que parece obvio — `storageState: STORAGE_STATE` (en cada project `ui-*`, NO en el `use:` raíz)**
+> **Qué es:** la asignación del badge **por project** que acabas de escribir (`ui-chromium`, `ui-firefox`, `ui-webkit`) — no va en el bloque `use:` global de `defineConfig`.
+> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una sola vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**: también los projects `api` y `anonymous` (llegan en M05/M06), que deben correr **sin** sesión.
+> **Qué pasa si lo cambias:** si lo subes al `use:` raíz, los flujos negativos (login inválido, acceso anónimo) arrancan **ya logueados** y dejan de probar lo que dicen probar; y los tests de API heredan cookies de UI que no les corresponden. Los falsos verdes más peligrosos del módulo nacen aquí.
+
+> 🔍 **Detalle que parece obvio — `testIgnore: [/tests\/setup\/.*/]`**
+> **Qué es:** la ruta que cada project `ui-*` **ignora**. (En el repo final el array crece a tres patrones: `/tests\/api\/.*/` y `/modulo-05-api-layer\/.*/` se añaden en M05 para que la suite de API no se cuele en los projects de UI.)
+> **Por qué así (y no la alternativa obvia):** sin ese ignore, el `testMatch` global (`/tests\/.*\.(spec|setup)\.ts/`) haría que `auth.setup.ts` también cayera dentro de los projects `ui-*`. Como esos projects dependen de `setup`, el login terminaría ejecutándose **dos veces**: una en el project `setup` y otra dentro de cada `ui-*`.
+> **Qué pasa si lo cambias:** si quitas `/tests\/setup\/.*/`, verás `auth.setup.ts` duplicado en el reporte y un POST de login extra por browser; con multi-browser eso es login ×3 innecesario y más lento.
+
 Añade los scripts nuevos al `package.json`:
 
 ```json
@@ -357,7 +450,7 @@ Y verifica que `tsconfig.json` incluya las carpetas nuevas:
 - **Comando del módulo (completo):** `pnpm m4`
 - **UI mode:** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`--grep @smoke`) o por archivo
+- **Filtrar:** por tag (`--grep "@smoke"`) o por archivo
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m4` (no `VAR=x pnpm m4`)
 
@@ -403,9 +496,7 @@ Asumiendo que ya estás en la rama `feature/m04-fixtures`:
 $ git push -u origin feature/m04-fixtures
 
 # 2. Abre el PR (vía web o con gh CLI)
-$ gh pr create --base main --head feature/m04-fixtures \
-    --title "feat(m04): setup project + fixtures" \
-    --body "Agrega auth.setup.ts, fixtures de POM y data isolation"
+$ gh pr create --base main --head feature/m04-fixtures --title "feat(m04): setup project + fixtures" --body "Agrega auth.setup.ts, fixtures de POM y data isolation"
 
 # 3. Si te piden cambios en el review, los aplicas y vuelves a pushear
 $ # (editas)

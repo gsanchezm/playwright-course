@@ -200,7 +200,7 @@ test('login @smoke', async ({ page }) => {...});
 test('checkout full @regression', async ({ page }) => {...});
 
 // Correr sólo @smoke
-// pnpm exec playwright test --grep @smoke
+// pnpm exec playwright test --grep "@smoke"
 ```
 
 ---
@@ -215,7 +215,7 @@ pnpm test:headed                       # browser visible
 pnpm test:debug                        # Inspector
 pnpm exec playwright test <path>       # archivo/carpeta
 pnpm exec playwright test --project=ui-chromium
-pnpm exec playwright test --grep @smoke
+pnpm exec playwright test --grep "@smoke"
 pnpm exec playwright test --workers=1  # 1 worker (debug)
 pnpm exec playwright test --shard=1/4
 pnpm exec playwright test --trace=on

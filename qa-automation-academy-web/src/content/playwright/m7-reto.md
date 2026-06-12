@@ -11,10 +11,10 @@ Generar un test E2E **completo y verde** usando **solo prompts** + Playwright MC
 3. OmniPizza despierto: corre `pnpm m1` una vez para warmup antes de empezar.
 
 ```bash
-$ mkdir -p modulo-07-ia-mcp/sandbox
+$ mkdir modulo-07-ia-mcp/sandbox
 ```
 
-Todos los archivos generados por la IA caen en `modulo-07-ia-mcp/sandbox/` (ya está gitignored si extiendes el `.gitignore` del curso).
+Todos los archivos generados por la IA caen en `modulo-07-ia-mcp/sandbox/` (la carpeta ya está gitignored en el `.gitignore` del curso — compruébalo con `git check-ignore modulo-07-ia-mcp/sandbox/`).
 
 ---
 

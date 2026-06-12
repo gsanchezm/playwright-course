@@ -115,32 +115,33 @@ Verifica:
 
 ```bash
 pnpm list @playwright/test     # aparece, con la versión que instaló el installer
-ls playwright.config.ts tests/ # el config y la carpeta tests existen
+ls playwright.config.ts        # el config existe
+ls tests                       # la carpeta tests existe
 ```
 
 > 💡 **¿Por qué `pnpm` y no `npm`/`npx`?**
-> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). `pnpm create playwright` es el equivalente a `npm init playwright@latest`. Si nunca usaste pnpm: `corepack enable && corepack prepare pnpm@latest --activate`.
+> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). `pnpm create playwright` es el equivalente a `npm init playwright@latest`. Si nunca usaste pnpm: `corepack enable` y luego `corepack prepare pnpm@latest --activate`.
 
 #### 1.B — Mirar lo que el installer dejó (antes de tocar nada)
 
 ```bash
-ls -la                       # .gitignore, playwright.config.ts, package.json, tests/, .github/
+ls                           # playwright.config.ts, package.json, tests/ (los dotfiles .gitignore y .github/ no salen en bash; míralos en VS Code)
 cat playwright.config.ts     # testDir "./tests", 3 projects, un bloque dotenv COMENTADO
 cat .gitignore               # trae /playwright/.auth/ … pero NO trae .env
 ```
 
 Tres cosas que vas a tocar en los Pasos 3-4: (1) el `.gitignore` del installer **no** ignora `.env`; (2) el config trae un bloque `dotenv` **comentado** — el installer ya te dejó el hook, solo hay que encenderlo; (3) `testDir` apunta a `./tests`, pero el curso vive en `modulo-*/`.
 
-#### 1.C — Añadir la única dependencia que el installer NO trae: `dotenv`
+#### 1.C — Añadir las dependencias que el installer NO trae: `dotenv` y `typescript`
 
 ```bash
-pnpm add -D dotenv
+pnpm add -D dotenv typescript
 ```
 
-El installer instaló `@playwright/test` y los navegadores, pero `dotenv` (para leer `.env` → `process.env`) **no** viene en el scaffold. El config trae el *hook comentado* pero falta la librería. Con `-D` queda en `devDependencies` (solo desarrollo/testing).
+El installer instaló `@playwright/test` y los navegadores, pero **dos piezas no vienen** en el scaffold: (1) `dotenv`, para leer `.env` → `process.env` — el config trae el *hook comentado* pero falta la librería; (2) `typescript`, el CLI `tsc` que usarás en todos los `pnpm exec tsc --noEmit` del curso y en el `tsc --init` del Paso 5. ¿Por qué el installer no lo trae? Porque Playwright **transpila tus specs por su cuenta, sin `tsc`** — pero nosotros sí queremos el type-check explícito. Con `-D` quedan en `devDependencies` (solo desarrollo/testing).
 
 ```bash
-pnpm list dotenv     # aparece con su versión
+pnpm list dotenv typescript     # aparecen ambos con su versión
 ```
 
 #### 1.D — Cómo `dotenv` se engancha al curso
@@ -151,7 +152,11 @@ Para que `process.env.TEST_USER_USERNAME` funcione, `playwright.config.ts` **deb
 import "dotenv/config";
 ```
 
-El installer dejó esa línea **comentada**; en el **Paso 4** la descomentas. Eso ejecuta `dotenv` automáticamente cada vez que Playwright arranca y carga `.env` en `process.env`. **Si esa línea falta, tus tests reciben `undefined` al leer variables del `.env`**.
+El installer dejó esa línea **comentada**; en el **Paso 4** la descomentas. Eso ejecuta `dotenv` automáticamente cada vez que Playwright arranca y carga `.env` en `process.env`. Si esa línea falta, `process.env` devuelve `undefined` al leer variables del `.env` — pero ojo: el test **no truena**, porque los fallbacks `??` del config y del spec lo tapan. En el Paso 4 verás esa trampa en detalle.
+
+> 🔷 **TypeScript — `import` por side-effect**
+> Fíjate en la forma del import: **no trae ningún símbolo** (no lleva `{ }`); solo **ejecuta** el módulo por su efecto colateral — poblar `process.env`. Es distinto del import normal `import { test } from "@playwright/test"`, que sí trae nombres.
+> 📚 Lo viste en [TS · M01 — Hello World](/docs/typescript/m1-console-log). Aquí lo aplicas para cargar tu `.env` antes de que el config lea `process.env.BASE_URL`.
 
 ---
 
@@ -164,7 +169,7 @@ El archivo `.env` **no está en el repo** (está listado en `.gitignore`). Lo cr
 cp .env.example .env
 
 # Confirma que existe
-ls -la .env
+ls .env
 cat .env
 ```
 
@@ -196,17 +201,20 @@ Si imprime `USERNAME = undefined` significa que `.env` no se creó o está en ot
 ```bash
 # 1. Ver lo que el installer dejó ignorado (no verás .env en la lista)
 cat .gitignore
+```
 
-# 2. Añadir (NO reemplazar) las líneas de secretos al final
-cat >> .gitignore <<'EOF'
+Después, **añade** (no reemplaces) las líneas de secretos: abre el archivo en VS Code (`code .gitignore`) y pega al final estas líneas:
 
+```
 # --- Añadido en M01: secrets y storageState ---
 .env
 .env.local
 .auth/
-EOF
+```
 
-# 3. Verifica que .env queda ignorado
+Verifica que `.env` queda ignorado:
+
+```bash
 git check-ignore .env     # imprime ".env" → está siendo ignorado
 ```
 
@@ -284,20 +292,35 @@ export default defineConfig({
 
 **Puntos clave a observar línea por línea:**
 
-| Línea | Qué hace |
-|---|---|
-| `import "dotenv/config"` | Lo único que conecta `.env` con `process.env` (estaba comentado en el scaffold) |
-| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Patrón de archivos que cuentan como tests (reemplaza el `testDir: "./tests"`) |
-| `timeout: 60_000` | 60s por TC — necesario para el cold start de Render (el scaffold no lo traía) |
-| `baseURL` | El frontend live; `page.goto("/")` lo concatena |
-| `trace: "retain-on-failure"` | Graba la caja negra al fallar (el scaffold usaba `on-first-retry`, inútil sin retries) |
-| `projects: [{ name: "ui-chromium", ... }]` | El único navegador en M01. En M04 vuelven firefox/webkit. |
+| Línea | Qué hace | Por qué este valor en M01 |
+|---|---|---|
+| `import { defineConfig, devices }` | `defineConfig` envuelve el objeto para darte autocompletado y type-check del config; `devices` es el catálogo oficial de perfiles de dispositivo (viewport, userAgent, touch, scale) | Habilita el spread `...devices["Desktop Chrome"]` del project |
+| `import "dotenv/config"` | Import por side-effect: ejecuta `dotenv` y vuelca tu `.env` en `process.env`; no trae símbolos | Va arriba del todo para poblar `process.env` ANTES de que se lea `BASE_URL`; estaba comentado en el scaffold |
+| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz, porque los specs del curso viven en `modulo-*/`, no en `tests/` (el installer ponía `"./tests"`) |
+| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de carpetas `modulo-*`; por eso el `tests/example.spec.ts` del installer nunca correría (lo borras al final de este paso) |
+| `timeout: 60_000` | Presupuesto TOTAL de cada `test()` — todas sus acciones y aserciones juntas; si se agota: `TimeoutError` y el test falla. Default: 30s | Doblado a 60s para absorber el cold start de Render (30-40s el primer request del día) |
+| `expect: { timeout: 10_000 }` | Tope de CADA aserción `expect()` individual; las aserciones web-first reintentan en bucle hasta cumplirse o agotarlo. Default: 5s | 10s da margen a renders lentos sin permitir que UNA aserción se coma el presupuesto del test entero |
+| `reporter: [["html", { open: "never" }], ["list"]]` | Lista de reporters que corren a la vez. `html` genera `playwright-report/` (`open: "never"` = no abre el navegador al terminar; lo abres tú con `pnpm report`); `list` imprime cada test en la terminal según corre | `html` = artefacto compartible (en M06 será el artifact de CI); `list` = feedback inmediato mientras corre |
+| `use: { ... }` | Bloque de opciones compartidas que heredan TODOS los projects y tests; cada project puede sobreescribir campos | Con un solo project parece innecesario — pero es lo que permitirá añadir firefox/webkit en M04 sin duplicar config |
+| `baseURL` | Host base contra el que se resuelven las URLs relativas: `page.goto("/")` y `toHaveURL` se calculan contra él | Viene de `process.env.BASE_URL` (tu `.env`) con fallback `??`; un único lugar para cambiar de entorno |
+| `trace: "retain-on-failure"` | Graba la "caja negra" (timeline, snapshot del DOM por acción, network, consola) de cada test y la conserva SOLO si falla (si pasa, la borra). Valores: `off` / `on` / `on-first-retry` / `retain-on-failure` | El scaffold traía `on-first-retry`, que solo graba al reintentar — inútil sin `retries` en M01: jamás verías un trace. Así tienes el trace desde el primer fallo |
+| `screenshot: "only-on-failure"` | Captura automática del estado final de la página solo cuando el test falla; se adjunta al HTML report | Evidencia visual gratis del momento del fallo, sin ensuciar los runs verdes |
+| `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
+| `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
+| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M04 vuelven firefox/webkit y se monta el setup project |
+| `name: "ui-chromium"` | Identificador del project: lo que pasas en `--project=ui-chromium` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M05 (convención de nombres del curso) |
+| `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
-**Borra el `tests/example.spec.ts` del installer:**
+> 🔷 **TypeScript — operador `??` (nullish coalescing)**
+> `process.env.BASE_URL ?? "https://…"` devuelve el lado derecho **solo si el izquierdo es `null` o `undefined`**. Cuidado con la alternativa obvia `||`: esa cae al fallback también con `""` o `0`, que a veces son valores válidos. `??` es más preciso para "usa esto solo si de verdad falta".
+> 📚 Lo viste en [TS · M02 — Types](/docs/typescript/m2-null-undefined). Aquí lo aplicas como **red de seguridad** del `baseURL` si `.env` no cargó.
 
-```bash
-rm -rf tests/
-```
+> 🔍 **Detalle que parece obvio — `import "dotenv/config"`**
+> **Qué es:** un import por **side-effect** — sin llaves, no trae ningún símbolo a tu archivo. Solo **ejecuta** el módulo `dotenv/config`, que lee `.env` y vuelca sus valores en `process.env` (el enganche que viste en 1.D). Vive al inicio de `playwright.config.ts`.
+> **Por qué así (y no la alternativa obvia):** no necesitas una función ni una variable de `dotenv`; lo único que quieres es el *efecto* de poblar `process.env` **antes** de que el config lea `process.env.BASE_URL`. Por eso va arriba del todo y por eso no lleva `{ }`.
+> **Qué pasa si lo quitas:** `process.env.BASE_URL` y `process.env.TEST_USER_USERNAME` quedan sin cargar… pero **el test no truena**: tanto el config (`process.env.BASE_URL ?? "https://..."`) como el spec (`process.env.TEST_USER_USERNAME ?? "standard_user"`) tienen un **fallback `??`** que apunta a los valores reales de OmniPizza. El resultado es la trampa más peligrosa: el test sigue verde **usando los defaults hardcodeados**, ocultándote que tu `.env` nunca se cargó. El día que un valor real difiera de su fallback, fallarás sin entender por qué.
+
+**Borra el `tests/example.spec.ts` del installer:** elimina la carpeta `tests/` completa desde el **explorador de VS Code** (click derecho sobre `tests/` → *Delete*). Si prefieres la terminal, no hay comando neutral: bash `rm -rf tests` · 🪟 PowerShell `Remove-Item -Recurse -Force tests`. Verifica que `tests/` ya no aparece en `ls`.
 
 El installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M06.)
 
@@ -305,7 +328,13 @@ El installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `te
 
 ### Paso 5 — Crear `tsconfig.json`
 
-**Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso. TypeScript necesita saber cómo compilar tus specs. Crea el archivo en la raíz:
+**Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso.
+
+> **📐 Generar → moldear, otra vez (la filosofía del Paso 4).** El comando oficial para **generar** un `tsconfig.json` desde consola es `pnpm exec tsc --init` (el CLI `tsc` que instalaste en 1.C): genera un archivo con **decenas de opciones comentadas** — otro scaffold genérico, como el config del installer. Aquí aplicamos la misma filosofía del curso, pero ya conocemos el destino: en vez de quedarnos con ese default gigante y recortarlo línea por línea, escribimos directo el **estado curado** del curso.
+
+TypeScript necesita saber cómo compilar tus specs. Crea el archivo en la raíz con el contenido de abajo. La vía más simple es el **editor**: crea `tsconfig.json` en VS Code (`code tsconfig.json`) y pega el JSON. O desde la terminal:
+
+🐧 **bash:**
 
 ```bash
 test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
@@ -315,6 +344,7 @@ test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
     "module": "commonjs",
     "moduleResolution": "node",
     "strict": true,
+    "exactOptionalPropertyTypes": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -329,11 +359,49 @@ test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
 EOF
 ```
 
+🪟 **PowerShell** (ojo: el `'@` de cierre va en la **columna 0**, sin indentación, o el here-string no cierra):
+
+```powershell
+@'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "modulo-*/**/*.ts"
+  ]
+}
+'@ | Set-Content -Encoding utf8 tsconfig.json
+```
+
 **Por qué cada opción importa:**
 
-- `"strict": true` — bloquea `any` implícitos, null checks, etc. Es la base del tipado fuerte.
-- `"resolveJsonModule": true` — necesario para `import marketsJson from "../data/markets.json"` en M02.
-- `"types": ["node", "@playwright/test"]` — sin esto, `process.env` y `test`/`expect` no tienen tipo.
+| Opción | Qué hace | Por qué en este curso |
+|---|---|---|
+| `target: "ES2022"` | A qué versión de JavaScript se traduce tu TS | Node 20 ejecuta ES2022 nativo; sintaxis moderna sin transpilar de más |
+| `module: "commonjs"` | Formato de módulos que asume/emite (`require`/`module.exports`) | Es lo que el runner de Playwright usa al ejecutar en Node |
+| `moduleResolution: "node"` | Estrategia para localizar lo que importas (`node_modules`, `index`…) | Resuelve `@playwright/test` y `dotenv` como lo hace Node |
+| `strict: true` | Enciende la familia completa de chequeos estrictos (`noImplicitAny`, `strictNullChecks`…) | Errores en compile-time, no a mitad de una corrida de 40s |
+| `exactOptionalPropertyTypes: false` | **NO** forma parte de `strict`; en `true` prohíbe asignar `undefined` explícito a una propiedad opcional (`prop?: T`) | **Debe** quedar en `false` en este curso (ver recuadro ⚠️ abajo) |
+| `esModuleInterop: true` | Permite `import` default sobre paquetes CommonJS | Sin esto algunos imports de librerías npm obligan a sintaxis rara |
+| `skipLibCheck: true` | No type-checkea los `.d.ts` de `node_modules` | Compila más rápido y no te bloquean errores de tipos de terceros que no puedes arreglar |
+| `forceConsistentCasingInFileNames: true` | Error si un import difiere en mayúsculas/minúsculas del archivo real | Windows/macOS lo perdonan, el CI en Linux (M06) no; mata el "funciona en mi máquina" |
+| `resolveJsonModule: true` | Permite importar `.json` con tipos | Necesario para `import marketsJson from "../data/markets.json"` en M02 |
+| `types: ["node", "@playwright/test"]` | Qué declaraciones globales se cargan | Sin `node`, `process.env` no tiene tipo; sin `@playwright/test`, `test`/`expect` tampoco |
+| `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todos los `modulo-*/`: espejo del `testMatch` del Paso 4 |
+
+> ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
+> Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M06 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M04, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
 
 Verifica:
 
@@ -349,8 +417,8 @@ pnpm exec tsc --noEmit
 Para tener un atajo cómodo:
 
 ```bash
-# Ver scripts actuales
-cat package.json | grep -A 20 '"scripts"'
+# Ver scripts actuales: busca la sección "scripts"
+cat package.json
 ```
 
 Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`:
@@ -375,7 +443,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed:** `pnpm test:headed`
 - **Depurar (Playwright Inspector):** `pnpm test:debug` (o `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug`) — pausa antes de cada acción y resalta el locator exacto
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
 - **Ver el HTML report:** `pnpm report` (o `pnpm exec playwright show-report`) — el artefacto compartible con pasos, trace, screenshot y video
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m1` (no `VAR=x pnpm m1`, que es sintaxis de bash y falla en PowerShell)
 
@@ -383,7 +451,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 
 ## Outcome esperado
 
-- [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` con `pnpm add -D dotenv`.
+- [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` y `typescript` con `pnpm add -D dotenv typescript`.
 - [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-chromium`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
 - [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`** (al que le añadiste `.env` + `.auth/`).
 - [ ] Test verde contra OmniPizza live (`TC-001` y `TC-002`).
@@ -392,6 +460,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 - [ ] Sabes depurar con `--debug` (Playwright Inspector) y abrir el HTML report con `show-report`.
 - [ ] **Puedes señalar con el dedo las líneas duplicadas** entre los specs.
 - [ ] Completaste TC-003 en `reto.spec.ts` y mediste cuántas líneas copiaste.
+- [ ] Versionaste tu trabajo con `git commit -m "feat(m01): smoke feo + dotenv"` (y confirmaste que `.env` quedó fuera).
 
 ---
 

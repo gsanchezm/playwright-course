@@ -16,8 +16,7 @@
 // ============================================================
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium
 //
 //   (o con UI mode, recomendado para depurar paso a paso:)
 //   pnpm test:ui

@@ -129,7 +129,7 @@ pages/
 **0.1 — Verifica que M02 corre en verde**
 - **Qué hago:** estando en `playwright-course/`, ejecuto `pnpm m2` y `pnpm typecheck`.
 - **Por qué:** M03 refactoriza el spec de M02. Si la data tipada (`types/`, `data/`) y los locators jerárquicos no funcionan, el refactor parte de una base rota y no sabrás si un fallo es del POM o heredado.
-- **Cómo verifico:** `pnpm m2` pasa los 4 mercados en verde; `pnpm typecheck` termina sin errores; `ls types/ data/` muestra ambas carpetas.
+- **Cómo verifico:** `pnpm m2` pasa los 4 mercados en verde; `pnpm typecheck` termina sin errores; `ls types/` y `ls data/` (un comando por carpeta) muestran ambas carpetas.
 
 **0.2 — Aísla el refactor en una rama de feature**
 - **Qué hago:** antes de tocar una sola clase, creo una rama dedicada:
@@ -171,13 +171,13 @@ pages/
 ### Paso 3 — Crear `pages/BasePage.ts` (la clase base)
 
 **3.1 — Crea la carpeta `pages/` y el archivo base**
-- **Qué hago:** creo la carpeta y el primer archivo:
+- **Qué hago:** creo la carpeta y abro el primer archivo en VS Code (se crea en disco al guardarlo):
   ```bash
-  mkdir -p pages
-  # PowerShell: New-Item -ItemType File pages/BasePage.ts
+  mkdir pages
+  code pages/BasePage.ts
   ```
 - **Por qué:** `BasePage` va **primero** porque todos los demás Pages la van a `extends`. Si no existe, `LoginPage extends BasePage` ni siquiera compila. Construimos de la raíz de la jerarquía hacia abajo.
-- **Cómo verifico:** `ls pages/` muestra `BasePage.ts`.
+- **Cómo verifico:** tras guardar el archivo en VS Code, `ls pages/` muestra `BasePage.ts`.
 
 **3.2 — Escribe la clase y su constructor**
 - **Qué hago:** escribo `pages/BasePage.ts` como **clase normal** (NO abstract — eso llega en M05):
@@ -213,12 +213,14 @@ pages/
 > 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo aplicas para crear el cimiento del Page Object Model.
 
 > 🔷 **TypeScript — constructor shorthand (`protected readonly page: Page`)**
-> Poner un modificador (`protected`/`readonly`/`private`/`public`) en un parámetro del constructor **declara y asigna** la propiedad en una sola línea — equivale a `this.page = page` más la declaración del campo. Sin el modificador, el parámetro sería una variable local que se pierde al terminar el constructor (gotcha clásico).
+> Poner un modificador (`protected`/`readonly`/`private`/`public`) en un parámetro del constructor **declara y asigna** la propiedad en una sola línea — TS lo llama *parameter property*: equivale a `this.page = page` más la declaración del campo, sin cuerpo en el constructor. Sin el modificador, el parámetro sería una variable local que se pierde al terminar el constructor (gotcha clásico). La alternativa obvia — declarar el campo arriba y asignarlo a mano (`private page: Page; constructor(page: Page) { this.page = page }`) — son tres líneas y dos lugares donde olvidar el `readonly`; la parameter property lo hace en una y deja el contrato explícito. Ese `page` lo provee el fixture de Playwright cada vez que el test hace `new LoginPage(page)`.
+> **Qué pasa si lo cambias:** sin `protected`, los tests podrían tocar `loginPage.page` directamente — rompes la encapsulación. Sin `readonly`, alguien puede reasignar `this.page` a otra pestaña a mitad del TC (la clase de bug "¿por qué el assert corrió en la pestaña equivocada?").
 > 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo usas para inyectar la pestaña `page` de Playwright en cada Page Object.
 
 > 🔷 **TypeScript — modificadores `private` / `protected` / `public`**
 > `public` (default) → visible para todos, incluido el test. `private` → sólo dentro de la misma clase. `protected` → la misma clase y sus hijas, **pero no** los tests. El gotcha: si olvidas el modificador, TS asume `public` y rompes la encapsulación sin darte cuenta.
-> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí `tid()` es `protected` para que `LoginPage` lo herede pero el spec no pueda construir locators a mano.
+> Aquí `tid()` es `protected` — el punto medio exacto — para que `LoginPage` lo herede pero el spec no pueda construir locators a mano. **Qué pasa si lo cambias:** con `private`, las clases que `extends BasePage` dejan de compilar (no ven el helper heredado); con `public`, el spec puede llamar `loginPage.tid("x")` y los locators inline vuelven al test — se erosiona la encapsulación que da sentido al POM.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/).
 
 > 🔷 **TypeScript — return type `Promise<void>`**
 > Una función `async` siempre devuelve una `Promise`. `Promise<void>` significa "es asíncrona pero no resuelve ningún valor útil — sólo señala cuándo terminó". El gotcha: si olvidas `await` al llamarla, el test sigue antes de que la acción termine (flaky garantizado).
@@ -229,7 +231,7 @@ pages/
 ### Paso 4 — Crear `pages/LoginPage.ts` (la primera clase concreta)
 
 **4.1 — Crea el archivo y extiende `BasePage`**
-- **Qué hago:** creo `pages/LoginPage.ts` y declaro `export class LoginPage extends BasePage`.
+- **Qué hago:** creo `pages/LoginPage.ts` en VS Code (`code pages/LoginPage.ts`) y declaro `export class LoginPage extends BasePage`.
 - **Por qué:** `extends` es **herencia**: `LoginPage` recibe gratis `page`, `tid()` y `waitForUrl()` de `BasePage`. No copio esos helpers — los reutilizo. Ese es el punto de tener una base.
 - **Cómo verifico:** el editor autocompleta `this.tid(...)` dentro de `LoginPage` sin importarlo (viene heredado).
 
@@ -276,8 +278,18 @@ pages/
     }
   }
   ```
-- **Por qué:** los locators son **`private get`** para que el test no pueda hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio. Que sean `get` (no campos asignados en el constructor) los resuelve **perezosamente**: `tid()` consulta el viewport en el momento del uso, no al construir el Page. `loginInMarket` encapsula los 5 pasos que en M02 estaban inline en cada test. Las testids base (`"username"`, `"password"`, `"login-button"`, `market-${code}`) usan `tid()`, que les añade el sufijo `-desktop`/`-responsive`.
+- **Por qué:** los locators son **`private get`** — propiedades calculadas: cada acceso reevalúa `this.tid(...)` — para que el test no pueda hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio. La alternativa obvia — escribir `this.page.getByTestId("username-desktop")` inline en cada método que lo use — reparte el locator por toda la clase; el getter lo centraliza: si el testid cambia, tocas **una línea**. Que sean `get` (no campos asignados en el constructor) los resuelve **perezosamente**: `tid()` consulta el `viewportSize()` en el momento del uso, no al construir el Page; si los asignaras en el constructor (`this.usernameInput = this.tid(...)`), congelarías el viewport al instante de `new LoginPage(page)`. `loginInMarket` encapsula los 5 pasos que en M02 estaban inline en cada test. Las testids base (`"username"`, `"password"`, `"login-button"`) usan `tid()`, que les añade el sufijo `-desktop`/`-responsive`. Las banderas de mercado usan testid plano `market-XX` (sin sufijo de viewport) — por eso `marketFlag` va con `page.getByTestId` directo y no con `tid()`.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` sigue limpio; si intentas escribir `new LoginPage(page).usernameInput` en el spec, el editor lo subraya en rojo ("propiedad privada").
+
+> 🔍 **Detalle que parece obvio — `readonly path = "/"`**
+> **Qué es:** una propiedad de instancia de solo lectura en `LoginPage` (`"/"`) y `CatalogPage` (`"/catalog"`). En `LoginPage`, el método `goto()` la usa: `await this.page.goto(this.path)`. (En `CatalogPage` documenta qué pantalla mapea la clase — a `/catalog` se llega navegando tras el login, no con un `goto` directo.)
+> **Por qué así (y no la alternativa obvia):** la alternativa es hardcodear la ruta dentro de cada método (`goto("/")`). Con `readonly path` la ruta vive en **un solo lugar** por Page y queda visible como "esta clase mapea esta pantalla". `readonly` comunica que la pantalla de una Page no cambia en tiempo de ejecución.
+> **Qué pasa si lo cambias:** si quitas `readonly`, el compilador deja de protegerte ante una reasignación accidental (`this.path = ...`) que mandaría el `goto` a una pantalla equivocada. Si la inlineas en cada método, repites el string y pierdes el único punto de cambio.
+
+> 🔍 **Detalle que parece obvio — `await this.page.goto(this.path)`**
+> **Qué es:** navegación dentro del método del Page. El `this.` apunta a la instancia: `this.page` es la pestaña que inyectó el constructor y `this.path` la ruta de esta pantalla.
+> **Por qué así (y no la alternativa obvia):** el método es `async` y lleva `await` porque `goto` devuelve una `Promise` (el gotcha de olvidarlo lo viste en el recuadro 🔷 `Promise<void>` del Paso 3). Y se usa `this.page` — no un `page` global ni un parámetro — porque cada Page se amarra a la pestaña que recibió: un solo test puede instanciar `LoginPage`, `CatalogPage` y `CheckoutPage` compartiendo la **misma** pestaña (exactamente lo que hace `reto.spec.ts` al construir los 3 Pages con el mismo `page`).
+> **Qué pasa si lo cambias:** sin `await`, la navegación queda "en el aire" y los locators siguientes corren sobre la página vieja. Sin `async`, ni siquiera puedes usar `await` adentro. Y si reemplazas `this.page` por una referencia externa, rompes el aislamiento por instancia y vuelves al estilo script de M01.
 
 > 💡 **Para el facilitador:** justo aquí, intenta en vivo escribir `loginPage.usernameInput.fill(...)` en el spec y muestra el subrayado rojo. Sentir que el compilador **bloquea** el atajo es más convincente que decir "los locators son privados".
 
@@ -286,17 +298,17 @@ pages/
 ### Paso 5 — Crear `pages/CatalogPage.ts` y `pages/CheckoutPage.ts`
 
 **5.1 — Construye `CatalogPage` (catálogo `/catalog`)**
-- **Qué hago:** creo `pages/CatalogPage.ts`, también `extends BasePage`, con sus locators privados (`pizza-card-*`, `add-to-cart-*`, `nav-cart-count`) y acciones (`waitForCatalog`, `addFirstPizza`, `getPizzaNames`, `expectLoaded`, `expectHasPizzas`, `expectCartCount`).
+- **Qué hago:** creo `pages/CatalogPage.ts` en VS Code (`code pages/CatalogPage.ts`), también `extends BasePage`, con su `readonly path = "/catalog"` (el mismo patrón de ruta en un solo lugar que viste en el 🔍 de `LoginPage`), sus locators privados (`pizza-card-*`, `add-to-cart-*`, `nav-cart-count`) y acciones (`waitForCatalog`, `addFirstPizza`, `getPizzaNames`, `expectLoaded`, `expectHasPizzas`, `expectCartCount`).
 - **Por qué:** las cards de pizza tienen testids **dinámicos**, así que el locator usa el prefijo `[data-testid^="pizza-card-"]` (selector legítimo, no inventado). Cada pizza es un `h3`; `getPizzaNames()` los lee con `getByRole("heading")`. Estos son los selectores OmniPizza verificados — no hay rol `list`/`listitem`.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `CatalogPage` exporta también el tipo `Category` para los filtros.
 
 **5.2 — Construye `CheckoutPage` (checkout `/checkout`)**
-- **Qué hago:** creo `pages/CheckoutPage.ts`, `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, `order-confirmation`, y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
+- **Qué hago:** creo `pages/CheckoutPage.ts` en VS Code (`code pages/CheckoutPage.ts`), `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, `order-confirmation`, y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
 - **Por qué:** `CheckoutPage` es la pantalla que usarás en el **reto**. Sus métodos ya están listos para que el reto se enfoque en **orquestar** el flujo E2E, no en escribir locators. `fillWithMarket(market)` rellena los 4 campos con datos coherentes por mercado.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; los métodos públicos aparecen al autocompletar `checkoutPage.` en el spec.
 
 **5.3 — Crea el barrel `pages/index.ts`**
-- **Qué hago:** creo `pages/index.ts` para reexportar las 4 clases (y el tipo `Category`):
+- **Qué hago:** creo `pages/index.ts` en VS Code (`code pages/index.ts`) para reexportar las 4 clases (y el tipo `Category`):
   ```ts
   export { BasePage } from "./BasePage";
   export { LoginPage } from "./LoginPage";
@@ -491,48 +503,12 @@ export default defineConfig({
 
 ---
 
-## 🔍 Detalles que parecen obvios pero no lo son
-
-Cada uno de estos aparece tal cual en `pages/BasePage.ts`, `pages/LoginPage.ts` o `pages/CatalogPage.ts`. Léelos con el código abierto al lado.
-
-### `constructor(protected readonly page: Page) {}`
-
-- **Qué es:** una *parameter property* de TypeScript. Esa única línea **declara** la propiedad `page`, la marca `protected readonly` y la **asigna** (`this.page = page`) automáticamente. No hay cuerpo en el constructor. El `page` lo provee el fixture de Playwright cada vez que el test hace `new LoginPage(page)`.
-- **Por qué así (y no la alternativa obvia):** la alternativa obvia es declarar el campo arriba y asignarlo a mano: `private page: Page; constructor(page: Page) { this.page = page }`. Eso son tres líneas y dos lugares donde olvidar el `readonly`. La parameter property lo hace en una y deja el contrato explícito.
-- **Qué pasa si lo cambias:** si quitas `protected`, el campo se vuelve `public` por defecto y los tests podrían tocar `loginPage.page` directamente — rompes la encapsulación. Si quitas `readonly`, alguien puede reasignar `this.page` a otra pestaña a mitad del TC (la clase de bug "¿por qué el assert corrió en la pestaña equivocada?").
-
-### `readonly path = "/"`
-
-- **Qué es:** una propiedad de instancia de solo lectura en `LoginPage` (`"/"`) y `CatalogPage` (`"/catalog"`). El método `goto()` la usa: `await this.page.goto(this.path)`.
-- **Por qué así (y no la alternativa obvia):** la alternativa es hardcodear la ruta dentro de cada método (`goto("/")`). Con `readonly path` la ruta vive en **un solo lugar** por Page y queda visible como "esta clase mapea esta pantalla". `readonly` comunica que la pantalla de una Page no cambia en tiempo de ejecución.
-- **Qué pasa si lo cambias:** si quitas `readonly`, el compilador deja de protegerte ante una reasignación accidental (`this.path = ...`) que mandaría el `goto` a una pantalla equivocada. Si la inlineas en cada método, repites el string y pierdes el único punto de cambio.
-
-### `private get usernameInput(): Locator`
-
-- **Qué es:** los locators se exponen como **getters `private`** (propiedades calculadas), no como variables inline dentro de cada método. Cada acceso reevalúa `this.tid("username")`.
-- **Por qué así (y no la alternativa obvia):** la alternativa obvia es escribir `this.page.getByTestId("username-desktop")` inline en cada método que lo use. El getter centraliza el locator: si cambia el testid, tocas **una línea**. Y al ser `get` (no campo asignado en el constructor) el `Locator` se resuelve perezosamente — importa porque `tid()` consulta el `viewportSize()` en el momento del uso, no en el de la construcción del Page.
-- **Qué pasa si lo cambias:** si lo declaras como campo en el constructor (`this.usernameInput = this.tid(...)`) congelas el viewport al instante de `new LoginPage(page)`. Si lo haces `public`, el test puede hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio — exactamente lo que el POM busca impedir.
-
-### `protected tid(base: string): Locator`
-
-- **Qué es:** helper de `BasePage` que añade el sufijo de viewport (`-desktop` / `-responsive`) al testid. Es `protected`, junto con `waitForUrl`.
-- **Por qué así (y no la alternativa obvia):** `protected` lo hace visible para las clases hijas (`LoginPage`, `CatalogPage`...) pero **no** para los tests. La alternativa `public` lo dejaría disponible en el spec (`loginPage.tid("x")`), reabriendo la puerta a locators inline desde el test. La alternativa `private` lo escondería incluso de las hijas y `LoginPage` no podría usarlo. `protected` es el punto medio exacto: herramienta del equipo QA interno, invisible para el cliente (test).
-- **Qué pasa si lo cambias:** con `private`, las clases que `extends BasePage` dejan de compilar (no ven el helper heredado). Con `public`, los specs vuelven a poder construir locators a mano y se erosiona la encapsulación que da sentido al POM.
-
-### `await this.page.goto(this.path)`
-
-- **Qué es:** navegación dentro del método del Page. El `this.` apunta a la instancia del Page; `this.page` es la pestaña inyectada por el constructor; `this.path` es la ruta de esa pantalla.
-- **Por qué así (y no la alternativa obvia):** el método es `async` y se hace `await` porque `goto` devuelve una `Promise` — sin `await`, el test seguiría a la siguiente acción antes de que la página cargara (flaky garantizado). Se usa `this.page` (no un `page` global ni un parámetro) porque cada Page se amarra a la pestaña que recibió: así un solo test puede instanciar `LoginPage`, `CatalogPage` y `CheckoutPage` compartiendo la **misma** pestaña.
-- **Qué pasa si lo cambias:** si quitas el `await`, la navegación queda "en el aire" y los locators siguientes corren sobre la página vieja. Si quitas `async`, ni siquiera puedes usar `await` adentro. Si reemplazas `this.page` por una referencia externa, rompes el aislamiento por instancia y vuelves al estilo script de M01.
-
----
-
 ## ▶️ Cómo ejecutar este módulo
 
 - **Comando del módulo:** `pnpm m3`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
 - **Verificar tipos (herencia POM):** `pnpm typecheck` — ojo: la herencia introduce errores sutiles
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m3` (no `VAR=x pnpm m3`, sintaxis bash que falla en PowerShell)

@@ -431,21 +431,23 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Habilidad mínima de Git para versionar tu suite — config, init, status, add, commit, .gitignore, log
       </p>
     </header>
+<h1 id="módulo-00-git-esencial-para-automatizadores">Módulo 00 — Git esencial para automatizadores</h1>
 <p><strong>Duración estimada:</strong> 30-45 min
 <strong>Pieza que suma al framework:</strong> habilidad mínima de Git para versionar tu suite — <code>config</code>, <code>init</code>, <code>status</code>, <code>add</code>, <code>commit</code>, <code>.gitignore</code>, <code>log</code>. Lo justo para empezar M01 sin miedo.</p>
 <aside class="callout callout--warn"><p>⚠️ <strong>¿Ya manejas Git con fluidez?</strong> Salta a M01. Este módulo es la <strong>versión condensada</strong> de lo esencial. Para profundización (rebase interactivo, workflows de equipo, tags, aliases) ver el <a href="../../git-github-course/">curso completo</a>.</p>
 </aside>
 <hr>
 <h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
-<p>Este módulo <strong>no agrega código al framework</strong> — agrega <strong>disciplina de versionado</strong>. El &quot;antes y después&quot; se ve en el repo, no en archivos nuevos:</p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">ANTES (sandbox sin Git)             DESPUÉS (sandbox con Git habit)
-─────────────────────────           ───────────────────────────
-mi-carpeta/                         mi-carpeta/
+<p>Este módulo <strong>no agrega código de tests</strong> al framework — pero sí <strong>nace el proyecto real</strong>: aquí creas <code>playwright_architecture</code> (el MISMO repo que M01 llenará con <code>pnpm create playwright</code>) y le das <strong>disciplina de versionado</strong>. El &quot;antes y después&quot; se ve en el repo:</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">ANTES (sin Git, sin proyecto)       DESPUÉS (playwright_architecture con Git habit)
+─────────────────────────           ───────────────────────────────────────────────
+proyecto-suelto/                    playwright_architecture/
 ├── tests_v1/                       ├── .git/                  ← 🆕 historial completo
-├── tests_v2/                       ├── .gitignore             ← 🆕 excluye .env, .auth, etc
-├── tests_FINAL/                    ├── tests/
-└── tests_NO_TOCAR/                 │   └── login.spec.ts      ← 1 versión, N commits
-                                    └── .env                   ← presente, NO versionado</code></pre></div>
+├── tests_v2/                       ├── .gitignore             ← 🆕 mínimo (.env, node_modules/)
+├── tests_FINAL/                    ├── login.spec.ts          ← 1 versión, N commits
+└── tests_NO_TOCAR/                 └── .env                   ← presente, NO versionado</code></pre></div>
+<aside class="callout callout--big-idea"><p>🎯 En <strong>M01</strong> entrarás a esta misma carpeta y correrás <code>pnpm create playwright</code> — el installer la poblará (<code>tests/</code>, <code>playwright.config.ts</code>, su propio <code>.gitignore</code>) <strong>encima de este historial</strong>, sin perder tus commits de M00.</p>
+</aside>
 <p><strong>Qué entrega este módulo al resto del curso:</strong></p>
 <table>
 <thead>
@@ -463,8 +465,8 @@ mi-carpeta/                         mi-carpeta/
 <td>M01 en adelante: versionas cada cambio</td>
 </tr>
 <tr>
-<td><code>.gitignore</code> con <code>.env</code>, <code>.auth/</code>, <code>node_modules/</code></td>
-<td>M01 (creas <code>.env</code>) y M04 (creas <code>.auth/</code>)</td>
+<td><code>.gitignore</code> mínimo (<code>.env</code>, <code>node_modules/</code>)</td>
+<td>M01 lo consolida (el installer trae el suyo + añades <code>.env</code>/<code>.auth/</code>)</td>
 </tr>
 <tr>
 <td><code>git log --oneline</code></td>
@@ -609,8 +611,9 @@ mi-carpeta/                         mi-carpeta/
 <ul>
 <li><input disabled="" type="checkbox"> <code>git config --list --global</code> muestra tu nombre y correo.</li>
 <li><input disabled="" type="checkbox"> Puedes explicar working dir / staging / repository.</li>
-<li><input disabled="" type="checkbox"> Hiciste tu primer commit en una carpeta sandbox.</li>
-<li><input disabled="" type="checkbox"> Tu <code>.gitignore</code> excluye <code>node_modules/</code>, <code>.env</code>, <code>.auth/</code>, <code>playwright-report/</code>, <code>test-results/</code>.</li>
+<li><input disabled="" type="checkbox"> Hiciste el primer commit real del proyecto <code>playwright_architecture</code>.</li>
+<li><input disabled="" type="checkbox"> Tu <code>.gitignore</code> mínimo excluye <code>node_modules/</code> y <code>.env</code> (el definitivo se completa en M01).</li>
+<li><input disabled="" type="checkbox"> Sabes leer un diff: líneas <code>-</code>/<code>+</code> y el encabezado de hunk <code>@@ -a,b +c,d @@</code>.</li>
 <li><input disabled="" type="checkbox"> Puedes leer <code>git log --oneline</code> y entender qué pasó.</li>
 </ul>
 <hr>

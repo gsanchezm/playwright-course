@@ -42,8 +42,7 @@ pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui
 // ============================================================
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium
 //
 //   (o con UI mode, recomendado para depurar paso a paso:)
 //   pnpm test:ui
@@ -176,4 +175,39 @@ test.describe("Smoke Reto M01", () => {
 // Pista de lo que viene: en M03 estas ~8 líneas se vuelven 1 sola:
 //     await loginPage.loginAs("MX", USERNAME, PASSWORD);
 // ============================================================
+```
+
+---
+
+## Paso 11 — Versiona tu trabajo (Git)
+
+Ya tienes el módulo verde: es el momento natural de guardar un punto de control en Git. (En este curso **Git es just-in-time**: aparece cuando el flujo lo pide, no como bloque inicial.)
+
+**11.1 — Preparar los archivos para el commit.** Desde la raíz del proyecto, agrega al staging lo que generó el installer y lo que creaste tú en este módulo:
+
+```bash
+git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github modulo-01-smoke-feo
+```
+
+Las listas explícitas evitan arrastrar basura. Aquí entran tanto lo que dejó `pnpm create playwright` (`playwright.config.ts` ya reconciliado, `package.json`, `pnpm-lock.yaml`, el `.github/workflows/playwright.yml` **latente**) como tus archivos (`.env.example`, `tsconfig.json`, el módulo). Fíjate que **`.env` NO está en la lista** — es secreto y ya lo excluye `.gitignore` (Paso 3). Sí versionas `.env.example` (la plantilla pública).
+
+**Cómo verificas:**
+
+```bash
+git status            # .env NO aparece como "to be committed"
+```
+
+Si `.env` apareciera en verde, detente: tu `.gitignore` no lo está cubriendo (vuelve al Paso 3).
+
+**11.2 — Crear el commit:**
+
+```bash
+git commit -m "feat(m01): smoke feo + dotenv"
+```
+
+Un commit pequeño y bien nombrado (convención `feat(m01): …`) deja un historial legible; cada módulo del curso será un punto de control que puedes revisar o revertir.
+
+```bash
+git log --oneline -1
+# → <hash> feat(m01): smoke feo + dotenv
 ```

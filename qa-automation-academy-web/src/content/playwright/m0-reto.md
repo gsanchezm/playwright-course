@@ -30,7 +30,11 @@ Este es el directorio raíz de tu framework para todo el curso. Si ya lo creaste
    Initialized empty Git repository in .../playwright_architecture/.git/
    ```
 
-3. **Crea un `.gitignore` mínimo ANTES de cualquier otro archivo** (el de la sección **`.gitignore` para Playwright** → 3.1):
+3. **Crea un `.gitignore` mínimo ANTES de cualquier otro archivo** (el de la sección **`.gitignore` para Playwright** → 3.1). Créalo desde VS Code:
+   ```bash
+   $ code .gitignore
+   ```
+   Pega este contenido y guarda:
    ```gitignore
    node_modules/
    .env
@@ -62,11 +66,11 @@ Este es el directorio raíz de tu framework para todo el curso. Si ya lo creaste
    ```
    Fíjate que haces `add` por nombre (NO `git add .`) — así controlas que el `.env` no se cuele aunque el `.gitignore` fallara. Este es el commit raíz (`root-commit`) de tu proyecto.
 
-8. **Modifica el test:**
-   ```bash
-   $ echo "test('logout funciona', () => {});" >> login.spec.ts
+8. **Modifica el test:** abre el archivo en VS Code con `code login.spec.ts` y añade esta línea al final:
+   ```ts
+   test('logout funciona', () => {});
    ```
-   Nota el `>>` (añade) vs `>` (sobreescribe). Generas un cambio sobre un archivo ya trackeado: `git status` lo muestra como `modified` (no como `new file`).
+   Generas un cambio sobre un archivo ya trackeado: `git status` lo muestra como `modified` (no como `new file`).
 
 9. **Mira el diff** y haz un segundo commit:
    ```bash

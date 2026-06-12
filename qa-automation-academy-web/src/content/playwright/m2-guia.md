@@ -358,7 +358,7 @@ Si M01 no corre, vuelve al módulo anterior — no avances sin esa base.
 Verifica:
 
 ```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+pnpm list @playwright/test dotenv typescript @types/node
 ```
 
 Si te falta alguno, vuelve al **Paso 1 de M01** (o ejecuta `pnpm install` si `package.json` ya los lista).
@@ -367,10 +367,15 @@ Si te falta alguno, vuelve al **Paso 1 de M01** (o ejecuta `pnpm install` si `pa
 
 ### Paso 2 — Crear `types/` y `data/` (carpetas nuevas)
 
+Crea las dos carpetas y abre cada archivo nuevo en VS Code (se crea en disco al guardarlo):
+
 ```bash
-mkdir -p types data
-touch types/omnipizza.d.ts types/index.ts
-touch data/markets.json data/users.json
+mkdir types
+mkdir data
+code types/omnipizza.d.ts
+code types/index.ts
+code data/markets.json
+code data/users.json
 ```
 
 **Contenido mínimo** de cada archivo:
@@ -408,6 +413,14 @@ export interface Pizza {
   price: number;
 }
 ```
+
+> 🔷 **TypeScript — `interface`**
+> Una `interface` describe la **forma** de un objeto (qué campos tiene y de qué tipo), sin generar código en runtime: es puro contrato de compilación. La alternativa obvia —no tipar nada y confiar en el JSON— te deja descubrir el campo faltante recién cuando el test revienta.
+> 📚 Lo viste en [TS · M06 — interfaces](/docs/typescript/m6-api-response). Aquí lo aplicas a `User`, `Market` y `Pizza`: el contrato que valida `data/*.json`.
+
+> 🔷 **TypeScript — union / literal types (`"MX" | "US" | …`)**
+> Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP"` significa "solo estos 4 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
+> 📚 Lo viste en [TS · M04 — objects & types](/docs/typescript/m4-union-types). Aquí lo aplicas a `code` y `currency`: si añades un mercado con un código fuera del union, TS lo rechaza antes de correr.
 
 📄 `types/index.ts` (barrel — re-exporta para imports cortos):
 
@@ -540,7 +553,7 @@ Cosas a observar:
 - **Comando del módulo:** `pnpm m2`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-02-locators-data/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-02-locators-data/reto.spec.ts`)
 - **Verificar tipos:** `pnpm typecheck`
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m2` (no `VAR=x pnpm m2`, sintaxis bash que falla en PowerShell)

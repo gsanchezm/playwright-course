@@ -20,6 +20,11 @@ ls test-results/
 pnpm exec playwright show-trace test-results/<carpeta>/trace.zip
 ```
 
+> 🔍 **Detalle que parece obvio — `trace: "retain-on-failure"`**
+> **Qué es:** graba la traza (la "caja negra") **sólo cuando un test falla**, no en cada corrida — por eso arriba forzaste `--trace=on`: para tener material que abrir aunque el test pase.
+> **Por qué así (y no la alternativa obvia):** `trace: "on"` graba la traza de **todos** los tests, pasen o fallen. Eso es lento y genera artefactos pesados que casi nunca vas a abrir. `retain-on-failure` te da exactamente la traza que necesitas — la del test roto — sin cargar el pipeline con cientos de zips inútiles.
+> **Qué pasa si lo cambias:** con `"on"` cada PR sube gigabytes de trazas y los jobs tardan más; con `"off"` te quedas ciego cuando algo falla en CI y no puedes reproducir el bug.
+
 **Qué explorar en el Trace Viewer:**
 
 - **Timeline** (arriba): cada acción del test como una franja temporal.
@@ -44,6 +49,8 @@ DEMO_FAIL=1 pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromi
 pnpm exec playwright show-trace test-results/<carpeta-debug>/trace.zip
 ```
 
+(🪟 En PowerShell: `$env:DEMO_FAIL="1"; pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium`.)
+
 Observa cómo en el último paso se ve el screenshot final + el locator que nunca apareció. **Eso es lo que recibes en un PR fallido**.
 
 ---
@@ -62,9 +69,7 @@ git commit -m "feat(m06): habilita CI workflow"
 git push -u origin feature/m06-ci
 
 # 4. Abre el PR
-gh pr create --base main --head feature/m06-ci \
-  --title "feat(m06): habilita CI workflow" \
-  --body "Pipeline matrix sobre 3 browsers + API"
+gh pr create --base main --head feature/m06-ci --title "feat(m06): habilita CI workflow" --body "Pipeline matrix sobre 3 browsers + API"
 
 # 5. Sigue los checks en vivo
 gh pr checks --watch
@@ -94,6 +99,8 @@ ls
 # Abre el trace del job fallido:
 pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/*/trace.zip
 ```
+
+(🪟 En PowerShell el `*` no se expande para ejecutables: usa la ruta explícita de la carpeta que descargó `gh run download` — `pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/<carpeta>/trace.zip`.)
 
 El flujo *"PR rojo → descargo artefactos → leo la traza"* es el día a día de un automatizador. Practicarlo aquí evita pánico en el primer fallo real en tu trabajo.
 

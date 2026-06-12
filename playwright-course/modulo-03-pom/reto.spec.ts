@@ -17,8 +17,7 @@
 //   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-03-pom/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium
 //
 //   (o con UI mode:)
 //   pnpm test:ui

@@ -18,7 +18,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 
 ---
 
-## Los 7 módulos
+## Los 7 módulos (+ M07 opcional)
 
 | # | Módulo | Pieza que añade al framework |
 |---|---------|-------------|
@@ -29,6 +29,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | 4 | [Setup project + Fixtures](./modulo-04-setup-fixtures/) | `tests/setup/auth.setup.ts` + `fixtures/` + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR + deshacer cambios |
 | 5 | [API Layer](./modulo-05-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
 | 6 | [CI/CD + Trace Viewer](./modulo-06-ci-debugging/) | `.github/workflows/playwright.yml` con matrix por browser |
+| 7 | [IA + Playwright MCP](./modulo-07-ia-mcp/) *(opcional)* | Cliente LLM + Playwright MCP — copiloto que genera/depura/mantiene tests (no agrega código al framework) |
 
 ### Mapa de Git embebido
 
@@ -43,7 +44,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 ### Apéndices opcionales (fuera de las 4-6 h)
 
 - **A1 — Codegen:** `pnpm codegen` para prototipar specs rápido.
-- **A2 — Playwright MCP + agentes AI:** revive del commit `58d61c2` si se quiere recuperar.
+- **A2 — [IA + Playwright MCP](./modulo-07-ia-mcp/)** (opcional, 45-60 min): configura un cliente LLM (Claude / Copilot / Gemini / ChatGPT) con Playwright MCP y Playwright Agents.
 
 ---
 

@@ -31,8 +31,7 @@ El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando 
 //   ✔ Tienes claro que cada uso termina con `await pizzas.dispose()`.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-05-api-layer/reto.spec.ts \
-//     --project=api
+//   pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api
 // ============================================================
 
 import { test, expect } from "@playwright/test";
@@ -208,3 +207,19 @@ test.describe("Reto M05 — extender PizzaService", () => {
 //    sobre 3 browsers en paralelo, con traces descargables.
 // ============================================================
 ```
+
+---
+
+## Paso 10 — Versiona tu trabajo (Git JIT)
+
+Agrega solo lo que toca este módulo y commitea con un mensaje convencional. La capa de servicios + su config + el módulo son una unidad coherente: un commit por capa deja un historial legible (y, en M06, fácil de revertir en CI).
+
+```bash
+git add services tests/api playwright.config.ts modulo-05-api-layer
+git commit -m "feat(m05): API layer con BaseService abstracta"
+git log --oneline -1
+```
+
+> 🪟 **Windows / PowerShell:** los comandos `git` son idénticos; no necesitas escapar nada aquí.
+
+**Cómo verificas:** `git log --oneline -1` muestra el commit `feat(m05): ...` en la cima.

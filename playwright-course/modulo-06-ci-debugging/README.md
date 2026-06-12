@@ -173,7 +173,7 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
   git remote -v      # debe haber un `origin` apuntando a GitHub
   ```
 - **Por qué:** todo el módulo (secrets, push, PR, descargar artefactos) se apoya en `gh` y en un repo remoto. Sin `origin` en GitHub, **no hay CI** que observar.
-- **Cómo verifico:** `gh auth status` dice *"Logged in"*; `git remote -v` lista un `origin` apuntando a `github.com`. Si falta `gh`: macOS → `brew install gh`; Linux → [`cli.github.com`](https://cli.github.com/). Si falta el remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
+- **Cómo verifico:** `gh auth status` dice *"Logged in"*; `git remote -v` lista un `origin` apuntando a `github.com`. Si falta `gh`: macOS → `brew install gh`; Windows → `winget install --id GitHub.cli`; Linux → [`cli.github.com`](https://cli.github.com/). Si falta el remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
 
 > 💡 **Para el facilitador:** este módulo asume que el repo ya tiene `origin` en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup de SSH antes de continuar — sin remoto no hay CI.
 
@@ -186,7 +186,7 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
 **1.1 — Confirma las dependencias de Playwright**
 - **Qué hago:** listo los 4 paquetes que ya instalaste en M01.
   ```bash
-  pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+  pnpm list @playwright/test dotenv typescript @types/node
   ```
 - **Por qué:** M06 no instala nada nuevo de npm; sólo necesita que la base de M01 siga ahí. El reporter `junit` y el `github` no son paquetes: vienen dentro de `@playwright/test`.
 - **Cómo verifico:** las 4 dependencias aparecen listadas. Si falta alguna, vuelve a M01 Paso 1.
@@ -196,7 +196,7 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
 
   | Herramienta | Cómo verificar | Cómo instalar si falta |
   |---|---|---|
-  | `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
+  | `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Windows: `winget install --id GitHub.cli` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
   | `git` con remoto | `git remote -v` | M04 Git break — conectar repo a GitHub |
   | Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
 - **Por qué:** estas tres viven fuera de `package.json`. Si te falta el permiso `write`, el push y los secrets funcionan, pero el reto (crear issues automáticos) fallará con `403`.
@@ -209,10 +209,11 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
 Aquí entra la **carpeta `.github/workflows/`**, el último directorio del framework. Es una acción de **GitHub Actions tejida en el flujo**, no un bloque de Git aparte: el workflow es el archivo que convierte tu suite local en un pipeline.
 
 **2.1 — Crear el archivo del workflow**
-- **Qué hago:** creo la carpeta y el archivo vacío del pipeline.
+- **Qué hago:** creo la carpeta del workflow (un nivel por línea) y abro el archivo en VS Code — se crea al guardarlo.
   ```bash
-  mkdir -p .github/workflows
-  touch .github/workflows/playwright.yml
+  mkdir .github
+  mkdir .github/workflows
+  code .github/workflows/playwright.yml
   ```
 - **Por qué:** GitHub busca workflows **únicamente** en `.github/workflows/*.yml`. La ruta es una convención dura: un archivo fuera de ahí no se ejecuta nunca. Este es el archivo que faltaba en el árbol de `🏗️ Arquitectura`.
 - **Cómo verifico:** `ls .github/workflows/` muestra `playwright.yml`.
@@ -221,50 +222,64 @@ Aquí entra la **carpeta `.github/workflows/`**, el último directorio del frame
 - **Qué hago:** pego el contenido del workflow en `.github/workflows/playwright.yml`.
 
 ```yaml
-name: Playwright
+name: Playwright Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/**']
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   e2e:
+    name: ${{ matrix.project }} / shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: playwright-course
     strategy:
       fail-fast: false
       matrix:
         project: [ui-chromium, ui-firefox, ui-webkit, api]
         shard: [1, 2]
         exclude:
-          - project: api    # api corre 1 sola vez (no se shardea)
+          # api no se beneficia de browsers ni shardear mucho
+          - project: api
             shard: 2
-    defaults:
-      run:
-        working-directory: playwright-course
+
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_URL: ${{ secrets.API_URL }}
+      TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      DEFAULT_COUNTRY: MX
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps
+          node-version: 20
 
-      - name: Run ${{ matrix.project }} (shard ${{ matrix.shard }}/2)
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run tests
         run: |
           if [ "${{ matrix.project }}" = "api" ]; then
             pnpm exec playwright test --project=api
           else
             pnpm exec playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
           fi
-        env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          API_URL:  ${{ secrets.API_URL }}
-          TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
       - name: Upload HTML report
         if: always()
@@ -274,7 +289,7 @@ jobs:
           path: playwright-course/playwright-report
           retention-days: 7
 
-      - name: Upload traces / videos
+      - name: Upload traces and videos
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -283,8 +298,31 @@ jobs:
           retention-days: 7
 ```
 
+> 🔍 **`defaults.run.working-directory` y los prefijos `playwright-course/` de los `path:`** existen porque en el repo del curso el proyecto vive en un subfolder `playwright-course/` dentro de la raíz del repo. El bloque `defaults.run.working-directory` aplica a **todos** los steps `run` del job (install, browsers y tests) — pero los `path:` de `upload-artifact` no lo respetan, por eso llevan el prefijo explícito. Si en TU repo la raíz ES el proyecto (el `package.json` vive en la raíz), omite ese bloque `defaults` y los prefijos `playwright-course/` de los `path:` (déjalos como `playwright-report` y `test-results`).
+
 - **Por qué:** la `matrix` (`project × shard`) es lo que multiplica un solo job en **7 jobs paralelos**. El `exclude` saca `api` del shard 2 (la API no se reparte). Las claves `env:` mapean cada credencial a un `secrets.*` que configurarás en el Paso 5 — el workflow **referencia** los secrets, pero no los contiene.
-- **Cómo verifico:** `gh workflow list` muestra `Playwright` (puede tardar un minuto en indexar tras el primer push). En local, un linter de YAML no marca errores de indentación.
+- **Cómo verifico:** `gh workflow list` muestra `Playwright Tests` (puede tardar un minuto en indexar tras el primer push). En local, un linter de YAML no marca errores de indentación.
+
+**Anatomía del workflow, línea por línea** (las claves que el resto del módulo no explica):
+
+| Línea | Qué hace |
+|---|---|
+| `name: Playwright Tests` | Nombre del workflow tal como aparece en la pestaña **Actions** y en `gh workflow list` |
+| `on:` | Los tres disparadores: `push` a `main` o a ramas `feature/**`, `pull_request` contra `main`, y `workflow_dispatch` (el botón "Run workflow" para correrlo a mano) |
+| `jobs.e2e` + `name: ${{ matrix.project }} / shard ${{ matrix.shard }}` | `e2e` es el **id** del job; el `name` interpolado es la etiqueta legible de cada job de la matrix (p.ej. `ui-firefox / shard 2`) |
+| `runs-on: ubuntu-latest` | La VM donde corre cada job: un runner Linux efímero que GitHub crea y destruye en cada corrida |
+| `timeout-minutes: 30` | Mata el job si se cuelga más de 30 min — sin esto, un test colgado consume el runner indefinidamente |
+| `strategy.fail-fast: false` | Sin esta línea, el primer job fallido **cancela a todos sus hermanos** de la matrix — y pierdes los reportes de los demás browsers |
+| `matrix` + `exclude` | `project × shard` expande 4×2 = 8 combinaciones; el `exclude` quita `api`+`shard 2` → **7 jobs** |
+| `env:` a nivel job | Variables disponibles en **todos** los steps. Las credenciales vienen de `secrets.*` (encriptadas — Paso 5); `DEFAULT_COUNTRY: MX` va en texto plano porque **no es un secreto**: es el mercado por defecto que consumen los tests data-driven (M02) |
+| `actions/checkout@v4` | Clona tu repo dentro del runner — sin esto el runner está vacío |
+| `actions/setup-node@v4` (`node-version: 20`) | Instala Node 20, la misma major que usas en local |
+| `pnpm/action-setup@v4` (`version: 10`) | Instala pnpm **pineado a la versión 10**. Alternativa: `corepack enable` (activa el pnpm que declare `package.json`); aquí se usa la action para dejar la versión fijada y visible en el propio YAML |
+| `pnpm install --frozen-lockfile` | Falla si `pnpm-lock.yaml` no cuadra con `package.json` — CI instala **exactamente** lo lockeado: builds reproducibles |
+| `playwright install --with-deps` | Descarga los navegadores **y** las librerías del SO que necesitan (el runner es un Linux pelado) |
+| El `if/else` del step `Run tests` | `api` corre completo en su único job — si lo shardearas con `--shard=1/2` (y el shard 2 excluido), la mitad de sus tests **jamás se ejecutaría**; los projects `ui-*` sí se reparten con `--shard=N/2` |
+| `if: always()` | Sube los artefactos **aunque el job falle** — las trazas de los jobs rojos son justo las que necesitas |
+| `retention-days: 7` | GitHub borra los artefactos a los 7 días: suficiente para debuggear el PR sin acumular gigabytes |
 
 > ⚠️ **`if: always()` es crítico:** sin esa línea, los artefactos solo se suben cuando el job pasa — exactamente al revés de lo que necesitas. Las trazas de los jobs FALLIDOS son las que te interesan.
 
@@ -328,12 +366,30 @@ M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `w
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
   ```
-- **Por qué:** estos cuatro flags hacen que el **mismo** config se comporte distinto en local y en pipeline sin scripts duplicados. `process.env.CI` no lo defines tú: GitHub Actions lo inyecta como `CI=true`.
+- **Por qué:** estos cuatro flags hacen que el **mismo** config se comporte distinto en local y en pipeline sin scripts duplicados ni flags manuales. `process.env.CI` no lo defines tú: GitHub Actions (y casi todos los CI) la inyecta automáticamente como `CI=true` en cada job — es la señal con la que el config decide en cuál de los dos mundos está corriendo.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` sigue verde; en local `pnpm m6` corre con 0 retries (no ves reintentos en la salida).
+
+> 🔍 **Detalle que parece obvio — `process.env.CI`**
+> **Qué pasa si lo cambias:** si la seteas a mano en local, tu máquina se comporta como CI (2 retries, `forbidOnly`, reporters extra) y pierdes justo las ventajas de correr en local. Para *simular* CI a propósito, sí la seteas temporalmente: `CI=true pnpm m6` (bash) / `$env:CI="true"; pnpm m6` (PowerShell).
+
+> 🔍 **Detalle que parece obvio — `retries: process.env.CI ? 2 : 0`**
+> **Qué es:** dos reintentos automáticos cuando un test falla en CI; **cero** reintentos cuando corres en local.
+> **Por qué así (y no la alternativa obvia):** en CI los runners comparten CPU, la red es más lenta y Render hace cold start — un fallo aislado suele ser ruido, así que 2 reintentos evitan PRs rojos por flakes. En **local** lo quieres al revés: si un test falla, quieres **verlo fallar**, no que un reintento lo esconda y te haga creer que todo está verde.
+> **Qué pasa si lo cambias:** si pones `retries > 0` en local, estás ocultando flakes en el peor momento — el desarrollo. Un test inestable pasará "por casualidad" en el segundo intento y nunca lo arreglarás hasta que reviente en CI o en producción.
+
+> 🔍 **Detalle que parece obvio — `fullyParallel: true` (+ `workers`)**
+> **Qué es:** paraleliza a nivel de **test individual**, no sólo a nivel de archivo; `workers` limita cuántos corren a la vez.
+> **Por qué así (y no la alternativa obvia):** por defecto Playwright paraleliza entre archivos pero corre los tests *dentro* de un archivo en serie. Con `fullyParallel: true` cada test es candidato a su propio worker, exprimiendo los runners. `workers: process.env.CI ? 2 : undefined` topa el paralelismo a 2 en CI (los runners de GitHub tienen 2 CPUs) y deja que en local Playwright elija según tus cores.
+> **Qué pasa si lo cambias:** sin `fullyParallel`, un archivo con 30 tests se vuelve un cuello de botella secuencial. Si subes `workers` por encima de los CPUs reales del runner, los tests pelean por recursos, se vuelven lentos y aparecen flakes por timeouts.
 
 > 🔷 **TypeScript — operador ternario `cond ? a : b`**
 > `process.env.CI ? 2 : 0` es una **expresión** que devuelve un valor (no un `if` que ejecuta sentencias): se usa donde la propiedad espera un número. El gotcha: `process.env.CI` es un `string | undefined`, así que el ternario lee su *truthiness* (la cadena vacía o `undefined` cuentan como falso). Por eso `forbidOnly` usa `!!process.env.CI` para forzarlo a un `boolean` real.
 > 📚 Lo viste en [TS · M03 — funciones y lógica](../../typescript-qa-course/modulo-03-functions/). Aquí lo aplicas para que `retries`, `workers` y los reporters cambien según el entorno.
+
+> 🔍 **Detalle que parece obvio — `forbidOnly: !!process.env.CI`**
+> **Qué es:** en CI, hace **fallar el build** si quedó un `test.only(...)` o `describe.only(...)` olvidado en el código (el `!!` es el del recuadro de arriba: fuerza la variable a un `boolean` real).
+> **Por qué así (y no la alternativa obvia):** un `.only` olvidado es silencioso y catastrófico: hace que Playwright corra **sólo ese test** e ignore todos los demás. El suite sale verde con 1 test ejecutado y 200 saltados — y nadie lo nota. `forbidOnly` convierte ese descuido en un error ruidoso que bloquea el merge.
+> **Qué pasa si lo cambias:** si lo pones en `false` (o no lo activas en CI), un `.only` puede pasar la revisión y dejar tu pipeline "verde" mientras en realidad no está testeando casi nada.
 
 **3.2 — Añadir reporters condicionales y `video` al fallar**
 - **Qué hago:** condiciono el `reporter` y agrego `video: "retain-on-failure"` dentro de `use`.
@@ -345,7 +401,12 @@ M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `w
   video: "retain-on-failure",
   ```
 - **Por qué:** en CI quieres `github` (anota el PR con los fallos) y `junit` (para integraciones externas); en local quieres `list` (salida legible en la terminal). El `video` sólo se graba cuando un test falla, igual que el `trace`.
-- **Cómo verifico:** `pnpm exec tsc --noEmit` verde; al simular CI (`$env:CI="true"; pnpm m6` en PowerShell) ves anotaciones estilo GitHub en la salida.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde; al simular CI (`CI=true pnpm m6` en bash · 🪟 `$env:CI="true"; pnpm m6` en PowerShell) ves anotaciones estilo GitHub en la salida.
+
+> 🔍 **Detalle que parece obvio — `video: "retain-on-failure"` / `screenshot: "only-on-failure"`**
+> **Qué es:** video y screenshot se guardan **únicamente cuando el test falla**, mismo principio que el `trace`. En M06 sólo el `video` es nuevo: el `screenshot: "only-on-failure"` ya lo traías de módulos anteriores.
+> **Por qué así (y no la alternativa obvia):** capturar video y screenshots de cada test verde es desperdicio puro: nadie revisa el video de un test que pasó. Limitarlos al fallo te da el material de diagnóstico justo cuando lo necesitas, sin inflar los artefactos.
+> **Qué pasa si lo cambias:** `video: "on"` multiplica el tamaño de `test-results/` y el tiempo de cada job; desactivarlo del todo te deja sin el clip que muchas veces explica el fallo más rápido que la propia traza.
 
 **3.3 — Añadir el 5º project `anonymous`**
 - **Qué hago:** agrego un quinto objeto al array `projects[]`, sin `storageState`.
@@ -515,6 +576,11 @@ Antes de confiar en CI, practica leer una traza en local. **Ningún concepto del
   # Verás carpetas tipo `modulo-01-smoke-feo-...-chromium` con un trace.zip dentro.
   ```
 
+> 🔍 **Detalle que parece obvio — `trace: "retain-on-failure"`**
+> **Qué es:** graba la traza (la "caja negra") **sólo cuando un test falla**, no en cada corrida.
+> **Por qué así (y no la alternativa obvia):** `trace: "on"` graba la traza de **todos** los tests, pasen o fallen. Eso es lento y genera artefactos pesados que casi nunca vas a abrir. `retain-on-failure` te da exactamente la traza que necesitas — la del test roto — sin cargar el pipeline con cientos de zips inútiles.
+> **Qué pasa si lo cambias:** con `"on"` cada PR sube gigabytes de trazas y los jobs tardan más; con `"off"` te quedas ciego cuando algo falla en CI y no puedes reproducir el bug.
+
 **6.2 — Abrir la traza en Trace Viewer**
 - **Qué hago:** abro el `trace.zip` generado.
   ```bash
@@ -541,7 +607,7 @@ Antes de confiar en CI, practica leer una traza en local. **Ningún concepto del
   ```bash
   DEMO_FAIL=1 pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium
   ```
-  (En PowerShell: `$env:DEMO_FAIL="1"; pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium`.)
+  (🪟 En PowerShell: `$env:DEMO_FAIL="1"; pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium`.)
 - **Por qué:** quieres ver cómo se ve un fallo **antes** de que ocurra de verdad en un PR. El test busca `#this-does-not-exist`, un locator que nunca aparece, así que falla tras 2s y graba su traza.
 - **Cómo verifico:** la corrida termina en rojo con 1 test fallido; en `test-results/` aparece una carpeta nueva con el `trace.zip` del fallo.
 
@@ -587,9 +653,7 @@ Aquí se juntan las acciones de Git: aíslas el trabajo en una rama, lo commitea
 **8.4 — Abrir el PR y observar los 7 jobs**
 - **Qué hago:** abro el PR contra `main` y sigo los checks en vivo.
   ```bash
-  gh pr create --base main --head feature/m06-ci \
-    --title "feat(m06): habilita CI workflow" \
-    --body "Pipeline matrix sobre 3 browsers + API"
+  gh pr create --base main --head feature/m06-ci --title "feat(m06): habilita CI workflow" --body "Pipeline matrix sobre 3 browsers + API"
 
   gh pr checks --watch
   ```
@@ -614,6 +678,7 @@ Aquí se juntan las acciones de Git: aíslas el trabajo en una rama, lo commitea
   ```bash
   pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/*/trace.zip
   ```
+  (🪟 En PowerShell el `*` no se expande para ejecutables: usa la ruta explícita de la carpeta que descargó `gh run download` — `pnpm exec playwright show-trace playwright-traces-ui-chromium-shard1/<carpeta>/trace.zip`.)
 - **Por qué:** cierra el ciclo *"PR rojo → descargo artefactos → leo la traza"*. La traza de CI se lee idéntica a la local (Paso 6) — el Trace Viewer no distingue de dónde viene.
 - **Cómo verifico:** se abre Trace Viewer con el Timeline del fallo remoto; identificas el paso roto sin haber reproducido nada a mano.
 
@@ -638,40 +703,6 @@ El reto pide crear un **segundo workflow** que corra **diariamente** (cron) un s
   gh issue list --label canary        # tras forzar un fallo, debe haber 1 issue nuevo
   ```
   El badge debe renderizar su estado en el README abierto en GitHub.
-
----
-
-## 🔍 Detalles que parecen obvios pero no lo son
-
-### `retries: process.env.CI ? 2 : 0`
-- **Qué es:** dos reintentos automáticos cuando un test falla en CI; **cero** reintentos cuando corres en local.
-- **Por qué así (y no la alternativa obvia):** en CI los runners comparten CPU, la red es más lenta y Render hace cold start — un fallo aislado suele ser ruido, así que 2 reintentos evitan PRs rojos por flakes. En **local** lo quieres al revés: si un test falla, quieres **verlo fallar**, no que un reintento lo esconda y te haga creer que todo está verde.
-- **Qué pasa si lo cambias:** si pones `retries > 0` en local, estás ocultando flakes en el peor momento — el desarrollo. Un test inestable pasará "por casualidad" en el segundo intento y nunca lo arreglarás hasta que reviente en CI o en producción.
-
-### `process.env.CI`
-- **Qué es:** la variable de entorno que el config usa para decidir si está corriendo en pipeline o en tu máquina.
-- **Por qué así (y no la alternativa obvia):** **no la defines tú.** GitHub Actions (y casi todos los CI) la inyecta automáticamente como `CI=true` en cada job. Eso te da un único `playwright.config.ts` que se comporta distinto en los dos mundos, sin scripts duplicados ni flags manuales.
-- **Qué pasa si lo cambias:** si intentas setearla a mano en local, harás que tu máquina se comporte como CI (2 retries, `forbidOnly`, reporters extra) y perderás justo las ventajas de correr en local. Para *simular* CI a propósito, sí la seteas temporalmente (ver comandos abajo).
-
-### `forbidOnly: !!process.env.CI`
-- **Qué es:** en CI, hace **fallar el build** si quedó un `test.only(...)` o `describe.only(...)` olvidado en el código.
-- **Por qué así (y no la alternativa obvia):** un `.only` olvidado es silencioso y catastrófico: hace que Playwright corra **sólo ese test** e ignore todos los demás. El suite sale verde con 1 test ejecutado y 200 saltados — y nadie lo nota. `forbidOnly` convierte ese descuido en un error ruidoso que bloquea el merge.
-- **Qué pasa si lo cambias:** si lo pones en `false` (o no lo activas en CI), un `.only` puede pasar la revisión y dejar tu pipeline "verde" mientras en realidad no está testeando casi nada.
-
-### `fullyParallel: true`
-- **Qué es:** paraleliza a nivel de **test individual**, no sólo a nivel de archivo; `workers` limita cuántos corren a la vez.
-- **Por qué así (y no la alternativa obvia):** por defecto Playwright paraleliza entre archivos pero corre los tests *dentro* de un archivo en serie. Con `fullyParallel: true` cada test es candidato a su propio worker, exprimiendo los runners. `workers: process.env.CI ? 2 : undefined` topa el paralelismo a 2 en CI (los runners de GitHub tienen 2 CPUs) y deja que en local Playwright elija según tus cores.
-- **Qué pasa si lo cambias:** sin `fullyParallel`, un archivo con 30 tests se vuelve un cuello de botella secuencial. Si subes `workers` por encima de los CPUs reales del runner, los tests pelean por recursos, se vuelven lentos y aparecen flakes por timeouts.
-
-### `trace: "retain-on-failure"`
-- **Qué es:** graba la traza (la "caja negra") **sólo cuando un test falla**, no en cada corrida.
-- **Por qué así (y no la alternativa obvia):** `trace: "on"` graba la traza de **todos** los tests, pasen o fallen. Eso es lento y genera artefactos pesados que casi nunca vas a abrir. `retain-on-failure` te da exactamente la traza que necesitas — la del test roto — sin cargar el pipeline con cientos de zips inútiles.
-- **Qué pasa si lo cambias:** con `"on"` cada PR sube gigabytes de trazas y los jobs tardan más; con `"off"` te quedas ciego cuando algo falla en CI y no puedes reproducir el bug.
-
-### `video: "retain-on-failure"` / `screenshot: "only-on-failure"`
-- **Qué es:** mismo principio que el trace — video y screenshot se guardan **únicamente cuando el test falla**.
-- **Por qué así (y no la alternativa obvia):** capturar video y screenshots de cada test verde es desperdicio puro: nadie revisa el video de un test que pasó. Limitarlos al fallo te da el material de diagnóstico justo cuando lo necesitas, sin inflar los artefactos.
-- **Qué pasa si lo cambias:** `video: "on"` multiplica el tamaño de `test-results/` y el tiempo de cada job; desactivarlo del todo te deja sin el clip que muchas veces explica el fallo más rápido que la propia traza.
 
 ---
 

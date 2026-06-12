@@ -46,6 +46,17 @@ const typescriptContent = buildSlugMap(typescriptModules);
 const gitGithubContent = buildSlugMap(gitGithubModules);
 const playwrightContent = buildSlugMap(playwrightModules);
 
+// Legacy URLs ("section/slug") that were renamed and should redirect.
+// /docs/playwright/mN-detalles → /docs/playwright/mN-guia
+const LEGACY_REDIRECTS: Record<string, string> = {
+  "playwright/m1-detalles": "/docs/playwright/m1-guia",
+  "playwright/m2-detalles": "/docs/playwright/m2-guia",
+  "playwright/m3-detalles": "/docs/playwright/m3-guia",
+  "playwright/m4-detalles": "/docs/playwright/m4-guia",
+  "playwright/m5-detalles": "/docs/playwright/m5-guia",
+  "playwright/m6-detalles": "/docs/playwright/m6-guia",
+};
+
 function getContent(section: string, slug: string): string | null {
   if (section === "setup") return setupContent[slug] ?? null;
   if (section === "typescript") return typescriptContent[slug] ?? null;
@@ -113,6 +124,12 @@ export default function DocsPage() {
     return (
       <Navigate to={`/docs/${section}/${sectionData.items[0].slug}`} replace />
     );
+  }
+
+  // Redirect: legacy slugs (e.g. /docs/playwright/m1-detalles → m1-guia)
+  const legacyTarget = slug ? LEGACY_REDIRECTS[`${section}/${slug}`] : null;
+  if (legacyTarget) {
+    return <Navigate to={legacyTarget} replace />;
   }
 
   const content = slug ? getContent(section, slug) : null;

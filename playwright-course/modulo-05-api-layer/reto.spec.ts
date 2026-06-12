@@ -17,8 +17,7 @@
 //   ✔ Tienes claro que cada uso termina con `await pizzas.dispose()`.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-05-api-layer/reto.spec.ts \
-//     --project=api
+//   pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api
 // ============================================================
 
 import { test, expect } from "@playwright/test";

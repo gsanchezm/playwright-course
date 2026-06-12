@@ -415,7 +415,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
     <summary>En esta página</summary>
     <ol>
       <li><a href="#qué-es-gitignore">¿Qué es .gitignore?</a></li>
-      <li><a href="#31-crear-el-gitignore">3.1 Crear el .gitignore</a></li>
+      <li><a href="#31-crear-un-gitignore-mínimo-el-definitivo-llega-en-m01">3.1 Crear un .gitignore mínimo (el definitivo llega en M01)</a></li>
       <li><a href="#32-verificar-que-funciona">3.2 Verificar que funciona</a></li>
       <li><a href="#33-caso-típico-te-metiste-el-env-por-error">3.3 Caso típico: te metiste el .env por error</a></li>
     </ol>
@@ -429,6 +429,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Sublección del Módulo 00: Git esencial
       </p>
     </header>
+<h1 id="3-gitignore-para-playwright">3. <code>.gitignore</code> para Playwright</h1>
 <h2 id="qué-es-gitignore">¿Qué es <code>.gitignore</code>?</h2>
 <p><code>.gitignore</code> es un archivo de texto plano (sin extensión) que vive en la raíz de tu repo y le dice a Git <strong>qué archivos jamás debe trackear</strong> — ni mostrarlos como &quot;untracked&quot;, ni dejarlos entrar a un commit aunque hagas <code>git add .</code>.</p>
 <aside class="callout callout--tip"><p>💡 <strong>Analogía QA:</strong> es la <strong>lista negra</strong> que mantiene tu equipo de testing — &quot;estos endpoints jamás se prueban en producción&quot;, &quot;estas credenciales jamás se loguean en consola&quot;. <code>.gitignore</code> es la lista negra del repo: tú decides qué nunca debe salir publicado.</p>
@@ -444,88 +445,114 @@ Untracked files:
   .DS_Store               ← basura de macOS</code></pre></div>
 <p>Si haces <code>git add .</code> aquí, <strong>commiteas todo eso al historial</strong> — incluyendo secretos. Y aunque después los borres, <strong>quedan en el historial para siempre</strong> (Git no olvida fácil). Por eso <code>.gitignore</code> se crea <strong>antes del primer commit</strong>.</p>
 <hr>
-<p>En un repo de Playwright, hay carpetas y archivos que <strong>nunca</strong> deben subirse:</p>
+<p>En un repo de Playwright <strong>completo</strong> (el que tendrás al final del curso), estos son todos los archivos y carpetas que <strong>nunca</strong> deben subirse. Es tu mapa de referencia — pero ojo: la mayoría aún <strong>no existe</strong> en tu carpeta. En M00 solo necesitas el subconjunto mínimo (<code>node_modules/</code>, <code>.env</code>); el resto se cubre en M01/M04 cuando esas carpetas nacen.</p>
 <table>
 <thead>
 <tr>
 <th>No commitear</th>
 <th>Por qué</th>
+<th>Nace en</th>
 </tr>
 </thead>
 <tbody><tr>
 <td><code>node_modules/</code></td>
 <td>Pesa cientos de MB; se reinstala con <code>pnpm install</code></td>
+<td>M01 (<code>pnpm install</code>)</td>
 </tr>
 <tr>
 <td><code>.env</code></td>
 <td>Contiene secretos (credenciales, tokens)</td>
+<td>M01</td>
 </tr>
 <tr>
 <td><code>.auth/</code></td>
 <td><code>storageState</code> con sesiones autenticadas</td>
+<td>M04 (<code>auth.setup.ts</code>)</td>
 </tr>
 <tr>
 <td><code>playwright-report/</code></td>
 <td>HTML report que se regenera en cada corrida</td>
+<td>M01 (1ª corrida)</td>
 </tr>
 <tr>
 <td><code>test-results/</code></td>
 <td>Screenshots, videos, traces de fallos</td>
+<td>M01 (1er fallo)</td>
 </tr>
 <tr>
 <td><code>blob-report/</code>, <code>traces/</code></td>
 <td>Artefactos intermedios</td>
+<td>M06 (CI)</td>
 </tr>
 <tr>
 <td><code>*.log</code>, <code>.DS_Store</code></td>
 <td>Ruido del sistema operativo y procesos</td>
+<td>—</td>
 </tr>
 </tbody></table>
-<h2 id="31-crear-el-gitignore">3.1 Crear el <code>.gitignore</code></h2>
-<p>En la <strong>raíz</strong> de tu repo, crea un archivo llamado <code>.gitignore</code> con este contenido (es el mismo que usa este curso):</p>
-<div class="code-block"><span class="code-lang">gitignore</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-gitignore"><span class="hl-comment"># Dependencias</span>
+<h2 id="31-crear-un-gitignore-mínimo-el-definitivo-llega-en-m01">3.1 Crear un <code>.gitignore</code> mínimo (el definitivo llega en M01)</h2>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Secuencia importante:</strong> en M00 creas un <code>.gitignore</code> <strong>mínimo</strong> — lo justo para que tu primer commit del proyecto no arrastre secretos ni dependencias. El <code>.gitignore</code> <strong>definitivo y completo</strong> se consolida en <strong>M01</strong>: cuando corras <code>pnpm create playwright</code>, el installer trae su propio <code>.gitignore</code> (con <code>/test-results/</code>, <code>/playwright-report/</code>, <code>/playwright/.auth/</code>, etc.) y en M01 solo le <strong>añades</strong> <code>.env</code> y <code>.auth/</code>. <strong>No dupliques aquí la lista final</strong> — la armas una vez, bien, en M01.</p>
+</aside>
+<p><strong>3.1.1 — Crear el archivo en la raíz de <code>playwright_architecture</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> en la raíz de tu repo, crea el archivo desde VS Code (el nombre es exactamente <code>.gitignore</code>, sin extensión):</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ code .gitignore</code></pre></div>
+<p>Pega este contenido mínimo y guarda:</p>
+<div class="code-block"><span class="code-lang">gitignore</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-gitignore"><span class="hl-comment"># Dependencias (cientos de MB, se reinstalan con pnpm install)</span>
 node_modules/
 
-<span class="hl-comment"># Reportes y artefactos generados por Playwright</span>
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-traces/
-
-<span class="hl-comment"># Variables de entorno y secretos</span>
+<span class="hl-comment"># Variables de entorno y secretos (¡nunca al repo!)</span>
 .env
-.env.local
-.env.*.local
-
-<span class="hl-comment"># Sesiones autenticadas (storageState)</span>
-.auth/
-
-<span class="hl-comment"># Sistema operativo y editores</span>
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-<span class="hl-comment"># Logs</span>
-*.log</code></pre></div>
-<aside class="callout callout--tip"><p>💡 Compromete <code>.gitignore</code> en tu <strong>primer commit</strong>, antes de <code>pnpm install</code>. Si ya instalaste y <code>node_modules/</code> quedó trackeado, sácalo con: <code>git rm -r --cached node_modules/</code> y luego commitea.</p>
+.env.local</code></pre></div>
+<ul>
+<li><strong>Por qué:</strong> estas dos líneas cubren los dos riesgos reales que ya tienes hoy: <code>node_modules/</code> (peso) y <code>.env</code> (secretos). Lo demás (<code>test-results/</code>, <code>playwright-report/</code>, <code>.auth/</code>) todavía <strong>no existe</strong> en tu carpeta — esas carpetas nacen en M01/M04, y allí el installer + tú las cubrirán.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> muestra <code>.gitignore</code> como <em>untracked</em> (sí queremos versionarlo). Si más adelante creas un <code>.env</code>, <code>git status</code> <strong>NO</strong> debe listarlo.</li>
+</ul>
+<aside class="callout callout--tip"><p>💡 Compromete <code>.gitignore</code> en tu <strong>primer commit</strong>, antes de <code>pnpm install</code>. Si ya instalaste y <code>node_modules/</code> quedó trackeado, sácalo del índice (sin borrarlo del disco) con: <code>git rm -r --cached node_modules/</code> y luego commitea.</p>
 </aside>
 <h2 id="32-verificar-que-funciona">3.2 Verificar que funciona</h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git status
+<p><strong>3.2.1 — Comprobar que <code>.env</code> queda invisible para Git</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> crea un <code>.env</code> de prueba y corre <code>git status</code>.</li>
+<li><strong>Por qué:</strong> la única forma de confiar en un <code>.gitignore</code> es probarlo: el archivo prohibido debe <strong>desaparecer</strong> de la lista de untracked.</li>
+<li><strong>Cómo verifico:</strong></li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ echo "API_TOKEN=supersecreto" &gt; .env
+$ git status
 On branch main
-nothing to commit, working tree clean</code></pre></div>
-<p>Si después de <code>pnpm install</code> ves esto (en lugar de <code>node_modules/</code> como untracked), tu <code>.gitignore</code> está bien configurado.</p>
+
+Untracked files:
+        .gitignore        ← este SÍ lo versionamos
+
+<span class="hl-comment"># .env NO aparece → .gitignore está funcionando</span></code></pre></div>
+<blockquote><p>🪟 <strong>PowerShell:</strong> mismo caveat de codificación de la lección 2 (<code>&gt;</code> puede generar UTF-16); para esta prueba con <code>git status</code> no importa.</p>
+</blockquote>
+<p>Más adelante, cuando corras <code>pnpm install</code>, <code>node_modules/</code> tampoco aparecerá como untracked. Esa es la señal de que tu <code>.gitignore</code> está bien configurado.</p>
 <h2 id="33-caso-típico-te-metiste-el-env-por-error">3.3 Caso típico: te metiste el <code>.env</code> por error</h2>
+<p>Esto pasa cuando haces <code>git add .env</code> a mano (saltándote el <code>.gitignore</code>) o cuando el <code>.env</code> ya estaba trackeado antes de añadir la regla.</p>
+<p><strong>3.3.1 — Detectar que el <code>.env</code> se coló al staging</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git status</code></li>
+<li><strong>Por qué:</strong> confirmas el daño antes de actuar. Si ves <code>.env</code> bajo <em>Changes to be committed</em>, está en staging pero <strong>aún no</strong> en el historial — todavía estás a tiempo.</li>
+<li><strong>Cómo verifico:</strong></li>
+</ul>
 <div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add .env   # 🤦
 $ git status
 Changes to be committed:
         new file:   .env</code></pre></div>
-<p>Sácalo del staging <strong>antes</strong> de commitear, sin perder el archivo:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git restore --staged .env</code></pre></div>
-<p>Si ya commiteaste y aún no pusheaste:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git rm --cached .env       # quita del repo, deja en disco
-$ git commit -m "chore: untrack .env"</code></pre></div>
+<p><strong>3.3.2 — Sacarlo del staging SIN perder el archivo (si aún no commiteaste)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git restore --staged .env</code></li>
+<li><strong>Por qué:</strong> lo regresa de <strong>staging → working</strong>. El archivo sigue en tu disco (lo necesitas para correr tests), pero ya no entrará al commit.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> deja de listarlo en <em>Changes to be committed</em>; si el <code>.gitignore</code> ya tiene la regla, desaparece por completo de untracked.</li>
+</ul>
+<p><strong>3.3.3 — Si YA commiteaste (pero aún no pusheaste)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git rm --cached .env</code> y luego <code>git commit -m &quot;chore: untrack .env&quot;</code></li>
+<li><strong>Por qué:</strong> <code>--cached</code> quita el archivo del <strong>índice de Git</strong> (deja de trackearlo) pero lo <strong>deja en tu disco</strong>. El nuevo commit registra &quot;este archivo ya no se sigue&quot;.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> muestra el <code>.env</code> como untracked otra vez (y el <code>.gitignore</code> lo silencia). El archivo sigue existiendo: <code>ls .env</code> lo encuentra.</li>
+</ul>
 <aside class="callout callout--warn"><p>⚠️ <strong>Si ya pusheaste un <code>.env</code> con secretos al remoto público, los secretos están comprometidos.</strong> Rotar credenciales inmediatamente. Borrar el commit del historial NO es suficiente — un fork pudo haberlo descargado.</p>
 </aside>
 <hr>

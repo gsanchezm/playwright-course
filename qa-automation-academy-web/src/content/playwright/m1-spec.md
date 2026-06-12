@@ -6,10 +6,10 @@ Ahora sí, **el código del módulo**. Crea la carpeta y el archivo:
 
 ```bash
 # 1. Crea la carpeta del módulo (si no existe)
-mkdir -p modulo-01-smoke-feo
+mkdir modulo-01-smoke-feo
 
-# 2. Crea el archivo del spec
-touch modulo-01-smoke-feo/ejemplo.spec.ts
+# 2. Crea y abre el archivo del spec en VS Code (se crea al guardar)
+code modulo-01-smoke-feo/ejemplo.spec.ts
 ```
 
 Abre `modulo-01-smoke-feo/ejemplo.spec.ts` en VS Code y **escribe esto exactamente** (no copies y pegues a ciegas — escribirlo a mano fija la sintaxis):
@@ -42,6 +42,14 @@ test.describe("Smoke OmniPizza — versión fea (M01)", () => {
 });
 ```
 
+> 🔷 **TypeScript — anotación de tipo `string` (por inferencia)**
+> `USERNAME` y `PASSWORD` son de tipo `string` **sin que escribas `: string`**: TypeScript lo **infiere** porque `process.env.X` es `string | undefined` y el `?? "literal"` garantiza un `string`. Podrías anotarlo explícito (`const USERNAME: string = …`), pero aquí la inferencia es suficiente y más limpia.
+> 📚 Lo viste en [TS · M02 — Types](/docs/typescript/m2-strings). Aquí lo aplicas: pasarás estos `string` a `.fill(...)`, que **espera** un `string`.
+
+> 🔷 **TypeScript — `async` / `await` y `Promise` (intro)**
+> `.click()`, `.fill()` y `expect(...)` devuelven una **`Promise`** (una operación que terminará *después*). El `await` delante de cada una **pausa** hasta que se resuelve, así el orden real de ejecución coincide con el orden que lees. Una función marcada `async` es la única donde puedes usar `await`.
+> 📚 Lo viste en [TS · M03 — Functions](/docs/typescript/m3-login). Aquí lo aplicas a **cada** acción y aserción del spec.
+
 **Anatomía línea por línea:**
 
 | Línea | Concepto |
@@ -53,6 +61,21 @@ test.describe("Smoke OmniPizza — versión fea (M01)", () => {
 | `await page.goto("/")` | Concatena con `baseURL` del config → `https://omnipizza-frontend.onrender.com/` |
 | `await page.getByTestId(...)` | Locator nivel 3 de la jerarquía (M02 explica los otros niveles) |
 | `await expect(page).toHaveURL(/\/catalog/)` | Aserción con regex; Playwright espera automáticamente |
+
+> 🔍 **Detalle que parece obvio — `await page.goto("/")`**
+> **Qué es:** abre el navegador en la **ruta raíz** del sitio; la `/` sola se concatena con el `baseURL` del config (lo acabas de ver en la anatomía).
+> **Por qué así (y no la alternativa obvia):** poner solo `/` deja el host en **un único lugar** (el config). El día que el frontend cambie de URL (staging, otro dominio, otro puerto), tocas una línea en el config y **todos los specs siguen funcionando**.
+> **Qué pasa si lo cambias:** si hardcodeas `page.goto("https://omnipizza-frontend.onrender.com/")` el test funciona igual hoy… pero esa URL queda regada por cada spec. Multiplica por 50 tests y un cambio de dominio se vuelve un *find & replace* frágil. Además ignora el `baseURL`, así que `--config` o un override por entorno dejan de tener efecto.
+
+> 🔍 **Detalle que parece obvio — `await page.getByTestId("market-MX").click()` (el `await` de cada línea)**
+> **Qué es:** el `await` delante de **cada acción y cada aserción** del spec. Playwright es **asíncrono**: `.click()`, `.fill()` y `expect(...)` devuelven una *promesa* (una operación que terminará *después*); el `await` pausa hasta que se resuelve.
+> **Por qué así (y no la alternativa obvia):** sin `await`, la promesa se dispara pero **nadie la espera**. El runner sigue a la siguiente línea antes de que el click ocurra, y el orden real de ejecución deja de coincidir con el orden que lees.
+> **Qué pasa si lo cambias:** quitar el `await` produce el peor de los bugs de QA: un test que **pasa o falla de forma engañosa**. Una aserción sin `await` (`expect(page).toHaveURL(...)`) puede reportar verde sin haber comprobado nada, porque la promesa quedó pendiente y el test terminó antes. Es un falso positivo silencioso.
+
+> 🔍 **Detalle que parece obvio — `await page.getByTestId("login-button-desktop").click()`**
+> **Qué es:** el spec localiza el botón de login por su **test id** (`data-testid="login-button-desktop"`), no por su rol accesible (`getByRole("button", { name: "Sign In" })`).
+> **Por qué así (y no la alternativa obvia):** ya conoces las dos analogías de los Conceptos JIT de la guía (el sticker que el dev puso vs el lector de pantalla): el test id es **estable aunque cambie el texto o el idioma** del botón; `getByRole(..., { name })` depende del **texto visible**, y el `name` es lo que cambia todo — si el botón pasa de "Sign In" a "Iniciar sesión", el `getByRole` rompe y el `getByTestId` no.
+> **Qué pasa si lo cambias:** migrar a `getByRole` te acerca a probar accesibilidad real (bueno), pero acoplas el test al copy de la UI. En M02 verás la jerarquía de locators completa; en M01 usamos `getByTestId` porque OmniPizza ya trae esos ids y queremos que el smoke sea inmune al texto.
 
 **Verifica que compila** antes de ejecutarlo:
 
@@ -214,3 +237,8 @@ test.describe("Smoke OmniPizza — versión fea (M01)", () => {
 // Esa es la duplicación que vas a matar en M03.
 // ============================================================
 ```
+
+> 🔍 **Detalle que parece obvio — `await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 })`** (el Paso 6 de TC-002)
+> **Qué es:** la espera de que la primera card de pizza aparezca. Fíjate que **no hay ningún `sleep()` ni `waitForTimeout()`** en todo el spec — solo un `timeout` como opción de la aserción.
+> **Por qué así (y no la alternativa obvia):** Playwright tiene **auto-waiting**: `toBeVisible()` reintenta en bucle hasta que la condición se cumple o se agota el timeout. Aquí subimos el timeout a 30s **por el cold start de Render**, no para "dar tiempo a que cargue" a ciegas.
+> **Qué pasa si lo cambias:** si lo reemplazas por `await page.waitForTimeout(30000)` esperas **siempre** 30 segundos completos aunque la card aparezca en 2 — tests lentos. Y si pones un sleep corto (`waitForTimeout(2000)`) en un día de cold start, la card aún no existe y el test **falla intermitente** (flaky). El auto-waiting espera *lo justo*: sigue en cuanto la condición se cumple.

@@ -7,3 +7,4 @@ node_modules/
 .env.local
 .auth/
 .DS_Store
+modulo-07-ia-mcp/sandbox/

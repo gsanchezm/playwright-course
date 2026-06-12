@@ -420,10 +420,9 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
       <li><a href="#conceptos-jit">Conceptos JIT</a></li>
       <li><a href="#arquitectura-del-pom-en-el-framework">Arquitectura del POM en el framework</a></li>
       <li><a href="#paso-a-paso">Paso a paso</a></li>
-      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</a></li>
       <li><a href="#outcome-esperado">Outcome esperado</a></li>
-      <li><a href="#git-break-refactoriza-en-una-rama-no-en-main">🌿 Git break — Refactoriza en una rama (no en main)</a></li>
-      <li><a href="#git-break-resolver-un-conflicto">⚔️ Git break — Resolver un conflicto</a></li>
+      <li><a href="#qué-viene-en-m04">¿Qué viene en M04?</a></li>
     </ol>
   </details>
   <main class="content">
@@ -435,7 +434,8 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Page Object Model: BasePage + 3 páginas reales
       </p>
     </header>
-<p><strong>Duración estimada:</strong> 80-105 min (incluye dos <em>Git breaks</em> — branches y conflictos)
+<h1 id="módulo-03-refactor-a-pom-oop-incremental">Módulo 03 — Refactor a POM (OOP incremental)</h1>
+<p><strong>Duración estimada:</strong> 80-105 min (incluye Git JIT — branches y conflictos, tejidos en el flujo del refactor)
 <strong>Pieza que suma al framework:</strong> <code>pages/BasePage.ts</code> + <code>LoginPage.ts</code> + <code>CatalogPage.ts</code> + <code>CheckoutPage.ts</code>. El spec de M02 se refactoriza y se nota cuánto se limpia.</p>
 <hr>
 <h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
@@ -568,93 +568,229 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 └── CheckoutPage.ts    ← extiende BasePage, maneja /checkout (lo usas en el reto)</code></pre></div>
 <hr>
 <h2 id="paso-a-paso">Paso a paso</h2>
-<h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
-pnpm m2            # debe pasar los 4 mercados en verde
-pnpm typecheck     # debe pasar limpio
-ls types/ data/    # ambas carpetas existen (vienen de M02)</code></pre></div>
-<p>Si M02 no corre, vuelve al módulo anterior. Este módulo asume que la data tipada y los locators jerárquicos ya están internalizados.</p>
+<blockquote><p><strong>Cómo leer esta sección:</strong> cada paso grande se parte en <strong>micro-pasos</strong> <code>N.M</code> con la tripleta <strong>Qué hago / Por qué / Cómo verifico</strong>. Cada micro-paso dice qué archivo se crea/edita y en qué orden, para que la <code>🏗️ Arquitectura</code> de arriba se construya pieza por pieza. Los recuadros <code>🔷 TypeScript</code> aparecen la <strong>primera vez</strong> que un concepto del lenguaje entra en juego y enlazan al curso de TS.</p>
+</blockquote>
+<hr>
+<h3 id="paso-0-pre-requisitos-y-rama-de-trabajo">Paso 0 — Pre-requisitos y rama de trabajo</h3>
+<p><strong>0.1 — Verifica que M02 corre en verde</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> estando en <code>playwright-course/</code>, ejecuto <code>pnpm m2</code> y <code>pnpm typecheck</code>.</li>
+<li><strong>Por qué:</strong> M03 refactoriza el spec de M02. Si la data tipada (<code>types/</code>, <code>data/</code>) y los locators jerárquicos no funcionan, el refactor parte de una base rota y no sabrás si un fallo es del POM o heredado.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m2</code> pasa los 4 mercados en verde; <code>pnpm typecheck</code> termina sin errores; <code>ls types/</code> y <code>ls data/</code> (un comando por carpeta) muestran ambas carpetas.</li>
+</ul>
+<p><strong>0.2 — Aísla el refactor en una rama de feature</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> antes de tocar una sola clase, creo una rama dedicada:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git switch main
+git pull            # sólo si ya tienes remoto configurado
+git switch -c feature/m03-pom</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el refactor toca <strong>varios archivos a la vez</strong> (<code>BasePage</code>, <code>LoginPage</code>, <code>CatalogPage</code>, <code>CheckoutPage</code>, <code>index.ts</code>, el spec). Si sale mal, descartas la rama y <code>main</code> queda intacto. Esta es la diferencia entre &quot;experimentar con red&quot; y &quot;experimentar sobre la rama que demuestras en clase&quot;.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> dice <code>On branch feature/m03-pom</code>; <code>git branch</code> la muestra con el asterisco.</li>
+</ul>
 <aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> repite en voz alta los nombres de los Page Objects que vamos a usar — <code>LoginPage</code>, <code>CatalogPage</code>, <code>CheckoutPage</code> — y enséñales que viven en <code>pages/</code>. Lo van a oír cien veces en los próximos 90 minutos.</p>
 </aside>
+<blockquote><p>🌿 <strong>Git JIT — por qué una rama aquí</strong>
+El refactor cruza varios archivos a la vez; aislarlo en <code>feature/m03-pom</code> protege <code>main</code>. Más abajo, al cerrar el módulo (Paso 10), harás el merge a <code>main</code> y verás un conflicto a propósito.</p>
+</blockquote>
 <hr>
 <h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
-<p><strong>M03 no añade paquetes npm nuevos.</strong> Las clases TS se compilan con el <code>typescript</code> que ya tienes.</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null
-<span class="hl-comment"># Si las 4 aparecen, listo. Si no, ejecuta:</span>
-<span class="hl-comment">#   pnpm install            (si package.json ya las lista)</span>
-<span class="hl-comment">#   pnpm add -D @playwright/test dotenv typescript @types/node  (si no)</span></code></pre></div>
+<p><strong>1.1 — Confirma que no hace falta instalar nada</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> ejecuto <code>pnpm list @playwright/test dotenv typescript @types/node</code>.</li>
+<li><strong>Por qué:</strong> <strong>M03 no añade paquetes npm nuevos.</strong> Las clases TS se compilan con el <code>typescript</code> que ya tienes desde M01. El incremental de este módulo es de arquitectura de código, no de dependencias.</li>
+<li><strong>Cómo verifico:</strong> las 4 dependencias aparecen listadas. Si falta alguna: <code>pnpm install</code> (si <code>package.json</code> ya las lista) o <code>pnpm add -D @playwright/test dotenv typescript @types/node</code>.</li>
+</ul>
 <hr>
-<h3 id="paso-2-crear-pages-el-page-object-model">Paso 2 — Crear <code>pages/</code> (el Page Object Model)</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p pages
-touch pages/BasePage.ts pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts</code></pre></div>
-<p><strong>Esqueleto mínimo</strong> de cada archivo (el alumno los llena durante el módulo):</p>
-<p>📄 <code>pages/BasePage.ts</code> — clase normal (NO abstract; eso llega en M05):</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { Page, Locator } from "@playwright/test";
+<h3 id="paso-2-reactivar-el-dolor-el-ritual">Paso 2 — Reactivar el dolor (el ritual)</h3>
+<p><strong>2.1 — Marca y cuenta la duplicación de M02</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> ejecuto el <strong>Ritual de apertura</strong> de arriba: abro <code>modulo-02-locators-data/ejemplo.spec.ts</code> y marco con resaltador cada línea repetida entre mercados (login, selección de mercado, validación de URL). Cuento las líneas duplicadas y anoto el número.</li>
+<li><strong>Por qué:</strong> el POM se justifica <strong>por contraste</strong>. Si no sientes primero la duplicación, vas a leer el POM como &quot;abstracción innecesaria&quot; y lo abandonarás en tu trabajo real. Este es el spine pedagógico del curso: smoke feo → dolor → refactor.</li>
+<li><strong>Cómo verifico:</strong> tienes un número anotado y completaste la frase <em>&quot;Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más.&quot;</em></li>
+</ul>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> <strong>no te saltes el ritual.</strong> Es lo que convierte el POM en una solución a un dolor real y no en teoría de OOP.</p>
+</aside>
+<hr>
+<h3 id="paso-3-crear-pagesbasepagets-la-clase-base">Paso 3 — Crear <code>pages/BasePage.ts</code> (la clase base)</h3>
+<p><strong>3.1 — Crea la carpeta <code>pages/</code> y el archivo base</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo la carpeta y abro el primer archivo en VS Code (se crea en disco al guardarlo):<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir pages
+code pages/BasePage.ts</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> <code>BasePage</code> va <strong>primero</strong> porque todos los demás Pages la van a <code>extends</code>. Si no existe, <code>LoginPage extends BasePage</code> ni siquiera compila. Construimos de la raíz de la jerarquía hacia abajo.</li>
+<li><strong>Cómo verifico:</strong> tras guardar el archivo en VS Code, <code>ls pages/</code> muestra <code>BasePage.ts</code>.</li>
+</ul>
+<p><strong>3.2 — Escribe la clase y su constructor</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> escribo <code>pages/BasePage.ts</code> como <strong>clase normal</strong> (NO abstract — eso llega en M05):<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { Page, Locator } from "@playwright/test";
 
 export class BasePage {
+  // `protected` → visible sólo para clases hijas, no para los tests.
+  // `readonly` → el Page se amarra a una pestaña y no salta a otra.
   constructor(protected readonly page: Page) {}
 
-  protected tid(testId: string): Locator {
-    return this.page.getByTestId(testId);
+  // Helper viewport-aware: añade "-desktop" (≥768px) o "-responsive".
+  protected tid(base: string): Locator {
+    const size = this.page.viewportSize();
+    const suffix = size &amp;&amp; size.width &lt; 768 ? "-responsive" : "-desktop";
+    return this.page.getByTestId(`${base}${suffix}`);
   }
 
-  async waitForUrl(pattern: RegExp): Promise&lt;void&gt; {
-    await this.page.waitForURL(pattern);
+  protected async waitForUrl(pattern: RegExp, timeout = 15_000): Promise&lt;void&gt; {
+    await this.page.waitForURL(pattern, { timeout });
+  }
+
+  async screenshot(name: string): Promise&lt;void&gt; {
+    await this.page.screenshot({ path: `test-results/${name}.png` });
   }
 }</code></pre></div>
-<p>📄 <code>pages/LoginPage.ts</code> — primera clase concreta:</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { BasePage } from "./BasePage";
+</li>
+<li><strong>Por qué:</strong> <code>tid()</code> resuelve el sufijo de viewport en <strong>un solo lugar</strong>: las hijas no duplican esa lógica. <code>waitForUrl</code> centraliza la espera &quot;paciente&quot; (sin <code>sleep</code>). Que <code>tid</code> y <code>waitForUrl</code> sean <code>protected</code> los hace herramientas internas: las ven las hijas, no los tests.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> no marca errores en <code>BasePage.ts</code>; el editor no subraya en rojo.</li>
+</ul>
+<blockquote><p>🔷 <strong>TypeScript — <code>class</code></strong>
+Una <code>class</code> es una plantilla que agrupa datos (propiedades) y comportamiento (métodos). En QA es tu &quot;mapa de pantalla&quot;: <code>BasePage</code> define lo que <strong>toda</strong> pantalla comparte.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a>. Aquí lo aplicas para crear el cimiento del Page Object Model.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — constructor shorthand (<code>protected readonly page: Page</code>)</strong>
+Poner un modificador (<code>protected</code>/<code>readonly</code>/<code>private</code>/<code>public</code>) en un parámetro del constructor <strong>declara y asigna</strong> la propiedad en una sola línea — TS lo llama <em>parameter property</em>: equivale a <code>this.page = page</code> más la declaración del campo, sin cuerpo en el constructor. Sin el modificador, el parámetro sería una variable local que se pierde al terminar el constructor (gotcha clásico). La alternativa obvia — declarar el campo arriba y asignarlo a mano (<code>private page: Page; constructor(page: Page) { this.page = page }</code>) — son tres líneas y dos lugares donde olvidar el <code>readonly</code>; la parameter property lo hace en una y deja el contrato explícito. Ese <code>page</code> lo provee el fixture de Playwright cada vez que el test hace <code>new LoginPage(page)</code>.
+<strong>Qué pasa si lo cambias:</strong> sin <code>protected</code>, los tests podrían tocar <code>loginPage.page</code> directamente — rompes la encapsulación. Sin <code>readonly</code>, alguien puede reasignar <code>this.page</code> a otra pestaña a mitad del TC (la clase de bug &quot;¿por qué el assert corrió en la pestaña equivocada?&quot;).
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a>. Aquí lo usas para inyectar la pestaña <code>page</code> de Playwright en cada Page Object.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — modificadores <code>private</code> / <code>protected</code> / <code>public</code></strong>
+<code>public</code> (default) → visible para todos, incluido el test. <code>private</code> → sólo dentro de la misma clase. <code>protected</code> → la misma clase y sus hijas, <strong>pero no</strong> los tests. El gotcha: si olvidas el modificador, TS asume <code>public</code> y rompes la encapsulación sin darte cuenta.
+Aquí <code>tid()</code> es <code>protected</code> — el punto medio exacto — para que <code>LoginPage</code> lo herede pero el spec no pueda construir locators a mano. <strong>Qué pasa si lo cambias:</strong> con <code>private</code>, las clases que <code>extends BasePage</code> dejan de compilar (no ven el helper heredado); con <code>public</code>, el spec puede llamar <code>loginPage.tid(&quot;x&quot;)</code> y los locators inline vuelven al test — se erosiona la encapsulación que da sentido al POM.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a>.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — return type <code>Promise&lt;void&gt;</code></strong>
+Una función <code>async</code> siempre devuelve una <code>Promise</code>. <code>Promise&lt;void&gt;</code> significa &quot;es asíncrona pero no resuelve ningún valor útil — sólo señala cuándo terminó&quot;. El gotcha: si olvidas <code>await</code> al llamarla, el test sigue antes de que la acción termine (flaky garantizado).
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-03-functions/">TS · M03 — Funciones</a>. Aquí casi todos los métodos de acción (<code>goto</code>, <code>loginAs</code>…) devuelven <code>Promise&lt;void&gt;</code>.</p>
+</blockquote>
+<hr>
+<h3 id="paso-4-crear-pagesloginpagets-la-primera-clase-concreta">Paso 4 — Crear <code>pages/LoginPage.ts</code> (la primera clase concreta)</h3>
+<p><strong>4.1 — Crea el archivo y extiende <code>BasePage</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>pages/LoginPage.ts</code> en VS Code (<code>code pages/LoginPage.ts</code>) y declaro <code>export class LoginPage extends BasePage</code>.</li>
+<li><strong>Por qué:</strong> <code>extends</code> es <strong>herencia</strong>: <code>LoginPage</code> recibe gratis <code>page</code>, <code>tid()</code> y <code>waitForUrl()</code> de <code>BasePage</code>. No copio esos helpers — los reutilizo. Ese es el punto de tener una base.</li>
+<li><strong>Cómo verifico:</strong> el editor autocompleta <code>this.tid(...)</code> dentro de <code>LoginPage</code> sin importarlo (viene heredado).</li>
+</ul>
+<blockquote><p>🔷 <strong>TypeScript — <code>extends</code> y <code>super</code></strong>
+<code>class Hija extends Padre</code> hereda propiedades y métodos del padre. Si la hija define su propio <code>constructor</code>, debe llamar <code>super(...)</code> para inicializar la parte del padre <strong>antes</strong> de usar <code>this</code>. Aquí <code>LoginPage</code> <strong>no</strong> declara constructor propio, así que TS usa el de <code>BasePage</code> automáticamente — por eso no ves <code>super()</code> explícito.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a>. Aquí cada Page <code>extends BasePage</code> para reutilizar los helpers comunes.</p>
+</blockquote>
+<p><strong>4.2 — Declara los locators como <code>private get</code> y las acciones públicas</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> escribo el cuerpo de <code>LoginPage</code>:<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { expect, type Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 import type { CountryCode, User } from "../types";
 
 export class LoginPage extends BasePage {
-  private get usernameInput() { return this.tid("username-desktop"); }
-  private get passwordInput() { return this.tid("password-desktop"); }
-  private get signInButton()  { return this.tid("login-button-desktop"); }
+  readonly path = "/";
 
+  // --- Locators privados: documentación interna del Page ---
+  private get usernameInput(): Locator { return this.tid("username"); }
+  private get passwordInput(): Locator { return this.tid("password"); }
+  private get signInButton(): Locator  { return this.tid("login-button"); }
+  private get errorMessage(): Locator   { return this.page.getByTestId("login-error"); }
+  private marketFlag(code: CountryCode): Locator {
+    return this.page.getByTestId(`market-${code}`);
+  }
+
+  // --- Acciones públicas: la interfaz del POM ---
   async goto(): Promise&lt;void&gt; {
-    await this.page.goto("/");
+    await this.page.goto(this.path);
   }
-
   async selectMarket(code: CountryCode): Promise&lt;void&gt; {
-    await this.tid(`market-${code}`).click();
+    await this.marketFlag(code).click();
   }
-
   async loginAs(user: User): Promise&lt;void&gt; {
     await this.usernameInput.fill(user.username);
     await this.passwordInput.fill(user.password);
     await this.signInButton.click();
   }
-
   async loginInMarket(user: User, code: CountryCode): Promise&lt;void&gt; {
     await this.goto();
     await this.selectMarket(code);
     await this.loginAs(user);
+    await this.waitForUrl(/\/catalog/);
   }
 }</code></pre></div>
-<p>📄 <code>pages/index.ts</code> (barrel — facilita el import en los specs):</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export { BasePage } from "./BasePage";
-export { LoginPage } from "./LoginPage";
-export { CatalogPage } from "./CatalogPage";
-export { CheckoutPage } from "./CheckoutPage";</code></pre></div>
-<p>(Los esqueletos completos de <code>CatalogPage</code> y <code>CheckoutPage</code> los construirás guiado por el ejemplo y el reto.)</p>
+</li>
+<li><strong>Por qué:</strong> los locators son <strong><code>private get</code></strong> — propiedades calculadas: cada acceso reevalúa <code>this.tid(...)</code> — para que el test no pueda hacer <code>loginPage.usernameInput.fill(...)</code> y saltarse la acción de negocio. La alternativa obvia — escribir <code>this.page.getByTestId(&quot;username-desktop&quot;)</code> inline en cada método que lo use — reparte el locator por toda la clase; el getter lo centraliza: si el testid cambia, tocas <strong>una línea</strong>. Que sean <code>get</code> (no campos asignados en el constructor) los resuelve <strong>perezosamente</strong>: <code>tid()</code> consulta el <code>viewportSize()</code> en el momento del uso, no al construir el Page; si los asignaras en el constructor (<code>this.usernameInput = this.tid(...)</code>), congelarías el viewport al instante de <code>new LoginPage(page)</code>. <code>loginInMarket</code> encapsula los 5 pasos que en M02 estaban inline en cada test. Las testids base (<code>&quot;username&quot;</code>, <code>&quot;password&quot;</code>, <code>&quot;login-button&quot;</code>) usan <code>tid()</code>, que les añade el sufijo <code>-desktop</code>/<code>-responsive</code>. Las banderas de mercado usan testid plano <code>market-XX</code> (sin sufijo de viewport) — por eso <code>marketFlag</code> va con <code>page.getByTestId</code> directo y no con <code>tid()</code>.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> sigue limpio; si intentas escribir <code>new LoginPage(page).usernameInput</code> en el spec, el editor lo subraya en rojo (&quot;propiedad privada&quot;).</li>
+</ul>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>readonly path = &quot;/&quot;</code></strong>
+<strong>Qué es:</strong> una propiedad de instancia de solo lectura en <code>LoginPage</code> (<code>&quot;/&quot;</code>) y <code>CatalogPage</code> (<code>&quot;/catalog&quot;</code>). En <code>LoginPage</code>, el método <code>goto()</code> la usa: <code>await this.page.goto(this.path)</code>. (En <code>CatalogPage</code> documenta qué pantalla mapea la clase — a <code>/catalog</code> se llega navegando tras el login, no con un <code>goto</code> directo.)
+<strong>Por qué así (y no la alternativa obvia):</strong> la alternativa es hardcodear la ruta dentro de cada método (<code>goto(&quot;/&quot;)</code>). Con <code>readonly path</code> la ruta vive en <strong>un solo lugar</strong> por Page y queda visible como &quot;esta clase mapea esta pantalla&quot;. <code>readonly</code> comunica que la pantalla de una Page no cambia en tiempo de ejecución.
+<strong>Qué pasa si lo cambias:</strong> si quitas <code>readonly</code>, el compilador deja de protegerte ante una reasignación accidental (<code>this.path = ...</code>) que mandaría el <code>goto</code> a una pantalla equivocada. Si la inlineas en cada método, repites el string y pierdes el único punto de cambio.</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>await this.page.goto(this.path)</code></strong>
+<strong>Qué es:</strong> navegación dentro del método del Page. El <code>this.</code> apunta a la instancia: <code>this.page</code> es la pestaña que inyectó el constructor y <code>this.path</code> la ruta de esta pantalla.
+<strong>Por qué así (y no la alternativa obvia):</strong> el método es <code>async</code> y lleva <code>await</code> porque <code>goto</code> devuelve una <code>Promise</code> (el gotcha de olvidarlo lo viste en el recuadro 🔷 <code>Promise&lt;void&gt;</code> del Paso 3). Y se usa <code>this.page</code> — no un <code>page</code> global ni un parámetro — porque cada Page se amarra a la pestaña que recibió: un solo test puede instanciar <code>LoginPage</code>, <code>CatalogPage</code> y <code>CheckoutPage</code> compartiendo la <strong>misma</strong> pestaña (exactamente lo que hace <code>reto.spec.ts</code> al construir los 3 Pages con el mismo <code>page</code>).
+<strong>Qué pasa si lo cambias:</strong> sin <code>await</code>, la navegación queda &quot;en el aire&quot; y los locators siguientes corren sobre la página vieja. Sin <code>async</code>, ni siquiera puedes usar <code>await</code> adentro. Y si reemplazas <code>this.page</code> por una referencia externa, rompes el aislamiento por instancia y vuelves al estilo script de M01.</p>
+</blockquote>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> justo aquí, intenta en vivo escribir <code>loginPage.usernameInput.fill(...)</code> en el spec y muestra el subrayado rojo. Sentir que el compilador <strong>bloquea</strong> el atajo es más convincente que decir &quot;los locators son privados&quot;.</p>
+</aside>
 <hr>
-<h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m03">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M03)</h3>
-<p><strong>M03 no requiere cambios al config.</strong> Sigue siendo el mismo de M01/M02.</p>
-<p>Solo asegúrate de que <code>tsconfig.json</code> incluya <code>pages/</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
-  "include": [
-    "playwright.config.ts",
-    "types/**/*.ts",
-    "types/**/*.d.ts",
-    "pages/**/*.ts",
-    "modulo-*/**/*.ts"
-  ]
-}</code></pre></div>
-<p>Añade <code>m3</code> a <code>package.json</code>:</p>
-<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
-  "m3": "playwright test modulo-03-pom --project=ui-chromium"
-}</code></pre></div>
-<p>Tu <code>playwright.config.ts</code> debe seguir como en M02:</p>
+<h3 id="paso-5-crear-pagescatalogpagets-y-pagescheckoutpagets">Paso 5 — Crear <code>pages/CatalogPage.ts</code> y <code>pages/CheckoutPage.ts</code></h3>
+<p><strong>5.1 — Construye <code>CatalogPage</code> (catálogo <code>/catalog</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>pages/CatalogPage.ts</code> en VS Code (<code>code pages/CatalogPage.ts</code>), también <code>extends BasePage</code>, con su <code>readonly path = &quot;/catalog&quot;</code> (el mismo patrón de ruta en un solo lugar que viste en el 🔍 de <code>LoginPage</code>), sus locators privados (<code>pizza-card-*</code>, <code>add-to-cart-*</code>, <code>nav-cart-count</code>) y acciones (<code>waitForCatalog</code>, <code>addFirstPizza</code>, <code>getPizzaNames</code>, <code>expectLoaded</code>, <code>expectHasPizzas</code>, <code>expectCartCount</code>).</li>
+<li><strong>Por qué:</strong> las cards de pizza tienen testids <strong>dinámicos</strong>, así que el locator usa el prefijo <code>[data-testid^=&quot;pizza-card-&quot;]</code> (selector legítimo, no inventado). Cada pizza es un <code>h3</code>; <code>getPizzaNames()</code> los lee con <code>getByRole(&quot;heading&quot;)</code>. Estos son los selectores OmniPizza verificados — no hay rol <code>list</code>/<code>listitem</code>.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> limpio; <code>CatalogPage</code> exporta también el tipo <code>Category</code> para los filtros.</li>
+</ul>
+<p><strong>5.2 — Construye <code>CheckoutPage</code> (checkout <code>/checkout</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>pages/CheckoutPage.ts</code> en VS Code (<code>code pages/CheckoutPage.ts</code>), <code>extends BasePage</code>, con los inputs del form (<code>checkout-fullname</code>, <code>checkout-phone</code>, <code>checkout-address</code>, <code>checkout-zip</code>), <code>place-order</code>, <code>order-total</code>, <code>order-confirmation</code>, y los métodos <code>fillWithMarket</code>, <code>placeOrder</code>, <code>checkoutWith</code>, <code>expectLoaded</code>, <code>expectConfirmation</code>, <code>expectTotalContains</code>.</li>
+<li><strong>Por qué:</strong> <code>CheckoutPage</code> es la pantalla que usarás en el <strong>reto</strong>. Sus métodos ya están listos para que el reto se enfoque en <strong>orquestar</strong> el flujo E2E, no en escribir locators. <code>fillWithMarket(market)</code> rellena los 4 campos con datos coherentes por mercado.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> limpio; los métodos públicos aparecen al autocompletar <code>checkoutPage.</code> en el spec.</li>
+</ul>
+<p><strong>5.3 — Crea el barrel <code>pages/index.ts</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>pages/index.ts</code> en VS Code (<code>code pages/index.ts</code>) para reexportar las 4 clases (y el tipo <code>Category</code>):<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export { BasePage } from "./BasePage";
+export { LoginPage } from "./LoginPage";
+export { CatalogPage, type Category } from "./CatalogPage";
+export { CheckoutPage } from "./CheckoutPage";</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el barrel deja que el spec importe con una sola línea — <code>import { LoginPage, CatalogPage } from &quot;../pages&quot;</code> — en vez de un import por archivo. Mantiene los specs limpios y desacopla el spec de la ubicación física de cada clase.</li>
+<li><strong>Cómo verifico:</strong> desde un spec, <code>import { LoginPage, CatalogPage, CheckoutPage } from &quot;../pages&quot;</code> resuelve sin error.</li>
+</ul>
+<hr>
+<h3 id="paso-6-versiona-el-pom-antes-de-tocar-el-spec">Paso 6 — Versiona el POM antes de tocar el spec</h3>
+<p><strong>6.1 — Commitea los Page Objects por pasos</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> desde la rama <code>feature/m03-pom</code>, hago commits incrementales:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add pages/BasePage.ts
+git commit -m "refactor(m03): add BasePage with shared helpers"
+
+git add pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts
+git commit -m "refactor(m03): extract Login, Catalog and Checkout Page Objects"</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> commits pequeños y descriptivos hacen el <code>git log --graph</code> legible y te dan puntos de retorno. Si el spec refactorizado sale mal, vuelves al commit donde los Pages ya estaban bien sin perderlos.</li>
+<li><strong>Cómo verifico:</strong> <code>git log --oneline -2</code> muestra ambos commits en orden.</li>
+</ul>
+<blockquote><p>🌿 <strong>Git JIT — convención de mensajes de commit</strong>
+El prefijo <code>refactor(m03):</code> es la convención del curso (igual que <code>feat(mXX):</code>). &quot;Refactor&quot; comunica que <strong>cambias estructura sin cambiar comportamiento</strong>: los mismos 4 tests deben seguir pasando tras el commit.</p>
+</blockquote>
+<hr>
+<h3 id="paso-7-verificar-tsconfigjson-y-packagejson">Paso 7 — Verificar <code>tsconfig.json</code> y <code>package.json</code></h3>
+<p><strong>7.1 — Confirma que <code>tsconfig.json</code> incluye <code>pages/</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>tsconfig.json</code> y verifico que <code>&quot;pages/**/*.ts&quot;</code> esté en <code>include</code>.</li>
+<li><strong>Por qué:</strong> si TS no compila <code>pages/</code>, los errores de tipo en tus clases pasan inadvertidos y <code>pnpm typecheck</code> te da un falso verde.</li>
+<li><strong>Cómo verifico:</strong> el <code>include</code> contiene <code>&quot;pages/**/*.ts&quot;</code> (ya está en el <code>tsconfig.json</code> del repo, junto con <code>types/</code>, <code>helpers/</code>, <code>services/</code>, <code>fixtures/</code>, <code>tests/</code> y <code>modulo-*</code>).</li>
+</ul>
+<p><strong>7.2 — Confirma el script <code>m3</code> en <code>package.json</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> verifico que exista <code>&quot;m3&quot;: &quot;playwright test modulo-03-pom --project=ui-chromium&quot;</code>.</li>
+<li><strong>Por qué:</strong> es el atajo del módulo. Sin él, tendrías que escribir el comando completo cada vez.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m3</code> arranca el runner sobre <code>modulo-03-pom</code>.</li>
+</ul>
+<blockquote><p><strong>📐 Config — cambios vs M02</strong></p>
+<div class="code-block"><span class="code-lang">diff</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-diff"><span class="hl-comment"># playwright.config.ts — SIN CAMBIOS vs M01/M02</span>
+<span class="hl-comment"># (M03 refactoriza los tests a Page Object Model; el runner corre igual)</span></code></pre></div>
+<p><strong>Se mantiene:</strong> todo (dotenv, baseURL, timeouts, project <code>ui-chromium</code>). <strong>Entra:</strong> nada en el config — el incremental de M03 es de <strong>arquitectura de código</strong> (clases POM en <code>pages/</code>), no del runner. El próximo cambio real al config llega en <strong>M04</strong>.</p>
+</blockquote>
+<p>Tu <code>playwright.config.ts</code> sigue idéntico a M02:</p>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">// playwright.config.ts — Estado en M03 (igual que M01/M02)
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
@@ -679,121 +815,84 @@ export default defineConfig({
 <aside class="callout callout--tip"><p>💡 <strong>Punto pedagógico:</strong> M03 es <strong>puro código</strong>, no toca configuración. Eso refuerza el principio del curso: <strong>la arquitectura crece donde el problema lo exige</strong>. Aquí el problema es duplicación → solución POM → archivos en <code>pages/</code>.</p>
 </aside>
 <hr>
-<h3 id="paso-4-hacer-el-ritual-5-10-min">Paso 4 — Hacer el ritual (5-10 min)</h3>
-<p>(Ver la sección &quot;Ritual de apertura&quot; arriba.) <strong>No saltes este paso.</strong> Es lo que justifica todo lo demás.</p>
-<hr>
-<h3 id="paso-5-lectura-guiada-de-pagesbasepagets">Paso 5 — Lectura guiada de <code>pages/BasePage.ts</code></h3>
-<p>Abre <code>pages/BasePage.ts</code> con el grupo y señala:</p>
+<h3 id="paso-8-refactorizar-el-spec-y-ejecutarlo">Paso 8 — Refactorizar el spec y ejecutarlo</h3>
+<p><strong>8.1 — Reescribe <code>ejemplo.spec.ts</code> usando los Page Objects</strong></p>
 <ul>
-<li><code>protected readonly page: Page</code> — todas las hijas la heredan, los tests no la tocan.</li>
-<li><code>protected tid(name: string)</code> — método helper interno; las hijas lo usan para construir testids consistentes.</li>
-<li><code>async waitForUrl(...)</code> — la espera &quot;paciente&quot; centralizada (sin <code>sleep</code>).</li>
-<li><strong>Por qué no es <code>abstract</code>:</strong> porque por sí sola sigue siendo útil para crear hijas. En M05 vas a ver el caso donde <code>abstract</code> sí es indispensable.</li>
-</ul>
-<hr>
-<h3 id="paso-6-lectura-guiada-de-pagesloginpagets">Paso 6 — Lectura guiada de <code>pages/LoginPage.ts</code></h3>
-<p>Cosas que el facilitador debe señalar:</p>
-<ul>
-<li>Los <strong>locators son <code>private get</code></strong> — el test no debería poder hacer <code>loginPage.usernameInput.fill(...)</code>. Si lo necesitara, es señal de que el Page no expone una acción de alto nivel.</li>
-<li>Las <strong>acciones públicas</strong> se leen como user story:<ul>
-<li><code>loginAs(user)</code></li>
-<li><code>loginInMarket(user, code)</code></li>
-<li><code>selectMarket(code)</code></li>
-</ul>
-</li>
-<li>El método <code>loginInMarket</code> <strong>encapsula los 5 pasos</strong> que en M02 estaban inline en cada test.</li>
-</ul>
-<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> abre M02 <code>ejemplo.spec.ts</code> y M03 <code>ejemplo.spec.ts</code> lado a lado. Cuenta las líneas: ~18 por test en M02, ~3 en M03. Ese delta es el argumento del módulo.</p>
-</aside>
-<hr>
-<h3 id="paso-7-ejecutar-el-ejemplo">Paso 7 — Ejecutar el ejemplo</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Headless</span>
-pnpm m3
+<li><strong>Qué hago:</strong> edito <code>modulo-03-pom/ejemplo.spec.ts</code> para que el bucle de mercados instancie los Pages y llame a sus acciones:<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { test } from "@playwright/test";
+import { LoginPage, CatalogPage } from "../pages";
+import type { Market, User } from "../types";
+import marketsJson from "../data/markets.json";
+import usersJson from "../data/users.json";
 
-<span class="hl-comment"># UI mode (recomendado para ver el flujo limpio)</span>
-pnpm test:ui</code></pre></div>
-<p><strong>Qué esperar:</strong></p>
+const markets = marketsJson as Market[];
+const users = usersJson as User[];
+const standardUser = users.find((u) =&gt; u.username === "standard_user")!;
+
+test.describe("POM — login + catálogo por mercado (M03)", () =&gt; {
+  for (const market of markets) {
+    test(`TC-${market.code} — flow limpio en ${market.fullName} @smoke`, async ({ page }) =&gt; {
+      const loginPage = new LoginPage(page);
+      const catalogPage = new CatalogPage(page);
+
+      await loginPage.loginInMarket(standardUser, market.code);
+      await catalogPage.expectLoaded();
+      await catalogPage.expectHasPizzas();
+    });
+  }
+});</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el spec ahora se lee como <strong>user story</strong>, no como instrucción técnica: <code>loginInMarket(user, code)</code> reemplaza el bloque de ~5 líneas inline de M02. Nota que el bucle es un <code>for...of</code> sobre <code>markets</code> con un <code>test()</code> adentro — <strong>no</strong> existe ningún <code>test.each()</code> en Playwright; esto es un <code>for</code> clásico.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m3</code> corre los <strong>mismos 4 tests</strong> que M02 (uno por mercado) en verde.</li>
+</ul>
+<p><strong>8.2 — Ejecuta el ejemplo en UI mode</strong></p>
 <ul>
-<li>Los <strong>mismos 4 tests</strong> que en M02 (uno por mercado) corren en verde.</li>
-<li>En el spec verás <code>loginPage.loginInMarket(user, &#39;MX&#39;)</code> en lugar del bloque de 5 líneas.</li>
-<li>Hay un segundo <code>describe</code> (&quot;uso de acciones granulares&quot;) que muestra que el POM <strong>no obliga</strong> a usar siempre el método de alto nivel — puedes encadenar <code>goto / selectMarket / loginAs</code> cuando un TC necesite control fino.</li>
+<li><strong>Qué hago:</strong> corro <code>pnpm m3</code> (headless) y <code>pnpm test:ui</code> (recomendado la primera vez).</li>
+<li><strong>Por qué:</strong> UI mode te deja ver el flujo limpio paso a paso y confirmar que el comportamiento no cambió — solo la estructura.</li>
+<li><strong>Cómo verifico:</strong> el HTML report / la lista muestran 4 verdes (más el segundo <code>describe</code> &quot;uso de acciones granulares&quot;). Ese segundo bloque demuestra que el POM <strong>no obliga</strong> a usar siempre el método de alto nivel: puedes encadenar <code>goto / selectMarket / loginAs</code> cuando un TC necesite control fino.</li>
+</ul>
+<p><strong>8.3 — Comparativa antes/después</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro M02 y M03 lado a lado y respondo: (1) si <code>username</code> cambia de testid, ¿cuántos archivos toco? (2) ¿dónde viviría un &quot;logout&quot;? (3) ¿por qué los locators son <code>private</code>?</li>
+<li><strong>Por qué:</strong> el delta de líneas (~18/test en M02 → ~3/test en M03) y &quot;1 línea vs 4 tests&quot; ante un cambio de testid <strong>son</strong> el argumento del módulo.</li>
+<li><strong>Cómo verifico:</strong> puedes contestar: (1) <strong>1 línea</strong> en <code>LoginPage.ts</code> vs 4 tests; (2) método público en <code>CatalogPage</code> (o un <code>LogoutPage</code> si crece); (3) para que el test no dependa del DOM interno — encapsulación.</li>
 </ul>
 <hr>
-<h3 id="paso-8-comparativa-antesdespués-5-min">Paso 8 — Comparativa antes/después (5 min)</h3>
-<p>Pide al grupo abrir M02 y M03 simultáneamente y responder:</p>
-<ol>
-<li>¿Qué pasa si el campo <code>username-desktop</code> cambia de testid?<ul>
-<li>En M02: <strong>modificas 4 tests</strong>.</li>
-<li>En M03: <strong>modificas 1 línea</strong> en <code>LoginPage.ts</code>.</li>
-</ul>
-</li>
-<li>Si añadieras un nuevo flujo &quot;logout&quot; desde el catálogo, ¿dónde viviría?<ul>
-<li>Respuesta: como método público en <code>CatalogPage</code> (o un nuevo <code>LogoutPage</code> si fuera más grande).</li>
-</ul>
-</li>
-<li>¿Por qué los locators son <code>private</code>?<ul>
-<li>Para que el test <strong>no sepa</strong> cómo está el DOM por dentro. Eso es encapsulación.</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h3 id="paso-9-resolver-el-reto">Paso 9 — Resolver el reto</h3>
-<p>Abre <code>reto.spec.ts</code>. Tu trabajo es completar un flujo E2E <strong>login → catálogo → addToCart → checkout → confirmación</strong> usando los Page Objects ya construidos.</p>
-<p><code>CheckoutPage</code> ya tiene métodos listos (revísalos primero):</p>
+<h3 id="paso-9-resolver-el-reto-checkoutpage">Paso 9 — Resolver el reto (CheckoutPage)</h3>
+<p><strong>9.1 — Completa el E2E del reto</strong></p>
 <ul>
-<li><code>checkoutWith(market)</code> — atajo: fill + placeOrder.</li>
-<li><code>fillWithMarket(market)</code> — sólo rellena el form.</li>
+<li><strong>Qué hago:</strong> abro <code>modulo-03-pom/reto.spec.ts</code> y completo el flujo E2E <strong>login → catálogo → addToCart → checkout → confirmación</strong>, parametrizado por mercado, usando los métodos públicos de <code>CheckoutPage</code> ya disponibles:<ul>
+<li><code>fillWithMarket(market)</code> — rellena el form.</li>
 <li><code>placeOrder()</code> — submit.</li>
+<li><code>checkoutWith(market)</code> — atajo: fill + placeOrder.</li>
 <li><code>expectLoaded()</code> / <code>expectConfirmation()</code> / <code>expectTotalContains(symbol)</code>.</li>
 </ul>
-<p>Cada TODO del reto sigue el formato <strong>Qué hacer / Pista / Cómo verificar</strong>.</p>
-<hr>
-<h2 id="comandos-útiles">Comandos útiles</h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm m3                                          # corre M03
-pnpm typecheck                                   # ojo: la herencia introduce errores sutiles
-pnpm exec playwright test --reporter=list        # output compacto
-pnpm exec playwright show-report                 # último HTML report
-pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium</code></pre></div>
-<hr>
-<h2 id="outcome-esperado">Outcome esperado</h2>
-<ul>
-<li><input disabled="" type="checkbox"> Hiciste el ritual y anotaste el número de líneas duplicadas en M02.</li>
-<li><input disabled="" type="checkbox"> Puedes explicar qué significa <code>private</code> / <code>protected</code> / <code>public</code> en este contexto.</li>
-<li><input disabled="" type="checkbox"> Entiendes por qué <code>readonly page: Page</code> evita bugs.</li>
-<li><input disabled="" type="checkbox"> Sabes extender <code>BasePage</code> para crear un Page nuevo.</li>
-<li><input disabled="" type="checkbox"> <strong>Puedes contar las líneas eliminadas</strong> vs M02.</li>
-<li><input disabled="" type="checkbox"> Completaste el reto E2E con <code>CheckoutPage</code>.</li>
-<li><input disabled="" type="checkbox"> Sabes que <code>abstract</code> llega en M05 — no lo introdujimos aquí.</li>
+</li>
+<li><strong>Por qué:</strong> el reto te hace <strong>orquestar</strong> Pages sin escribir locators inline (la única línea inline esperada es la del <code>nav-checkout-desktop</code>). Es donde compruebas que internalizaste la &quot;regla de oro&quot;: si necesitas un locator que no existe, lo añades al Page, no al spec.</li>
+<li><strong>Cómo verifico:</strong> los 4 tests del reto terminan en verde (<code>Reto-MX</code>, <code>Reto-US</code>, <code>Reto-CH</code>, <code>Reto-JP</code>). Cada <code>TODO</code> del reto trae su propio formato <strong>Qué hacer / Pista / Cómo verificar</strong> — resuélvelos tú; el README no los resuelve por ti.</li>
 </ul>
 <hr>
-<h2 id="git-break-refactoriza-en-una-rama-no-en-main">🌿 Git break — Refactoriza en una rama (no en <code>main</code>)</h2>
-<p>Vas a tocar varios archivos a la vez (<code>BasePage</code>, <code>LoginPage</code>, <code>CatalogPage</code>, <code>CheckoutPage</code>). Esto es <strong>el momento perfecto</strong> para una rama dedicada: si el refactor sale mal, descartas la rama y <code>main</code> queda intacto.</p>
-<h3 id="el-flujo">El flujo</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># 1. Asegúrate de estar en main al día</span>
-$ git switch main
-$ git pull            # sólo si ya tienes remoto configurado
-
-<span class="hl-comment"># 2. Crea tu rama de feature</span>
-$ git switch -c feature/m03-pom
-
-<span class="hl-comment"># 3. Trabaja, commitea por pasos</span>
-$ git add pages/BasePage.ts
-$ git commit -m "refactor: add BasePage with shared helpers"
-
-$ git add pages/LoginPage.ts pages/CatalogPage.ts
-$ git commit -m "refactor: extract Login and Catalog Page Objects"
-
-<span class="hl-comment"># 4. Cuando el refactor está listo, vuelve a main y mergea</span>
-$ git switch main
-$ git merge feature/m03-pom
-
-<span class="hl-comment"># 5. Borra la rama ya mergeada</span>
-$ git branch -d feature/m03-pom</code></pre></div>
-<h3 id="convención-de-nombres-de-rama">Convención de nombres de rama</h3>
-<table>
+<h3 id="paso-10-cerrar-la-rama-merge-a-main">Paso 10 — Cerrar la rama: merge a <code>main</code></h3>
+<p><strong>10.1 — Versiona el spec refactorizado</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> commiteo el refactor del spec en la rama:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add modulo-03-pom/ejemplo.spec.ts modulo-03-pom/reto.spec.ts
+git commit -m "feat(m03): refactor specs to use Page Object Model"</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> cierras la rama con el trabajo completo y commiteado antes de integrarlo.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> está limpio (<code>nothing to commit</code>); <code>git log --oneline -1</code> muestra el commit del refactor.</li>
+</ul>
+<p><strong>10.2 — Mergea <code>feature/m03-pom</code> a <code>main</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> vuelvo a <code>main</code> e integro:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git switch main
+git merge feature/m03-pom
+git branch -d feature/m03-pom</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> el refactor ya está probado en verde; integrarlo a <code>main</code> lo hace oficial. Borrar la rama mergeada mantiene el repo limpio.</li>
+<li><strong>Cómo verifico:</strong> <code>git log --oneline --graph -5</code> muestra los commits del POM en <code>main</code>. Si <code>main</code> no avanzó desde que ramificaste, verás un <strong>fast-forward</strong> (sin commit extra); si avanzó, un <strong>merge commit</strong> con dos padres. Ambos son correctos.</li>
+</ul>
+<blockquote><table>
 <thead>
 <tr>
-<th>Prefijo</th>
+<th>Prefijo de rama</th>
 <th>Uso</th>
 </tr>
 </thead>
@@ -814,51 +913,52 @@ $ git branch -d feature/m03-pom</code></pre></div>
 <td>Reestructurar sin cambiar comportamiento</td>
 </tr>
 </tbody></table>
-<h3 id="fast-forward-vs-merge-commit">Fast-forward vs merge commit</h3>
-<p>Cuando <code>main</code> no tiene commits nuevos desde que creaste tu rama, Git hace <strong>fast-forward</strong> (avanza el puntero, sin commit extra). Si <code>main</code> avanzó (porque alguien más mergeó), Git crea un <strong>merge commit</strong> con dos padres. Ambos están bien — sólo es bueno saber qué estás viendo cuando lees <code>git log --graph</code>.</p>
-<hr>
-<h2 id="git-break-resolver-un-conflicto">⚔️ Git break — Resolver un conflicto</h2>
-<p>Imagina que tú estás en <code>feature/m03-pom</code> y cambiaste el locator del input de email en <code>LoginPage</code>:</p>
-<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// Tu cambio
+</blockquote>
+<p><strong>10.3 — (Opcional, demostración) Provoca y resuelve un conflicto</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> para <em>practicar</em> conflictos, simulo dos cambios al mismo método. En la rama cambio un locator de <code>LoginPage</code>:<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// En feature/m03-pom
 get emailInput() { return this.page.getByLabel('Correo'); }</code></pre></div>
-<p>Mientras tanto, una compañera ya mergeó otro cambio al mismo método en <code>main</code>:</p>
-<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// El cambio en main que llegó primero
+y en <code>main</code> alguien ya mergeó otra versión del mismo método:<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// El cambio que llegó primero a main
 get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }</code></pre></div>
-<p>Cuando intentas mergear, Git no puede decidir y te avisa:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git switch main
-$ git merge feature/m03-pom
-Auto-merging pages/LoginPage.ts
+Al <code>git merge feature/m03-pom</code>, Git no puede decidir:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">Auto-merging pages/LoginPage.ts
 CONFLICT (content): Merge conflict in pages/LoginPage.ts
 Automatic merge failed; fix conflicts and then commit the result.</code></pre></div>
-<h3 id="cómo-se-ve-el-archivo-en-conflicto">Cómo se ve el archivo en conflicto</h3>
-<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">export class LoginPage extends BasePage {
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
-  get emailInput() { return this.page.getByRole('textbox', { name: 'Email' }); }
-=======
-  get emailInput() { return this.page.getByLabel('Correo'); }
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/m03-pom
-}</code></pre></div>
-<ul>
-<li><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> = lo que está en <code>main</code> ahora.</li>
-<li><code>=======</code> = separador.</li>
-<li><code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/m03-pom</code> = lo que trae tu rama.</li>
+</li>
+<li><strong>Por qué:</strong> un conflicto NO es un error — es Git pidiéndote que decidas qué cambio gana cuando dos ramas tocaron la misma línea. Verlo a propósito, en un caso controlado, te quita el miedo cuando aparezca de verdad en equipo.</li>
+<li><strong>Cómo verifico:</strong> el archivo muestra los marcadores <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> (lo de <code>main</code>) <code>=======</code> (separador) <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/m03-pom</code> (tu rama). Para resolver: editas a mano, <strong>borras los tres marcadores</strong>, y:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add pages/LoginPage.ts
+git commit            # abre el editor con el mensaje pre-escrito; guarda y cierra</code></pre></div>
+Si te arrepientes a mitad: <code>git merge --abort</code> regresa el repo al estado previo.</li>
 </ul>
-<h3 id="cómo-lo-resuelves">Cómo lo resuelves</h3>
-<ol>
-<li>Decide manualmente cuál se queda (o combinas ambos).</li>
-<li><strong>Borra los marcadores</strong> (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>).</li>
-<li>Marca el archivo como resuelto y termina el merge:</li>
-</ol>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add pages/LoginPage.ts
-$ git commit                # abre el editor con el mensaje pre-escrito; guarda y cierra</code></pre></div>
-<h3 id="si-te-arrepientes">Si te arrepientes</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git merge --abort</code></pre></div>
-<p>Esto regresa el repo al estado previo, como si el merge nunca hubiera pasado.</p>
-<aside class="callout callout--tip"><p>💡 <strong>VS Code</strong> tiene botones inline <strong>Accept Current</strong>, <strong>Accept Incoming</strong>, <strong>Accept Both</strong> sobre cada bloque en conflicto. Úsalos para evitar errores manuales.</p>
+<aside class="callout callout--tip"><p>💡 <strong>VS Code</strong> muestra botones inline <strong>Accept Current</strong>, <strong>Accept Incoming</strong>, <strong>Accept Both</strong> sobre cada bloque en conflicto. Úsalos para evitar borrar mal los marcadores a mano.</p>
+</aside>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional Git:</strong> <a href="../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md">Conceptos de ramas</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md">Flujo feature-branch detallado</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/04-merge.md">Tipos de merge</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md">Conflictos avanzados</a> · <a href="../../git-github-course/modulo-05-workflows-rebase/">Workflows de equipo y rebase</a></p>
 </aside>
 <hr>
-<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-04-ramas-y-merge/01-ramas-conceptos.md">Conceptos de ramas</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/03-flujo-feature-branch.md">Flujo feature-branch detallado</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/04-merge.md">Tipos de merge</a> · <a href="../git-github-course/modulo-04-ramas-y-merge/05-conflictos.md">Conflictos avanzados</a> · <a href="../../git-github-course/modulo-05-workflows-rebase/">Workflows de equipo y rebase</a></p>
-</aside>
+<h2 id="cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</h2>
+<ul>
+<li><strong>Comando del módulo:</strong> <code>pnpm m3</code></li>
+<li><strong>UI mode (recomendado la 1ª vez):</strong> <code>pnpm test:ui</code></li>
+<li><strong>Headed / debug:</strong> <code>pnpm test:headed</code> · <code>pnpm test:debug</code></li>
+<li><strong>Filtrar:</strong> por tag (<code>pnpm exec playwright test --grep &quot;@smoke&quot;</code>) o por archivo (<code>pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium</code>)</li>
+<li><strong>Verificar tipos (herencia POM):</strong> <code>pnpm typecheck</code> — ojo: la herencia introduce errores sutiles</li>
+<li><strong>Ver el reporte:</strong> <code>pnpm report</code></li>
+<li><strong>🪟 Windows / PowerShell:</strong> variables de entorno con <code>$env:VAR=&quot;x&quot;; pnpm m3</code> (no <code>VAR=x pnpm m3</code>, sintaxis bash que falla en PowerShell)</li>
+</ul>
+<hr>
+<h2 id="outcome-esperado">Outcome esperado</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Hiciste el ritual y anotaste el número de líneas duplicadas en M02.</li>
+<li><input disabled="" type="checkbox"> Puedes explicar qué significa <code>private</code> / <code>protected</code> / <code>public</code> en este contexto.</li>
+<li><input disabled="" type="checkbox"> Entiendes por qué <code>readonly page: Page</code> evita bugs.</li>
+<li><input disabled="" type="checkbox"> Sabes extender <code>BasePage</code> para crear un Page nuevo.</li>
+<li><input disabled="" type="checkbox"> <strong>Puedes contar las líneas eliminadas</strong> vs M02.</li>
+<li><input disabled="" type="checkbox"> Completaste el reto E2E con <code>CheckoutPage</code>.</li>
+<li><input disabled="" type="checkbox"> Sabes que <code>abstract</code> llega en M05 — no lo introdujimos aquí.</li>
+<li><input disabled="" type="checkbox"> Aislaste el refactor en <code>feature/m03-pom</code> y lo mergeaste a <code>main</code>.</li>
+</ul>
+<hr>
+<h2 id="qué-viene-en-m04">¿Qué viene en M04?</h2>
+<p>En M03 el login todavía corre por UI en <strong>cada</strong> test. En <strong>M04 (setup + fixtures)</strong> vas a eliminar ese login repetido: un <code>auth.setup.ts</code> se ejecuta <strong>una sola vez</strong>, guarda el estado de sesión en <code>.auth/</code>, y todos los TCs arrancan ya autenticados vía un <strong>fixture</strong> custom. También entra el primer cambio real al <code>playwright.config.ts</code> desde M01 (un <code>project</code> de <code>setup</code> con dependencias) y, en Git, el ciclo <code>push → PR → code review → deshacer</code> (<code>git restore</code> / <code>git revert</code>) porque tocar <code>auth.setup.ts</code> puede romper toda la suite.</p>
 
     <nav class="prevnext" aria-label="Navegación entre módulos">
       <a href="m02.html"><div class="prevnext__label">← Anterior</div><div class="prevnext__title">M02 · Locators & data</div></a>

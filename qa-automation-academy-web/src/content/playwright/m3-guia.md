@@ -122,7 +122,8 @@ pages/
 # Estando en playwright-course/
 pnpm m2            # debe pasar los 4 mercados en verde
 pnpm typecheck     # debe pasar limpio
-ls types/ data/    # ambas carpetas existen (vienen de M02)
+ls types/          # existe (viene de M02)
+ls data/           # existe (viene de M02)
 ```
 
 Si M02 no corre, vuelve al módulo anterior. Este módulo asume que la data tipada y los locators jerárquicos ya están internalizados.
@@ -134,7 +135,7 @@ Si M02 no corre, vuelve al módulo anterior. Este módulo asume que la data tipa
 **M03 no añade paquetes npm nuevos.** Las clases TS se compilan con el `typescript` que ya tienes.
 
 ```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+pnpm list @playwright/test dotenv typescript @types/node
 # Si las 4 aparecen, listo. Si no, ejecuta:
 #   pnpm install            (si package.json ya las lista)
 #   pnpm add -D @playwright/test dotenv typescript @types/node  (si no)
@@ -144,12 +145,18 @@ pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
 
 ### Paso 2 — Crear `pages/` (el Page Object Model)
 
+Crea la carpeta y abre cada archivo en VS Code (se crean en disco al guardarlos):
+
 ```bash
-mkdir -p pages
-touch pages/BasePage.ts pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPage.ts pages/index.ts
+mkdir pages
+code pages/BasePage.ts
+code pages/LoginPage.ts
+code pages/CatalogPage.ts
+code pages/CheckoutPage.ts
+code pages/index.ts
 ```
 
-**Esqueleto mínimo** de cada archivo (el alumno los llena durante el módulo):
+**Contenido de cada archivo** (escríbelo ahora; en los Pasos 5 y 6 lo releemos línea por línea):
 
 📄 `pages/BasePage.ts` — clase normal (NO abstract; eso llega en M05):
 
@@ -157,35 +164,74 @@ touch pages/BasePage.ts pages/LoginPage.ts pages/CatalogPage.ts pages/CheckoutPa
 import type { Page, Locator } from "@playwright/test";
 
 export class BasePage {
+  // `protected` → visible sólo para clases hijas, no para los tests.
+  // `readonly` → el Page se amarra a una pestaña y no salta a otra.
   constructor(protected readonly page: Page) {}
 
-  protected tid(testId: string): Locator {
-    return this.page.getByTestId(testId);
+  // Helper viewport-aware: OmniPizza añade "-desktop" (≥768px)
+  // o "-responsive" (<768px) a sus testids. Se resuelve aquí,
+  // en un solo lugar, para que las hijas no dupliquen la lógica.
+  protected tid(base: string): Locator {
+    const size = this.page.viewportSize();
+    const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
+    return this.page.getByTestId(`${base}${suffix}`);
   }
 
-  async waitForUrl(pattern: RegExp): Promise<void> {
-    await this.page.waitForURL(pattern);
+  // Espera "paciente" centralizada (sin sleep), con timeout configurable.
+  protected async waitForUrl(pattern: RegExp, timeout = 15_000): Promise<void> {
+    await this.page.waitForURL(pattern, { timeout });
+  }
+
+  // Screenshot con nombre semántico para debug.
+  async screenshot(name: string): Promise<void> {
+    await this.page.screenshot({ path: `test-results/${name}.png` });
   }
 }
 ```
 
+> 🔷 **TypeScript — `class`**
+> Una `class` es una plantilla que agrupa datos (propiedades) y comportamiento (métodos). En QA es tu "mapa de pantalla": `BasePage` define lo que **toda** pantalla comparte.
+> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page). Aquí lo aplicas para crear el cimiento del Page Object Model.
+
+> 🔷 **TypeScript — constructor shorthand (`protected readonly page: Page`)**
+> Poner un modificador (`protected`/`readonly`/`private`/`public`) en un parámetro del constructor **declara y asigna** la propiedad en una sola línea — TS lo llama *parameter property*. Sin el modificador, el parámetro sería una variable local que se pierde al terminar el constructor (gotcha clásico). El desglose completo (la alternativa manual y qué pasa si lo cambias) lo lees en el 🔍 del constructor, en el Paso 5.
+> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page). Aquí lo usas para inyectar la pestaña `page` de Playwright en cada Page Object.
+
+> 🔷 **TypeScript — modificadores `private` / `protected` / `public`**
+> `public` (default) → visible para todos, incluido el test. `private` → sólo dentro de la misma clase. `protected` → la misma clase y sus hijas, **pero no** los tests. El gotcha: si olvidas el modificador, TS asume `public` y rompes la encapsulación sin darte cuenta. (Por qué `tid()` es justo `protected` — y qué pasa si lo cambias — lo lees en el 🔍 de `tid`, en el Paso 5.)
+> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page).
+
+> 🔷 **TypeScript — return type `Promise<void>`**
+> Una función `async` siempre devuelve una `Promise`. `Promise<void>` significa "es asíncrona pero no resuelve ningún valor útil — sólo señala cuándo terminó". El gotcha de olvidar el `await` al llamarla (el test sigue antes de que la acción termine — flaky garantizado) lo ves aplicado en el 🔍 de `goto`, en el Paso 6.
+> 📚 Lo viste en [TS · M03 — Funciones](/docs/typescript/m3-void-functions). Aquí casi todos los métodos de acción (`goto`, `loginAs`…) devuelven `Promise<void>`.
+
 📄 `pages/LoginPage.ts` — primera clase concreta:
 
 ```ts
+import { expect, type Locator } from "@playwright/test";
 import { BasePage } from "./BasePage";
 import type { CountryCode, User } from "../types";
 
 export class LoginPage extends BasePage {
-  private get usernameInput() { return this.tid("username-desktop"); }
-  private get passwordInput() { return this.tid("password-desktop"); }
-  private get signInButton()  { return this.tid("login-button-desktop"); }
+  readonly path = "/";
 
+  // --- Locators privados: documentación interna del Page ---
+  private get usernameInput(): Locator { return this.tid("username"); }
+  private get passwordInput(): Locator { return this.tid("password"); }
+  private get signInButton(): Locator  { return this.tid("login-button"); }
+  private get errorMessage(): Locator  { return this.page.getByTestId("login-error"); }
+  private marketFlag(code: CountryCode): Locator {
+    // Testid plano "market-XX" (sin sufijo de viewport) → getByTestId directo.
+    return this.page.getByTestId(`market-${code}`);
+  }
+
+  // --- Acciones públicas: la interfaz del POM ---
   async goto(): Promise<void> {
-    await this.page.goto("/");
+    await this.page.goto(this.path);
   }
 
   async selectMarket(code: CountryCode): Promise<void> {
-    await this.tid(`market-${code}`).click();
+    await this.marketFlag(code).click();
   }
 
   async loginAs(user: User): Promise<void> {
@@ -198,18 +244,36 @@ export class LoginPage extends BasePage {
     await this.goto();
     await this.selectMarket(code);
     await this.loginAs(user);
+    await this.waitForUrl(/\/catalog/);
+  }
+
+  // --- Assertions de estado ---
+  async expectLoaded(): Promise<void> {
+    await expect(this.signInButton).toBeVisible();
+  }
+
+  async expectLoginError(): Promise<void> {
+    await expect(this.errorMessage).toBeVisible();
   }
 }
 ```
+
+> 🔷 **TypeScript — `extends` y `super`**
+> `class Hija extends Padre` hereda propiedades y métodos del padre. Si la hija define su propio `constructor`, debe llamar `super(...)` para inicializar la parte del padre **antes** de usar `this`. Aquí `LoginPage` **no** declara constructor propio, así que TS usa el de `BasePage` automáticamente — por eso no ves `super()` explícito.
+> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-login-page). Aquí cada Page `extends BasePage` para reutilizar los helpers comunes.
+
+Fíjate en dos detalles: los getters pasan el testid **base** (`"username"`, no `"username-desktop"`) — el sufijo de viewport lo añade el `tid()` heredado de `BasePage`. Y las banderas de mercado son la excepción: su testid es plano (`market-MX`, sin sufijo), por eso `marketFlag` usa `page.getByTestId` directo y no `tid()`.
 
 📄 `pages/index.ts` (barrel — facilita el import en los specs):
 
 ```ts
 export { BasePage } from "./BasePage";
 export { LoginPage } from "./LoginPage";
-export { CatalogPage } from "./CatalogPage";
+export { CatalogPage, type Category } from "./CatalogPage";
 export { CheckoutPage } from "./CheckoutPage";
 ```
+
+(`CatalogPage` exporta también el tipo `Category` — los filtros del catálogo —, y el barrel lo re-exporta para que los specs lo importen desde `../pages`.)
 
 (Los esqueletos completos de `CatalogPage` y `CheckoutPage` los construirás guiado por el ejemplo y el reto.)
 
@@ -289,9 +353,19 @@ export default defineConfig({
 Abre `pages/BasePage.ts` y observa:
 
 - `protected readonly page: Page` — todas las hijas la heredan, los tests no la tocan.
-- `protected tid(name: string)` — método helper interno; las hijas lo usan para construir testids consistentes.
+- `protected tid(base: string)` — método helper interno; las hijas lo usan para construir testids consistentes.
 - `async waitForUrl(...)` — la espera "paciente" centralizada (sin `sleep`).
 - **Por qué no es `abstract`:** porque por sí sola sigue siendo útil para crear hijas. En M05 vas a ver el caso donde `abstract` sí es indispensable.
+
+> 🔍 **Detalle que parece obvio — `constructor(protected readonly page: Page) {}`**
+> **Qué es:** una *parameter property* de TypeScript. Esa única línea **declara** la propiedad `page`, la marca `protected readonly` y la **asigna** (`this.page = page`) automáticamente — no hay cuerpo en el constructor. El `page` lo provee el fixture de Playwright cada vez que el test hace `new LoginPage(page)`.
+> **Por qué así (y no la alternativa obvia):** la alternativa obvia es declarar el campo arriba y asignarlo a mano: `private page: Page; constructor(page: Page) { this.page = page }`. Eso son tres líneas y dos lugares donde olvidar el `readonly`. La parameter property lo hace en una y deja el contrato explícito.
+> **Qué pasa si lo cambias:** si quitas `protected`, el campo se vuelve `public` por defecto y los tests podrían tocar `loginPage.page` directamente — rompes la encapsulación. Si quitas `readonly`, alguien puede reasignar `this.page` a otra pestaña a mitad del TC (la clase de bug "¿por qué el assert corrió en la pestaña equivocada?").
+
+> 🔍 **Detalle que parece obvio — `protected tid(base: string): Locator`**
+> **Qué es:** el helper que añade el sufijo de viewport (`-desktop` / `-responsive`) al testid. Es `protected`, junto con `waitForUrl`.
+> **Por qué así (y no la alternativa obvia):** `protected` lo hace visible para las clases hijas (`LoginPage`, `CatalogPage`...) pero **no** para los tests. La alternativa `public` lo dejaría disponible en el spec (`loginPage.tid("x")`), reabriendo la puerta a locators inline desde el test. La alternativa `private` lo escondería incluso de las hijas y `LoginPage` no podría usarlo. `protected` es el punto medio exacto: herramienta del equipo QA interno, invisible para el cliente (test).
+> **Qué pasa si lo cambias:** con `private`, las clases que `extends BasePage` dejan de compilar (no ven el helper heredado). Con `public`, los specs vuelven a poder construir locators a mano y se erosiona la encapsulación que da sentido al POM.
 
 ---
 
@@ -306,6 +380,21 @@ Cosas a observar:
   - `selectMarket(code)`
 - El método `loginInMarket` **encapsula los 5 pasos** que en M02 estaban inline en cada test.
 
+> 🔍 **Detalle que parece obvio — `readonly path = "/"`**
+> **Qué es:** una propiedad de instancia de solo lectura en `LoginPage` (`"/"`) y `CatalogPage` (`"/catalog"`). En `LoginPage`, el método `goto()` la usa: `await this.page.goto(this.path)`. (En `CatalogPage` documenta qué pantalla mapea la clase — a `/catalog` se llega navegando tras el login, no con un `goto` directo.)
+> **Por qué así (y no la alternativa obvia):** la alternativa es hardcodear la ruta dentro de cada método (`goto("/")`). Con `readonly path` la ruta vive en **un solo lugar** por Page y queda visible como "esta clase mapea esta pantalla". `readonly` comunica que la pantalla de una Page no cambia en tiempo de ejecución.
+> **Qué pasa si lo cambias:** si quitas `readonly`, el compilador deja de protegerte ante una reasignación accidental (`this.path = ...`) que mandaría el `goto` a una pantalla equivocada. Si la inlineas en cada método, repites el string y pierdes el único punto de cambio.
+
+> 🔍 **Detalle que parece obvio — `private get usernameInput(): Locator`**
+> **Qué es:** los locators se exponen como **getters `private`** (propiedades calculadas), no como variables inline dentro de cada método. Cada acceso reevalúa `this.tid("username")`.
+> **Por qué así (y no la alternativa obvia):** la alternativa obvia es escribir `this.page.getByTestId("username-desktop")` inline en cada método que lo use. El getter centraliza el locator: si cambia el testid, tocas **una línea**. Y al ser `get` (no campo asignado en el constructor) el `Locator` se resuelve perezosamente — importa porque `tid()` consulta el `viewportSize()` en el momento del uso, no en el de la construcción del Page.
+> **Qué pasa si lo cambias:** si lo declaras como campo en el constructor (`this.usernameInput = this.tid(...)`) congelas el viewport al instante de `new LoginPage(page)`. Si lo haces `public`, el test recupera el atajo `loginPage.usernameInput.fill(...)` que el primer bullet de arriba te dijo que es mala señal — exactamente lo que el POM busca impedir.
+
+> 🔍 **Detalle que parece obvio — `await this.page.goto(this.path)`**
+> **Qué es:** navegación dentro del método del Page. El `this.` apunta a la instancia del Page; `this.page` es la pestaña inyectada por el constructor; `this.path` es la ruta de esa pantalla.
+> **Por qué así (y no la alternativa obvia):** el método es `async` y se hace `await` porque `goto` devuelve una `Promise` — sin `await`, el test seguiría a la siguiente acción antes de que la página cargara (flaky garantizado). Se usa `this.page` (no un `page` global ni un parámetro) porque cada Page se amarra a la pestaña que recibió: así un solo test puede instanciar `LoginPage`, `CatalogPage` y `CheckoutPage` compartiendo la **misma** pestaña — exactamente lo que hace `reto.spec.ts` al construir los 3 Pages con el mismo `page`.
+> **Qué pasa si lo cambias:** si quitas el `await`, la navegación queda "en el aire" y los locators siguientes corren sobre la página vieja. Si quitas `async`, ni siquiera puedes usar `await` adentro. Si reemplazas `this.page` por una referencia externa, rompes el aislamiento por instancia y vuelves al estilo script de M01.
+
 ---
 
 ## ▶️ Cómo ejecutar este módulo
@@ -313,7 +402,7 @@ Cosas a observar:
 - **Comando del módulo:** `pnpm m3`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
 - **Verificar tipos (herencia POM):** `pnpm typecheck` — ojo: la herencia introduce errores sutiles
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m3` (no `VAR=x pnpm m3`, sintaxis bash que falla en PowerShell)

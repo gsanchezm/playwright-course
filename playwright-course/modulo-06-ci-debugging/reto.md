@@ -23,11 +23,17 @@ Esto es el patrón **canary in the coal mine**: detectar regresiones de producci
 
 **Qué hacer:**
 
-Crea el archivo con:
+Abre el archivo en VS Code (se crea al guardarlo):
+
+```bash
+code .github/workflows/smoke-daily.yml
+```
+
+Escríbelo con:
 
 - Trigger `schedule` con cron `'0 14 * * *'` (= 14:00 UTC = 8am hora CDMX).
 - Trigger `workflow_dispatch` para poder dispararlo manualmente desde la UI de GitHub.
-- Que corra **solo** `--grep @smoke --project=ui-chromium` (un browser, no los 3).
+- Que corra **solo** `--grep "@smoke" --project=ui-chromium` (un browser, no los 3).
 - `timeout-minutes: 15` (menos que el workflow principal, porque es un subset).
 - Subir el HTML report **si falla** (`if: failure()`).
 
@@ -62,7 +68,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
 
       - name: Smoke @smoke contra live
-        run: pnpm exec playwright test --grep @smoke --project=ui-chromium
+        run: pnpm exec playwright test --grep "@smoke" --project=ui-chromium
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
           API_URL: ${{ secrets.API_URL }}

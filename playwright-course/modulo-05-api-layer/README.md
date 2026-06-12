@@ -160,7 +160,7 @@ pnpm typecheck     # debe pasar
 - **Cómo verifico:** las 4 dependencias aparecen listadas. Si alguna falta, `pnpm install` (si ya están en `package.json`) o `pnpm add -D @playwright/test dotenv typescript @types/node`.
 
 ```bash
-pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+pnpm list @playwright/test dotenv typescript @types/node
 # Las 4 deben aparecer. Si no:
 #   pnpm install     (si package.json ya las lista)
 #   pnpm add -D @playwright/test dotenv typescript @types/node
@@ -171,15 +171,28 @@ pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
 ### Paso 2 — Crear `services/` y `tests/api/`
 
 **2.1 — Crear las carpetas y los archivos vacíos**
-- **Qué hago:** creo `services/` y `tests/api/`, y toco los 5 archivos de servicios + los 2 specs de API.
+- **Qué hago:** creo `services/` y `tests/api/`, y creo vacíos los 5 archivos de servicios + los 2 specs de API.
 - **Por qué:** `services/` es la **nueva capa** de este módulo (el cliente HTTP), `tests/api/` es la suite que la consume. Tenerlos vacíos primero me deja llenar el contrato (`BaseService`) antes que las hijas.
-- **Cómo verifico:** `ls services tests/api` muestra los 7 archivos.
+- **Cómo verifico:** `ls services` muestra los 5 archivos de servicios y `ls tests/api` los 2 specs.
 
 ```bash
-mkdir -p services tests/api
-touch services/BaseService.ts services/AuthService.ts services/OrderService.ts \
-      services/PizzaService.ts services/index.ts
-touch tests/api/auth.spec.ts tests/api/pizzas.spec.ts
+mkdir services
+mkdir tests
+mkdir tests/api
+```
+
+`tests/` probablemente ya existe desde M04 (ahí vive `tests/setup/`) — si ya existe, salta esa línea.
+
+Crea los 7 archivos abriéndolos en VS Code (cada `code <ruta>` abre el archivo como nuevo; guárdalo con `Ctrl+S` para que exista en disco — los llenarás en 2.2-2.5):
+
+```bash
+code services/BaseService.ts
+code services/AuthService.ts
+code services/OrderService.ts
+code services/PizzaService.ts
+code services/index.ts
+code tests/api/auth.spec.ts
+code tests/api/pizzas.spec.ts
 ```
 
 **2.2 — Escribir `services/BaseService.ts` (la clase abstracta — el contrato)**
@@ -211,6 +224,7 @@ export abstract class BaseService {
 
 > 🔷 **TypeScript — `abstract class` + métodos abstractos**
 > Una clase `abstract` **no se puede instanciar** (`new BaseService(...)` no compila) y puede declarar métodos sin cuerpo (`abstract basePath(): string`) que cada hija **está obligada** a implementar. Es la diferencia clave con una clase normal: una normal con un método "vacío" compila aunque la hija se olvide de él; `abstract` lo convierte en error de compilación.
+> **Qué pasa si lo cambias:** si quitas `abstract` solo de `basePath()`, el compilador deja de exigir que cada hija lo defina — y `url()` podría construir rutas contra un `basePath` inexistente.
 > 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/) (y el contrato que impone se ve a fondo en [TS · M06 — Interfaces](../../typescript-qa-course/modulo-06-interfaces/)). Aquí lo aplicas a `BaseService`, que fuerza a `AuthService`/`OrderService`/`PizzaService` a declarar su `basePath()`.
 
 > ⚠️ **Primera vez que aparece `abstract` en el curso — y a propósito.** En M03 `BasePage` era una clase **normal**: con una sola hija, `abstract` no aportaba nada. Aquí ya hay **3 servicios** que comparten comportamiento, así que el patrón por fin se gana su lugar. Ese es el sentido de *just-in-time*: el concepto entra cuando el problema lo reclama.
@@ -261,6 +275,21 @@ export async function createAuthedContext(
   });
 }
 ```
+
+> 🔍 **Detalle que parece obvio — `const api = await request.newContext({ baseURL })`**
+> **Qué es:** el servicio importa `request` de `@playwright/test` y crea su propio contexto HTTP; el tipo de ese contexto es `APIRequestContext`.
+> **Por qué así (y no la alternativa obvia):** `request.newContext()` levanta un cliente HTTP **sin navegador**. La alternativa `page.request` existe, pero exige una `page` (y por tanto un browser arrancado), que aquí no se necesita para nada.
+> **Qué pasa si lo cambias:** si usaras `page.request`, tendrías que pedir el fixture `page` y pagar el costo de abrir un navegador por test. Quedarte con `request.newContext()` es la razón del efecto que verás en el Paso 6: los tests del project `api` corren en <1s y sin abrir navegador — son llamadas HTTP puras.
+
+> 🔍 **Detalle que parece obvio — `if (!res.ok()) throw new Error(... ${res.status()} ...)`**
+> **Qué es:** cada método (`login` aquí, y luego `list`, `createOrder`, `listMine`) chequea `res.ok()` y, si falla, lanza incluyendo `res.status()` y el body.
+> **Por qué así (y no la alternativa obvia):** `res.ok()` es `true` para cualquier 2xx; chequearlo explícito convierte un 4xx/5xx en un error claro **antes** de intentar `res.json()`. La alternativa "asumir 200 y parsear directo" produciría un crash opaco al deserializar un body de error.
+> **Qué pasa si lo cambias:** sin el guard, un login con password inválido devolvería un body de error y `res.json()` lo parsearía como si fuera el token — el test fallaría más tarde y con un mensaje confuso. Justamente `auth.spec.ts` valida `rejects.toThrow(/Login failed/)` apoyado en este patrón.
+
+> 🔍 **Detalle que parece obvio — `this.api.post(this.url("/login"), { data: { ... } })`**
+> **Qué es:** los POST mandan el body con la opción `data` (objeto JS), no `form`.
+> **Por qué así (y no la alternativa obvia):** `data` con un objeto serializa a **JSON** y fija `Content-Type: application/json`, que es lo que espera el backend de OmniPizza. `form` enviaría `application/x-www-form-urlencoded`, otro formato de body.
+> **Qué pasa si lo cambias:** si cambias `data` por `form`, el backend recibe campos urlencoded en vez de JSON; lo más probable es un 4xx (body no parseable como JSON) y, gracias al guard de `res.ok()` de arriba, un `Error` con el status real.
 
 > 🔷 **TypeScript — factory con `static`**
 > Un método `static` pertenece a la **clase**, no a la instancia: se llama como `AuthService.create(...)`, sin haber creado nada todavía. Lo usamos porque la construcción es **asíncrona** (`await request.newContext(...)`) y un `constructor` en TS/JS **no puede ser `async`**. El factory `static async create()` envuelve ese `await` y devuelve la instancia ya armada.
@@ -341,7 +370,7 @@ export { PizzaService } from "./PizzaService";
 
 **3.1 — Añadir el project `api` (sin `storageState`, sin `dependencies`)**
 - **Qué hago:** dentro del array `projects` agrego un cuarto project `api` que solo fija `baseURL` (el backend) y su `testMatch`.
-- **Por qué:** los tests de API se autentican solos (`AuthService.create()` hace login). NO deben heredar las cookies de UI ni esperar al setup project — el aislamiento es intencional.
+- **Por qué:** los tests de API se autentican solos — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. NO deben heredar las cookies de UI (la sesión de navegador que el setup deja en `.auth/user.json`) ni esperar al setup project — el aislamiento es intencional.
 - **Cómo verifico:** `pnpm exec playwright test --list --project=api` lista los specs de `tests/api/` y de `modulo-05-api-layer/`.
 
 ```ts
@@ -353,6 +382,9 @@ export { PizzaService } from "./PizzaService";
   testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
 },
 ```
+
+> 🔍 **Detalle que parece obvio — `{ name: "api", ... }` sin `storageState`, sin `dependencies`**
+> **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies: ["setup"]`, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume.
 
 **3.2 — Excluir la carpeta del módulo y `tests/api/` de los `ui-*`**
 - **Qué hago:** amplío el `testIgnore` de `ui-chromium`, `ui-firefox` y `ui-webkit` para que ignoren `tests/api/` y `modulo-05-api-layer/`.
@@ -504,8 +536,8 @@ pnpm exec playwright test --project=api
 - **Cómo verifico:** `pnpm exec playwright test modulo-05-api-layer/ejemplo.spec.ts --project=api` pasa en verde; el report muestra el flujo completo sin abrir navegador.
 
 > 🔷 **TypeScript — union types para errores (`Order | ApiError`)**
-> Un **union type** dice "esto es A **o** B": `Order | ApiError` modela que un endpoint puede devolver la entidad esperada **o** un objeto de error. TypeScript te obliga a **estrechar** (narrow) el tipo antes de usar campos específicos de uno u otro — por eso el guard `if (!res.ok()) throw ...` es tan importante: separa el camino feliz (`Order`) del de error (`ApiError`) **antes** de leer propiedades.
-> 📚 Lo viste en [TS · M04 — Tipos de objetos](../../typescript-qa-course/modulo-04-objects-types/) (uniones y forma de objetos; el contrato `ApiError` vive en `types/omnipizza.d.ts`). Aquí lo aplicas para distinguir una respuesta válida de un error del backend.
+> Un **union type** dice "esto es A **o** B". Míralo en negativo: sin el guard de `res.ok()` + `throw` temprano, la firma honesta de `createOrder()` (en `OrderService`) sería `Promise<Order | ApiError>` — y **cada** llamada tendría que **estrechar** (narrow) el union antes de tocar un campo de `Order`. El `throw` temprano saca el camino de error de la firma y te deja devolver un `Promise<Order>` limpio; `ApiError` (en `types/omnipizza.d.ts`) describe la forma del body de error que el backend devuelve.
+> 📚 Lo viste en [TS · M04 — Tipos de objetos](../../typescript-qa-course/modulo-04-objects-types/) (uniones y forma de objetos). Aquí el guard de `res.ok()` es lo que te ahorra cargar ese union en cada firma de la capa.
 
 ---
 
@@ -552,42 +584,13 @@ git log --oneline -1
 
 ---
 
-## 🔍 Detalles que parecen obvios pero no lo son
-
-### `{ name: "api", use: { baseURL: ... }, testMatch: [...] }` (sin `storageState`, sin `dependencies`)
-- **Qué es:** el project `api` se define sin `storageState: STORAGE_STATE` y sin `dependencies: ["setup"]`, a diferencia de los 3 projects `ui-*`.
-- **Por qué así (y no la alternativa obvia):** los tests de API se autentican por su cuenta — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. No necesitan la sesión de navegador que el setup deja en `.auth/user.json`.
-- **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies: ["setup"]`, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume. El aislamiento es intencional.
-
-### `request` / `APIRequestContext` (no `page.request`)
-- **Qué es:** los servicios importan `request` de `@playwright/test` y crean su contexto con `await request.newContext({ baseURL })`. El tipo del contexto es `APIRequestContext`.
-- **Por qué así (y no la alternativa obvia):** `request.newContext()` levanta un cliente HTTP **sin navegador**. La alternativa `page.request` existe, pero exige una `page` (y por tanto un browser arrancado), que aquí no se necesita para nada.
-- **Qué pasa si lo cambias:** si usaras `page.request`, tendrías que pedir el fixture `page` y pagar el costo de abrir un navegador por test. Por eso los tests del project `api` corren en menos de 1s y "no abren navegador" — son llamadas HTTP puras.
-
-### `export abstract class BaseService`
-- **Qué es:** la clase base es `abstract` y declara `protected abstract basePath(): string` más un `protected constructor(...)`.
-- **Por qué así (y no la alternativa obvia):** `abstract` impide instanciar la base directamente y **obliga** a cada hijo (`AuthService`, `OrderService`, `PizzaService`) a implementar `basePath()`. Con un solo servicio no valdría la pena; con 3 que comparten `api`, `baseURL`, `url()` y `dispose()`, evita duplicación y garantiza el contrato.
-- **Qué pasa si lo cambias:** escribir `new BaseService(...)` no compila — TypeScript responde **"Cannot create an instance of an abstract class"**. Y si quitas `abstract` de `basePath()`, el compilador deja de exigir que cada hijo lo defina, y `url()` podría construir rutas contra un `basePath` inexistente.
-
-### `if (!res.ok()) throw new Error(... ${res.status()} ...)`
-- **Qué es:** cada método (`login`, `list`, `createOrder`, `listMine`) chequea `res.ok()` y, si falla, lanza incluyendo `res.status()` y el body.
-- **Por qué así (y no la alternativa obvia):** `res.ok()` es `true` para cualquier 2xx; chequearlo explícito convierte un 4xx/5xx en un error claro **antes** de intentar `res.json()`. La alternativa "asumir 200 y parsear directo" produciría un crash opaco al desserializar un body de error.
-- **Qué pasa si lo cambias:** sin el guard, un login con password inválido devolvería un body de error y `res.json()` lo parsearía como si fuera el token — el test fallaría más tarde y con un mensaje confuso. Justamente `auth.spec.ts` valida `rejects.toThrow(/Login failed/)` apoyado en este patrón.
-
-### `this.api.post(this.url("/login"), { data: { ... } })`
-- **Qué es:** los POST mandan el body con la opción `data` (objeto JS), no `form`.
-- **Por qué así (y no la alternativa obvia):** `data` con un objeto serializa a **JSON** y fija `Content-Type: application/json`, que es lo que espera el backend de OmniPizza. `form` enviaría `application/x-www-form-urlencoded`, otro formato de body.
-- **Qué pasa si lo cambias:** si cambias `data` por `form`, el backend recibe campos urlencoded en vez de JSON; lo más probable es un 4xx (body no parseable como JSON) y, gracias al guard de `res.ok()`, un `Error` con el status real.
-
----
-
 ## ▶️ Cómo ejecutar este módulo
 
 - **Comando del módulo (project api):** `pnpm m5`
 - **Suite API completa:** `pnpm test:api`
 - **UI mode:** `pnpm test:ui`
 - **Debug:** `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @api` / `--grep @regression`) o por archivo (`pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@regression"`) o por archivo (`pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api`)
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** las variables de entorno van con `$env:VAR="x"; pnpm m5` (no `VAR=x pnpm m5`). Ej.: `$env:API_URL="https://mi-backend"; pnpm m5`
 

@@ -40,7 +40,7 @@ Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un san
   ```
 
 **1.3 — Crea un `.gitignore` mínimo ANTES de cualquier otro archivo**
-- **Qué hago:** crea `.gitignore` en la raíz con el contenido mínimo de [`03-gitignore-playwright.md`](./03-gitignore-playwright.md) (sección 3.1):
+- **Qué hago:** crea el archivo desde VS Code con `code .gitignore` y pega el contenido mínimo de [`03-gitignore-playwright.md`](./03-gitignore-playwright.md) (sección 3.1):
   ```gitignore
   node_modules/
   .env
@@ -82,8 +82,11 @@ Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un san
   ```
 
 **1.8 — Modifica el test**
-- **Qué hago:** `echo "test('logout funciona', () => {});" >> login.spec.ts`
-- **Por qué:** generas un cambio sobre un archivo ya trackeado, para practicar el ciclo de actualización (no solo el de archivos nuevos). Nota el `>>` (añade) vs `>` (sobreescribe).
+- **Qué hago:** abre el archivo en VS Code con `code login.spec.ts` y añade esta línea al final:
+  ```ts
+  test('logout funciona', () => {});
+  ```
+- **Por qué:** generas un cambio sobre un archivo ya trackeado, para practicar el ciclo de actualización (no solo el de archivos nuevos).
 - **Cómo verifico:** `git status` muestra `login.spec.ts` como `modified` (no como `new file`).
 
 **1.9 — Mira el diff y haz un segundo commit**

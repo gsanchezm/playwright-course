@@ -136,9 +136,9 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 **0.1 — Verifica que M03 quede verde antes de empezar**
 - **Qué hago:** desde `playwright-course/` corro los Page Objects de M03 y el typecheck.
   ```bash
-  pnpm m3                    # los Page Objects ya funcionan
-  pnpm typecheck             # debe pasar
-  ls .auth 2>&1 || echo OK   # .auth/ debería estar vacío o no existir aún
+  pnpm m3          # los Page Objects ya funcionan
+  pnpm typecheck   # debe pasar
+  ls .auth         # si da error, perfecto: aún no existe (se crea en este módulo)
   ```
 - **Por qué:** M04 construye **encima** de `pages/` (los fixtures inyectan esos Page Objects). Si M03 está roto, los fixtures arrastran el error y no sabrás si el bug es de M03 o de M04.
 - **Cómo verifico:** `pnpm m3` termina en verde y `pnpm typecheck` no imprime errores.
@@ -152,7 +152,7 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 **1.1 — Confirma que no falta ningún paquete**
 - **Qué hago:** **M04 no añade paquetes npm nuevos.** Los custom fixtures, `storageState` y `page.route()` viven dentro de `@playwright/test`. Solo confirmo que las 4 dependencias base están instaladas.
   ```bash
-  pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+  pnpm list @playwright/test dotenv typescript @types/node
   # Las 4 deben aparecer. Si no:
   #   pnpm install
   #   o pnpm add -D @playwright/test dotenv typescript @types/node
@@ -161,12 +161,16 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 - **Cómo verifico:** las 4 dependencias aparecen listadas con su versión.
 
 **1.2 — Asegura que `.auth/` esté en `.gitignore` (edita `.gitignore`)**
-- **Qué hago:** añado `.auth/` al `.gitignore` si no está.
+- **Qué hago:** abro el `.gitignore` en VS Code y añado `.auth/` si no está.
   ```bash
-  grep -q "^\.auth/" .gitignore || echo ".auth/" >> .gitignore
+  code .gitignore
+  ```
+  Añade esta línea al final (solo si no existe ya):
+  ```gitignore
+  .auth/
   ```
 - **Por qué:** los `storageState` que vas a generar contienen **tokens válidos** (`access_token` en `localStorage`). Commitearlos es filtrar credenciales en el historial de Git.
-- **Cómo verifico:** `git status` **no** muestra `.auth/` como archivo nuevo ni siquiera después de correr el setup.
+- **Cómo verifico:** `git check-ignore .auth/` imprime `.auth/` (la ruta quedó cubierta por el ignore), y `git status` **no** muestra `.auth/` como archivo nuevo ni siquiera después de correr el setup.
 
 > ⚠️ Haz esto **antes** del primer `pnpm test:setup`. Una vez que `.auth/user.json` entra al historial, sacarlo requiere reescribir commits.
 
@@ -175,13 +179,19 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 ### Paso 2 — Crear los archivos nuevos (helpers → setup → fixtures)
 
 **2.1 — Crea las carpetas y los archivos vacíos**
-- **Qué hago:** creo las 3 carpetas nuevas y sus archivos.
+- **Qué hago:** creo las carpetas nuevas (una por línea) y abro cada archivo en VS Code para crearlo.
   ```bash
-  mkdir -p tests/setup fixtures helpers
-  touch tests/setup/auth.setup.ts fixtures/omnipizza.ts helpers/unique-data.ts
+  mkdir tests
+  mkdir tests/setup
+  mkdir fixtures
+  mkdir helpers
+  code tests/setup/auth.setup.ts
+  code fixtures/omnipizza.ts
+  code helpers/unique-data.ts
   ```
+  Guarda cada archivo vacío (Ctrl+S) para que exista en disco.
 - **Por qué:** dejar los archivos vacíos primero me deja anclar las rutas del `tsconfig` y del `playwright.config.ts` sin pelear con errores de "módulo no encontrado" mientras escribo cada uno.
-- **Cómo verifico:** `ls tests/setup fixtures helpers` muestra los 3 archivos.
+- **Cómo verifico:** `ls tests/setup`, `ls fixtures` y `ls helpers` muestran los 3 archivos.
 
 **2.2 — Escribe `helpers/unique-data.ts` (data isolation)**
 - **Qué hago:** creo las funciones de datos únicos por worker. Es el archivo **sin dependencias**, por eso va primero.
@@ -254,6 +264,7 @@ La v3 **no usa `globalSetup` con login por UI** porque:
     });
     expect(apiRes.ok(), `login API debe ser 200. Status: ${apiRes.status()}`).toBeTruthy();
     const { access_token } = (await apiRes.json()) as { access_token: string };
+    expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
 
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -271,6 +282,16 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 - **Cómo verifico:** `pnpm exec tsc --noEmit` pasa; el archivo abre un **contexto nuevo** del `browser` (no reusa `page` del test) y lo cierra al final.
 
 > ⚠️ Fíjate en los detalles que el código real exige y son fáciles de equivocar: el endpoint es `POST /api/auth/login` (con `/api`), se siembran **dos** claves (`access_token` **y** `username`), y se usa `browser.newContext()` → `context.storageState(...)` → `context.close()`, **no** `page.context()` del test.
+
+> 🔍 **Detalle que parece obvio — ``await request.post(`${API_URL}/api/auth/login`, { data: { username, password } })``**
+> **Qué es:** el login se hace con un **POST a la API** usando el fixture `request` (`APIRequestContext`), no llenando el formulario en la UI.
+> **Por qué así (y no la alternativa obvia):** es la tabla "Por qué este patrón (y no `globalSetup`)" en acción: llenar el formulario en UI suma navegación + render + clicks y depende del DOM, de animaciones y de selectores; un solo POST es **rápido y determinista** — prueba el contrato de la API y devuelve el `access_token` directo.
+> **Qué pasa si lo cambias:** si haces login por UI en el setup, recuperas toda la fragilidad que querías evitar — y la pagas **una vez por corrida del setup**, multiplicado si tienes varios roles. El UI login se prueba aparte (en su propio spec), no como precondición de toda la suite.
+
+> 🔍 **Detalle que parece obvio — `await context.storageState({ path: USER_FILE })`**
+> **Qué es:** serializa el estado del `BrowserContext` (el contexto nuevo del ⚠️ de arriba, creado con `browser.newContext()`) a `.auth/user.json` — el "badge" que luego heredan los projects `ui-*`.
+> **Por qué así (y no la alternativa obvia):** `storageState` siempre guarda **cookies + localStorage** juntos, así que el badge es portable a cualquier mecanismo de sesión — por eso no escribimos el JSON a mano.
+> **Qué pasa si lo cambias:** OmniPizza guarda la sesión en `localStorage` (`access_token`, `username`) y **no** usa cookies de sesión, así que el array `cookies` del JSON queda vacío y todo el peso del badge está en `origins[].localStorage`. Si OmniPizza migrara a cookies httpOnly, el mismo `storageState` seguiría funcionando sin tocar el setup.
 
 **2.4 — Escribe `fixtures/omnipizza.ts` (inyecta Page Objects con `test.extend`)**
 - **Qué hago:** extiendo el `test` base para que inyecte Page Objects, el usuario estándar y el mercado por defecto.
@@ -418,6 +439,21 @@ export default defineConfig({
 - **Por qué:** el project `setup` corre **primero** y genera el badge; los `ui-*` lo heredan vía `storageState` + `dependencies`. El `storageState` va **por project** (no en el `use:` raíz) para que los flujos negativos/API no lo hereden; el `testIgnore` evita que el setup corra dos veces.
 - **Cómo verifico:** `pnpm exec playwright test --list` corre sin error de parseo y **incluye** los projects `setup` + los tres `ui-*` (en el repo completo verás además `api` y `anonymous`, que no heredan `storageState`).
 
+> 🔍 **Detalle que parece obvio — `dependencies: ["setup"]`**
+> **Qué es:** la **precondición declarativa** de la tabla de Conceptos JIT, a nivel de project: "este project no arranca hasta que el project `setup` termine **en verde**".
+> **Por qué así (y no la alternativa obvia):** no es un `import`, ni un `globalSetup`, ni una llamada en un `beforeAll`. No ejecutas el login tú mismo — **declaras** el orden y Playwright construye el grafo de ejecución (por eso el setup aparece como un test en el reporte y se reutiliza por rol).
+> **Qué pasa si lo cambias:** si borras `dependencies`, los projects `ui-*` ya **no esperan** al setup. Pueden arrancar antes de que `.auth/user.json` exista (o con uno viejo) → tests que fallan con "sesión no encontrada" de forma intermitente, según quién gane la carrera.
+
+> 🔍 **Detalle que parece obvio — `storageState: STORAGE_STATE` (en cada project `ui-*`, NO en el `use:` raíz)**
+> **Qué es:** la asignación del badge **por project** que acabas de escribir (`ui-chromium`, `ui-firefox`, `ui-webkit`) — no va en el bloque `use:` global de `defineConfig`.
+> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una sola vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**: también los projects `api` y `anonymous` (llegan en M05/M06), que deben correr **sin** sesión.
+> **Qué pasa si lo cambias:** si lo subes al `use:` raíz, los flujos negativos (login inválido, acceso anónimo) arrancan **ya logueados** y dejan de probar lo que dicen probar; y los tests de API heredan cookies de UI que no les corresponden. Los falsos verdes más peligrosos del módulo nacen aquí.
+
+> 🔍 **Detalle que parece obvio — `testIgnore: [/tests\/setup\/.*/]`**
+> **Qué es:** la ruta que cada project `ui-*` **ignora**. (En el repo final el array crece a tres patrones: `/tests\/api\/.*/` y `/modulo-05-api-layer\/.*/` se añaden en M05 para que la suite de API no se cuele en los projects de UI.)
+> **Por qué así (y no la alternativa obvia):** sin ese ignore, el `testMatch` global (`/tests\/.*\.(spec|setup)\.ts/`) haría que `auth.setup.ts` también cayera dentro de los projects `ui-*`. Como esos projects dependen de `setup`, el login terminaría ejecutándose **dos veces**: una en el project `setup` y otra dentro de cada `ui-*`.
+> **Qué pasa si lo cambias:** si quitas `/tests\/setup\/.*/`, verás `auth.setup.ts` duplicado en el reporte y un POST de login extra por browser; con multi-browser eso es login ×3 innecesario y más lento.
+
 **3.2 — Añade los scripts al `package.json` (edita `package.json`)**
 - **Qué hago:** agrego los scripts del módulo y por project.
   ```json
@@ -466,6 +502,11 @@ export default defineConfig({
 - **Por qué:** entender que el setup es **un test más** (visible en el reporte) y no un hook escondido es lo que hace clic con `dependencies`.
 - **Cómo verifico:** localizas en el archivo el endpoint `POST /api/auth/login` y las dos claves de `localStorage` (`access_token`, `username`).
 
+> 🔍 **Detalle que parece obvio — `auth.setup.ts` (extensión `.setup.ts`, no `.spec.ts`)**
+> **Qué es:** la clave 1 de arriba, vista de cerca: un test normal de Playwright, pero con extensión `.setup.ts` — el project `setup` lo matchea con su propio `testMatch: /tests\/setup\/.*\.setup\.ts/`.
+> **Por qué así (y no la alternativa obvia):** la extensión es la convención que permite que **una sola** regla de `testMatch` lo capture sin atrapar tus `*.spec.ts`. El project `setup` usa una regex distinta a la global precisamente para aislar el archivo de setup del resto de la suite.
+> **Qué pasa si lo cambias:** si lo renombras a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y todos los `ui-*` arrancan sin sesión. Y al revés: cualquier `*.setup.ts` que dejes suelto en `tests/` lo recogerá el setup project aunque no quieras.
+
 > 💡 **Para el facilitador:** muestra `playwright.config.ts` donde se declara:
 > ```ts
 > { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ }
@@ -505,9 +546,10 @@ pnpm test:setup
 1. Verás **dos** tests verdes en el project `setup` (corren en modo serial): `wake up backend (warmup cold start)` y `authenticate as standard_user`.
 2. Tras la corrida, el archivo `.auth/user.json` aparece en disco:
    ```bash
-   ls -la .auth/
-   cat .auth/user.json | head -5
+   ls .auth
+   cat .auth/user.json
    ```
+   Fíjate en las primeras líneas: `cookies` y `origins` (ahí vive el `localStorage`).
 3. Ese archivo contiene cookies + localStorage. **Está en `.gitignore`** — nunca lo commitees.
 
 > 💡 **Si falla** con `ECONNREFUSED` o `404`: probablemente OmniPizza está dormido. Vuelve a correr una segunda vez (el cold start despierta el backend).
@@ -546,8 +588,7 @@ pnpm test:setup
 - **Qué hago:** ahora que la suite corre verde, aíslo M04 en su rama (si no lo hice ya) y hago commit de todo lo nuevo.
   ```bash
   git switch -c feature/m04-fixtures          # si aún no estás en la rama
-  git add tests/setup fixtures helpers playwright.config.ts \
-          package.json tsconfig.json modulo-04-setup-fixtures
+  git add tests/setup fixtures helpers playwright.config.ts package.json tsconfig.json modulo-04-setup-fixtures
   git commit -m "feat(m04): setup project + fixtures + data isolation"
   ```
 - **Por qué:** M04 toca muchos archivos de infraestructura; un commit atómico con mensaje claro deja un punto de retorno limpio si el PR pide cambios. **`.auth/` NO se incluye** (está en `.gitignore`).
@@ -579,6 +620,7 @@ pnpm test:setup
   time pnpm m3   # sin setup project
   time pnpm m4   # con setup project
   ```
+  **🪟 Windows / PowerShell:** `time` no existe — usa `Measure-Command { pnpm m3 }` y `Measure-Command { pnpm m4 }`.
 - **Por qué:** el delta principal es que **no hay login por UI** en cada TC — un solo POST en el setup reemplaza N navegaciones completas. Es el argumento de venta del patrón.
 - **Cómo verifico:** anotas ambos tiempos; `pnpm m4` debería amortizar el login en una sola corrida del setup.
 
@@ -589,9 +631,7 @@ pnpm test:setup
   git push -u origin feature/m04-fixtures
 
   # 2. Abre el PR con la CLI de GitHub
-  gh pr create --base main --head feature/m04-fixtures \
-      --title "feat(m04): setup project + fixtures" \
-      --body "Agrega auth.setup.ts, fixtures de POM y data isolation"
+  gh pr create --base main --head feature/m04-fixtures --title "feat(m04): setup project + fixtures" --body "Agrega auth.setup.ts, fixtures de POM y data isolation"
 
   # 3. Si el review pide cambios: editas, commiteas y vuelves a pushear (ya sin -u)
   git add fixtures/omnipizza.ts
@@ -617,44 +657,12 @@ pnpm test:setup
 - **Qué hago:** abro `reto.spec.ts`; tiene **2 partes**, ambas con TODOs detallados (formato **Qué hacer / Pista / Cómo verificar**):
   1. **PARTE A — Login negativo con `locked_out_user`.** OmniPizza **no tiene admin**: todas sus personas son `customer` y se distinguen por *comportamiento de login*, no por privilegios. `locked_out_user` está bloqueado — el login se **rechaza** con el texto exacto `Invalid credentials`. Llenas el formulario con `getByTestId("username-desktop")`/`password-desktop`, haces clic en **Sign In** y asertas el error con `page.getByText("Invalid credentials")`.
   2. **PARTE B — Mock con latencia simulada** usando `page.route()` + `setTimeout` + `route.continue()`, y validar que la UI muestra un skeleton mientras tanto.
-- **Por qué:** la PARTE A te enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** es un setup project con `storageState` (no hay badge que guardar): es un **test de UI de auth fallida**. **(b)** Este spec corre bajo `ui-chromium`, que ya hereda el badge de `standard_user`; para ver el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo inverso al que aprendiste en `🔍 storageState por project`. La PARTE B te hace sentir la diferencia entre latencia real (no determinista) y latencia mockeada (determinista).
+- **Por qué:** la PARTE A te enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** es un setup project con `storageState` (no hay badge que guardar): es un **test de UI de auth fallida**. **(b)** Este spec corre bajo `ui-chromium`, que ya hereda el badge de `standard_user`; para ver el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo inverso al `storageState` por project que configuraste en el paso 3.1. La PARTE B te hace sentir la diferencia entre latencia real (no determinista) y latencia mockeada (determinista).
 - **Cómo verifico:** sigues los TODOs del archivo — **no** están resueltos aquí a propósito. Para PARTE A: el test pasa con `Invalid credentials` visible y la URL **sigue** en `/login` (no entró a `/catalog`); para PARTE B: el test pasa y su duración total es ≥ 3s.
 
 > 📌 **El patrón de setup project SÍ escala a un 2º rol — pero solo a personas que autentican.** La PARTE A original (eliminada) montaba un `admin.setup.ts` sobre un rol inexistente. Si algún día necesitas un **segundo storageState autenticado**, copia `auth.setup.ts` apuntando a una persona que **sí** entra (`problem_user` o `performance_glitch_user`), guarda en `.auth/<persona>.json` y declara su project con `dependencies: ["setup"]`. `locked_out_user` no sirve para eso justamente porque nunca llega a generar un badge — por eso aquí es un caso de **aserción de error**, no de setup.
 
 ---
-
-## 🔍 Detalles que parecen obvios pero no lo son
-
-### `dependencies: ["setup"]`
-- **Qué es:** una **precondición declarativa** a nivel de project. Le dices a Playwright "este project no arranca hasta que el project `setup` termine en verde".
-- **Por qué así (y no la alternativa obvia):** no es un `import`, ni un `globalSetup`, ni una llamada en un `beforeAll`. No ejecutas el login tú mismo — **declaras** el orden y Playwright construye el grafo de ejecución. Esto lo hace visible en el reporte (setup aparece como un test) y reutilizable por rol.
-- **Qué pasa si lo cambias:** si borras `dependencies`, los projects `ui-*` ya **no esperan** al setup. Pueden arrancar antes de que `.auth/user.json` exista (o con uno viejo) → tests que fallan con "sesión no encontrada" de forma intermitente, según quién gane la carrera.
-
-### `storageState: STORAGE_STATE` (en cada project `ui-*`, NO en el `use:` raíz)
-- **Qué es:** el `storageState` se asigna **por project** (`ui-chromium`, `ui-firefox`, `ui-webkit`), no en el bloque `use:` global de `defineConfig`.
-- **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una sola vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**: también los projects `api` y `anonymous`, que deben correr **sin** sesión.
-- **Qué pasa si lo cambias:** si lo subes al `use:` raíz, los flujos negativos (login inválido, acceso anónimo) arrancan **ya logueados** y dejan de probar lo que dicen probar; y los tests de API heredan cookies de UI que no les corresponden. Los falsos verdes más peligrosos del módulo nacen aquí.
-
-### `testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/]`
-- **Qué es:** lista de rutas que cada project `ui-*` **ignora**. La pieza clave para este punto es `/tests\/setup\/.*/`.
-- **Por qué así (y no la alternativa obvia):** sin ese ignore, el `testMatch` global (`/tests\/.*\.(spec|setup)\.ts/`) haría que `auth.setup.ts` también cayera dentro de los projects `ui-*`. Como esos projects dependen de `setup`, el login terminaría ejecutándose **dos veces**: una en el project `setup` y otra dentro de cada `ui-*`. (Los otros dos patrones del array — `tests/api` y `modulo-05` — son para que la suite de API de M05 no se cuele en los projects de UI.)
-- **Qué pasa si lo cambias:** si quitas `/tests\/setup\/.*/`, verás `auth.setup.ts` duplicado en el reporte y un POST de login extra por browser; con multi-browser eso es login ×3 innecesario y más lento.
-
-### `auth.setup.ts` (extensión `.setup.ts`, no `.spec.ts`)
-- **Qué es:** un test normal de Playwright, pero con extensión `.setup.ts`. El project `setup` lo matchea con su propio `testMatch: /tests\/setup\/.*\.setup\.ts/`.
-- **Por qué así (y no la alternativa obvia):** la extensión es la convención que permite que **una sola** regla de `testMatch` lo capture sin atrapar tus `*.spec.ts`. El project `setup` usa una regex distinta a la global precisamente para aislar el archivo de setup del resto de la suite.
-- **Qué pasa si lo cambias:** si lo renombras a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y todos los `ui-*` arrancan sin sesión. Y al revés: cualquier `*.setup.ts` que dejes suelto en `tests/` lo recogerá el setup project aunque no quieras.
-
-### `await request.post(`${API_URL}/api/auth/login`, { data: { username, password } })`
-- **Qué es:** el login se hace con un **POST a la API** usando el fixture `request` (`APIRequestContext`), no llenando el formulario en la UI.
-- **Por qué así (y no la alternativa obvia):** llenar el formulario en UI es lento (navegación + render + clicks) y frágil (depende del DOM, de animaciones, de selectores). Un solo POST es **rápido y determinista**: prueba el contrato de la API y devuelve el `access_token` directo.
-- **Qué pasa si lo cambias:** si haces login por UI en el setup, recuperas toda la fragilidad que querías evitar — y la pagas **una vez por corrida del setup**, multiplicado si tienes varios roles. El UI login se prueba aparte (en su propio spec), no como precondición de toda la suite.
-
-### `await context.storageState({ path: USER_FILE })`
-- **Qué es:** serializa el estado del `BrowserContext` (creado con `browser.newContext()`) a `.auth/user.json` — el "badge" que luego heredan los projects `ui-*`.
-- **Por qué así (y no la alternativa obvia):** `storageState` siempre guarda **cookies + localStorage** juntos, así que el badge es portable a cualquier mecanismo de sesión. Nota: en este flujo se usa `context.storageState(...)` desde un contexto nuevo del `browser`, no `page.context().storageState(...)` — el setup abre su propio contexto, siembra el token y lo persiste.
-- **Qué pasa si lo cambias:** en **este** proyecto OmniPizza guarda la sesión en `localStorage` (`access_token`, `username`) y **no** usa cookies de sesión, así que el array `cookies` del JSON queda vacío y todo el peso del badge está en `origins[].localStorage`. Si OmniPizza migrara a cookies httpOnly, el mismo `storageState` seguiría funcionando sin tocar el setup — por eso no escribimos el JSON a mano.
 
 ## ▶️ Cómo ejecutar este módulo
 
@@ -662,7 +670,7 @@ pnpm test:setup
 - **Comando del módulo (completo):** `pnpm m4`
 - **UI mode:** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`--grep @smoke`) o por archivo
+- **Filtrar:** por tag (`--grep "@smoke"`) o por archivo
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m4` (no `VAR=x pnpm m4`)
 

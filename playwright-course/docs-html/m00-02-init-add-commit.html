@@ -415,11 +415,11 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
     <summary>En esta página</summary>
     <ol>
       <li><a href="#20-qué-es-un-commit-exactamente">2.0 ¿Qué es un commit, exactamente?</a></li>
-      <li><a href="#21-inicializar-un-repo">2.1 Inicializar un repo</a></li>
+      <li><a href="#21-inicializar-el-proyecto-real-del-curso">2.1 Inicializar el proyecto real del curso</a></li>
       <li><a href="#22-el-ciclo-status-add-commit">2.2 El ciclo status → add → commit</a></li>
       <li><a href="#23-variantes-de-git-add">2.3 Variantes de git add</a></li>
       <li><a href="#24-buenos-mensajes-de-commit">2.4 Buenos mensajes de commit</a></li>
-      <li><a href="#25-git-diff-ver-qué-cambió">2.5 git diff — ver qué cambió</a></li>
+      <li><a href="#25-git-diff-leer-exactamente-qué-cambió">2.5 git diff — leer exactamente qué cambió</a></li>
     </ol>
   </details>
   <main class="content">
@@ -431,6 +431,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Sublección del Módulo 00: Git esencial
       </p>
     </header>
+<h1 id="2-inicializar-un-repo-y-registrar-cambios">2. Inicializar un repo y registrar cambios</h1>
 <h2 id="20-qué-es-un-commit-exactamente">2.0 ¿Qué es un commit, exactamente?</h2>
 <p>Un <strong>commit</strong> es una <strong>fotografía completa</strong> de tu proyecto en un momento dado, con tres datos pegados:</p>
 <ol>
@@ -467,20 +468,46 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 <td>Muestra las líneas exactas que cambiaron.</td>
 </tr>
 </tbody></table>
-<h2 id="21-inicializar-un-repo">2.1 Inicializar un repo</h2>
-<p>Hay dos formas de empezar:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># A) Crear un repo nuevo desde cero</span>
-$ mkdir mi-suite-playwright &amp;&amp; cd mi-suite-playwright
-$ git init
-Initialized empty Git repository in .../mi-suite-playwright/.git/
+<h2 id="21-inicializar-el-proyecto-real-del-curso">2.1 Inicializar el proyecto real del curso</h2>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Esto NO es un sandbox desechable.</strong> Aquí creas <code>playwright_architecture</code>, <strong>el mismo proyecto que llenarás en M01</strong> con <code>pnpm create playwright</code>. Todo lo que practiques en M00 (status / add / commit / diff / log) queda en su historial real. Tu primer commit del curso nace aquí.</p>
+</aside>
+<p><strong>2.1.1 — Crear la carpeta y entrar en ella</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>mkdir playwright_architecture &amp;&amp; cd playwright_architecture</code></li>
+<li><strong>Por qué:</strong> este es el directorio raíz de tu framework para todo el curso. El nombre es deliberado: en M01 el installer de Playwright lo poblará con <code>tests/</code>, <code>playwright.config.ts</code>, etc. — pero el repo Git ya existirá desde ahora.</li>
+<li><strong>Cómo verifico:</strong> <code>pwd</code> (PowerShell: <code>Get-Location</code>) termina en <code>/playwright_architecture</code>. La carpeta está vacía (<code>ls</code> no muestra nada aún).</li>
+</ul>
+<p><strong>2.1.2 — Inicializar el repositorio</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git init</code></li>
+<li><strong>Por qué:</strong> crea la carpeta oculta <code>.git/</code> que contiene <strong>todo el historial</strong>. Sin ella, Git no sabe que esta carpeta es un repo. (No la borres jamás — borrarla equivale a tirar la caja negra del avión.)</li>
+<li><strong>Cómo verifico:</strong></li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git init
+Initialized empty Git repository in .../playwright_architecture/.git/
 
-<span class="hl-comment"># B) Clonar un repo que ya existe en GitHub</span>
-$ git clone git@github.com:miempresa/qa-playwright.git
+$ git status
+On branch main
+
+No commits yet
+
+nothing to commit (create/copy files and use "git add" to track)</code></pre></div>
+<blockquote><p>🪟 <strong>PowerShell:</strong> <code>mkdir playwright_architecture; cd playwright_architecture; git init</code>. La carpeta <code>.git/</code> está oculta — verla con <code>Get-ChildItem -Force</code> (alias <code>ls -Force</code>).</p>
+</blockquote>
+<aside class="callout callout--tip"><p>💡 <strong>¿Y si el proyecto ya existe en GitHub?</strong> En equipos reales muchas veces clonas en vez de iniciar de cero:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git clone git@github.com:miempresa/qa-playwright.git
 $ cd qa-playwright</code></pre></div>
-<p><code>git init</code> crea la carpeta oculta <code>.git/</code> que contiene todo el historial. <strong>No la borres.</strong></p>
+<p><code>git clone</code> hace <code>init</code> + descarga el historial completo + configura el remoto, todo de un golpe. Para este curso usamos <code>git init</code> porque el proyecto nace contigo.</p>
+</aside>
 <h2 id="22-el-ciclo-status-add-commit">2.2 El ciclo <code>status → add → commit</code></h2>
-<p>Crea tu primer archivo y míralo recorrer los 3 estados:</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ echo "test('smoke', () =&gt; {});" &gt; tests/smoke.spec.ts
+<p>Vamos a crear el primer archivo del proyecto y verlo recorrer los 3 estados. (En el <strong>reto</strong> harás esto &quot;de verdad&quot; con un <code>.gitignore</code> y un primer commit semántico; aquí lo paseamos para entender cada parada.)</p>
+<p><strong>2.2.1 — Crear un archivo y ver el estado <em>working</em></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>echo &quot;# playwright_architecture&quot; &gt; README.md</code> y luego <code>git status</code></li>
+<li><strong>Por qué:</strong> un archivo nuevo arranca como <strong>untracked</strong> — existe en tu working directory pero Git todavía no lo sigue. <code>git status</code> es tu instrumento de orientación: te dice en qué estado está cada archivo.</li>
+<li><strong>Cómo verifico:</strong></li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ echo "# playwright_architecture" &gt; README.md
 $ git status
 On branch main
 
@@ -488,26 +515,58 @@ No commits yet
 
 Untracked files:
   (use "git add &lt;file&gt;..." to include in what will be committed)
-        tests/
+        README.md
 
 nothing added to commit but untracked files present</code></pre></div>
-<p>Git te dice: &quot;veo <code>tests/</code> pero no la sigo. Si quieres que entre al repo, usa <code>git add</code>&quot;.</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add tests/smoke.spec.ts
+<p>Git te dice: &quot;veo <code>README.md</code> pero no lo sigo. Si quieres que entre al repo, usa <code>git add</code>&quot;.</p>
+<p><strong>2.2.2 — Mover el archivo a <em>staging</em></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git add README.md</code></li>
+<li><strong>Por qué:</strong> <code>add</code> mueve el archivo de <strong>working → staging</strong> (la sala de espera). Estás declarando &quot;esto sí va en el próximo commit&quot;. Todavía NO está en el historial.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> ahora lo lista bajo <em>Changes to be committed</em> (suele salir en verde):</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add README.md
 $ git status
 Changes to be committed:
-        new file:   tests/smoke.spec.ts
+        new file:   README.md</code></pre></div>
+<p><strong>2.2.3 — Grabar el commit (<em>staging → repository</em>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git commit -m &quot;chore: bootstrap playwright_architecture project&quot;</code></li>
+<li><strong>Por qué:</strong> <code>commit</code> toma una foto de <strong>todo lo que está en staging</strong> y la graba en <code>.git/</code> para siempre, firmada con tu identidad. El <code>(root-commit)</code> indica que es el <strong>primer</strong> commit del repo.</li>
+<li><strong>Cómo verifico:</strong></li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git commit -m "chore: bootstrap playwright_architecture project"
+[main (root-commit) a1b2c3d] chore: bootstrap playwright_architecture project
+ 1 file changed, 1 insertion(+)
 
-$ git commit -m "test: add first smoke test"
-[main (root-commit) a1b2c3d] test: add first smoke test
- 1 file changed, 1 insertion(+)</code></pre></div>
+$ git status
+On branch main
+nothing to commit, working tree clean</code></pre></div>
+<p><code>working tree clean</code> = no hay diferencias entre tu editor, el staging y el historial. Todo está sincronizado.</p>
+<blockquote><p>🪟 <strong>PowerShell:</strong> <code>echo &quot;...&quot; &gt; archivo</code> funciona, pero genera el archivo en <strong>UTF-16</strong>. Para evitar sorpresas usa <code>Set-Content -Encoding utf8 README.md &quot;# playwright_architecture&quot;</code> o crea el archivo desde VS Code.</p>
+</blockquote>
 <h2 id="23-variantes-de-git-add">2.3 Variantes de <code>git add</code></h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add archivo1.ts archivo2.ts   # varios archivos
-$ git add tests/                     # carpeta completa
+<p><strong>2.3.1 — Conoce las 4 formas de mover a staging</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> elige la variante según lo que quieras commitear:</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git add archivo1.ts archivo2.ts   # varios archivos por nombre
+$ git add tests/                     # carpeta completa (recursivo)
 $ git add .                          # TODO lo que cambió en cwd ⚠️
-$ git add -u                         # sólo archivos ya trackeados</code></pre></div>
-<aside class="callout callout--warn"><p>⚠️ <code>git add .</code> es cómodo pero peligroso: arrastra basura (<code>.env</code>, <code>playwright-report/</code>, screenshots). Por eso <code>.gitignore</code> existe (siguiente sección).</p>
+$ git add -u                         # sólo archivos YA trackeados (no añade nuevos)</code></pre></div>
+<ul>
+<li><strong>Por qué:</strong> controlar <strong>qué</strong> entra al commit es el punto del staging. <code>git add archivo1 archivo2</code> te deja agrupar sólo los cambios de una misma feature; <code>git add .</code> es cómodo pero indiscriminado.</li>
+<li><strong>Cómo verifico:</strong> tras cualquier <code>add</code>, <code>git status</code> muestra exactamente lo que quedó en <em>Changes to be committed</em>. Si ves algo que no querías, sácalo con <code>git restore --staged &lt;archivo&gt;</code>.</li>
+</ul>
+<aside class="callout callout--warn"><p>⚠️ <code>git add .</code> es cómodo pero <strong>peligroso</strong>: arrastra basura (<code>.env</code>, <code>playwright-report/</code>, screenshots) al staging. Por eso <code>.gitignore</code> existe (siguiente lección) — es el filtro que hace seguro al <code>git add .</code>.</p>
 </aside>
 <h2 id="24-buenos-mensajes-de-commit">2.4 Buenos mensajes de commit</h2>
+<p><strong>2.4.1 — Escribe el mensaje con la forma <code>&lt;tipo&gt;: &lt;qué cambió&gt;</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> al commitear, redacta el mensaje como <code>tipo: descripción en imperativo</code> (p. ej. <code>test: add login happy path</code>).</li>
+<li><strong>Por qué:</strong> el mensaje es lo único que tu yo-del-futuro (o un compañero) verá en <code>git log</code>. Un <code>update</code> no dice nada; un <code>fix: stabilize login — wait for network idle</code> te ahorra abrir el diff.</li>
+<li><strong>Cómo verifico:</strong> <code>git log --oneline -1</code> muestra tu mensaje. Si te avergüenza leerlo dentro de un mes, reescríbelo.</li>
+</ul>
 <p>Un mensaje útil sigue la forma <code>&lt;tipo&gt;: &lt;qué cambió&gt;</code>. Tipos comunes en automatización:</p>
 <table>
 <thead>
@@ -544,15 +603,86 @@ $ git add -u                         # sólo archivos ya trackeados</code></pre>
 <p>Ejemplos reales:</p>
 <div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">test: add checkout happy path for mobile viewport
 fix: stabilize login test — wait for network idle before clicking submit
-chore: upgrade @playwright/test to 1.47.0
+chore: upgrade @playwright/test to latest
 refactor: extract login steps into LoginPage POM</code></pre></div>
 <p>❌ Malos mensajes que verás mil veces en repos reales: <code>update</code>, <code>fix</code>, <code>asdf</code>, <code>WIP</code>, <code>cambios</code>.</p>
-<h2 id="25-git-diff-ver-qué-cambió">2.5 <code>git diff</code> — ver qué cambió</h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git diff                  # working dir vs staging
-$ git diff --staged         # staging vs último commit
-$ git diff HEAD             # working dir + staging vs último commit
-$ git diff --name-only      # sólo lista de archivos</code></pre></div>
-<p>Las líneas con <code>-</code> son borradas, las <code>+</code> son agregadas.</p>
+<h2 id="25-git-diff-leer-exactamente-qué-cambió">2.5 <code>git diff</code> — leer exactamente qué cambió</h2>
+<p><code>git diff</code> es la herramienta que responde la pregunta más frecuente de QA: <strong>&quot;¿quién cambió este selector y a qué?&quot;</strong>. Es la diferencia entre &quot;el test de login se rompió&quot; y &quot;alguien cambió <code>username-desktop</code> por <code>username</code> en el commit <code>a1b2c3d</code>&quot;.</p>
+<h3 id="251-un-diff-real-alguien-cambió-un-selector">2.5.1 Un diff REAL: alguien cambió un selector</h3>
+<p>Supón que tu <code>tests/login.spec.ts</code> tenía esta línea (el selector real de OmniPizza):</p>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">await page.getByTestId("username-desktop").fill(USERNAME);</code></pre></div>
+<p>Un compañero la editó porque &quot;el testid le pareció más limpio sin sufijo&quot;. Guardó en el editor pero aún no ha hecho <code>add</code>. Tú corres <code>git diff</code> y ves:</p>
+<div class="code-block"><span class="code-lang">diff</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-diff">$ git diff tests/login.spec.ts
+diff --git a/tests/login.spec.ts b/tests/login.spec.ts
+index 8f3c1a2..b7e9d04 100644
+--- a/tests/login.spec.ts
++++ b/tests/login.spec.ts
+@@ -12,8 +12,8 @@ test("login exitoso", async ({ page }) =&gt; {
+   await page.goto("/");
+   await page.getByTestId("market-MX").click();
+
+-  await page.getByTestId("username-desktop").fill(USERNAME);
+-  await page.getByTestId("password-desktop").fill(PASSWORD);
++  await page.getByTestId("username").fill(USERNAME);
++  await page.getByTestId("password").fill(PASSWORD);
+   await page.getByTestId("login-button-desktop").click();
+
+   await expect(page).toHaveURL(/catalog/);</code></pre></div>
+<p>Ahí está la causa raíz: cambió <code>username-desktop</code> → <code>username</code> (y lo mismo para password). Como el testid real de OmniPizza es <code>username-desktop</code>, <strong>ese cambio rompe el login</strong>. <code>git diff</code> te lo muestra en segundos, con líneas <code>-</code> (lo que había) y <code>+</code> (lo nuevo).</p>
+<h3 id="252-cómo-leer-el-encabezado-del-hunk-ab-cd">2.5.2 Cómo leer el encabezado del hunk <code>@@ -a,b +c,d @@</code></h3>
+<p>La línea misteriosa <code>@@ -12,8 +12,8 @@</code> es el <strong>encabezado de hunk</strong> (un &quot;hunk&quot; es un bloque de líneas con cambios). Se lee así:</p>
+<table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>Significa</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>-12,8</code></td>
+<td>En el archivo <strong>viejo</strong> (<code>-</code>), el bloque empieza en la <strong>línea 12</strong> y abarca <strong>8 líneas</strong> (3 de contexto arriba + 2 que cambian + 3 de contexto abajo).</td>
+</tr>
+<tr>
+<td><code>+12,8</code></td>
+<td>En el archivo <strong>nuevo</strong> (<code>+</code>), empieza en la línea 12 y abarca 8 líneas.</td>
+</tr>
+<tr>
+<td><code>@@ … @@</code></td>
+<td>Delimitadores del hunk. Lo que sigue (<code>test(&quot;login exitoso&quot;…</code>) es solo <strong>contexto</strong>: la función donde cae el cambio, para orientarte.</td>
+</tr>
+</tbody></table>
+<p>Las líneas <strong>sin</strong> <code>-</code> ni <code>+</code> son contexto sin cambios (Git muestra 3 arriba y 3 abajo por defecto), para que veas el cambio <em>en su entorno</em> sin abrir el archivo.</p>
+<h3 id="253-las-4-variantes-y-por-qué-importan">2.5.3 Las 4 variantes — y por qué importan</h3>
+<p>El error más común con <code>git diff</code> es correrlo y ver &quot;nada&quot; porque ya hiciste <code>add</code>. Cada variante compara <strong>un par de estados distinto</strong> de los 3 que viste en la lección 1:</p>
+<p><strong>Variante A — <code>git diff</code> (working ↔ staging)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git diff</code></li>
+<li><strong>Por qué:</strong> muestra lo que cambiaste en el editor pero <strong>aún NO agregaste</strong> con <code>git add</code>. Es tu &quot;última revisión antes de hacer stage&quot;.</li>
+<li><strong>Cómo verifico:</strong> si ya hiciste <code>git add archivo</code>, este comando NO muestra ese archivo (ya salió de working). Por eso a veces &quot;no muestra nada&quot;.</li>
+</ul>
+<p><strong>Variante B — <code>git diff --staged</code> (staging ↔ HEAD)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git diff --staged</code> (alias: <code>--cached</code>)</li>
+<li><strong>Por qué:</strong> muestra lo que está <strong>en staging vs el último commit</strong> — exactamente lo que entrará si haces <code>commit</code> ahora. Es tu &quot;revisión final antes de commitear&quot;.</li>
+<li><strong>Cómo verifico:</strong> tras <code>git add login.spec.ts</code>, <code>git diff</code> sale vacío pero <code>git diff --staged</code> muestra el cambio del selector.</li>
+</ul>
+<p><strong>Variante C — <code>git diff HEAD</code> (working + staging ↔ HEAD)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git diff HEAD</code></li>
+<li><strong>Por qué:</strong> muestra <strong>todo</strong> lo que difiere del último commit, sin importar si está en staging o no. Es &quot;todo lo que he tocado desde el último commit, junto&quot;.</li>
+<li><strong>Cómo verifico:</strong> es la suma de A + B. Útil para una vista completa antes de decidir cómo agrupar tus commits.</li>
+</ul>
+<p><strong>Variante D — <code>git diff --name-only</code> (solo nombres)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git diff --name-only</code> (o <code>git diff --staged --name-only</code>)</li>
+<li><strong>Por qué:</strong> cuando tocaste 20 archivos no quieres leer 500 líneas de diff — solo <strong>qué archivos</strong> cambiaron. Perfecto para un vistazo rápido o para alimentar scripts.</li>
+<li><strong>Cómo verifico:</strong> imprime una ruta por línea, sin el contenido:</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git diff --name-only
+tests/login.spec.ts
+playwright.config.ts</code></pre></div>
+<aside class="callout callout--tip"><p>💡 <strong>Tip del automatizador:</strong> para responder &quot;¿quién y cuándo cambió este selector?&quot; combinas dos herramientas: <code>git diff</code> te dice <strong>qué</strong> cambió ahora mismo, y <code>git log -p tests/login.spec.ts</code> (lección 4) te muestra el diff de <strong>cada commit pasado</strong> que tocó ese archivo — con autor y fecha. Juntas son tu detective de regresiones.</p>
+</aside>
 <hr>
 <aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong> <a href="../git-github-course/modulo-02-git-basico/02-registrar-cambios.md">Variantes avanzadas de <code>add</code> (<code>-p</code>, <code>-i</code>)</a> · <a href="../git-github-course/modulo-02-git-basico/04-casos-reales.md">Casos reales del día a día</a></p>
 </aside>

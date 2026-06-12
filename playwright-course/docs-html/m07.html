@@ -414,13 +414,16 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
   <details class="toc" open>
     <summary>En esta página</summary>
     <ol>
+      <li><a href="#reencuadre-cli-first-lee-esto-antes-de-configurar-nada">🧭 Reencuadre: CLI-first (lee esto antes de configurar nada)</a></li>
       <li><a href="#arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</a></li>
       <li><a href="#analogía-de-apertura">Analogía de apertura</a></li>
       <li><a href="#qué-es-mcp-y-por-qué-importa-para-qa">¿Qué es MCP y por qué importa para QA?</a></li>
+      <li><a href="#no-confundas-tres-cosas-distintas-con-nombres-parecidos">⚠️ No confundas: tres cosas distintas con nombres parecidos</a></li>
       <li><a href="#qué-llm-elegir-comparativa-mayo-2026">¿Qué LLM elegir? Comparativa (mayo 2026)</a></li>
       <li><a href="#setup-paso-a-paso">Setup paso a paso</a></li>
       <li><a href="#verificación-el-primer-hola-navegador">Verificación: el primer &quot;hola navegador&quot;</a></li>
       <li><a href="#casos-de-uso-prácticos-lo-que-vas-a-usar-en-el-día-a-día">Casos de uso prácticos (lo que vas a usar en el día a día)</a></li>
+      <li><a href="#playwright-agents-planner-generator-healer-experimental">Playwright Agents (planner / generator / healer) — 🧪 experimental</a></li>
       <li><a href="#buenas-prácticas-con-ia-playwright">Buenas prácticas con IA + Playwright</a></li>
       <li><a href="#outcome-esperado">Outcome esperado</a></li>
       <li><a href="#reto">Reto</a></li>
@@ -435,9 +438,40 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Asistente de IA que controla el browser real vía Playwright MCP
       </p>
     </header>
+<h1 id="módulo-07-ia-playwright-mcp">Módulo 07 — IA + Playwright MCP</h1>
 <p><strong>Duración estimada:</strong> 45-60 min
 <strong>Pieza que suma al framework:</strong> integración de un <strong>asistente de IA</strong> (Claude / Copilot / ChatGPT / Gemini) capaz de <strong>controlar el navegador real</strong> vía Playwright MCP, para generar, depurar y mantener tests usando lenguaje natural. No agrega código nuevo al framework — agrega un <strong>copiloto operativo</strong> sobre la suite que ya tienes desde M01..M06.</p>
 <aside class="callout callout--warn"><p>⚠️ Este módulo es <strong>opcional</strong> y se hace mejor <em>después</em> de M06. Asume que ya entiendes locators, POM, fixtures, API layer y CI — porque la IA va a generar contra ese framework.</p>
+</aside>
+<hr>
+<h2 id="reencuadre-cli-first-lee-esto-antes-de-configurar-nada">🧭 Reencuadre: CLI-first (lee esto antes de configurar nada)</h2>
+<p>Antes de tocar MCP o Agents, ubica este módulo en el mapa del curso. <strong>Los fundamentos AI-assisted <em>reales</em> — los que de verdad te hacen mejor automatizando — son CLI y ya viven en el core del curso:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Herramienta AI-assisted (CLI)</th>
+<th>Dónde la aprendiste</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>playwright codegen &lt;url&gt;</code></td>
+<td><strong>M02</strong></td>
+<td>Graba tus clics y <strong>genera locators role-first</strong> automáticamente</td>
+</tr>
+<tr>
+<td><code>playwright test --debug</code> (Inspector)</td>
+<td><strong>M01</strong></td>
+<td>Pausa, ejecuta paso a paso, <strong>te sugiere selectors</strong> en vivo</td>
+</tr>
+<tr>
+<td><code>playwright show-trace</code> (Trace Viewer)</td>
+<td><strong>M06</strong></td>
+<td>Reproduce el fallo con DOM/red/screenshots para <strong>diagnosticar flakiness</strong></td>
+</tr>
+</tbody></table>
+<p>Esas tres no necesitan ningún LLM: son determinísticas, gratis y offline. <strong>Son tu base.</strong> M07 es el <strong>apéndice acelerador</strong>: MCP y Agents valen la pena <em>cuando ya dominas locators y el modelo mental del framework</em> — porque tú vas a revisar y endurecer lo que la IA genera. Si todavía no distingues un locator frágil de uno robusto, la IA te va a sepultar en slop sin que lo notes.</p>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Lema del módulo:</strong> <strong>CLI para aprender · MCP + Agents para acelerar.</strong> No saltes la columna izquierda de la tabla para llegar a la derecha; el orden importa.</p>
 </aside>
 <hr>
 <h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
@@ -450,13 +484,13 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 │   │ Claude Desktop  │          │  @playwright/mcp     │      │
 │   │ VS Code Copilot │ ◄──MCP──►│  (npx, stdio o sse)  │      │
 │   │ ChatGPT app     │          │                      │      │
-│   │ Gemini CLI      │          │   40+ tools:         │      │
-│   └─────────────────┘          │   · navigate         │      │
-│           ▲                    │   · click            │      │
-│           │ "Genera un test    │   · fill             │      │
-│           │  de login para     │   · screenshot       │      │
-│           │  OmniPizza"        │   · evaluate         │      │
-│                                │   · pdf, trace, ...  │      │
+│   │ Gemini CLI      │          │   ~25 tools:         │      │
+│   └─────────────────┘          │   · browser_navigate │      │
+│           ▲                    │   · browser_click    │      │
+│           │ "Genera un test    │   · browser_type     │      │
+│           │  de login para     │   · browser_snapshot │      │
+│           │  OmniPizza"        │   · browser_evaluate │      │
+│                                │   · ...y más         │      │
 │                                └──────────┬───────────┘      │
 │                                           │                  │
 │                                           ▼                  │
@@ -468,7 +502,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 │                                          │ HTTP              │
 └──────────────────────────────────────────┼──────────────────┘
                                            ▼
-                              https://omnipizza.onrender.com
+                          https://omnipizza-frontend.onrender.com
                               (la app real, sobre la que la
                                IA explora y genera tests)</code></pre></div>
 <p><strong>Qué cambia en tu workflow:</strong></p>
@@ -481,7 +515,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 </thead>
 <tbody><tr>
 <td>Escribes selectors a mano viendo DevTools</td>
-<td>Le pides a la IA <em>&quot;abre la página de login y dame los locators role-based&quot;</em></td>
+<td>Le pides a la IA <em>&quot;abre el catálogo y dame los locators role-based de las pizzas y los filtros&quot;</em></td>
 </tr>
 <tr>
 <td>Debug de tests flakey leyendo trace</td>
@@ -517,8 +551,43 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
 <td>Como TestRail/Xray: el LLM no inventa, <strong>consulta la fuente de verdad</strong> y opera sobre ella</td>
 </tr>
 </tbody></table>
-<p><strong>Playwright MCP</strong> (<code>@playwright/mcp</code> de Microsoft) expone Playwright <strong>como tools MCP</strong>: <code>navigate</code>, <code>click</code>, <code>fill</code>, <code>screenshot</code>, <code>evaluate</code>, etc. El LLM invoca esas tools como funciones; cada llamada <strong>abre/manipula un browser real</strong> en tu máquina.</p>
+<p><strong>Playwright MCP</strong> (<code>@playwright/mcp</code> de Microsoft) expone Playwright <strong>como tools MCP</strong> con prefijo <code>browser_</code>: <code>browser_navigate</code>, <code>browser_click</code>, <code>browser_type</code>, <code>browser_take_screenshot</code>, <code>browser_snapshot</code>, <code>browser_evaluate</code>, etc. El LLM invoca esas tools como funciones; cada llamada <strong>abre/manipula un browser real</strong> en tu máquina.</p>
 <aside class="callout callout--learn-more"><p>📚 Spec oficial: <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> · Repo: <a href="https://github.com/microsoft/playwright-mcp">microsoft/playwright-mcp</a></p>
+</aside>
+<hr>
+<h2 id="no-confundas-tres-cosas-distintas-con-nombres-parecidos">⚠️ No confundas: tres cosas distintas con nombres parecidos</h2>
+<p>El ecosistema &quot;Playwright + IA&quot; tiene <strong>tres herramientas</strong> cuyos nombres se confunden todo el tiempo. Sepáralas en tu cabeza desde ya:</p>
+<table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Qué es</th>
+<th>Cómo &quot;ve&quot; la página</th>
+<th>Para quién / cuándo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>npx playwright …</code></strong> (CLI clásico)</td>
+<td>El binario de siempre: <code>test</code>, <code>codegen</code>, <code>show-trace</code>, <code>--debug</code>. <strong>No usa IA.</strong></td>
+<td>N/A (lo manejas tú)</td>
+<td><strong>Todos</strong>, siempre. Es el core (M01–M06).</td>
+</tr>
+<tr>
+<td><strong><code>@playwright/mcp</code></strong> (MCP server)</td>
+<td>Expone Playwright como <strong>tools MCP</strong>; el LLM las invoca para abrir/manipular un browser real. Lee la página vía <strong>accessibility tree</strong>.</td>
+<td>Accessibility tree (texto estructurado, roles + nombres)</td>
+<td>Un <strong>cliente LLM con MCP</strong> (Claude, Copilot agent, Gemini CLI). Es lo que configuras en este módulo.</td>
+</tr>
+<tr>
+<td><strong><code>@playwright/cli</code></strong> (agent-cli)</td>
+<td>El motor detrás de los <strong>Playwright Agents</strong> (planner/generator/healer). Da al agente <strong>snapshots YAML</strong> de la página.</td>
+<td>Snapshots YAML</td>
+<td><strong>Agentes de codegen</strong> dentro de Claude Code / Copilot. Ver la sección &quot;Playwright Agents&quot; más abajo.</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Regla mnemónica:</strong> <code>npx playwright</code> = <em>tú</em> manejas · <code>@playwright/mcp</code> = <em>el LLM</em> maneja un browser en vivo (accessibility-tree) · <code>@playwright/cli</code> = <em>el agente de codegen</em> trabaja sobre snapshots YAML. Las tres conviven; no son sustitutas.</p>
+</aside>
+<aside class="callout callout--learn-more"><p>📚 Guía oficial de MCP con Playwright: <a href="https://playwright.dev/docs/getting-started-mcp">playwright.dev/docs/getting-started-mcp</a>.</p>
 </aside>
 <hr>
 <h2 id="qué-llm-elegir-comparativa-mayo-2026">¿Qué LLM elegir? Comparativa (mayo 2026)</h2>
@@ -598,8 +667,36 @@ playwright    npx @playwright/mcp@latest    ✓ connected</code></pre></div>
     }
   }
 }</code></pre></div>
+<p>📐 Las dos claves del bloque <code>mcpServers</code> significan lo mismo en los cuatro setups de abajo (en VS Code la clave externa se llama <code>servers</code> en vez de <code>mcpServers</code>, pero <code>command</code>/<code>args</code> funcionan igual):</p>
+<table>
+<thead>
+<tr>
+<th>Clave</th>
+<th>Qué es</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>command</code></td>
+<td>El <strong>ejecutable</strong> que lanza el server. <code>npx</code> lo descarga al vuelo — por eso no instalas nada antes.</td>
+</tr>
+<tr>
+<td><code>args</code></td>
+<td>El <strong>paquete + los flags</strong> del server. Ejemplo: <code>&quot;args&quot;: [&quot;@playwright/mcp@latest&quot;, &quot;--headless&quot;]</code>.</td>
+</tr>
+</tbody></table>
+<p>Flags útiles del server (verificados con <code>npx @playwright/mcp@latest --help</code>, v0.0.76):</p>
+<ul>
+<li><code>--headless</code> — corre el browser <strong>sin ventana</strong> (por defecto es headed: ves la ventana).</li>
+<li><code>--isolated</code> — mantiene el perfil del browser <strong>en memoria</strong>, sin guardarlo a disco: cada sesión arranca limpia.</li>
+<li><code>--storage-state &lt;ruta&gt;</code> — carga un storage state (p. ej. tu <code>.auth/user.json</code> de M04) en las sesiones aisladas: el browser arranca ya logueado.</li>
+<li><code>--port &lt;puerto&gt;</code> — levanta el server en modo <strong>SSE/HTTP</strong> en ese puerto (en vez de stdio); necesario para clientes remotos como ChatGPT.</li>
+</ul>
 <h3 id="2-setup-para-claude-desktop">2) Setup para Claude Desktop</h3>
-<p>Edita <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS) o <code>%APPDATA%\Claude\claude_desktop_config.json</code> (Windows):</p>
+<p>Abre el config en VS Code y pega el bloque de abajo. Si el archivo no existe (instalación fresca), créalo con ese mismo comando — <code>code</code> abre el archivo nuevo y lo crea al guardar:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># macOS</span>
+$ code ~/"Library/Application Support/Claude/claude_desktop_config.json"</code></pre></div>
+<blockquote><p>🪟 <strong>Windows / PowerShell:</strong> <code>code $env:APPDATA\Claude\claude_desktop_config.json</code></p>
+</blockquote>
 <div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
   "mcpServers": {
     "playwright": {
@@ -610,7 +707,9 @@ playwright    npx @playwright/mcp@latest    ✓ connected</code></pre></div>
 }</code></pre></div>
 <p>Cierra y reabre Claude Desktop. En el chat verás el icono 🔧 con las tools de Playwright disponibles.</p>
 <h3 id="3-setup-para-vs-code-copilot-agent">3) Setup para VS Code + Copilot Agent</h3>
-<p>Crea <code>.vscode/mcp.json</code> en la raíz de <code>playwright-course/</code>:</p>
+<p>Crea <code>.vscode/mcp.json</code> en la raíz de <code>playwright-course/</code> (si la carpeta <code>.vscode/</code> ya existe, salta el <code>mkdir</code>) y pega el bloque de abajo:</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ mkdir .vscode
+$ code .vscode/mcp.json</code></pre></div>
 <div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
   "servers": {
     "playwright": {
@@ -621,9 +720,12 @@ playwright    npx @playwright/mcp@latest    ✓ connected</code></pre></div>
 }</code></pre></div>
 <p>Abre VS Code, activa <strong>Agent mode</strong> en el panel de Copilot Chat, y verifica que Playwright aparezca como tool disponible.</p>
 <h3 id="4-setup-para-gemini-cli">4) Setup para Gemini CLI</h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ npm i -g @google/gemini-cli
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ pnpm add -g @google/gemini-cli
 $ gemini auth login</code></pre></div>
-<p>Edita <code>~/.gemini/settings.json</code>:</p>
+<p>Abre <code>~/.gemini/settings.json</code> en VS Code y pega el bloque de abajo (si no existe, ese mismo comando lo crea al guardar):</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ code ~/.gemini/settings.json</code></pre></div>
+<blockquote><p>🪟 <strong>Windows / PowerShell:</strong> <code>code $env:USERPROFILE\.gemini\settings.json</code></p>
+</blockquote>
 <div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
   "mcpServers": {
     "playwright": {
@@ -636,20 +738,20 @@ $ gemini auth login</code></pre></div>
 <p>ChatGPT no acepta un comando local arbitrario por seguridad. Las dos rutas viables son:</p>
 <ol>
 <li><strong>Connectors / Apps SDK</strong> — si tu org tiene OpenAI Business y publica el MCP server remoto.</li>
-<li><strong>MCP remoto via HTTP/SSE</strong> — corre <code>@playwright/mcp</code> con transport <code>--transport sse --port 9000</code> y conéctalo desde ChatGPT como custom connector.</li>
+<li><strong>MCP remoto via HTTP/SSE</strong> — corre <code>npx @playwright/mcp@latest --port 9000</code> y conéctalo desde ChatGPT como custom connector. El flag <code>--port</code> es el que habilita el modo SSE/HTTP (sin él, el server habla stdio); no existe un flag <code>--transport</code>.</li>
 </ol>
 <aside class="callout callout--tip"><p>💡 Si estás explorando solo, Claude Code, Claude Desktop, Copilot o Gemini CLI son más simples para empezar.</p>
 </aside>
 <hr>
 <h2 id="verificación-el-primer-quothola-navegadorquot">Verificación: el primer &quot;hola navegador&quot;</h2>
-<p>Con el cliente configurado, escribe este prompt:</p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Abre https://omnipizza.onrender.com, espera a que cargue la home
-y dame una lista de los botones visibles en el header con sus
-atributos role + accessible name.</code></pre></div>
+<p>Con el cliente configurado, escribe este prompt (cópialo en inglés — los modelos rinden mejor con prompts de tooling en inglés):</p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Open https://omnipizza-frontend.onrender.com, wait for the home page
+to finish loading, and give me a list of the buttons visible in the
+header with their role + accessible name attributes.</code></pre></div>
 <p>Lo que debe pasar:</p>
 <ol>
 <li>La IA invoca la tool <code>browser_navigate</code>.</li>
-<li>Se abre una ventana de Chromium (cabezas visible si no usaste <code>--headless</code>).</li>
+<li>Se abre una ventana de Chromium (ventana visible — modo headed — si no usaste <code>--headless</code>).</li>
 <li>Invoca <code>browser_snapshot</code> para leer el accessibility tree.</li>
 <li>Te devuelve la lista de botones con <code>getByRole(&#39;button&#39;, { name: &#39;...&#39; })</code> listos para pegar.</li>
 </ol>
@@ -658,15 +760,17 @@ atributos role + accessible name.</code></pre></div>
 <hr>
 <h2 id="casos-de-uso-prácticos-lo-que-vas-a-usar-en-el-día-a-día">Casos de uso prácticos (lo que vas a usar en el día a día)</h2>
 <h3 id="caso-1-generar-un-test-desde-lenguaje-natural">Caso 1 — Generar un test desde lenguaje natural</h3>
-<p><strong>Prompt:</strong></p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Genera un test de Playwright que:
-1. Inicie sesión como user@test.com / Password123
-2. Agregue una Margherita grande al carrito
-3. Vaya al checkout
-4. Verifique que el total es mayor a 0
+<p><strong>Prompt (en inglés):</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Generate a Playwright test that:
+1. Logs in as standard_user / pizza123
+2. Adds a large Margarita to the cart
+3. Goes to checkout
+4. Verifies the total is greater than 0
 
-Usa el patrón POM del proyecto (revisa pages/LoginPage.ts y pages/CatalogPage.ts).
-Pega el archivo en modulo-07-ia-mcp/sandbox/checkout.spec.ts.</code></pre></div>
+Use the project's POM pattern (read pages/LoginPage.ts and pages/CatalogPage.ts).
+Write the file to modulo-07-ia-mcp/sandbox/checkout.spec.ts.</code></pre></div>
+<blockquote><p>🔍 <code>standard_user</code> / <code>pizza123</code> es una de las 5 personas reales de OmniPizza (Quick-Login, estilo SauceDemo); la pizza se llama <strong>Margarita</strong> (no &quot;Margherita&quot;). El login usa <strong>username</strong>, no email.</p>
+</blockquote>
 <p><strong>Qué hace la IA:</strong></p>
 <ul>
 <li>Lee tus POMs existentes (Claude/Copilot leen el filesystem).</li>
@@ -674,37 +778,102 @@ Pega el archivo en modulo-07-ia-mcp/sandbox/checkout.spec.ts.</code></pre></div>
 <li>Genera el spec usando <em>tus</em> convenciones, no plantillas genéricas.</li>
 </ul>
 <h3 id="caso-2-refactor-de-un-test-flaky">Caso 2 — Refactor de un test flaky</h3>
-<p><strong>Prompt:</strong></p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Este test falla 1 de cada 5 veces en CI con "locator timeout". Aquí está el código:
+<p><strong>Prompt (en inglés):</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">This test fails 1 out of every 5 runs in CI with "locator timeout".
+Here is the code:
 
-&lt;&lt;pega el .spec.ts&gt;&gt;
+&lt;&lt;paste the .spec.ts&gt;&gt;
 
-Aquí está el último trace de un fallo (test-results/.../trace.zip ya extraído).
+Here is the trace from the latest failure (test-results/.../trace.zip,
+already extracted).
 
-Encuentra la causa probable y dame el fix con web-first assertions.</code></pre></div>
+Find the most likely root cause and give me the fix using web-first assertions.</code></pre></div>
 <h3 id="caso-3-migración-manual-automatizado">Caso 3 — Migración manual → automatizado</h3>
-<p><strong>Prompt:</strong></p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Tengo este caso de prueba manual:
+<p><strong>Prompt (en inglés):</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">I have this manual test case:
 
-Título: "Aplicar cupón inválido"
-Pasos:
-1. Login como user@test.com
-2. Agregar 1 pizza al carrito
-3. Ir a checkout
-4. Aplicar cupón "INVALID123"
-5. Verificar mensaje de error rojo
+Title: "Apply invalid coupon"
+Steps:
+1. Log in as standard_user / pizza123
+2. Add 1 pizza to the cart
+3. Go to checkout
+4. Apply coupon "INVALID123"
+5. Verify a red error message appears
 
-Conviértelo en un Playwright test. Antes de escribir, navega OmniPizza
-y confírmame los selectors reales del input de cupón y del mensaje de error.</code></pre></div>
+Convert it into a Playwright test. Before writing any code, navigate
+OmniPizza and confirm the real selectors for the coupon input and the
+error message.</code></pre></div>
 <h3 id="caso-4-generar-data-sintética-para-fixtures">Caso 4 — Generar data sintética para fixtures</h3>
-<p><strong>Prompt:</strong></p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">Necesito 20 usuarios para data/users.json siguiendo este shape:
+<p><strong>Prompt (en inglés):</strong></p>
+<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">I need 12 sample shipping customers for data/customers.json following
+this shape:
 
-{ email, password, market: 'us' | 'mx' | 'br', tier: 'free' | 'pro' }
+{ fullName, phone, address, zipCode, market: 'MX' | 'US' | 'CH' | 'JP' }
 
-Distribución: 50% us, 30% mx, 20% br. 70% free, 30% pro.
-Genera el JSON listo para commitear.</code></pre></div>
+Distribution: 4 MX, 4 US, 2 CH, 2 JP. Use realistic localized data per market.
+Output the JSON, ready to commit.</code></pre></div>
+<blockquote><p>🔍 Ojo: NO le pidas regenerar <code>data/users.json</code> — ese archivo contiene las <strong>5 personas reales</strong> de OmniPizza (<code>standard_user</code>, <code>locked_out_user</code>, <code>problem_user</code>, <code>performance_glitch_user</code>, <code>error_user</code>, todas con rol <code>customer</code>). Aquí generas data de <em>clientes</em> (direcciones de envío), que es lo tedioso de inventar a mano.</p>
+</blockquote>
 <p>(Para esto MCP no es estrictamente necesario, pero muestra la otra mitad del valor del LLM: ayudante para tareas tediosas alrededor del framework.)</p>
+<hr>
+<h2 id="playwright-agents-planner-generator-healer-experimental">Playwright Agents (planner / generator / healer) — 🧪 experimental</h2>
+<aside class="callout callout--warn"><p>⚠️ <strong>EXPERIMENTAL.</strong> Esta feature llegó en <strong>Playwright v1.56 (octubre 2025)</strong>, tiene <strong>bugs abiertos</strong>, y requiere <strong>VS Code 1.105+</strong> (o un cliente compatible). La API y los archivos generados <strong>van a cambiar</strong>: cada vez que actualices Playwright, <strong>regenera las definiciones</strong>. No la lleves a producción todavía; aquí la conoces para estar listo cuando madure.</p>
+</aside>
+<p>Mientras MCP te da un <strong>browser en vivo</strong> controlado por el LLM (un copiloto operativo, paso a paso), los <strong>Playwright Agents</strong> son tres <strong>roles especializados</strong> que cubren el ciclo <em>plan → genera → mantén</em> de un test, cada uno con un prompt-chatmode propio:</p>
+<table>
+<thead>
+<tr>
+<th>Agente</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🧭 <strong>planner</strong></td>
+<td>Lee un requisito/PRD y lo descompone en un <strong>plan de prueba</strong> (escenarios, casos, pasos) — un <code>spec</code> en lenguaje estructurado, todavía sin código.</td>
+</tr>
+<tr>
+<td>🎭 <strong>generator</strong></td>
+<td>Toma ese plan y <strong>genera el código</strong> del test (los <code>.spec.ts</code>), navegando la app real para anclar locators (sobre snapshots YAML de la página, vía <code>@playwright/cli</code>).</td>
+</tr>
+<tr>
+<td>🔧 <strong>healer</strong></td>
+<td>Cuando un test <strong>falla por un cambio de UI</strong>, navega la nueva pantalla y <strong>repara los locators rotos</strong> en vez de borrarlos. Es el caso &quot;mantenimiento&quot; del flujo, automatizado.</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--big-idea"><p>🎯 <strong>Diferencia clave con MCP:</strong> MCP = <em>tú</em> conversas con un LLM que opera un browser. Agents = un <strong>pipeline de roles</strong> (plan → genera → cura) pensado para <strong>codegen y mantenimiento a escala</strong>, no para exploración manual.</p>
+</aside>
+<h3 id="cómo-inicializar-los-agents-micro-pasos">Cómo inicializar los Agents (micro-pasos)</h3>
+<p><strong>A.1 — Ejecuta el init</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> desde la raíz del proyecto, corro el comando de scaffolding eligiendo tu cliente con <code>--loop</code>:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ npx playwright init-agents --loop=vscode
+<span class="hl-comment"># alternativas según tu cliente:</span>
+$ npx playwright init-agents --loop=claude
+$ npx playwright init-agents --loop=opencode</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> cada cliente (VS Code/Copilot, Claude Code, OpenCode) consume los chatmodes en un formato propio; <code>--loop</code> genera las definiciones <strong>para ese loop concreto</strong>. Elegir mal el loop = los agentes no aparecen en tu cliente.</li>
+<li><strong>Cómo verifico:</strong> el comando termina sin error y reporta los archivos creados (ver A.2).</li>
+</ul>
+<p><strong>A.2 — Revisa los archivos generados</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> inspecciono lo que el init dejó en el repo:<ul>
+<li><code>.github/*.chatmode.md</code> — las definiciones de los tres agentes (planner/generator/healer) como <strong>chatmodes</strong> que tu cliente carga.</li>
+<li><code>specs/</code> — carpeta donde el <strong>planner</strong> deja sus planes de prueba en lenguaje estructurado.</li>
+<li><code>tests/seed.spec.ts</code> — un test <strong>semilla</strong> que da contexto al generator (convenciones, imports, patrón base del que partir).</li>
+</ul>
+</li>
+<li><strong>Por qué:</strong> entender qué se generó evita tratarlo como caja negra; el <code>seed.spec.ts</code> es tu palanca para que el generator copie <em>tus</em> convenciones (igual que en MCP le pasas los POMs).</li>
+<li><strong>Cómo verifico:</strong> tres <code>ls</code> separados listan las tres piezas — <code>ls .github/*.chatmode.md</code>, <code>ls specs</code>, <code>ls tests/seed.spec.ts</code>; al abrir tu cliente compatible, los chatmodes <strong>planner/generator/healer</strong> aparecen seleccionables.</li>
+</ul>
+<p><strong>A.3 — Regenera al actualizar (recordatorio)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> cada vez que suba la versión de Playwright, vuelvo a correr <code>npx playwright init-agents --loop=&lt;...&gt;</code>.</li>
+<li><strong>Por qué:</strong> al ser experimental, el formato de los chatmodes y del seed cambia entre releases; definiciones viejas + Playwright nuevo = agentes que fallan en silencio.</li>
+<li><strong>Cómo verifico:</strong> <code>npx playwright --version</code> coincide con la versión para la que regeneraste; los agentes siguen respondiendo en tu cliente.</li>
+</ul>
+<aside class="callout callout--learn-more"><p>📚 Doc oficial (sigue la <strong>última</strong> versión, no fijes un número): <a href="https://playwright.dev/docs/test-agents">playwright.dev/docs/test-agents</a>.</p>
+</aside>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> demuestra el flujo completo solo si el grupo ya tiene VS Code 1.105+ y la versión de Playwright que trae Agents; de lo contrario, muéstralo como <em>roadmap</em> y quédate en MCP, que es estable. El valor pedagógico aquí es el <strong>modelo mental</strong> (plan → genera → cura), no el tooling exacto, que aún se mueve.</p>
+</aside>
 <hr>
 <h2 id="buenas-prácticas-con-ia-playwright">Buenas prácticas con IA + Playwright</h2>
 <ol>
@@ -719,11 +888,11 @@ Genera el JSON listo para commitear.</code></pre></div>
 <hr>
 <h2 id="outcome-esperado">Outcome esperado</h2>
 <ul>
-<li><input disabled="" type="checkbox"> Tienes al menos <strong>un cliente MCP configurado</strong> (Claude, Copilot, ChatGPT o Gemini) y <code>mcp list</code> muestra <code>playwright ✓ connected</code>.</li>
+<li><input disabled="" type="checkbox"> Tienes al menos <strong>un cliente MCP configurado</strong> (Claude, Copilot, ChatGPT o Gemini) y tu cliente muestra el server conectado (Claude Code: <code>claude mcp list</code>; VS Code: la lista de tools en Agent mode; Gemini CLI: <code>/mcp</code> dentro de la sesión).</li>
 <li><input disabled="" type="checkbox"> Ejecutaste el prompt de verificación y la IA navegó OmniPizza con éxito.</li>
 <li><input disabled="" type="checkbox"> Generaste <strong>un test nuevo</strong> usando IA + MCP, lo corriste y pasó.</li>
 <li><input disabled="" type="checkbox"> Identificaste qué LLM se adapta mejor a tu flujo y por qué.</li>
-<li><input disabled="" type="checkbox"> Conoces los 7 anti-patterns para evitar al usar IA en tu suite.</li>
+<li><input disabled="" type="checkbox"> Conoces las 7 buenas prácticas con IA (y los anti-patterns que evitan) al usarla en tu suite.</li>
 </ul>
 <hr>
 <h2 id="reto">Reto</h2>
@@ -731,7 +900,7 @@ Genera el JSON listo para commitear.</code></pre></div>
 <hr>
 <aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional:</strong></p>
 <ul>
-<li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP — README oficial</a> — lista completa de tools y opciones (<code>--isolated</code>, <code>--storage-state</code>, <code>--transport sse</code>)</li>
+<li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP — README oficial</a> — lista completa de tools y opciones (<code>--isolated</code>, <code>--storage-state</code>, <code>--port</code>)</li>
 <li><a href="https://modelcontextprotocol.io/specification">Model Context Protocol — Spec</a> — para entender cómo escribir tu propio MCP server (por ejemplo, exponer tu sistema de bug-tracking interno)</li>
 <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — Building effective agents</a> — patrones para agentes que generan/mantienen tests</li>
 </ul>

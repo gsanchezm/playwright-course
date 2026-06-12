@@ -523,7 +523,7 @@ pnpm exec playwright test --workers=1                    # forzar 1 worker para 
 ```bash
 pnpm exec playwright test --project=api                  # sólo API
 pnpm exec playwright test --project=ui-chromium          # sólo UI
-pnpm exec playwright test --grep @smoke                  # tags
+pnpm exec playwright test --grep "@smoke"                  # tags
 ```
 
 ---
@@ -891,7 +891,7 @@ pnpm exec playwright test <path>                   # archivo/carpeta específica
 pnpm exec playwright test --ui                     # UI mode (recomendado para aprender)
 pnpm exec playwright test --headed                 # con browser visible
 pnpm exec playwright test --debug                  # Playwright Inspector
-pnpm exec playwright test --grep @smoke            # por tag
+pnpm exec playwright test --grep "@smoke"            # por tag
 pnpm exec playwright test --project=setup          # correr sólo auth setup
 pnpm exec playwright test --project=api            # sólo API
 pnpm exec playwright test --project=ui-chromium    # sólo UI chromium

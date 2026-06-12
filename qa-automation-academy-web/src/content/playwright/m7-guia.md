@@ -177,9 +177,30 @@ Alternativa manual editando `~/.claude.json`:
 }
 ```
 
+📐 Las dos claves del bloque `mcpServers` significan lo mismo en los cuatro setups de abajo (en VS Code la clave externa se llama `servers` en vez de `mcpServers`, pero `command`/`args` funcionan igual):
+
+| Clave | Qué es |
+|---|---|
+| `command` | El **ejecutable** que lanza el server. `npx` lo descarga al vuelo — por eso no instalas nada antes. |
+| `args` | El **paquete + los flags** del server. Ejemplo: `"args": ["@playwright/mcp@latest", "--headless"]`. |
+
+Flags útiles del server (verificados con `npx @playwright/mcp@latest --help`, v0.0.76):
+
+- `--headless` — corre el browser **sin ventana** (por defecto es headed: ves la ventana).
+- `--isolated` — mantiene el perfil del browser **en memoria**, sin guardarlo a disco: cada sesión arranca limpia.
+- `--storage-state <ruta>` — carga un storage state (p. ej. tu `.auth/user.json` de M04) en las sesiones aisladas: el browser arranca ya logueado.
+- `--port <puerto>` — levanta el server en modo **SSE/HTTP** en ese puerto (en vez de stdio); necesario para clientes remotos como ChatGPT.
+
 ### 2) Setup para Claude Desktop
 
-Edita `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Abre el config en VS Code y pega el bloque de abajo. Si el archivo no existe (instalación fresca), créalo con ese mismo comando — `code` abre el archivo nuevo y lo crea al guardar:
+
+```bash
+# macOS
+$ code ~/"Library/Application Support/Claude/claude_desktop_config.json"
+```
+
+> 🪟 **Windows / PowerShell:** `code $env:APPDATA\Claude\claude_desktop_config.json`
 
 ```json
 # @file claude_desktop_config.json
@@ -197,7 +218,12 @@ Cierra y reabre Claude Desktop. En el chat verás el icono 🔧 con las tools de
 
 ### 3) Setup para VS Code + Copilot Agent
 
-Crea `.vscode/mcp.json` en la raíz de `playwright-course/`:
+Crea `.vscode/mcp.json` en la raíz de `playwright-course/` (si la carpeta `.vscode/` ya existe, salta el `mkdir`) y pega el bloque de abajo:
+
+```bash
+$ mkdir .vscode
+$ code .vscode/mcp.json
+```
 
 ```json
 # @file .vscode/mcp.json
@@ -216,11 +242,17 @@ Abre VS Code, activa **Agent mode** en el panel de Copilot Chat, y verifica que 
 ### 4) Setup para Gemini CLI
 
 ```bash
-$ npm i -g @google/gemini-cli
+$ pnpm add -g @google/gemini-cli
 $ gemini auth login
 ```
 
-Edita `~/.gemini/settings.json`:
+Abre `~/.gemini/settings.json` en VS Code y pega el bloque de abajo (si no existe, ese mismo comando lo crea al guardar):
+
+```bash
+$ code ~/.gemini/settings.json
+```
+
+> 🪟 **Windows / PowerShell:** `code $env:USERPROFILE\.gemini\settings.json`
 
 ```json
 # @file ~/.gemini/settings.json
@@ -239,7 +271,7 @@ Edita `~/.gemini/settings.json`:
 ChatGPT no acepta un comando local arbitrario por seguridad. Las dos rutas viables son:
 
 1. **Connectors / Apps SDK** — si tu org tiene OpenAI Business y publica el MCP server remoto.
-2. **MCP remoto via HTTP/SSE** — corre `@playwright/mcp` con transport `--transport sse --port 9000` y conéctalo desde ChatGPT como custom connector.
+2. **MCP remoto via HTTP/SSE** — corre `npx @playwright/mcp@latest --port 9000` y conéctalo desde ChatGPT como custom connector. El flag `--port` es el que habilita el modo SSE/HTTP (sin él, el server habla stdio); no existe un flag `--transport`.
 
 > 💡 Si estás explorando solo, Claude Code, Claude Desktop, Copilot o Gemini CLI son más simples para empezar.
 
@@ -257,7 +289,7 @@ header with their role + accessible name attributes.
 
 Lo que debe pasar:
 1. La IA invoca la tool `browser_navigate`.
-2. Se abre una ventana de Chromium (cabezas visible si no usaste `--headless`).
+2. Se abre una ventana de Chromium (ventana visible — modo headed — si no usaste `--headless`).
 3. Invoca `browser_snapshot` para leer el accessibility tree.
 4. Te devuelve la lista de botones con `getByRole('button', { name: '...' })` listos para pegar.
 
@@ -372,7 +404,7 @@ El init deja en el repo tres piezas que conviene inspeccionar para no tratarlas 
 - `specs/` — carpeta donde el **planner** deja sus planes de prueba en lenguaje estructurado.
 - `tests/seed.spec.ts` — un test **semilla** que da contexto al generator (convenciones, imports, patrón base del que partir). Es tu palanca para que el generator copie *tus* convenciones, igual que en MCP le pasas los POMs.
 
-Para verificar, `ls .github/*.chatmode.md specs tests/seed.spec.ts` lista los tres; al abrir tu cliente compatible, los chatmodes planner/generator/healer aparecen seleccionables.
+Para verificar, tres `ls` separados listan las tres piezas — `ls .github/*.chatmode.md`, `ls specs`, `ls tests/seed.spec.ts`; al abrir tu cliente compatible, los chatmodes planner/generator/healer aparecen seleccionables.
 
 > 💡 **Recordatorio:** al ser experimental, el formato de los chatmodes y del seed cambia entre releases. Cada vez que subas la versión de Playwright, vuelve a correr `npx playwright init-agents --loop=<...>` — definiciones viejas + Playwright nuevo = agentes que fallan en silencio.
 
@@ -394,15 +426,15 @@ Para verificar, `ls .github/*.chatmode.md specs tests/seed.spec.ts` lista los tr
 
 ## Outcome esperado
 
-- [ ] Tienes al menos **un cliente MCP configurado** (Claude, Copilot, ChatGPT o Gemini) y `mcp list` muestra `playwright ✓ connected`.
+- [ ] Tienes al menos **un cliente MCP configurado** (Claude, Copilot, ChatGPT o Gemini) y tu cliente muestra el server conectado (Claude Code: `claude mcp list`; VS Code: la lista de tools en Agent mode; Gemini CLI: `/mcp` dentro de la sesión).
 - [ ] Ejecutaste el prompt de verificación y la IA navegó OmniPizza con éxito.
 - [ ] Generaste **un test nuevo** usando IA + MCP, lo corriste y pasó.
 - [ ] Identificaste qué LLM se adapta mejor a tu flujo y por qué.
-- [ ] Conoces los 7 anti-patterns para evitar al usar IA en tu suite.
+- [ ] Conoces las 7 buenas prácticas con IA (y los anti-patterns que evitan) al usarla en tu suite.
 
 ---
 
 > 📚 **Profundización opcional:**
-> - [Playwright MCP — README oficial](https://github.com/microsoft/playwright-mcp) — lista completa de tools y opciones (`--isolated`, `--storage-state`, `--transport sse`)
+> - [Playwright MCP — README oficial](https://github.com/microsoft/playwright-mcp) — lista completa de tools y opciones (`--isolated`, `--storage-state`, `--port`)
 > - [Model Context Protocol — Spec](https://modelcontextprotocol.io/specification) — para entender cómo escribir tu propio MCP server (por ejemplo, exponer tu sistema de bug-tracking interno)
 > - [Anthropic — Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) — patrones para agentes que generan/mantienen tests

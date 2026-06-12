@@ -9,9 +9,19 @@ Esta página cubre la parte de **lectura y ejecución** de M04: correr el setup 
 Abre el archivo y fíjate en:
 
 1. **Es un `setup.ts`, no un `spec.ts`** — el `testMatch` de `playwright.config.ts` los distingue.
-2. Hace **login por API** (un `POST /auth/login`), no por UI.
-3. Persiste cookies/localStorage en `.auth/user.json` con `storageState`.
+2. Hace **login por API** (un `POST /api/auth/login`), no por UI.
+3. Persiste cookies/localStorage en `.auth/user.json` con `context.storageState({ path })`.
 4. **NO aparece en `tests/` regulares** — vive en `tests/setup/` para que el project `api` y los flujos negativos (`anonymous`) **no lo hereden**.
+
+> 🔍 **Detalle que parece obvio — `auth.setup.ts` (extensión `.setup.ts`, no `.spec.ts`)**
+> **Qué es:** el punto 1 de arriba, visto de cerca: un test normal de Playwright, pero con extensión `.setup.ts` — el project `setup` lo matchea con su propio `testMatch: /tests\/setup\/.*\.setup\.ts/`.
+> **Por qué así (y no la alternativa obvia):** la extensión es la convención que permite que **una sola** regla de `testMatch` lo capture sin atrapar tus `*.spec.ts`. El project `setup` usa una regex distinta a la global precisamente para aislar el archivo de setup del resto de la suite.
+> **Qué pasa si lo cambias:** si lo renombras a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y todos los `ui-*` arrancan sin sesión. Y al revés: cualquier `*.setup.ts` que dejes suelto en `tests/` lo recogerá el setup project aunque no quieras.
+
+> 🔍 **Detalle que parece obvio — `await context.storageState({ path: USER_FILE })`**
+> **Qué es:** el punto 3 de arriba, visto de cerca: serializa el estado del `BrowserContext` a `.auth/user.json` — el "badge" que luego heredan los projects `ui-*`. Ojo: en el archivo del repo se usa `context.storageState(...)` desde un **contexto nuevo** (`browser.newContext()`), no `page.context()` del test — el setup abre su propio contexto, siembra el token y lo persiste.
+> **Por qué así (y no la alternativa obvia):** `storageState` siempre guarda **cookies + localStorage** juntos, así que el badge es portable a cualquier mecanismo de sesión — por eso no escribimos el JSON a mano.
+> **Qué pasa si lo cambias:** OmniPizza guarda la sesión en `localStorage` (`access_token`, `username`) y **no** usa cookies de sesión, así que el array `cookies` del JSON queda vacío y todo el peso del badge está en `origins[].localStorage`. Si OmniPizza migrara a cookies httpOnly, el mismo `storageState` seguiría funcionando sin tocar el setup.
 
 ---
 
@@ -23,12 +33,13 @@ pnpm test:setup
 
 **Qué debería pasar:**
 
-1. Verás un único test verde: `tests/setup/auth.setup.ts`.
+1. Verás **dos** tests verdes en el project `setup` (corren en modo serial): `wake up backend (warmup cold start)` y `authenticate as standard_user`.
 2. Tras la corrida, el archivo `.auth/user.json` aparece en disco:
    ```bash
-   ls -la .auth/
-   cat .auth/user.json | head -5
+   ls .auth
+   cat .auth/user.json
    ```
+   Fíjate en las primeras líneas: `cookies` y `origins` (ahí vive el `localStorage`).
 3. Ese archivo contiene cookies + localStorage. **Está en `.gitignore`** — nunca lo commitees.
 
 > 💡 **Si falla** con `ECONNREFUSED` o `404`: probablemente OmniPizza está dormido. Vuelve a correr una segunda vez (el cold start despierta el backend).
@@ -39,8 +50,8 @@ pnpm test:setup
 
 Cosas en las que fijarte:
 
-- `test.extend<{...}, {...}>()` — el primer genérico son **test fixtures** (1 por TC), el segundo son **worker fixtures** (1 por worker).
-- `loginPage`, `catalogPage`, `checkoutPage` son **test fixtures**: Playwright los crea por TC y los inyecta al callback.
+- `base.extend<PageFixtures, WorkerFixtures>()` — el primer genérico son **test fixtures** (1 por TC), el segundo son **worker fixtures** (1 por worker).
+- `loginPage`, `catalogPage`, `checkoutPage`, `standardUser` son **test fixtures**: Playwright los crea por TC y los inyecta al callback.
 - `defaultMarket` es **worker fixture** (scope `"worker"`): se crea una vez por proceso paralelo.
 - En el test ya **no escribes `new LoginPage(page)`** — el fixture te lo entrega listo.
 
@@ -86,6 +97,8 @@ time pnpm m3
 time pnpm m4
 ```
 
+**🪟 Windows / PowerShell:** `time` no existe — usa `Measure-Command { pnpm m3 }` y `Measure-Command { pnpm m4 }`.
+
 El delta principal está en que **no hay login por UI** en cada TC. Anota el tiempo de cada uno — deja que los datos hablen.
 
 ---
@@ -94,24 +107,76 @@ El delta principal está en que **no hay login por UI** en cada TC. Anota el tie
 
 ```ts
 // @file tests/setup/auth.setup.ts
+// ============================================================
+// tests/setup/auth.setup.ts — Login vía API (M04)
+// ============================================================
+// Analogía QA: el proceso de "registro en recepción". Se hace
+// UNA SOLA VEZ al llegar; todos los TCs posteriores entran con
+// el badge (storageState) ya emitido.
+//
+// Corre como project "setup" gracias al patrón 2026 de Playwright:
+//   - project: { name: "setup", testMatch: /.*\.setup\.ts/ }
+//   - los demás projects declaran `dependencies: ["setup"]`
+//
+// Ventajas vs globalSetup con UI login:
+//   ✅ Mucho más rápido (1 POST vs navegación completa)
+//   ✅ Determinista (sin flakiness de UI)
+//   ✅ Reutilizable — el mismo pattern para otras personas que
+//      autentican (problem_user, performance_glitch_user…), no sólo standard.
+// ============================================================
+
 import { test as setup, expect } from "@playwright/test";
-import usersJson from "../../data/users.json";
-import type { User } from "../../types";
+import fs from "node:fs";
+import path from "node:path";
 
-const STORAGE = ".auth/user.json";
+const AUTH_DIR = ".auth";
+const USER_FILE = path.join(AUTH_DIR, "user.json");
+
 const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
-const standard = (usersJson as User[]).find((u) => u.username === "standard_user")!;
+const BASE_URL = process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com";
+const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
+const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-setup("authenticate via API and persist storageState", async ({ page, request }) => {
-  const res = await request.post(`${API_URL}/api/auth/login`, {
-    data: { username: standard.username, password: standard.password },
+setup.describe.configure({ mode: "serial" });
+
+setup.beforeAll(() => {
+  if (!fs.existsSync(AUTH_DIR)) {
+    fs.mkdirSync(AUTH_DIR, { recursive: true });
+  }
+});
+
+setup("wake up backend (warmup cold start)", async ({ request }) => {
+  // Render free tier duerme el backend después de 15 min.
+  // Este setup hace el primer request del día y garantiza que
+  // todos los tests que siguen tengan el backend despierto.
+  setup.setTimeout(90_000);
+  const res = await request.get(`${API_URL}/health`, { timeout: 80_000 });
+  expect(res.ok(), "backend /health debe responder 200").toBeTruthy();
+});
+
+setup("authenticate as standard_user", async ({ browser, request }) => {
+  // 1. Login vía API para obtener el token.
+  const apiRes = await request.post(`${API_URL}/api/auth/login`, {
+    data: { username: USERNAME, password: PASSWORD },
   });
-  expect(res.ok()).toBeTruthy();
-  const { access_token } = await res.json();
+  expect(apiRes.ok(), `login API debe ser 200. Status: ${apiRes.status()}`).toBeTruthy();
+  const { access_token } = (await apiRes.json()) as { access_token: string };
+  expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
 
-  await page.goto("/");
-  await page.evaluate((token) => localStorage.setItem("access_token", token), access_token);
-  await page.context().storageState({ path: STORAGE });
+  // 2. Abrir un contexto de navegador y sembrar la sesión.
+  //    OmniPizza persiste el token en localStorage — lo escribimos ahí.
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(BASE_URL);
+
+  await page.evaluate(([token, username]) => {
+    window.localStorage.setItem("access_token", token);
+    window.localStorage.setItem("username", username);
+  }, [access_token, USERNAME]);
+
+  // 3. Persistir el storageState para todos los projects UI.
+  await context.storageState({ path: USER_FILE });
+  await context.close();
 });
 ```
 
@@ -121,31 +186,68 @@ setup("authenticate via API and persist storageState", async ({ page, request })
 
 ```ts
 // @file fixtures/omnipizza.ts
+// ============================================================
+// fixtures/omnipizza.ts — Custom fixtures del framework (M04)
+// ============================================================
+// Analogía QA: el fixture es el ambiente de prueba YA preparado
+// (usuario logueado, mercado seleccionado, data sembrada). El TC
+// lo recibe listo para ejecutar sus pasos.
+//
+// Nota importante: el `page` autenticado lo provee el `storageState`
+// del project (definido en playwright.config.ts). Aquí sólo añadimos
+// fixtures extra (marketContext, fixtures por persona) o helpers cross-test.
+// ============================================================
+
 import { test as base, expect } from "@playwright/test";
 import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
-import type { Market } from "../types";
+import usersJson from "../data/users.json";
 
-type OmniFixtures = {
+const markets = marketsJson as Market[];
+const users = usersJson as User[];
+
+type PageFixtures = {
   loginPage: LoginPage;
   catalogPage: CatalogPage;
   checkoutPage: CheckoutPage;
+  standardUser: User;
 };
-type OmniWorkerFixtures = { defaultMarket: Market };
 
-export const test = base.extend<OmniFixtures, OmniWorkerFixtures>({
-  loginPage: async ({ page }, use) => use(new LoginPage(page)),
-  catalogPage: async ({ page }, use) => use(new CatalogPage(page)),
-  checkoutPage: async ({ page }, use) => use(new CheckoutPage(page)),
-  defaultMarket: [
-    async ({}, use) => {
-      const m = (marketsJson as Market[]).find((x) => x.code === "MX")!;
-      await use(m);
-    },
-    { scope: "worker" },
-  ],
+type WorkerFixtures = {
+  // Worker-scoped: se crea 1 vez por worker.
+  defaultMarket: Market;
+};
+
+export const test = base.extend<PageFixtures, WorkerFixtures>({
+  // --- Worker fixture ---
+  // eslint-disable-next-line no-empty-pattern
+  defaultMarket: [async ({}, use) => {
+    const mx = markets.find((m) => m.code === "MX");
+    if (!mx) throw new Error("Mercado MX no encontrado en data/markets.json");
+    await use(mx);
+  }, { scope: "worker" }],
+
+  // --- Test fixtures ---
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  catalogPage: async ({ page }, use) => {
+    await use(new CatalogPage(page));
+  },
+  checkoutPage: async ({ page }, use) => {
+    await use(new CheckoutPage(page));
+  },
+  // eslint-disable-next-line no-empty-pattern
+  standardUser: async ({}, use) => {
+    const u = users.find((u) => u.username === "standard_user");
+    if (!u) throw new Error("standard_user no encontrado en data/users.json");
+    await use(u);
+  },
 });
+
 export { expect };
+export type { Market, User };
 ```
 
 ---
@@ -154,14 +256,42 @@ export { expect };
 
 ```ts
 // @file helpers/unique-data.ts
+// ============================================================
+// helpers/unique-data.ts — Data isolation para tests en paralelo
+// ============================================================
+// Analogía QA: cada tester paralelo lleva su propio libro de
+// pedidos. Nunca comparten folios con los demás workers.
+//
+// Sin esto, `fullyParallel: true` + datos compartidos = colisiones
+// (órdenes duplicadas, emails repetidos) que `retries` enmascara
+// pero no arregla.
+// ============================================================
+
 import type { TestInfo } from "@playwright/test";
 
-export function uniqueEmail(info: TestInfo, prefix = "qa"): string {
-  return `${prefix}+w${info.workerIndex}-${Date.now()}@example.test`;
+/**
+ * Email único por worker + timestamp.
+ * Ej: `customer+w0-1714000000000@omnipizza.test`
+ */
+export function uniqueEmail(info: TestInfo, prefix = "customer"): string {
+  return `${prefix}+w${info.workerIndex}-${Date.now()}@omnipizza.test`;
 }
 
+/**
+ * Identificador único de orden — útil para referencias externas.
+ * Ej: `ORD-w0-1714000000000-4821`
+ */
 export function uniqueOrderId(info: TestInfo): string {
-  return `ORD-w${info.workerIndex}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const random = Math.floor(Math.random() * 10_000);
+  return `ORD-w${info.workerIndex}-${Date.now()}-${random}`;
+}
+
+/**
+ * Prefijo determinista por worker — útil cuando no queremos timestamp
+ * (ej. seeds reproducibles en tests deterministas de lectura).
+ */
+export function workerPrefix(info: TestInfo): string {
+  return `w${info.workerIndex}`;
 }
 ```
 

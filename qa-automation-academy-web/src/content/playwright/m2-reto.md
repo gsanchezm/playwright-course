@@ -33,8 +33,7 @@ Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts \
-//     --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-chromium
 //
 //   (o con UI mode:)
 //   pnpm test:ui
@@ -175,4 +174,24 @@ test.describe("Reto M02 — parametrización extendida", () => {
 // 👉 En M03 vas a refactorizar este bloque de login a una clase
 //    POM: 5 líneas se convertirán en 1.
 // ============================================================
+```
+
+---
+
+## Paso 10 — Versiona tu trabajo (Git JIT)
+
+Cuando el reto quede en verde, agrega **solo lo que cambió en este módulo** y commitéalo con un mensaje convencional:
+
+```bash
+git add types data modulo-02-locators-data
+git commit -m "feat(m02): data-driven con JSON tipado"
+```
+
+M02 introduce dos carpetas reusables (`types/`, `data/`) más el spec del módulo. Versionarlas en un commit atómico deja un punto de retorno limpio **antes** de que M03 empiece a refactorizar hacia POM. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan en M03/M04, cuando el flujo los pida.)
+
+**Cómo verificas:**
+
+```bash
+git log --oneline -1        # muestra el commit feat(m02) recién creado
+git status                  # working tree limpio para lo que tocaste
 ```

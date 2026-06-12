@@ -428,7 +428,7 @@ pnpm m2                               # sin TEST_ENV → usa el default "qa"
 **1.1 — Verifica que no falta nada (M02 no añade paquetes)**
 - **Qué hago:** listo los paquetes que M02 reutiliza de M01.
   ```bash
-  pnpm list @playwright/test dotenv typescript @types/node 2>/dev/null
+  pnpm list @playwright/test dotenv typescript @types/node
   ```
 - **Por qué:** **M02 no instala dependencias nuevas.** El incremental de este módulo es **datos tipados**, no herramientas. Confirmar evita "instalar por las dudas".
 - **Cómo verifico:** los 4 paquetes aparecen con versión. Si falta alguno, vuelve al **Paso 1 de M01** o corre `pnpm install`.
@@ -440,14 +440,17 @@ pnpm m2                               # sin TEST_ENV → usa el default "qa"
 Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: primero los contratos (`types/`), luego los datos (`data/`) que esos contratos validan.
 
 **2.1 — Crea las carpetas y los archivos vacíos**
-- **Qué hago:** creo `types/` y `data/` con sus archivos.
+- **Qué hago:** creo `types/` y `data/`, y abro cada archivo nuevo en VS Code (se crea en disco al guardarlo).
   ```bash
-  mkdir -p types data
-  touch types/omnipizza.d.ts types/index.ts
-  touch data/markets.json data/users.json
+  mkdir types
+  mkdir data
+  code types/omnipizza.d.ts
+  code types/index.ts
+  code data/markets.json
+  code data/users.json
   ```
 - **Por qué:** separar **contrato** (`types/`) de **dato** (`data/`) es la decisión central del módulo: el `.d.ts` describe la forma; el `.json` la rellena. Quien los mezcla pierde la red de seguridad de TS.
-- **Cómo verifico:** `ls types data` muestra los 4 archivos.
+- **Cómo verifico:** las 4 pestañas quedan abiertas en VS Code; tras guardarlas, `ls types` y `ls data` muestran los 4 archivos.
 
 **2.2 — Escribe el contrato del dominio (`types/omnipizza.d.ts`)**
 - **Qué hago:** defino los union types y las `interface` del dominio.
@@ -534,7 +537,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 - **Por qué:** este es el "verde" que prueba que contrato y consumo encajan. Validarlo aquí evita arrastrar un error de tipos hasta la ejecución del test.
 - **Cómo verifico:** el comando termina sin output ni código de error.
 
-> 💡 **Para el facilitador:** si el alumno escribe `"code": "MNX"` y el spec lo consume como `Market[]` "estrechado" (no con `as`), `tsc --noEmit` falla con `Type '"MNX"' is not assignable to type 'CountryCode'`. Provoca el typo a propósito para mostrar el error en vivo (con el `as Market[]` actual el cast lo enmascara — buen momento para explicar la diferencia entre *assertion* y *validación*, ver §🔍 más abajo).
+> 💡 **Para el facilitador:** si el alumno escribe `"code": "MNX"` y el spec lo consume como `Market[]` "estrechado" (no con `as`), `tsc --noEmit` falla con `Type '"MNX"' is not assignable to type 'CountryCode'`. Provoca el typo a propósito para mostrar el error en vivo (con el `as Market[]` actual el cast lo enmascara — buen momento para explicar la diferencia entre *assertion* y *validación*; está desglosada en el recuadro 🔷 de arrays tipados del Paso 7).
 
 ---
 
@@ -661,20 +664,41 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
     });
   }
   ```
-- **Por qué:** el `for...of` recorre el array y **registra** un `test()` por elemento (no un test que itera por dentro). El título lleva `${market.code}` porque Playwright exige títulos únicos. El CSS `[data-testid^="pizza-card-"]` baja al nivel 4 de la jerarquía a propósito: los testids son dinámicos.
-- **🔎 Fíjate en `await expect(page).toHaveURL(/\/catalog/)`** (en el bloque de navegación al catálogo): el argumento es un **regex**, no un string, y eso es deliberado. Un **regex** hace *match parcial* — la aserción pasa si la URL *contiene* `/catalog` (tolera `?query`, locale en el path, slash final). Un **string**, en cambio, se fusiona con `baseURL` vía `new URL()` y se compara por **IGUALDAD exacta** — frágil ante cualquier `?query`/locale/slash extra. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión. (Detalle completo en §🔍 más abajo.)
+- **Por qué:** el `for...of` recorre el array y **registra** un `test()` por elemento (no un test que itera por dentro). El título lleva `${market.code}` porque Playwright exige títulos únicos dentro del mismo describe. El CSS `[data-testid^="pizza-card-"]` baja al nivel 4 de la jerarquía a propósito: los testids son dinámicos.
 - **Cómo verifico:** puedo explicar en voz alta por qué hay 4 tests y no 1; por qué el título cambia en cada vuelta; y por qué `toHaveURL` usa regex y no string.
+
+> 🔍 **Detalle que parece obvio — `await expect(page).toHaveURL(/\/catalog/)`**
+> **Qué es:** (en el bloque de navegación al catálogo) el argumento entre `/.../` es una **expresión regular** (regex), **no** un string, y eso es deliberado. Un regex hace *match parcial*: la aserción pasa si la URL **contiene/matchea** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
+> **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL del catálogo —querystring (`?locale=`), ids, el locale dentro del path (`/mx/catalog`) o un slash final— y el regex tolera todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
+> **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **IGUALDAD exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
+
+> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...) ``**
+> **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`: nombres distintos y legibles en el reporte (la regla de títulos únicos ya la viste en el "Por qué").
+> **Por qué así (y no la alternativa obvia):** además, el tag `@smoke` va **embebido en el título** a propósito: es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
+> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
+
+> 🔍 **Detalle que parece obvio — `page.locator('[data-testid^="pizza-card-"]')`**
+> **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
+> **Por qué así (y no la alternativa obvia):** los testids completos son dinámicos (`pizza-card-123`, `pizza-card-456`...), así que un `getByTestId("pizza-card-123")` con id fijo solo encontraría una pizza concreta (frágil) o ninguna. Bajar al nivel 4 es legítimo justamente por eso (ver la tabla de jerarquía arriba) — no es deuda técnica: es la herramienta correcta para testids variables.
+> **Qué pasa si lo cambias:** si usas `=` en vez de `^=` (`[data-testid="pizza-card-"]`), exiges igualdad exacta y no matcheas **ninguna** tarjeta.
+
+> 🔍 **Detalle que parece obvio — `const allCards = await pizzaCards.all()`**
+> **Qué es:** `.all()` devuelve `Promise<Locator[]>` — **materializa** la lista: consulta el DOM *ahora* y te entrega un array fijo de locators. Por eso lleva `await`.
+> **Por qué así (y no la alternativa obvia):** comparado con `pizzaCards.first()`, que **no** necesita `await` porque devuelve un `Locator` perezoso (lazy) — un puntero que recién resuelve el DOM cuando lo usas en una acción o aserción. `.all()` rompe esa pereza a propósito: necesitas el array concreto para iterarlo y contar (`allCards.length`).
+> **Qué pasa si lo cambias:** si omites el `await`, `allCards` queda como una `Promise`, no como array; `allCards.length` da `undefined` y el `for...of` no itera nada (o falla). Si en cambio creías que `.first()` necesita `await` y lo agregas, no rompe pero es ruido — el locator es perezoso por diseño.
 
 > 🔷 **TypeScript — `import type`**
 > `import type { Market }` trae **solo la forma** (el tipo), no código ejecutable: el compilador la borra del bundle final. La alternativa `import { Market }` (sin `type`) también compila, pero arrastra una dependencia de valor innecesaria y puede crear ciclos de import en proyectos grandes.
 > 📚 Lo viste en [TS · M06 — interfaces](../../typescript-qa-course/modulo-06-interfaces/). Aquí lo aplicas a `Market`, `User` y `Currency`: contratos que solo existen en compile-time.
 
 > 🔷 **TypeScript — arrays tipados (`Market[]` / `User[]`)**
-> `Type[]` significa "array cuyos elementos son `Type`". `marketsJson as Market[]` le dice a TS "trata este JSON como una lista de `Market`", lo que te da autocompletado de `market.code`/`market.currency` dentro del `for...of`. Sin la anotación, el elemento sería `any` y perderías el chequeo.
-> 📚 Lo viste en [TS · M02 — types](../../typescript-qa-course/modulo-02-types/). Aquí lo aplicas al array que alimenta el bucle data-driven. (Sobre el `as` —*assertion*, no validación— ve el detalle en §🔍.)
+> `Type[]` significa "array cuyos elementos son `Type`". `marketsJson as Market[]` le dice a TS "trata este JSON como una lista de `Market`", lo que te da autocompletado de `market.code`/`market.currency` dentro del `for...of` — importar un `.json` a secas te da un tipo inferido amplio (y a veces `any`, según la config). Si quitas el `as Market[]`, vuelves a ese tipo inferido (o `any`) y pierdes el autocompletado y el chequeo.
+> ⚠️ **Ojo: `as` es una *type assertion*, no una validación.** Es una promesa que haces tú; en runtime **nadie** revisa que el JSON realmente cumpla el contrato — un JSON con datos basura compilaría igual. El contrato real lo defiende `types/omnipizza.d.ts` vía `tsc`, no este cast.
+> 📚 Lo viste en [TS · M02 — types](../../typescript-qa-course/modulo-02-types/). Aquí lo aplicas al array que alimenta el bucle data-driven.
 
 > 🔷 **TypeScript — `for...of` para iterar**
-> `for (const x of array)` recorre los **valores** del array (no los índices, que sería `for...in`). En este módulo lo usas en dos niveles: para **registrar** un `test()` por mercado, y dentro del test para **recorrer** las tarjetas de pizza con un `await` por vuelta. La alternativa `array.forEach(async …)` **no espera** los `await` internos → falsos verdes.
+> `for (const x of array)` recorre los **valores** del array (no los índices, que sería `for...in`). En este módulo lo usas en dos niveles: para **registrar** un `test()` por mercado, y dentro del test para **recorrer** las tarjetas de pizza — ahí `for...of` **serializa** los `await`: espera a que termine la aserción de una tarjeta antes de pasar a la siguiente.
+> La alternativa "obvia" `allCards.forEach(async …)` **no espera** los `await` internos: `forEach` ignora el valor de retorno del callback, así que las promesas se pierden, el test sigue de largo y las aserciones se disparan en paralelo sin que nadie las espere — un fallo puede explotar **después** de que el test ya terminó (unhandled rejection) y obtienes falsos verdes. Cuando hay `await` dentro, lo correcto es `for...of` (o `Promise.all` si quieres paralelismo controlado).
 > 📚 Es construcción base de JavaScript/TypeScript (lo usaste desde [TS · M03 — functions](../../typescript-qa-course/modulo-03-functions/)). Aquí es el motor de la parametrización: un `for` reemplaza al inexistente `test.each()`.
 
 > 🔷 **TypeScript — ternario / guard clause (`if (!symbol) return;`)**
@@ -733,56 +757,12 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 
 ---
 
-## 🔍 Detalles que parecen obvios pero no lo son
-
-Cosas del `ejemplo.spec.ts` que se leen "de pasada" pero esconden una decisión de diseño. Si las cambias por la alternativa "obvia", el test se rompe o pierdes seguridad de tipos.
-
-### `await expect(page).toHaveURL(/\/catalog/)`
-
-- **Qué es:** el argumento entre `/.../ ` es una **expresión regular** (regex), **no** un string. Un regex hace *match parcial*: la aserción pasa si la URL **contiene/matchea** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
-- **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL del catálogo —querystring (`?locale=`), ids, o el locale dentro del path (`/mx/catalog`)—. Con regex toleras todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
-- **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **igualdad exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
-
-### `marketsJson as Market[]`
-
-- **Qué es:** una *type assertion* — le dices a TypeScript "trata este JSON como `Market[]`". Es una promesa que haces tú; **no** es validación en runtime. Al ejecutar, nadie revisa que el JSON realmente cumpla el contrato.
-- **Por qué así (y no la alternativa obvia):** importar un `.json` te da un tipo inferido amplio (y a veces `any`, según la config). El `as Market[]` te devuelve autocompletado y chequeo de `market.code`, `market.currency`, etc. en compile-time, que es donde queremos atrapar los errores.
-- **Qué pasa si lo cambias:** si quitas el `as Market[]`, el tipo pasa a ser el inferido del JSON (o `any`) y **pierdes el autocompletado y la seguridad** de `market.code` / `market.currency`. (Ojo: como es assertion, no validación, un JSON con datos basura sí compilaría — el contrato real lo defiende el `.d.ts` vía `tsc`, no este cast.)
-
-### `const allCards = await pizzaCards.all()`
-
-- **Qué es:** `.all()` devuelve `Promise<Locator[]>` — **materializa** la lista: consulta el DOM *ahora* y te entrega un array fijo de locators. Por eso lleva `await`.
-- **Por qué así (y no la alternativa obvia):** comparado con `pizzaCards.first()`, que **no** necesita `await` porque devuelve un `Locator` perezoso (lazy) — un puntero que recién resuelve el DOM cuando lo usas en una acción o aserción. `.all()` rompe esa pereza a propósito: necesitas el array concreto para iterarlo y contar (`allCards.length`).
-- **Qué pasa si lo cambias:** si omites el `await`, `allCards` queda como una `Promise`, no como array; `allCards.length` da `undefined` y el `for...of` no itera nada (o falla). Si en cambio creías que `.first()` necesita `await` y lo agregas, no rompe pero es ruido — el locator es perezoso por diseño.
-
-### `page.locator('[data-testid^="pizza-card-"]')`
-
-- **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
-- **Por qué así (y no la alternativa obvia):** los testids de las pizzas son **dinámicos** (`pizza-card-123`, `pizza-card-456`...), así que no puedes usar `getByTestId("pizza-card-123")` con un id fijo. Bajar al nivel 4 de la jerarquía (CSS) es **legítimo** justamente por eso (ver la tabla de jerarquía arriba). No es deuda técnica: es la herramienta correcta para testids variables.
-- **Qué pasa si lo cambias:** si usas `=` en vez de `^=` (`[data-testid="pizza-card-"]`), exiges igualdad exacta y no matcheas **ninguna** tarjeta. Si intentas un `getByTestId` con id fijo, solo encuentras una pizza concreta (frágil) o ninguna.
-
-### `for (const card of allCards) { await expect(card)... }`
-
-- **Qué es:** un bucle `for...of` que recorre el array de locators y hace una aserción `await` por cada tarjeta.
-- **Por qué así (y no la alternativa obvia):** `for...of` **serializa** los `await`: espera a que termine la aserción de una tarjeta antes de pasar a la siguiente. La alternativa "obvia" `allCards.forEach(async (card) => { await ... })` **no espera** las promesas — `forEach` ignora el valor de retorno del callback, así que los `await` de adentro se pierden y el test sigue de largo.
-- **Qué pasa si lo cambias:** con `forEach`, las aserciones se disparan en paralelo sin que el test las espere; un fallo puede ocurrir **después** de que el test ya terminó (unhandled rejection) y obtienes falsos verdes. `for...of` (o `Promise.all` si quieres paralelismo controlado) es lo correcto cuando hay `await` dentro.
-
-### `` test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...) ``
-
-- **Qué es:** el título del test se construye con un *template string* que interpola `market.code` en cada vuelta del `for...of` sobre `markets`.
-- **Por qué así (y no la alternativa obvia):** cada iteración del bucle registra un `test()` distinto, y Playwright **exige títulos únicos** dentro del mismo describe. El `${market.code}` garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP` — nombres distintos y legibles en el reporte. Además, el tag `@smoke` embebido en el título es lo que permite filtrar con `--grep @smoke`.
-- **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
-
-> 💡 **Para el facilitador:** el deep-dive de `Partial<Record<Currency, string>>` (la guard clause `if (!symbol) return;`) ya está más arriba (ver sección de utility types arriba); no lo repitas aquí — enlázalo si alguien pregunta por qué el `currencySymbol` es opcional.
-
----
-
 ## ▶️ Cómo ejecutar este módulo
 
 - **Comando del módulo:** `pnpm m2`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-02-locators-data/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-02-locators-data/reto.spec.ts`)
 - **Verificar tipos:** `pnpm typecheck`
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m2` (no `VAR=x pnpm m2`, sintaxis bash que falla en PowerShell)

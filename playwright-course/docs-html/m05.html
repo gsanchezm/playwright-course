@@ -420,7 +420,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
       <li><a href="#conceptos-jit">Conceptos JIT</a></li>
       <li><a href="#arquitectura">Arquitectura</a></li>
       <li><a href="#paso-a-paso">Paso a paso</a></li>
-      <li><a href="#comandos-útiles">Comandos útiles</a></li>
+      <li><a href="#cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</a></li>
       <li><a href="#outcome-esperado">Outcome esperado</a></li>
     </ol>
   </details>
@@ -433,6 +433,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Capa de servicios HTTP reutilizable para tests UI y API
       </p>
     </header>
+<h1 id="módulo-05-api-layer-n-layered-completo">Módulo 05 — API Layer (N-layered completo)</h1>
 <p><strong>Duración estimada:</strong> 50-60 min
 <strong>Piezas que suma al framework:</strong></p>
 <ul>
@@ -572,7 +573,15 @@ tests/api/
 └── pizzas.spec.ts        ← data-driven por mercado</code></pre></div>
 <hr>
 <h2 id="paso-a-paso">Paso a paso</h2>
+<blockquote><p>Cada micro-paso lleva la tripleta <strong>Qué hago / Por qué / Cómo verifico</strong>, y dice <strong>qué archivo se crea/edita</strong> y en qué orden. El orden importa: primero <code>BaseService</code> (el contrato), luego las clases concretas que lo extienden, después el barrel y por último el config que las pone a correr.</p>
+</blockquote>
 <h3 id="paso-0-pre-requisitos">Paso 0 — Pre-requisitos</h3>
+<p><strong>0.1 — Confirmar que M04 está sano</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> desde <code>playwright-course/</code> corro <code>pnpm m4</code> y luego <code>pnpm typecheck</code>.</li>
+<li><strong>Por qué:</strong> M05 reutiliza <code>types/</code> (M02), <code>helpers/</code> (M04) y <code>data/</code>. Si M04 ya rompe, no quiero diagnosticar dos capas a la vez.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m4</code> pasa en verde y <code>pnpm typecheck</code> no imprime errores.</li>
+</ul>
 <div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Estando en playwright-course/</span>
 pnpm m4            # los fixtures y el setup project funcionan
 pnpm typecheck     # debe pasar</code></pre></div>
@@ -580,19 +589,42 @@ pnpm typecheck     # debe pasar</code></pre></div>
 </aside>
 <hr>
 <h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
-<p><strong>M05 no añade paquetes npm nuevos.</strong> <code>APIRequestContext</code> ya viene en <code>@playwright/test</code>.</p>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node 2&gt;/dev/null
+<p><strong>1.1 — Verificar que no falta nada (M05 no añade paquetes)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> corro <code>pnpm list @playwright/test dotenv typescript @types/node</code>.</li>
+<li><strong>Por qué:</strong> <code>APIRequestContext</code> ya viene dentro de <code>@playwright/test</code>. No hay <code>npm add</code> nuevo en este módulo — la capa de API se construye con lo que ya tienes.</li>
+<li><strong>Cómo verifico:</strong> las 4 dependencias aparecen listadas. Si alguna falta, <code>pnpm install</code> (si ya están en <code>package.json</code>) o <code>pnpm add -D @playwright/test dotenv typescript @types/node</code>.</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm list @playwright/test dotenv typescript @types/node
 <span class="hl-comment"># Las 4 deben aparecer. Si no:</span>
 <span class="hl-comment">#   pnpm install     (si package.json ya las lista)</span>
 <span class="hl-comment">#   pnpm add -D @playwright/test dotenv typescript @types/node</span></code></pre></div>
 <hr>
 <h3 id="paso-2-crear-services-y-testsapi">Paso 2 — Crear <code>services/</code> y <code>tests/api/</code></h3>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir -p services tests/api
-touch services/BaseService.ts services/AuthService.ts services/OrderService.ts \
-      services/PizzaService.ts services/index.ts
-touch tests/api/auth.spec.ts tests/api/pizzas.spec.ts</code></pre></div>
-<p><strong>Esqueletos mínimos:</strong></p>
-<p>📄 <code>services/BaseService.ts</code> — <strong>primera clase abstracta del curso</strong>:</p>
+<p><strong>2.1 — Crear las carpetas y los archivos vacíos</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>services/</code> y <code>tests/api/</code>, y creo vacíos los 5 archivos de servicios + los 2 specs de API.</li>
+<li><strong>Por qué:</strong> <code>services/</code> es la <strong>nueva capa</strong> de este módulo (el cliente HTTP), <code>tests/api/</code> es la suite que la consume. Tenerlos vacíos primero me deja llenar el contrato (<code>BaseService</code>) antes que las hijas.</li>
+<li><strong>Cómo verifico:</strong> <code>ls services</code> muestra los 5 archivos de servicios y <code>ls tests/api</code> los 2 specs.</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">mkdir services
+mkdir tests
+mkdir tests/api</code></pre></div>
+<p><code>tests/</code> probablemente ya existe desde M04 (ahí vive <code>tests/setup/</code>) — si ya existe, salta esa línea.</p>
+<p>Crea los 7 archivos abriéndolos en VS Code (cada <code>code &lt;ruta&gt;</code> abre el archivo como nuevo; guárdalo con <code>Ctrl+S</code> para que exista en disco — los llenarás en 2.2-2.5):</p>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">code services/BaseService.ts
+code services/AuthService.ts
+code services/OrderService.ts
+code services/PizzaService.ts
+code services/index.ts
+code tests/api/auth.spec.ts
+code tests/api/pizzas.spec.ts</code></pre></div>
+<p><strong>2.2 — Escribir <code>services/BaseService.ts</code> (la clase abstracta — el contrato)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> escribo la primera <strong>clase abstracta del curso</strong>: un <code>protected constructor</code>, un <code>protected abstract basePath()</code> y los helpers compartidos <code>url()</code> y <code>dispose()</code>.</li>
+<li><strong>Por qué:</strong> las 3 hijas (<code>Auth</code>, <code>Order</code>, <code>Pizza</code>) comparten <code>api</code>, <code>baseURL</code>, <code>url()</code> y <code>dispose()</code>. <code>abstract</code> impide instanciar la base directa y <strong>obliga</strong> a cada hija a definir <code>basePath()</code>. Por eso este archivo va <strong>primero</strong>: es el molde que las demás extienden.</li>
+<li><strong>Cómo verifico:</strong> el editor no subraya en rojo; <code>pnpm exec tsc --noEmit</code> sigue verde (aún no hay hijas, pero el archivo solo compila).</li>
+</ul>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import type { APIRequestContext } from "@playwright/test";
 
 export abstract class BaseService {
@@ -612,48 +644,147 @@ export abstract class BaseService {
     await this.api.dispose();
   }
 }</code></pre></div>
-<p>📄 <code>services/AuthService.ts</code> — primera clase concreta + factory async:</p>
-<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { request } from "@playwright/test";
+<blockquote><p>🔷 <strong>TypeScript — <code>abstract class</code> + métodos abstractos</strong>
+Una clase <code>abstract</code> <strong>no se puede instanciar</strong> (<code>new BaseService(...)</code> no compila) y puede declarar métodos sin cuerpo (<code>abstract basePath(): string</code>) que cada hija <strong>está obligada</strong> a implementar. Es la diferencia clave con una clase normal: una normal con un método &quot;vacío&quot; compila aunque la hija se olvide de él; <code>abstract</code> lo convierte en error de compilación.
+<strong>Qué pasa si lo cambias:</strong> si quitas <code>abstract</code> solo de <code>basePath()</code>, el compilador deja de exigir que cada hija lo defina — y <code>url()</code> podría construir rutas contra un <code>basePath</code> inexistente.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a> (y el contrato que impone se ve a fondo en <a href="../../typescript-qa-course/modulo-06-interfaces/">TS · M06 — Interfaces</a>). Aquí lo aplicas a <code>BaseService</code>, que fuerza a <code>AuthService</code>/<code>OrderService</code>/<code>PizzaService</code> a declarar su <code>basePath()</code>.</p>
+</blockquote>
+<aside class="callout callout--warn"><p>⚠️ <strong>Primera vez que aparece <code>abstract</code> en el curso — y a propósito.</strong> En M03 <code>BasePage</code> era una clase <strong>normal</strong>: con una sola hija, <code>abstract</code> no aportaba nada. Aquí ya hay <strong>3 servicios</strong> que comparten comportamiento, así que el patrón por fin se gana su lugar. Ese es el sentido de <em>just-in-time</em>: el concepto entra cuando el problema lo reclama.</p>
+</aside>
+<p><strong>2.3 — Escribir <code>services/AuthService.ts</code> (primera clase concreta + factory async)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo <code>AuthService extends BaseService</code>, implemento <code>basePath()</code>, añado el factory <code>static async create(...)</code> y el método <code>login()</code>. Aquí también vive el helper <code>createAuthedContext(...)</code> que inyecta el Bearer.</li>
+<li><strong>Por qué:</strong> <code>AuthService</code> es la primera <strong>hija concreta</strong>: prueba que el contrato de <code>BaseService</code> funciona. El factory <code>create()</code> es <code>static async</code> porque crear el <code>APIRequestContext</code> requiere <code>await</code> — y un <code>constructor</code> no puede ser <code>async</code>.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> verde; el editor reconoce <code>AuthService.create</code> y <code>auth.login</code>.</li>
+</ul>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { request, type APIRequestContext } from "@playwright/test";
 import { BaseService } from "./BaseService";
-import type { User } from "../types";
-
-export async function createAuthedContext(
-  baseURL: string,
-  token: string,
-  extra: Record&lt;string, string&gt; = {},
-) {
-  return await request.newContext({
-    baseURL,
-    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extra },
-  });
-}
+import type { LoginResponse, User } from "../types";
 
 export class AuthService extends BaseService {
-  protected basePath() { return "/api/auth"; }
+  protected basePath(): string {
+    return "/api/auth";
+  }
 
+  // Factory — crea una instancia con un APIRequestContext listo.
   static async create(baseURL: string): Promise&lt;AuthService&gt; {
     const api = await request.newContext({ baseURL });
     return new AuthService(api, baseURL);
   }
 
-  async login(user: User): Promise&lt;{ access_token: string }&gt; {
+  // Login con usuario/contraseña. Devuelve el token o lanza.
+  async login(user: User): Promise&lt;LoginResponse&gt; {
     const res = await this.api.post(this.url("/login"), {
       data: { username: user.username, password: user.password },
     });
-    if (!res.ok()) throw new Error(`login failed (${res.status()}): ${await res.text()}`);
-    return await res.json();
+    if (!res.ok()) {
+      const body = await res.text();
+      throw new Error(`Login failed (${res.status()}): ${body}`);
+    }
+    return (await res.json()) as LoginResponse;
+  }
+}
+
+// Utilidad — crea un APIRequestContext ya autenticado con Bearer.
+export async function createAuthedContext(
+  baseURL: string,
+  token: string,
+  extraHeaders: Record&lt;string, string&gt; = {},
+): Promise&lt;APIRequestContext&gt; {
+  return request.newContext({
+    baseURL,
+    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extraHeaders },
+  });
+}</code></pre></div>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>const api = await request.newContext({ baseURL })</code></strong>
+<strong>Qué es:</strong> el servicio importa <code>request</code> de <code>@playwright/test</code> y crea su propio contexto HTTP; el tipo de ese contexto es <code>APIRequestContext</code>.
+<strong>Por qué así (y no la alternativa obvia):</strong> <code>request.newContext()</code> levanta un cliente HTTP <strong>sin navegador</strong>. La alternativa <code>page.request</code> existe, pero exige una <code>page</code> (y por tanto un browser arrancado), que aquí no se necesita para nada.
+<strong>Qué pasa si lo cambias:</strong> si usaras <code>page.request</code>, tendrías que pedir el fixture <code>page</code> y pagar el costo de abrir un navegador por test. Quedarte con <code>request.newContext()</code> es la razón del efecto que verás en el Paso 6: los tests del project <code>api</code> corren en &lt;1s y sin abrir navegador — son llamadas HTTP puras.</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>if (!res.ok()) throw new Error(... ${res.status()} ...)</code></strong>
+<strong>Qué es:</strong> cada método (<code>login</code> aquí, y luego <code>list</code>, <code>createOrder</code>, <code>listMine</code>) chequea <code>res.ok()</code> y, si falla, lanza incluyendo <code>res.status()</code> y el body.
+<strong>Por qué así (y no la alternativa obvia):</strong> <code>res.ok()</code> es <code>true</code> para cualquier 2xx; chequearlo explícito convierte un 4xx/5xx en un error claro <strong>antes</strong> de intentar <code>res.json()</code>. La alternativa &quot;asumir 200 y parsear directo&quot; produciría un crash opaco al deserializar un body de error.
+<strong>Qué pasa si lo cambias:</strong> sin el guard, un login con password inválido devolvería un body de error y <code>res.json()</code> lo parsearía como si fuera el token — el test fallaría más tarde y con un mensaje confuso. Justamente <code>auth.spec.ts</code> valida <code>rejects.toThrow(/Login failed/)</code> apoyado en este patrón.</p>
+</blockquote>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>this.api.post(this.url(&quot;/login&quot;), { data: { ... } })</code></strong>
+<strong>Qué es:</strong> los POST mandan el body con la opción <code>data</code> (objeto JS), no <code>form</code>.
+<strong>Por qué así (y no la alternativa obvia):</strong> <code>data</code> con un objeto serializa a <strong>JSON</strong> y fija <code>Content-Type: application/json</code>, que es lo que espera el backend de OmniPizza. <code>form</code> enviaría <code>application/x-www-form-urlencoded</code>, otro formato de body.
+<strong>Qué pasa si lo cambias:</strong> si cambias <code>data</code> por <code>form</code>, el backend recibe campos urlencoded en vez de JSON; lo más probable es un 4xx (body no parseable como JSON) y, gracias al guard de <code>res.ok()</code> de arriba, un <code>Error</code> con el status real.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — factory con <code>static</code></strong>
+Un método <code>static</code> pertenece a la <strong>clase</strong>, no a la instancia: se llama como <code>AuthService.create(...)</code>, sin haber creado nada todavía. Lo usamos porque la construcción es <strong>asíncrona</strong> (<code>await request.newContext(...)</code>) y un <code>constructor</code> en TS/JS <strong>no puede ser <code>async</code></strong>. El factory <code>static async create()</code> envuelve ese <code>await</code> y devuelve la instancia ya armada.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-05-classes/">TS · M05 — Clases</a>. Aquí lo aplicas para construir cada servicio con su <code>APIRequestContext</code> (y, en las hijas con auth, sus headers) ya conectado.</p>
+</blockquote>
+<blockquote><p>🔷 <strong>TypeScript — genéricos <code>Promise&lt;T&gt;</code></strong>
+<code>Promise&lt;LoginResponse&gt;</code> es un <strong>genérico</strong>: <code>Promise</code> es el contenedor y <code>&lt;LoginResponse&gt;</code> el tipo que resuelve dentro. Al hacer <code>await auth.login(user)</code> TypeScript ya sabe que tienes un <code>LoginResponse</code> (con su <code>access_token</code>), no un <code>any</code>. Cambia el <code>&lt;LoginResponse&gt;</code> del retorno de <code>login()</code> por <code>&lt;any&gt;</code> y verás que el tipo del genérico deja de propagarse: quien hace <code>await</code> pierde el autocompletado de <code>access_token</code>.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-03-functions/">TS · M03 — Funciones</a> (<code>async</code>/<code>await</code> y el tipo de retorno <code>Promise&lt;T&gt;</code>). Aquí lo aplicas a cada método de servicio para que el <code>await</code> devuelva el contrato correcto y no <code>any</code>.</p>
+</blockquote>
+<p><strong>2.4 — Escribir <code>services/PizzaService.ts</code> y <code>services/OrderService.ts</code> (mismo molde, con auth)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo las otras dos hijas. Ambas implementan <code>basePath()</code> y un factory <code>create(baseURL, token, country)</code> que usa <code>createAuthedContext</code> para meter <code>Authorization: Bearer</code> + <code>X-Country-Code</code>.</li>
+<li><strong>Por qué:</strong> <code>Pizza</code> y <code>Order</code> necesitan <strong>token y mercado</strong>, a diferencia de <code>Auth</code> (que aún no tiene token). El header <code>X-Country-Code</code> hace que el backend filtre por mercado. <code>PizzaService</code> es la base del <strong>reto</strong> (le añadirás métodos después).</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> verde con las 3 hijas implementadas.</li>
+</ul>
+<div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { BaseService } from "./BaseService";
+import { createAuthedContext } from "./AuthService";
+import type { CountryCode, Pizza, PizzasResponse } from "../types";
+
+export class PizzaService extends BaseService {
+  protected basePath(): string {
+    return "/api/pizzas";
+  }
+
+  static async create(
+    baseURL: string,
+    token: string,
+    country: CountryCode,
+  ): Promise&lt;PizzaService&gt; {
+    const api = await createAuthedContext(baseURL, token, {
+      "X-Country-Code": country,
+    });
+    return new PizzaService(api, baseURL);
+  }
+
+  async list(): Promise&lt;Pizza[]&gt; {
+    const res = await this.api.get(this.url(""));
+    if (!res.ok()) {
+      throw new Error(`list pizzas failed (${res.status()}): ${await res.text()}`);
+    }
+    const body = (await res.json()) as PizzasResponse;
+    return body.pizzas ?? [];
   }
 }</code></pre></div>
-<p>📄 <code>services/index.ts</code> (barrel):</p>
+<p><code>OrderService.ts</code> sigue exactamente el mismo molde (<code>basePath() → &quot;/api/orders&quot;</code>, factory con auth, <code>createOrder()</code> y <code>listMine()</code>).</p>
+<p><strong>2.5 — Escribir <code>services/index.ts</code> (barrel export)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> reexporto las 3 clases y el helper desde un solo <code>index.ts</code>.</li>
+<li><strong>Por qué:</strong> así los specs importan <code>from &quot;../services&quot;</code> en una línea, en vez de cuatro rutas distintas. Es la fachada pública de la capa.</li>
+<li><strong>Cómo verifico:</strong> en <code>ejemplo.spec.ts</code>, <code>import { AuthService, PizzaService } from &quot;../services&quot;</code> resuelve sin error.</li>
+</ul>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">export { BaseService } from "./BaseService";
 export { AuthService, createAuthedContext } from "./AuthService";
 export { OrderService } from "./OrderService";
 export { PizzaService } from "./PizzaService";</code></pre></div>
-<p>(<code>PizzaService</code> y <code>OrderService</code> siguen el mismo molde — los completas con el ejemplo.)</p>
 <hr>
 <h3 id="paso-3-ajustes-a-playwrightconfigts-estado-al-terminar-m05">Paso 3 — Ajustes a <code>playwright.config.ts</code> (estado al terminar M05)</h3>
-<p>Hay que <strong>añadir el project <code>api</code></strong>. NO depende del setup ni hereda storageState.</p>
-<p>Diff sobre el config de M04: dentro del array <code>projects</code>, agrega:</p>
+<blockquote><p><strong>📐 Config — cambios vs M04</strong></p>
+<div class="code-block"><span class="code-lang">diff</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-diff">  projects: [
+    { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
+-   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/] },
++   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/] },
+    // (mismo testIgnore ampliado para ui-firefox y ui-webkit)
++   { name: "api",
++     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
++     testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/] },
+  ]</code></pre></div>
+<p><strong>Se mantiene:</strong> projects <code>setup</code> + 3 browsers. <strong>Entra:</strong> project <code>api</code> — <strong>sin <code>storageState</code> y sin <code>dependencies</code></strong> (aislado a propósito: las cookies de UI no deben contaminar los tests de API); y el <code>testIgnore</code> de los ui-* ahora excluye también los tests de API para que no se corran como UI.</p>
+</blockquote>
+<p><strong>3.1 — Añadir el project <code>api</code> (sin <code>storageState</code>, sin <code>dependencies</code>)</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> dentro del array <code>projects</code> agrego un cuarto project <code>api</code> que solo fija <code>baseURL</code> (el backend) y su <code>testMatch</code>.</li>
+<li><strong>Por qué:</strong> los tests de API se autentican solos — <code>AuthService.create()</code> hace login y obtiene un <code>access_token</code> fresco que <code>PizzaService</code>/<code>OrderService</code> inyectan como <code>Authorization: Bearer</code>. NO deben heredar las cookies de UI (la sesión de navegador que el setup deja en <code>.auth/user.json</code>) ni esperar al setup project — el aislamiento es intencional.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec playwright test --list --project=api</code> lista los specs de <code>tests/api/</code> y de <code>modulo-05-api-layer/</code>.</li>
+</ul>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">{
   name: "api",
   use: {
@@ -661,7 +792,15 @@ export { PizzaService } from "./PizzaService";</code></pre></div>
   },
   testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
 },</code></pre></div>
-<p>Y <strong>excluye</strong> la carpeta del módulo 5 de los <code>ui-*</code> (para que no la corran sin headers de API):</p>
+<blockquote><p>🔍 <strong>Detalle que parece obvio — <code>{ name: &quot;api&quot;, ... }</code> sin <code>storageState</code>, sin <code>dependencies</code></strong>
+<strong>Qué pasa si lo cambias:</strong> si le agregas <code>storageState</code>, Playwright intentaría cargar cookies de UI en un <code>APIRequestContext</code> que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas <code>dependencies: [&quot;setup&quot;]</code>, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume.</p>
+</blockquote>
+<p><strong>3.2 — Excluir la carpeta del módulo y <code>tests/api/</code> de los <code>ui-*</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> amplío el <code>testIgnore</code> de <code>ui-chromium</code>, <code>ui-firefox</code> y <code>ui-webkit</code> para que ignoren <code>tests/api/</code> y <code>modulo-05-api-layer/</code>.</li>
+<li><strong>Por qué:</strong> sin esto, los projects de UI intentarían correr los tests de API <strong>sin headers de API</strong> (y arrancando un navegador inútil). Un mismo archivo pertenece o no a un project según las reglas de match/ignore.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec playwright test --list --project=ui-chromium</code> ya <strong>no</strong> muestra los specs de API.</li>
+</ul>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">{
   name: "ui-chromium",
   // ...
@@ -715,12 +854,22 @@ export default defineConfig({
     },
   ],
 });</code></pre></div>
-<p>Añade los scripts de M05 al <code>package.json</code>:</p>
+<p><strong>3.3 — Añadir los scripts de M05 a <code>package.json</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> agrego <code>m5</code> (corre solo este módulo en el project api) y <code>test:api</code> (la suite API completa).</li>
+<li><strong>Por qué:</strong> atajos memorables para el alumno; <code>--project=api</code> evita arrancar UI/setup sin querer.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm m5</code> y <code>pnpm test:api</code> arrancan sin &quot;missing script&quot;.</li>
+</ul>
 <div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">"scripts": {
   "m5": "playwright test modulo-05-api-layer --project=api",
   "test:api": "playwright test --project=api"
 }</code></pre></div>
-<p>Y verifica que <code>tsconfig.json</code> incluya <code>services/</code>:</p>
+<p><strong>3.4 — Confirmar que <code>tsconfig.json</code> incluye <code>services/</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> reviso que el array <code>include</code> de <code>tsconfig.json</code> tenga <code>&quot;services/**/*.ts&quot;</code>.</li>
+<li><strong>Por qué:</strong> si la nueva carpeta no está en <code>include</code>, <code>pnpm typecheck</code> no la chequea y los errores de tipo de los servicios pasarían desapercibidos.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> reporta errores de <code>services/</code> cuando los introduces a propósito (y ninguno cuando el código está bien).</li>
+</ul>
 <div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
   "include": [
     "playwright.config.ts",
@@ -741,47 +890,45 @@ pnpm exec playwright test --project=api                                  # los c
 </aside>
 <hr>
 <h3 id="paso-4-lectura-guiada-de-servicesbaseservicets">Paso 4 — Lectura guiada de <code>services/BaseService.ts</code></h3>
-<p>Abre el archivo y señala punto por punto:</p>
-<ol>
-<li><strong><code>export abstract class BaseService</code></strong> — la palabra <strong><code>abstract</code> aparece por primera vez en el curso</strong>. Hazlo explícito en voz alta.</li>
-<li><strong><code>protected constructor(...)</code></strong> — protegido, no público. Eso significa que <strong>no puedes hacer <code>new BaseService(...)</code> desde fuera</strong>. Solo las hijas pueden llamarlo (vía <code>super(...)</code>).</li>
-<li><strong><code>protected abstract basePath(): string</code></strong> — método sin implementación. Cada hijo DEBE proveerlo o TS no compila.</li>
-<li><strong><code>url(path)</code></strong> — helper compartido por todas las hijas: junta <code>baseURL + basePath() + path</code>.</li>
-<li><strong><code>dispose()</code></strong> — cierra el <code>APIRequestContext</code>. Si no lo llamas, hay leaks.</li>
-</ol>
-<aside class="callout callout--tip"><p>💡 <strong>Pruébalo en vivo:</strong> abre un editor y escribe <code>const x = new BaseService(...)</code>. TypeScript debe quejarse con <strong>&quot;Cannot create an instance of an abstract class&quot;</strong>. Eso es el valor de <code>abstract</code> en una sola línea. (No guardes el archivo — es solo para demostrarlo).</p>
-</aside>
+<p><strong>4.1 — Leer el contrato línea por línea</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>BaseService.ts</code> y señalo en voz alta: <code>export abstract class</code> (primera vez en el curso), <code>protected constructor</code> (nadie de fuera puede <code>new</code>), <code>protected abstract basePath()</code> (cada hija lo DEBE definir), <code>url()</code> (helper compartido) y <code>dispose()</code> (cierra el contexto HTTP).</li>
+<li><strong>Por qué:</strong> entender el molde antes de ver las hijas hace obvio por qué <code>AuthService</code> &quot;solo&quot; declara <code>basePath()</code> y el factory: todo lo demás lo heredó.</li>
+<li><strong>Cómo verifico (en vivo):</strong> escribo <code>const x = new BaseService(...)</code> en un editor; TypeScript se queja con <strong>&quot;Cannot create an instance of an abstract class&quot;</strong>. Ese error en una línea es el valor de <code>abstract</code>. (No guardo el archivo — es solo demostración.)</li>
+</ul>
 <hr>
 <h3 id="paso-5-lectura-guiada-de-authservicets-y-pizzaservicets">Paso 5 — Lectura guiada de <code>AuthService.ts</code> y <code>PizzaService.ts</code></h3>
-<p>Cosas que señalar:</p>
+<p><strong>5.1 — Identificar el patrón factory + auth + dispose</strong></p>
 <ul>
-<li><strong><code>static async create(...)</code></strong> — el factory. Reemplaza al <code>new ServiceX(...)</code> directo porque necesita <strong>construcción async</strong> (Playwright crea el <code>APIRequestContext</code> con <code>await playwright.request.newContext(...)</code>).</li>
-<li><strong><code>createAuthedContext(baseURL, token, extraHeaders)</code></strong> — helper que inyecta <code>Authorization: Bearer &lt;token&gt;</code> y <code>X-Country-Code</code> en TODAS las requests del contexto.</li>
-<li>Cada servicio <strong>implementa <code>basePath()</code></strong> — TS no compila sin eso.</li>
-<li>Tras usar, <strong>siempre <code>await service.dispose()</code></strong> — recuérdalo al grupo varias veces.</li>
+<li><strong>Qué hago:</strong> recorro las hijas y marco: <code>static async create(...)</code> (el factory, porque la construcción es <code>async</code>); <code>createAuthedContext(baseURL, token, extraHeaders)</code> (inyecta <code>Authorization: Bearer</code> + <code>X-Country-Code</code> en TODAS las requests); cada servicio implementa <code>basePath()</code> (sin eso TS no compila); y <code>await service.dispose()</code> al final de cada uso.</li>
+<li><strong>Por qué:</strong> es el patrón que se repite en los 3 servicios — &quot;un servicio por endpoint family, factory async, dispose siempre&quot;. Reconocerlo aquí evita explicarlo 3 veces.</li>
+<li><strong>Cómo verifico:</strong> en el editor, autocompletar <code>pizzas.</code> muestra <code>list</code>, <code>create</code> y <code>dispose</code>; <code>AuthService.create</code> aparece como <code>static</code>.</li>
 </ul>
 <hr>
 <h3 id="paso-6-correr-la-suite-api">Paso 6 — Correr la suite API</h3>
+<p><strong>6.1 — Ejecutar solo el project <code>api</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> corro <code>pnpm test:api</code> (o <code>pnpm exec playwright test --project=api</code>).</li>
+<li><strong>Por qué:</strong> valida que servicios + config + specs encajan, sin arrancar UI ni setup. Son llamadas HTTP puras: por eso corren en &lt;1s cada una.</li>
+<li><strong>Cómo verifico:</strong> el HTML report muestra los tests de <code>tests/api/*.spec.ts</code> <strong>y</strong> el <code>ejemplo.spec.ts</code> de este módulo en verde, sin que se abra ningún navegador. (La primera corrida del día puede tardar 30-40s por el cold start de Render.)</li>
+</ul>
 <div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash"><span class="hl-comment"># Solo el project api (sin UI projects ni setup)</span>
 pnpm test:api
 
 <span class="hl-comment"># O directamente</span>
 pnpm exec playwright test --project=api</code></pre></div>
-<p><strong>Qué debería pasar:</strong></p>
-<ul>
-<li>Verás los tests de <code>tests/api/*.spec.ts</code> + el <code>ejemplo.spec.ts</code> de este módulo.</li>
-<li>Los tests <strong>no abren navegador</strong> — son llamadas HTTP puras. Por eso son rápidos.</li>
-<li>En la primera corrida del día puede tardar 30-40s (cold start de Render).</li>
-</ul>
 <hr>
 <h3 id="paso-7-lectura-guiada-del-flujo-del-ejemplospects">Paso 7 — Lectura guiada del flujo del <code>ejemplo.spec.ts</code></h3>
-<p>Identifica el patrón con el grupo:</p>
-<ol>
-<li><strong>Auth</strong>: <code>AuthService.create(API_URL)</code> → <code>auth.login(user)</code> → guardas el <code>access_token</code> → <code>auth.dispose()</code>.</li>
-<li><strong>Reutilización del token</strong>: el mismo token se usa en cada <code>PizzaService.create(...)</code>.</li>
-<li><strong>Iteración por mercado</strong>: el bucle <code>for (const market of markets)</code> crea un <code>PizzaService</code> por mercado, lista pizzas, valida currency, dispose.</li>
-</ol>
-<p><strong>Patrón clave que repetir en voz alta:</strong> <em>&quot;un servicio por endpoint family, factory async, dispose siempre&quot;</em>.</p>
+<p><strong>7.1 — Trazar el flujo auth → list por mercado</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> identifico con el grupo las 3 fases del test: (1) <strong>Auth</strong> — <code>AuthService.create(API_URL)</code> → <code>auth.login(user)</code> → guardo el <code>access_token</code> → <code>auth.dispose()</code>; (2) <strong>Reutilización del token</strong> — el mismo token alimenta cada <code>PizzaService.create(...)</code>; (3) <strong>Iteración por mercado</strong> — <code>for (const market of markets)</code> crea un <code>PizzaService</code> por mercado, lista pizzas, valida <code>currency</code>, dispose.</li>
+<li><strong>Por qué:</strong> es el patrón canónico de la capa de API — <em>&quot;un servicio por endpoint family, factory async, dispose siempre&quot;</em>. El <code>for...of</code> sobre <code>markets</code> es data-driven puro (un <code>for</code>, no una API mágica de Playwright).</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm exec playwright test modulo-05-api-layer/ejemplo.spec.ts --project=api</code> pasa en verde; el report muestra el flujo completo sin abrir navegador.</li>
+</ul>
+<blockquote><p>🔷 <strong>TypeScript — union types para errores (<code>Order | ApiError</code>)</strong>
+Un <strong>union type</strong> dice &quot;esto es A <strong>o</strong> B&quot;. Míralo en negativo: sin el guard de <code>res.ok()</code> + <code>throw</code> temprano, la firma honesta de <code>createOrder()</code> (en <code>OrderService</code>) sería <code>Promise&lt;Order | ApiError&gt;</code> — y <strong>cada</strong> llamada tendría que <strong>estrechar</strong> (narrow) el union antes de tocar un campo de <code>Order</code>. El <code>throw</code> temprano saca el camino de error de la firma y te deja devolver un <code>Promise&lt;Order&gt;</code> limpio; <code>ApiError</code> (en <code>types/omnipizza.d.ts</code>) describe la forma del body de error que el backend devuelve.
+📚 Lo viste en <a href="../../typescript-qa-course/modulo-04-objects-types/">TS · M04 — Tipos de objetos</a> (uniones y forma de objetos). Aquí el guard de <code>res.ok()</code> es lo que te ahorra cargar ese union en cada firma de la capa.</p>
+</blockquote>
 <hr>
 <h3 id="paso-8-comparativa-con-ui-5-min">Paso 8 — Comparativa con UI (5 min)</h3>
 <p>Mide en el pizarrón:</p>
@@ -817,15 +964,40 @@ pnpm exec playwright test --project=api</code></pre></div>
 <p><strong>Mensaje:</strong> la API es la base de la pirámide. <strong>No reemplaza</strong> los E2E de UI; los <strong>acompaña</strong>.</p>
 <hr>
 <h3 id="paso-9-resolver-el-reto">Paso 9 — Resolver el reto</h3>
-<p>Tienes que extender <code>PizzaService</code> con DOS métodos nuevos: <code>getByMarket(market)</code> y <code>getById(id)</code>. Y luego escribir un test que los use juntos.</p>
-<p>El reto sigue <strong>Qué hacer / Pista / Cómo verificar</strong> por cada TODO, indicando dónde escribir cada método dentro de <code>services/PizzaService.ts</code>.</p>
+<p><strong>9.1 — Extender <code>PizzaService</code> con <code>getByMarket</code> y <code>getById</code>, y escribir el test</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> abro <code>modulo-05-api-layer/reto.spec.ts</code> y sigo sus TODOs. Añado <strong>dos métodos públicos</strong> a <code>services/PizzaService.ts</code> (<code>getByMarket(market)</code> y <code>getById(id)</code>) junto al <code>list()</code> existente, y luego escribo un test que los use juntos.</li>
+<li><strong>Por qué:</strong> practica el patrón &quot;un método por endpoint&quot; dentro de una hija concreta de <code>BaseService</code>. El reto <strong>conserva sus TODOs</strong> a propósito — el dolor de implementarlo es el ejercicio; no lo resuelvas aquí.</li>
+<li><strong>Cómo verifico:</strong> <code>pnpm typecheck</code> pasa con los métodos nuevos, y <code>pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api</code> queda en verde (tras quitar el <code>test.skip</code>).</li>
+</ul>
+<blockquote><p>El reto sigue <strong>Qué hacer / Pista / Cómo verificar</strong> por cada TODO, indicando dónde escribir cada método dentro de <code>services/PizzaService.ts</code>. Los TODOs se quedan sin resolver en este README — vívelos en el archivo.</p>
+</blockquote>
 <hr>
-<h2 id="comandos-útiles">Comandos útiles</h2>
-<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">pnpm test:api                                    # sólo tests/api/ + modulo-05
-pnpm exec playwright test --project=api          # equivalente
-pnpm exec playwright test tests/api/auth.spec.ts # un spec específico
-pnpm exec playwright test --grep @api            # por tag
-pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api</code></pre></div>
+<h3 id="paso-10-versiona-tu-trabajo-git-jit">Paso 10 — Versiona tu trabajo (Git JIT)</h3>
+<p><strong>10.1 — Commitear la capa de API</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> agrego solo lo que toca este módulo y commiteo con un mensaje convencional.</li>
+<li><strong>Por qué:</strong> la capa de servicios + su config + el módulo son una unidad coherente. Un commit por capa deja un historial legible (y, en M06, fácil de revertir en CI).</li>
+<li><strong>Cómo verifico:</strong> <code>git log --oneline -1</code> muestra el commit <code>feat(m05): ...</code> en la cima.</li>
+</ul>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add services tests/api playwright.config.ts modulo-05-api-layer
+git commit -m "feat(m05): API layer con BaseService abstracta"
+git log --oneline -1</code></pre></div>
+<blockquote><p>🪟 <strong>Windows / PowerShell:</strong> los comandos <code>git</code> son idénticos; no necesitas escapar nada aquí.</p>
+</blockquote>
+<hr>
+<h2 id="cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</h2>
+<ul>
+<li><strong>Comando del módulo (project api):</strong> <code>pnpm m5</code></li>
+<li><strong>Suite API completa:</strong> <code>pnpm test:api</code></li>
+<li><strong>UI mode:</strong> <code>pnpm test:ui</code></li>
+<li><strong>Debug:</strong> <code>pnpm test:debug</code></li>
+<li><strong>Filtrar:</strong> por tag (<code>pnpm exec playwright test --grep &quot;@api&quot;</code> / <code>--grep &quot;@regression&quot;</code>) o por archivo (<code>pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api</code>)</li>
+<li><strong>Ver el reporte:</strong> <code>pnpm report</code></li>
+<li><strong>🪟 Windows / PowerShell:</strong> las variables de entorno van con <code>$env:VAR=&quot;x&quot;; pnpm m5</code> (no <code>VAR=x pnpm m5</code>). Ej.: <code>$env:API_URL=&quot;https://mi-backend&quot;; pnpm m5</code></li>
+</ul>
+<blockquote><p>M05 corre contra el <strong>backend</strong> (<code>API_URL</code>), no el frontend (<code>BASE_URL</code>). El project <code>api</code> ya apunta a <code>process.env.API_URL ?? &quot;https://omnipizza-backend.onrender.com&quot;</code>.</p>
+</blockquote>
 <hr>
 <h2 id="outcome-esperado">Outcome esperado</h2>
 <ul>

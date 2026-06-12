@@ -428,19 +428,34 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
         <br><strong>Pieza que suma al framework:</strong> Sublección del Módulo 00: Git esencial
       </p>
     </header>
+<h1 id="1-configuración-inicial-los-3-estados">1. Configuración inicial + los 3 estados</h1>
 <h2 id="11-identidad-para-tus-commits">1.1 Identidad para tus commits</h2>
-<p>Cada commit queda firmado con tu nombre y correo. Configúralos <strong>antes</strong> del primer commit:</p>
+<p><strong>1.1.1 — Configura tu nombre, correo y rama por defecto</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> tres comandos <code>git config --global</code>, <strong>antes</strong> de tu primer commit:</li>
+</ul>
 <div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git config --global user.name "Tu Nombre"
 $ git config --global user.email "tu@correo.com"
 $ git config --global init.defaultBranch main</code></pre></div>
-<aside class="callout callout--warn"><p>⚠️ Usa el mismo correo de tu cuenta de GitHub. De lo contrario, tus commits aparecen como &quot;autor desconocido&quot; en los Pull Requests.</p>
+<ul>
+<li><strong>Por qué:</strong> cada commit queda <strong>firmado</strong> con tu nombre y correo (es lo que verás en <code>git log</code> y en los Pull Requests). Si no lo configuras antes del primer commit, Git puede fallar o firmar con datos basura. <code>init.defaultBranch main</code> hace que cada <code>git init</code> nuevo arranque en <code>main</code> (en vez del antiguo <code>master</code>).</li>
+<li><strong>Cómo verifico:</strong> lo confirmas en el paso 1.2 con <code>git config --list --global</code>.</li>
+</ul>
+<aside class="callout callout--warn"><p>⚠️ Usa el mismo correo de tu cuenta de GitHub. De lo contrario, tus commits aparecen como &quot;autor desconocido&quot; en los Pull Requests y no se enlazan a tu perfil.</p>
 </aside>
 <h2 id="12-verificar-configuración">1.2 Verificar configuración</h2>
+<p><strong>1.2.1 — Confirma que la identidad quedó registrada</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git config --list --global</code></li>
+<li><strong>Por qué:</strong> quieres ver, antes de seguir, que tu nombre y correo realmente quedaron guardados. Lo que pones con <code>--global</code> vive en <code>~/.gitconfig</code> (Windows: <code>C:\Users\&lt;tú&gt;\.gitconfig</code>) y aplica a <strong>todos</strong> tus repos.</li>
+<li><strong>Cómo verifico:</strong> la salida incluye tus tres líneas:</li>
+</ul>
 <div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">$ git config --list --global
 user.name=Tu Nombre
 user.email=tu@correo.com
 init.defaultBranch=main</code></pre></div>
-<p>Lo que pones con <code>--global</code> queda en <code>~/.gitconfig</code> y aplica a todos tus repos. Si trabajas con múltiples identidades (laboral / personal), puedes sobreescribir por repo con <code>--local</code> dentro de cada carpeta.</p>
+<aside class="callout callout--tip"><p>💡 ¿Trabajas con dos identidades (laboral / personal)? Puedes sobreescribir el correo <strong>por repo</strong> con <code>git config --local user.email &quot;...&quot;</code> dentro de cada carpeta — el <code>--local</code> gana sobre el <code>--global</code> solo en ese repo.</p>
+</aside>
 <h2 id="13-los-3-estados-de-un-archivo">1.3 Los 3 estados de un archivo</h2>
 <aside class="callout callout--big-idea"><p>🎯 <strong>Idea grande:</strong> un archivo en Git <strong>siempre</strong> está en uno de 3 lugares. Saber en cuál estás es la mitad del trabajo — el resto son comandos para moverlo.</p>
 </aside>
@@ -473,18 +488,26 @@ init.defaultBranch=main</code></pre></div>
 </tr>
 </tbody></table>
 <h3 id="ejemplo-paseado-un-test-viaja-por-los-3-estados">Ejemplo paseado: un test viaja por los 3 estados</h3>
-<p>Imagina que editas <code>login.spec.ts</code>:</p>
-<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">1) Escribes el test en VS Code              →  Working
-   git status: "modified: login.spec.ts"
-
-2) Decides que ese cambio sí va al commit    →  Staging
-   git add login.spec.ts
-   git status: "Changes to be committed: login.spec.ts"
-
-3) Lo grabas en el historial                 →  Repository
-   git commit -m "test: add login happy path"
-   git status: "nothing to commit, working tree clean"</code></pre></div>
-<p>Después del paso 3, ese commit queda en <code>.git/</code> para siempre — aunque borres el archivo del editor, puedes recuperarlo.</p>
+<p>Imagina que editas <code>login.spec.ts</code>. Cada parada tiene su comando y su señal observable:</p>
+<p><strong>1.3.1 — Working: editas en el editor</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> escribes/cambias el test en VS Code y guardas (<code>Ctrl+S</code>).</li>
+<li><strong>Por qué:</strong> guardar en el editor solo afecta al <strong>working directory</strong>. Git lo ve, pero todavía no lo sigue para el próximo commit.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> dice <code>modified: login.spec.ts</code> (en rojo, bajo <em>Changes not staged</em>).</li>
+</ul>
+<p><strong>1.3.2 — Staging: marcas que ese cambio sí va</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git add login.spec.ts</code></li>
+<li><strong>Por qué:</strong> mueves el archivo a la <strong>sala de espera</strong>. Estás declarando &quot;esto entra al próximo commit&quot; — pero aún no está grabado.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> ahora lo lista bajo <code>Changes to be committed:</code> (en verde).</li>
+</ul>
+<p><strong>1.3.3 — Repository: lo grabas en el historial</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> <code>git commit -m &quot;test: add login happy path&quot;</code></li>
+<li><strong>Por qué:</strong> tomas la <strong>foto definitiva</strong> de lo que estaba en staging y la guardas en <code>.git/</code>. A partir de aquí, aunque borres el archivo del editor, puedes recuperarlo.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> dice <code>nothing to commit, working tree clean</code>.</li>
+</ul>
+<p>Después del paso 1.3.3, ese commit queda en <code>.git/</code> para siempre — la foto ya no se pierde con un <code>Ctrl+Z</code>.</p>
 <h3 id="por-qué-importa-el-staging">Por qué importa el staging</h3>
 <p>El staging es la <strong>sala de espera</strong> donde decides exactamente qué cambios entran al próximo commit. Si tocas 5 archivos pero sólo dos pertenecen a la misma feature, agregas sólo esos dos al staging y los commiteas juntos. Los otros tres quedan en working dir para un commit aparte.</p>
 <aside class="callout callout--tip"><p>💡 <strong>Analogía QA — reporte de bugs:</strong></p>

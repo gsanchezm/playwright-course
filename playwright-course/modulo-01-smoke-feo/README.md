@@ -119,32 +119,33 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 - **Cómo verifico:**
   ```bash
   pnpm list @playwright/test          # aparece, con la versión que instaló el installer
-  cat package.json | grep -A 8 '"scripts"'   # ves los scripts base
-  ls playwright.config.ts tests/      # el config y la carpeta tests existen
+  cat package.json                    # busca la sección "scripts": ves los scripts base
+  ls playwright.config.ts             # el config existe
+  ls tests                            # la carpeta tests existe
   ```
 
 > 💡 **¿Por qué `pnpm` y no `npm`/`npx`?**
-> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). `pnpm create playwright` es el equivalente a `npm init playwright@latest`. Si nunca usaste pnpm: `corepack enable && corepack prepare pnpm@latest --activate`.
+> Este curso usa **pnpm** (más rápido, mejor con disk space, lockfile más estable). `pnpm create playwright` es el equivalente a `npm init playwright@latest`. Si nunca usaste pnpm: `corepack enable` y luego `corepack prepare pnpm@latest --activate`.
 
 **1.2 — Mirar lo que el installer dejó (antes de tocar nada)**
 - **Qué hago:** inspecciono el scaffold tal cual quedó:
   ```bash
-  ls -la                       # .gitignore, playwright.config.ts, package.json, tests/, .github/
+  ls                           # playwright.config.ts, package.json, tests/ (los dotfiles .gitignore y .github/ no salen en bash; míralos en VS Code)
   cat playwright.config.ts     # fíjate: testDir "./tests", 3 projects, un bloque dotenv COMENTADO
   cat .gitignore               # trae /playwright/.auth/  … pero NO trae .env
   ```
 - **Por qué:** antes de reconciliar hay que **ver el punto de partida**. Tres cosas que vas a tocar en los Pasos 3-4: (1) el `.gitignore` del installer **no** ignora `.env`; (2) el config trae un bloque `dotenv` **comentado** — el installer ya te dejó el hook, solo hay que encenderlo; (3) `testDir` apunta a `./tests`, pero el curso vive en `modulo-*/`.
 - **Cómo verifico:** ves en `playwright.config.ts` un comentario tipo `// import dotenv from 'dotenv'` / `// dotenv.config(...)` (comentado) y `projects` con `chromium`, `firefox` y `webkit`.
 
-**1.3 — Añadir la única dependencia que el installer NO trae: `dotenv`**
+**1.3 — Añadir las dependencias que el installer NO trae: `dotenv` y `typescript`**
 - **Qué hago:**
   ```bash
-  pnpm add -D dotenv
+  pnpm add -D dotenv typescript
   ```
-- **Por qué:** el installer instaló `@playwright/test` y los navegadores, pero `dotenv` (para leer `.env` → `process.env`) **no** viene en el scaffold. El config trae el *hook comentado* pero falta la librería. Con `-D` queda en `devDependencies` (solo desarrollo/testing).
+- **Por qué:** el installer instaló `@playwright/test` y los navegadores, pero **dos piezas no vienen** en el scaffold: (1) `dotenv`, para leer `.env` → `process.env` — el config trae el *hook comentado* pero falta la librería; (2) `typescript`, el CLI `tsc` que usarás en todos los `pnpm exec tsc --noEmit` del curso y en el `tsc --init` del Paso 5. ¿Por qué el installer no lo trae? Porque Playwright **transpila tus specs por su cuenta, sin `tsc`** — pero nosotros sí queremos el type-check explícito. Con `-D` quedan en `devDependencies` (solo desarrollo/testing).
 - **Cómo verifico:**
   ```bash
-  pnpm list dotenv     # aparece con su versión
+  pnpm list dotenv typescript     # aparecen ambos con su versión
   ```
 
 > 🔷 **TypeScript — `import` por side-effect**
@@ -164,7 +165,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 - **Por qué:** el `.env` real **no está en el repo** (lo excluye `.gitignore`), pero sí versionamos `.env.example` como plantilla. Copiarla te da un `.env` con los valores correctos sin exponer secrets en Git.
 - **Cómo verifico:**
   ```bash
-  ls -la .env
+  ls .env
   cat .env
   ```
   Debería verse así (los valores ya están listos para OmniPizza, no los cambies):
@@ -201,15 +202,12 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 - **Cómo verifico:** ves las entradas de Playwright, pero **no** ves `.env` en la lista.
 
 **3.2 — Añadir las líneas de secretos (`.env` + `.auth/`)**
-- **Qué hago:** **añado** (no reemplazo) al final del `.gitignore` que ya existe:
-  ```bash
-  cat >> .gitignore <<'EOF'
-
+- **Qué hago:** **añado** (no reemplazo) al final del `.gitignore` que ya existe. Abro el archivo en VS Code (`code .gitignore`) y pego al final estas líneas:
+  ```
   # --- Añadido en M01: secrets y storageState ---
   .env
   .env.local
   .auth/
-  EOF
   ```
 - **Por qué:** las entradas `.env` y `.auth/` son **críticas**. Si las olvidas, terminas pusheando secrets al repo. En M00 ya viste el **concepto** de `.gitignore` con un mínimo; aquí lo **consolidas** mergeando el del installer con esas dos líneas. (`.auth/` aún no existe, pero lo dejas listo: en M04 guardará el `storageState` de sesión.)
 - **Cómo verifico:**
@@ -217,7 +215,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   git check-ignore .env          # imprime ".env" → está siendo ignorado
   ```
 
-> ⚠️ **Importante:** `git check-ignore .env` debe imprimir `.env`. Si no imprime nada, el `.env` **no** está ignorado y tus credenciales se commitearían en el Paso 11. (Cuando ejecutas `cat >> .gitignore` dos veces por error, no pasa nada grave: Git ignora líneas duplicadas; aun así revisa que `.env` aparezca **una** vez.)
+> ⚠️ **Importante:** `git check-ignore .env` debe imprimir `.env`. Si no imprime nada, el `.env` **no** está ignorado y tus credenciales se commitearían en el Paso 11. (Si pegas las líneas dos veces por error, no pasa nada grave: Git ignora las entradas duplicadas; aun así revisa que `.env` aparezca **una** vez.)
 
 ---
 
@@ -246,7 +244,7 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
   | `fullyParallel`/`forbidOnly`/`retries`/`workers` (CI) | se quedan **latentes** | La matrix real de CI llega en **M06**; en M01 no estorban |
 
 - **Por qué:** este recorte es la habilidad real. El scaffold sirve para arrancar; el framework de tu equipo es siempre una versión **moldeada** del scaffold. Hacer el diff explícito te enseña qué hace cada flag.
-- **Cómo verifico:** después de editar, `pnpm exec tsc --noEmit` queda limpio y `cat playwright.config.ts | grep -c "firefox\|webkit"` → `0`.
+- **Cómo verifico:** después de editar, abro `playwright.config.ts` y confirmo que ya **no** aparecen `firefox` ni `webkit`; `pnpm exec tsc --noEmit` queda limpio.
 
 **4.2 — Reemplazar el contenido por el estado M01**
 - **Qué hago:** abro el `playwright.config.ts` generado y dejo **este** contenido (es el resultado de aplicar la tabla de 4.1):
@@ -300,25 +298,34 @@ export default defineConfig({
 > 🔷 **TypeScript — operador `??` (nullish coalescing)**
 > `process.env.BASE_URL ?? "https://…"` devuelve el lado derecho **solo si el izquierdo es `null` o `undefined`**. Cuidado con la alternativa obvia `||`: esa cae al fallback también con `""` o `0`, que a veces son valores válidos. `??` es más preciso para "usa esto solo si de verdad falta".
 > 📚 Lo viste en [TS · M02 — Types](../../typescript-qa-course/modulo-02-types/). Aquí lo aplicas como **red de seguridad** del `baseURL` si `.env` no cargó.
+>
+> 🔍 **La trampa de esa red de seguridad — qué pasa si quitas `import "dotenv/config"`** (el import por side-effect que vive arriba del todo del config, justamente para poblar `process.env` antes de que se lea `BASE_URL`): el test **no truena**. Tanto el config (`process.env.BASE_URL ?? "https://..."`) como el spec (`process.env.TEST_USER_USERNAME ?? "standard_user"`) tienen un fallback `??` que apunta a los valores reales de OmniPizza, así que `process.env` queda sin cargar pero el test sigue verde **usando los defaults hardcodeados** — ocultándote que tu `.env` nunca se cargó. El día que un valor real difiera de su fallback, fallarás sin entender por qué.
 
 **4.3 — Borrar el `tests/example.spec.ts` del installer**
-- **Qué hago:**
-  ```bash
-  rm -rf tests/
-  ```
+- **Qué hago:** borro la carpeta `tests/` completa desde el **explorador de VS Code** (click derecho sobre `tests/` → *Delete*). Si prefieres la terminal, no hay comando neutral: bash `rm -rf tests` · 🪟 PowerShell `Remove-Item -Recurse -Force tests`.
 - **Por qué:** el installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — pero deja basura en el árbol. Lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M06.)
-- **Cómo verifico:** `ls tests/ 2>/dev/null` no devuelve nada (la carpeta ya no existe).
+- **Cómo verifico:** `tests/` ya no aparece en `ls`.
 
-**4.4 — Leer el config línea por línea (facilitador):**
+**4.4 — Leer el config línea por línea**
 
-| Línea | Qué hace |
-|---|---|
-| `import "dotenv/config"` | Lo único que conecta `.env` con `process.env` (estaba comentado en el scaffold) |
-| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Patrón de archivos que cuentan como tests (reemplaza el `testDir: "./tests"`) |
-| `timeout: 60_000` | 60s por TC — necesario para el cold start de Render (el scaffold no lo traía) |
-| `baseURL` | El frontend live; `page.goto("/")` lo concatena |
-| `trace: "retain-on-failure"` | Graba la caja negra al fallar (el scaffold usaba `on-first-retry`, inútil sin retries) |
-| `projects: [{ name: "ui-chromium", ... }]` | El único navegador en M01. En M04 vuelven firefox/webkit. |
+| Línea | Qué hace | Por qué este valor en M01 |
+|---|---|---|
+| `import { defineConfig, devices }` | `defineConfig` envuelve el objeto para darte autocompletado y type-check del config; `devices` es el catálogo oficial de perfiles de dispositivo (viewport, userAgent, touch, scale) | Habilita el spread `...devices["Desktop Chrome"]` del project |
+| `import "dotenv/config"` | Import por side-effect: ejecuta `dotenv` y vuelca tu `.env` en `process.env`; no trae símbolos | Va arriba del todo para poblar `process.env` ANTES de que se lea `BASE_URL`; estaba comentado en el scaffold |
+| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz, porque los specs del curso viven en `modulo-*/`, no en `tests/` (el installer ponía `"./tests"`) |
+| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de carpetas `modulo-*`; por eso el `tests/example.spec.ts` del installer nunca correría (lo borraste en 4.3) |
+| `timeout: 60_000` | Presupuesto TOTAL de cada `test()` — todas sus acciones y aserciones juntas; si se agota: `TimeoutError` y el test falla. Default: 30s | Doblado a 60s para absorber el cold start de Render (30-40s el primer request del día) |
+| `expect: { timeout: 10_000 }` | Tope de CADA aserción `expect()` individual; las aserciones web-first reintentan en bucle hasta cumplirse o agotarlo. Default: 5s | 10s da margen a renders lentos sin permitir que UNA aserción se coma el presupuesto del test entero |
+| `reporter: [["html", { open: "never" }], ["list"]]` | Lista de reporters que corren a la vez. `html` genera `playwright-report/` (`open: "never"` = no abre el navegador al terminar; lo abres tú con `pnpm report`); `list` imprime cada test en la terminal según corre | `html` = artefacto compartible (en M06 será el artifact de CI); `list` = feedback inmediato mientras corre |
+| `use: { ... }` | Bloque de opciones compartidas que heredan TODOS los projects y tests; cada project puede sobreescribir campos | Con un solo project parece innecesario — pero es lo que permitirá añadir firefox/webkit en M04 sin duplicar config |
+| `baseURL` | Host base contra el que se resuelven las URLs relativas: `page.goto("/")` y `toHaveURL` se calculan contra él | Viene de `process.env.BASE_URL` (tu `.env`) con fallback `??`; un único lugar para cambiar de entorno |
+| `trace: "retain-on-failure"` | Graba la "caja negra" (timeline, snapshot del DOM por acción, network, consola) de cada test y la conserva SOLO si falla (si pasa, la borra). Valores: `off` / `on` / `on-first-retry` / `retain-on-failure` | El scaffold traía `on-first-retry`, que solo graba al reintentar — inútil sin `retries` en M01: jamás verías un trace. Así tienes el trace desde el primer fallo |
+| `screenshot: "only-on-failure"` | Captura automática del estado final de la página solo cuando el test falla; se adjunta al HTML report | Evidencia visual gratis del momento del fallo, sin ensuciar los runs verdes |
+| `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
+| `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
+| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M04 vuelven firefox/webkit y se monta el setup project |
+| `name: "ui-chromium"` | Identificador del project: lo que pasas en `--project=ui-chromium` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M05 (convención de nombres del curso) |
+| `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
 ---
 
@@ -326,8 +333,12 @@ export default defineConfig({
 
 > **Archivo que se crea en este paso:** `tsconfig.json` (raíz). **Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso.
 
+> **📐 Generar → moldear, otra vez (la filosofía del Paso 4).** El comando oficial para **generar** un `tsconfig.json` desde consola es `pnpm exec tsc --init` (el CLI `tsc` que instalaste en 1.3): genera un archivo con **decenas de opciones comentadas** — otro scaffold genérico, como el config del installer. Aquí aplicamos la misma filosofía del curso, pero ya conocemos el destino: en vez de quedarnos con ese default gigante y recortarlo línea por línea, escribimos directo el **estado curado** del curso.
+
 **5.1 — Escribir el `tsconfig.json`**
-- **Qué hago:** TypeScript necesita saber cómo compilar tus specs; creo el archivo en la raíz:
+- **Qué hago:** TypeScript necesita saber cómo compilar tus specs; creo el archivo en la raíz con el contenido de abajo. La vía más simple es el **editor**: crea `tsconfig.json` en VS Code (`code tsconfig.json`) y pega el JSON. O desde la terminal:
+
+  🐧 **bash:**
 
 ```bash
 test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
@@ -337,6 +348,7 @@ test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
     "module": "commonjs",
     "moduleResolution": "node",
     "strict": true,
+    "exactOptionalPropertyTypes": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -351,10 +363,50 @@ test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
 EOF
 ```
 
+  🪟 **PowerShell** (ojo: el `'@` de cierre va en la **columna 0**, sin indentación, o el here-string no cierra):
+
+```powershell
+@'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "modulo-*/**/*.ts"
+  ]
+}
+'@ | Set-Content -Encoding utf8 tsconfig.json
+```
+
 - **Por qué cada opción importa:**
-  - `"strict": true` — bloquea `any` implícitos, null checks, etc. Es la base del tipado fuerte.
-  - `"resolveJsonModule": true` — necesario para `import marketsJson from "../data/markets.json"` en M02.
-  - `"types": ["node", "@playwright/test"]` — sin esto, `process.env` y `test`/`expect` no tienen tipo.
+
+  | Opción | Qué hace | Por qué en este curso |
+  |---|---|---|
+  | `target: "ES2022"` | A qué versión de JavaScript se traduce tu TS | Node 20 ejecuta ES2022 nativo; sintaxis moderna sin transpilar de más |
+  | `module: "commonjs"` | Formato de módulos que asume/emite (`require`/`module.exports`) | Es lo que el runner de Playwright usa al ejecutar en Node |
+  | `moduleResolution: "node"` | Estrategia para localizar lo que importas (`node_modules`, `index`…) | Resuelve `@playwright/test` y `dotenv` como lo hace Node |
+  | `strict: true` | Enciende la familia completa de chequeos estrictos (`noImplicitAny`, `strictNullChecks`…) | Errores en compile-time, no a mitad de una corrida de 40s |
+  | `exactOptionalPropertyTypes: false` | **NO** forma parte de `strict`; en `true` prohíbe asignar `undefined` explícito a una propiedad opcional (`prop?: T`) | **Debe** quedar en `false` en este curso (ver recuadro ⚠️ abajo) |
+  | `esModuleInterop: true` | Permite `import` default sobre paquetes CommonJS | Sin esto algunos imports de librerías npm obligan a sintaxis rara |
+  | `skipLibCheck: true` | No type-checkea los `.d.ts` de `node_modules` | Compila más rápido y no te bloquean errores de tipos de terceros que no puedes arreglar |
+  | `forceConsistentCasingInFileNames: true` | Error si un import difiere en mayúsculas/minúsculas del archivo real | Windows/macOS lo perdonan, el CI en Linux (M06) no; mata el "funciona en mi máquina" |
+  | `resolveJsonModule: true` | Permite importar `.json` con tipos | Necesario para `import marketsJson from "../data/markets.json"` en M02 |
+  | `types: ["node", "@playwright/test"]` | Qué declaraciones globales se cargan | Sin `node`, `process.env` no tiene tipo; sin `@playwright/test`, `test`/`expect` tampoco |
+  | `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todos los `modulo-*/`: espejo del `testMatch` del Paso 4 |
+
+  > ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
+  > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M06 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M04, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
+
 - **Cómo verifico:**
   ```bash
   pnpm exec tsc --noEmit
@@ -370,11 +422,11 @@ EOF
 **6.1 — Registrar los scripts del curso**
 - **Qué hago:** reviso los scripts que dejó el installer (suele dejar `scripts` casi vacío) y **añado** los que falten:
   ```bash
-  # Ver scripts actuales
-  cat package.json | grep -A 20 '"scripts"'
+  # Ver scripts actuales: busca la sección "scripts"
+  cat package.json
   ```
 - **Por qué:** `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium`. Un atajo memorable evita teclear el comando largo en cada corrida.
-- **Cómo verifico:** `cat package.json | grep '"m1"'` muestra la entrada del script. (Aún no puedes ejecutarlo: el spec file no existe hasta el Paso 7.)
+- **Cómo verifico:** `cat package.json` — confirma que aparece la entrada `"m1"`. (Aún no puedes ejecutarlo: el spec file no existe hasta el Paso 7.)
 
 Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`:
 
@@ -404,13 +456,13 @@ Ahora sí, **el código del módulo**.
 - **Qué hago:**
   ```bash
   # 1. Crea la carpeta del módulo (si no existe)
-  mkdir -p modulo-01-smoke-feo
+  mkdir modulo-01-smoke-feo
 
-  # 2. Crea el archivo del spec
-  touch modulo-01-smoke-feo/ejemplo.spec.ts
+  # 2. Crea y abre el archivo del spec en VS Code (se crea al guardar)
+  code modulo-01-smoke-feo/ejemplo.spec.ts
   ```
 - **Por qué:** el `testMatch` del config (`/modulo-.*\/.*\.spec\.ts/`) solo recoge archivos `*.spec.ts` dentro de `modulo-*`. La ubicación y el nombre importan para que Playwright lo descubra.
-- **Cómo verifico:** `ls modulo-01-smoke-feo/` muestra `ejemplo.spec.ts`.
+- **Cómo verifico:** tras guardar, `ls modulo-01-smoke-feo/` muestra `ejemplo.spec.ts`.
 
 **7.2 — Escribir el encabezado y las credenciales**
 - **Qué hago:** abre el archivo en VS Code y escribe (a mano, no copy-paste a ciegas — escribirlo fija la sintaxis):
@@ -463,7 +515,9 @@ Ahora sí, **el código del módulo**.
 
 > 🔷 **TypeScript — `async` / `await` y `Promise` (intro)**
 > `.click()`, `.fill()` y `expect(...)` devuelven una **`Promise`** (una operación que terminará *después*). El `await` delante de cada una **pausa** hasta que se resuelve, así el orden real de ejecución coincide con el orden que lees. Una función marcada `async` es la única donde puedes usar `await`.
-> 📚 Lo viste en [TS · M03 — Functions](../../typescript-qa-course/modulo-03-functions/). Aquí lo aplicas a **cada** acción y aserción del spec — olvidar un `await` produce falsos positivos (ver 🔍 Detalles).
+> 📚 Lo viste en [TS · M03 — Functions](../../typescript-qa-course/modulo-03-functions/). Aquí lo aplicas a **cada** acción y aserción del spec.
+>
+> 🔍 **Qué pasa si olvidas un `await`:** la promesa se dispara pero **nadie la espera** — el runner sigue a la siguiente línea antes de que el click ocurra, y el orden real deja de coincidir con el que lees. Es el peor de los bugs de QA: un test que **pasa o falla de forma engañosa**. Una aserción sin `await` (`expect(page).toHaveURL(...)`) puede reportar verde sin haber comprobado nada, porque la promesa quedó pendiente y el test terminó antes. Un **falso positivo silencioso**.
 
 **Anatomía línea por línea** (el facilitador la repite en voz alta):
 
@@ -476,6 +530,16 @@ Ahora sí, **el código del módulo**.
 | `await page.goto("/")` | Concatena con `baseURL` del config → `https://omnipizza-frontend.onrender.com/` |
 | `await page.getByTestId(...)` | Locator nivel 3 de la jerarquía (M02 explica los otros niveles) |
 | `await expect(page).toHaveURL(/\/catalog/)` | Aserción con regex; Playwright espera automáticamente |
+
+> 🔍 **Detalle que parece obvio — `await page.goto("/")`**
+> **Qué es:** abre el navegador en la **ruta raíz** del sitio; la `/` sola se concatena con el `baseURL` del config (lo acabas de ver en la anatomía).
+> **Por qué así (y no la alternativa obvia):** poner solo `/` deja el host en **un único lugar** (el config). El día que el frontend cambie de URL (staging, otro dominio, otro puerto), tocas una línea en el config y **todos los specs siguen funcionando**.
+> **Qué pasa si lo cambias:** si hardcodeas `page.goto("https://omnipizza-frontend.onrender.com/")` el test funciona igual hoy… pero esa URL queda regada por cada spec. Multiplica por 50 tests y un cambio de dominio se vuelve un *find & replace* frágil. Además ignora el `baseURL`, así que `--config` o un override por entorno dejan de tener efecto.
+
+> 🔍 **Detalle que parece obvio — `await page.getByTestId("login-button-desktop").click()`**
+> **Qué es:** el spec localiza el botón de login por su **test id** (`data-testid="login-button-desktop"`), no por su rol accesible (`getByRole("button", { name: "Sign In" })`).
+> **Por qué así (y no la alternativa obvia):** ya conoces las dos analogías de Conceptos JIT (el sticker que el dev puso vs el lector de pantalla): el test id es **estable aunque cambie el texto o el idioma** del botón; `getByRole(..., { name })` depende del **texto visible**, y el `name` es lo que cambia todo — si el botón pasa de "Sign In" a "Iniciar sesión", el `getByRole` rompe y el `getByTestId` no.
+> **Qué pasa si lo cambias:** migrar a `getByRole` te acerca a probar accesibilidad real (bueno), pero acoplas el test al copy de la UI. En M02 verás la jerarquía de locators completa; en M01 usamos `getByTestId` porque OmniPizza ya trae esos ids y queremos que el smoke sea inmune al texto.
 
 **7.4 — Verificar que compila antes de ejecutar**
 - **Qué hago:** `pnpm exec tsc --noEmit`
@@ -534,6 +598,11 @@ Ahora sí, **el código del módulo**.
 - **Por qué:** reescribir el login completo a mano es lo que te hace **sentir la duplicación** en los dedos — ese es el motor pedagógico del curso. Si te entregara el código pegado, no dolería. (Si te atascas en la sintaxis del catálogo, las pistas exactas están en `reto.spec.ts`, TODO 6.)
 - **Cómo verifico:** `pnpm m1` muestra **2 verdes** (`TC-001` y `TC-002`).
 
+> 🔍 **Detalle que parece obvio — `await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 })`**
+> **Qué es:** la espera de que la primera card de pizza aparezca. Fíjate que **no hay ningún `sleep()` ni `waitForTimeout()`** en todo el spec — solo un `timeout` como opción de la aserción.
+> **Por qué así (y no la alternativa obvia):** Playwright tiene **auto-waiting**: `toBeVisible()` reintenta en bucle hasta que la condición se cumple o se agota el timeout. Aquí subimos el timeout a 30s **por el cold start de Render**, no para "dar tiempo a que cargue" a ciegas.
+> **Qué pasa si lo cambias:** si lo reemplazas por `await page.waitForTimeout(30000)` esperas **siempre** 30 segundos completos aunque la card aparezca en 2 — tests lentos. Y si pones un sleep corto (`waitForTimeout(2000)`) en un día de cold start, la card aún no existe y el test **falla intermitente** (flaky). El auto-waiting espera *lo justo*: sigue en cuanto la condición se cumple.
+
 **9.2 — Señalar el dolor (facilitador)**
 
 Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el dedo**:
@@ -573,8 +642,7 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 **11.1 — Preparar los archivos para el commit**
 - **Qué hago:** desde la raíz `playwright_architecture/`, agrego al staging lo que generó el installer y lo que creaste tú en este módulo:
   ```bash
-  git add .env.example .gitignore playwright.config.ts tsconfig.json \
-          package.json pnpm-lock.yaml .github modulo-01-smoke-feo
+  git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github modulo-01-smoke-feo
   ```
 - **Por qué:** listas explícitas evitan arrastrar basura. Aquí entran tanto lo que dejó `pnpm create playwright` (`playwright.config.ts` ya reconciliado, `package.json`, `pnpm-lock.yaml`, el `.github/workflows/playwright.yml` **latente**) como tus archivos (`.env.example`, `tsconfig.json`, el módulo). Fíjate que **`.env` NO está en la lista** — es secreto y ya lo excluye `.gitignore` (Paso 3). Sí versionas `.env.example` (la plantilla pública).
 - **Cómo verifico:**
@@ -599,7 +667,7 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 
 ## Outcome esperado
 
-- [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` con `pnpm add -D dotenv`.
+- [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` y `typescript` con `pnpm add -D dotenv typescript`.
 - [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-chromium`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
 - [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`** (al que le añadiste `.env` + `.auth/`).
 - [ ] Test verde contra OmniPizza live (`TC-001` y `TC-002`).
@@ -612,48 +680,12 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 
 ---
 
-## 🔍 Detalles que parecen obvios pero no lo son
-
-Antes de pasar a los comandos, estos son los detalles del spec que un ojo entrenado nota y un principiante pasa por alto. Cada uno sale del código real de `ejemplo.spec.ts`.
-
-### `await page.goto("/")`
-
-- **Qué es:** abre el navegador en la **ruta raíz** del sitio. La `/` se concatena con el `baseURL` del `playwright.config.ts` → `https://omnipizza-frontend.onrender.com/`.
-- **Por qué así (y no la alternativa obvia):** poner solo `/` deja el host en **un único lugar** (el config). El día que el frontend cambie de URL (staging, otro dominio, otro puerto), tocas una línea en el config y **todos los specs siguen funcionando**.
-- **Qué pasa si lo cambias:** si hardcodeas `page.goto("https://omnipizza-frontend.onrender.com/")` el test funciona igual hoy… pero esa URL queda regada por cada spec. Multiplica por 50 tests y un cambio de dominio se vuelve un *find & replace* frágil. Además ignora el `baseURL`, así que `--config` o un override por entorno dejan de tener efecto.
-
-### `await page.getByTestId("market-MX").click()`
-
-- **Qué es:** el `await` delante de **cada acción y cada aserción** del spec. Playwright es **asíncrono**: `.click()`, `.fill()` y `expect(...)` devuelven una *promesa*.
-- **Por qué así (y no la alternativa obvia):** sin `await`, la promesa se dispara pero **nadie la espera**. El runner sigue a la siguiente línea antes de que el click ocurra, y el orden real de ejecución deja de coincidir con el orden que lees.
-- **Qué pasa si lo cambias:** quitar el `await` produce el peor de los bugs de QA: un test que **pasa o falla de forma engañosa**. Una aserción sin `await` (`expect(page).toHaveURL(...)`) puede reportar verde sin haber comprobado nada, porque la promesa quedó pendiente y el test terminó antes. Es un falso positivo silencioso.
-
-### `await page.getByTestId("login-button-desktop").click()`
-
-- **Qué es:** el spec localiza el botón de login por su **test id** (`data-testid="login-button-desktop"`), no por su rol accesible (`getByRole("button", { name: "Sign In" })`).
-- **Por qué así (y no la alternativa obvia):** `getByTestId` apunta a un **sticker que el dev puso a propósito** para testing — es estable aunque cambie el texto o el idioma del botón. `getByRole(..., { name })` localiza como un lector de pantalla y depende del **texto visible**; el `name` es lo que cambia todo: si el botón pasa de "Sign In" a "Iniciar sesión", el `getByRole` rompe y el `getByTestId` no.
-- **Qué pasa si lo cambias:** migrar a `getByRole` te acerca a probar accesibilidad real (bueno), pero acoplas el test al copy de la UI. En M02 verás la jerarquía de locators completa; en M01 usamos `getByTestId` porque OmniPizza ya trae esos ids y queremos que el smoke sea inmune al texto.
-
-### `await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 })`
-
-- **Qué es:** la espera de que la primera card de pizza aparezca. Fíjate que **no hay ningún `sleep()` ni `waitForTimeout()`** en todo el spec — solo un `timeout` como opción de la aserción.
-- **Por qué así (y no la alternativa obvia):** Playwright tiene **auto-waiting**: `toBeVisible()` reintenta en bucle hasta que la condición se cumple o se agota el timeout. Aquí subimos el timeout a 30s **por el cold start de Render**, no para "dar tiempo a que cargue" a ciegas.
-- **Qué pasa si lo cambias:** si reemplazas esto por `await page.waitForTimeout(30000)` esperas **siempre** 30 segundos completos aunque la card aparezca en 2 — tests lentos. Y si pones un sleep corto (`waitForTimeout(2000)`) en un día de cold start, la card aún no existe y el test **falla intermitente** (flaky). El auto-waiting espera *lo justo*: sigue en cuanto la condición se cumple.
-
-### `import "dotenv/config"`
-
-- **Qué es:** un import por **side-effect** — sin llaves, no trae ningún símbolo a tu archivo. Solo **ejecuta** el módulo `dotenv/config`, que lee `.env` y vuelca sus valores en `process.env`. Vive al inicio de `playwright.config.ts`.
-- **Por qué así (y no la alternativa obvia):** no necesitas una función ni una variable de `dotenv`; lo único que quieres es el *efecto* de poblar `process.env` **antes** de que el config lea `process.env.BASE_URL`. Por eso va arriba del todo y por eso no lleva `{ }`.
-- **Qué pasa si lo quitas:** `process.env.BASE_URL` y `process.env.TEST_USER_USERNAME` quedan sin cargar… pero **el test no truena**: tanto el config (`process.env.BASE_URL ?? "https://..."`) como el spec (`process.env.TEST_USER_USERNAME ?? "standard_user"`) tienen un **fallback `??`** que apunta a los valores reales de OmniPizza. El resultado es la trampa más peligrosa: el test sigue verde **usando los defaults hardcodeados**, ocultándote que tu `.env` nunca se cargó. El día que un valor real difiera de su fallback, fallarás sin entender por qué.
-
----
-
 ## ▶️ Cómo ejecutar este módulo
 
 - **Comando del módulo:** `pnpm m1`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep @smoke`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m1` (no `VAR=x pnpm m1`, que es sintaxis de bash y falla en PowerShell)
 
