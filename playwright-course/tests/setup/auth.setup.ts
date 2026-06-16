@@ -45,8 +45,29 @@ setup("wake up backend (warmup cold start)", async ({ request }) => {
   expect(res.ok(), "backend /health debe responder 200").toBeTruthy();
 });
 
+// Mercado por defecto que el SPA persiste tras seleccionar la bandera.
+// Coincide con el flujo de login por UI (M01 hace click en `market-MX`).
+const COUNTRY = process.env.DEFAULT_COUNTRY ?? "MX";
+
+// Mapa de mercado → metadatos que OmniPizza guarda en su store de país.
+// Replica lo que el SPA escribe al elegir bandera (idioma/locale/moneda).
+const MARKETS: Record<string, { language: string; locale: string; currency: string }> = {
+  MX: { language: "es", locale: "es-MX", currency: "MXN" },
+  US: { language: "en", locale: "en-US", currency: "USD" },
+};
+
+// Decodifica el payload de un JWT sin verificar firma (sólo lectura).
+// El token de OmniPizza trae { sub, behavior, exp } — lo necesitamos
+// para construir el store de auth igual que el login por UI.
+function decodeJwt(token: string): { sub?: string; behavior?: string } {
+  const payload = token.split(".")[1] ?? "";
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const json = Buffer.from(normalized, "base64").toString("utf8");
+  return JSON.parse(json);
+}
+
 setup("authenticate as standard_user", async ({ browser, request }) => {
-  // 1. Login vía API para obtener el token.
+  // 1. Login vía API para obtener el token (rápido y determinista).
   const apiRes = await request.post(`${API_URL}/api/auth/login`, {
     data: { username: USERNAME, password: PASSWORD },
   });
@@ -54,16 +75,51 @@ setup("authenticate as standard_user", async ({ browser, request }) => {
   const { access_token } = (await apiRes.json()) as { access_token: string };
   expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
 
-  // 2. Abrir un contexto de navegador y sembrar la sesión.
-  //    OmniPizza persiste el token en localStorage — lo escribimos ahí.
+  // El SPA guarda `username` y `behavior` derivados del token.
+  const claims = decodeJwt(access_token);
+  const username = claims.sub ?? USERNAME;
+  const behavior = claims.behavior ?? "standard";
+  const market = MARKETS[COUNTRY] ?? MARKETS.MX;
+
+  // 2. Abrir un contexto de navegador y sembrar la sesión EXACTAMENTE
+  //    como lo hace el login por UI. OmniPizza usa Zustand con persist:
+  //    la sesión vive en `omnipizza-auth` (objeto { state, version }),
+  //    NO en una clave plana `access_token`. El catálogo además exige
+  //    un mercado elegido (`omnipizza-country`) o rebota a "/".
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(BASE_URL);
 
-  await page.evaluate(([token, username]) => {
-    window.localStorage.setItem("access_token", token);
-    window.localStorage.setItem("username", username);
-  }, [access_token, USERNAME]);
+  await page.evaluate(
+    ([token, user, beh, countryCode, mkt]) => {
+      const { language, locale, currency } = mkt as {
+        language: string;
+        locale: string;
+        currency: string;
+      };
+
+      // Store de auth (Zustand persist) — fuente de verdad de la sesión.
+      window.localStorage.setItem(
+        "omnipizza-auth",
+        JSON.stringify({ state: { token, username: user, behavior: beh }, version: 0 }),
+      );
+
+      // Store de país — sin un mercado elegido, el guard rebota a "/".
+      window.localStorage.setItem(
+        "omnipizza-country",
+        JSON.stringify({
+          state: { countryCode, countryInfo: null, language, locale, currency },
+          version: 0,
+        }),
+      );
+
+      // Mirrors planos que el SPA también escribe en el login por UI.
+      window.localStorage.setItem("token", token as string);
+      window.localStorage.setItem("username", user as string);
+      window.localStorage.setItem("countryCode", countryCode as string);
+    },
+    [access_token, username, behavior, COUNTRY, market] as const,
+  );
 
   // 3. Persistir el storageState para todos los projects UI.
   await context.storageState({ path: USER_FILE });

@@ -24,6 +24,13 @@
 
 import { test, expect } from "@playwright/test";
 
+// Este reto ENSEÑA el flujo de login por UI (elige mercado + credenciales),
+// así que debe correr ANÓNIMO. El project ui-chromium inyecta el storageState
+// autenticado del setup (M04); si lo heredáramos, page.goto("/") rebotaría al
+// catálogo y la pantalla de login (botones market-*) nunca aparecería.
+// Lo reseteamos a un estado vacío solo para este archivo.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 // Las credenciales viajan vía dotenv → process.env (ver
 // playwright.config.ts: `import "dotenv/config"`).
 // El `??` es un fallback por si alguien corre sin .env.

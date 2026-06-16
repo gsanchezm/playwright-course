@@ -26,6 +26,13 @@ import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
 
+// Este reto ENSEÑA el flujo de login por UI (elige mercado + credenciales),
+// así que debe correr ANÓNIMO. El project ui-chromium inyecta el storageState
+// autenticado del setup (M04); si lo heredáramos, page.goto("/") rebotaría al
+// catálogo y la pantalla de login (botones market-*) nunca aparecería.
+// Lo reseteamos a un estado vacío solo para este archivo.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;

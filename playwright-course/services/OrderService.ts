@@ -27,7 +27,14 @@ export class OrderService extends BaseService {
   }
 
   async createOrder(payload: OrderPayload): Promise<Order> {
-    const res = await this.api.post(this.url(""), { data: payload });
+    // OJO: la orden se CREA con POST /api/checkout, NO con basePath()
+    // (/api/orders es solo lectura: historial y detalle). Por eso
+    // construimos la URL directo desde baseURL en vez de usar this.url().
+    //
+    // El `payload` ya cumple el contrato REAL del endpoint (ver OrderPayload
+    // en types/omnipizza.d.ts): { country_code, items: [{ pizza_id, quantity }],
+    // name, address, phone }. Se envía tal cual en el body, sin transformar.
+    const res = await this.api.post(`${this.baseURL}/api/checkout`, { data: payload });
     if (!res.ok()) {
       throw new Error(`createOrder failed (${res.status()}): ${await res.text()}`);
     }

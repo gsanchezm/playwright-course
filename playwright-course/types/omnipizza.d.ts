@@ -54,15 +54,29 @@ export interface PizzasResponse {
   pizzas: Pizza[];
 }
 
+// Body de POST /api/checkout (snake_case, como lo espera el backend FastAPI
+// de OmniPizza). El nombre/dirección/teléfono van planos (no anidados en
+// `customer`) y los items usan `pizza_id` (no `pizzaId`). Además del bloque
+// común, el backend exige el CAMPO DE DIRECCIÓN según `country_code` (MX:
+// `colonia`, US: `zip_code`, CH: `plz`, JP: `prefectura`); la propina
+// (`propina`/`tip`/`trinkgeld`/`chip`) es OPCIONAL. Por eso los campos por
+// mercado se modelan como opcionales aquí.
 export interface OrderPayload {
-  items: Array<{ pizzaId: string | number; quantity: number }>;
-  market: CountryCode;
-  customer: {
-    fullName: string;
-    phone: string;
-    address: string;
-    zipCode: string;
-  };
+  country_code: CountryCode;
+  items: Array<{ pizza_id: string | number; quantity: number }>;
+  name: string;
+  address: string;
+  phone: string;
+  // Campos por mercado — el de dirección es requerido por el backend según
+  // `country_code`; la propina es opcional.
+  colonia?: string;
+  propina?: number;
+  zip_code?: string;
+  tip?: number;
+  plz?: string;
+  trinkgeld?: number;
+  prefectura?: string;
+  chip?: number;
 }
 
 export interface Order {
