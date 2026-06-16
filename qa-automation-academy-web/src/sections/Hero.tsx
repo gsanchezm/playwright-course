@@ -9,6 +9,7 @@ import Badge from "@/components/Badge";
 const techBadges = [
   { label: "Setup", status: "live" as const },
   { label: "TypeScript", status: "live" as const },
+  { label: "Regex", status: "live" as const },
   { label: "Git / GitHub", status: "live" as const },
   { label: "Playwright", status: "live" as const },
 ];

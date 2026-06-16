@@ -1,5 +1,5 @@
 export type PathStatus = "live" | "soon" | "in-progress";
-export type PathAccent = "cyan" | "periwinkle" | "lavender";
+export type PathAccent = "cyan" | "periwinkle" | "lavender" | "violet";
 
 export type LearningPath = {
   id: string;
@@ -9,7 +9,7 @@ export type LearningPath = {
   capabilities: [string, string, string];
   href: string;
   accent: PathAccent;
-  iconName: "code" | "git-branch" | "play";
+  iconName: "code" | "git-branch" | "play" | "target";
   logo?: string;
 };
 
@@ -29,6 +29,21 @@ export const paths: LearningPath[] = [
     accent: "cyan",
     iconName: "code",
     logo: "/typescript.png",
+  },
+  {
+    id: "regex",
+    title: "Regex para QA",
+    status: "live",
+    description:
+      "Domina las expresiones regulares desde cero hasta nivel avanzado, siempre a través de la lente del testing: validar, parsear, sanear datos y evitar ReDoS.",
+    capabilities: [
+      "Clases, cuantificadores, grupos, anclas y lookaround",
+      "Validación data-driven, parseo de logs y scrubbing de snapshots",
+      "7 módulos ejecutables con tsx + puentes a Java y Python",
+    ],
+    href: "/docs/regex",
+    accent: "violet",
+    iconName: "target",
   },
   {
     id: "playwright",

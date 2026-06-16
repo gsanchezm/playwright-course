@@ -4,6 +4,7 @@ import Container from "@/components/Container";
 const moduleLinks = [
   { label: "Setup", to: "/docs/setup" },
   { label: "TypeScript para QA", to: "/docs/typescript" },
+  { label: "Regex para QA", to: "/docs/regex" },
   { label: "Git / GitHub", to: "/docs/git-github" },
   { label: "Playwright", to: "/docs/playwright" },
 ];
@@ -29,7 +30,7 @@ export default function Footer() {
             </div>
             <p className="mt-4 max-w-sm font-sans text-sm leading-relaxed text-qa-muted">
               Academia práctica de QA Automation. Ejercicios reales de
-              TypeScript, Git/GitHub y Playwright. Todo el contenido disponible
+              TypeScript, expresiones regulares, Git/GitHub y Playwright. Todo el contenido disponible
               en esta página.
             </p>
             <Link

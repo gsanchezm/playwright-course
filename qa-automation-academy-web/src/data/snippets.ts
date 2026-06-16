@@ -37,7 +37,7 @@ export const snippets: Snippet[] = [
     filename: "00-setup/install.sh",
     language: "bash",
     lines: [
-      { tokens: [c("# Instala todo lo necesario para los 3 cursos")] },
+      { tokens: [c("# Instala todo lo necesario para los 4 cursos")] },
       { tokens: [cmd("brew"), t(" install node@20 git")] },
       { tokens: [cmd("npm"), t(" install -g pnpm")] },
       { tokens: [t("")] },

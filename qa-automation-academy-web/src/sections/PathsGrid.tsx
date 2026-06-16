@@ -11,12 +11,14 @@ const accentIconClass: Record<PathAccent, string> = {
   cyan: "text-qa-cyan",
   periwinkle: "text-qa-periwinkle",
   lavender: "text-qa-lavender",
+  violet: "text-qa-violet",
 };
 
 const accentLinkClass: Record<PathAccent, string> = {
   cyan: "text-qa-cyan",
   periwinkle: "text-qa-periwinkle",
   lavender: "text-qa-lavender",
+  violet: "text-qa-violet",
 };
 
 export default function PathsGrid() {
@@ -33,16 +35,16 @@ export default function PathsGrid() {
             id="rutas-title"
             className="mt-4 max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight text-qa-text sm:text-4xl"
           >
-            Tres caminos conectados para llegar a automatización real.
+            Cuatro caminos conectados para llegar a automatización real.
           </h2>
           <p className="mt-4 max-w-2xl font-sans text-lg leading-relaxed text-qa-muted">
-            Empieza con TypeScript, consolida tu flujo con Git/GitHub y termina
-            escribiendo tests E2E con Playwright. Cada ruta es práctica y
-            progresiva.
+            Empieza con TypeScript y expresiones regulares, consolida tu flujo
+            con Git/GitHub y termina escribiendo tests E2E con Playwright. Cada
+            ruta es práctica y progresiva.
           </p>
         </SectionReveal>
 
-        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {paths.map((p, i) => (
             <SectionReveal key={p.id} delay={i * 80}>
               <Card accent={p.accent} as="article" className="flex h-full flex-col">

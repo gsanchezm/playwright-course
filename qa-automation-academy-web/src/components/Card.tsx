@@ -13,6 +13,7 @@ const accentRing: Record<PathAccent, string> = {
   cyan: "hover:border-qa-cyan/40",
   periwinkle: "hover:border-qa-periwinkle/40",
   lavender: "hover:border-qa-lavender/40",
+  violet: "hover:border-qa-violet/40",
 };
 
 export default function Card({
