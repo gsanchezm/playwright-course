@@ -1129,7 +1129,7 @@ git push</code></pre></div>
 <li><p><strong>Cómo verifico:</strong> <code>gh pr view --web</code> abre el PR en el navegador; <code>git push</code> posteriores ya no piden <code>-u</code>.</p>
 </li>
 </ul>
-<blockquote><p>📌 La <strong>primera vez</strong> que conectas el repo a GitHub: en github.com crea <strong>New repository</strong> (<code>qa-playwright-curso</code>, sin README inicial), luego <code>git remote add origin git@github.com:tu-usuario/qa-playwright-curso.git</code> y <code>git push -u origin main</code>. <code>git remote -v</code> confirma que quedó.</p>
+<blockquote><p>📌 El remoto <code>origin</code> <strong>ya quedó conectado en M03 (Paso 0.3 — crear el repo en GitHub y conectarlo)</strong>. Aquí <strong>no</strong> vuelves a crear el repo ni a correr <code>git remote add origin</code>: sólo subes tu rama de trabajo con <code>git push -u</code> y abres el PR. Si por algún motivo aún no tienes <code>origin</code> (saltaste M03), regresa a ese paso antes de continuar — <code>git remote -v</code> te dice si ya está.</p>
 </blockquote>
 <hr>
 <h3 id="paso-10-resolver-el-reto">Paso 10 — Resolver el reto</h3>

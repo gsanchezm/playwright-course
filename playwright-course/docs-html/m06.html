@@ -597,9 +597,9 @@ gh auth status     # debes estar logueado
 git remote -v      # debe haber un `origin` apuntando a GitHub</code></pre></div>
 </li>
 <li><strong>Por qué:</strong> todo el módulo (secrets, push, PR, descargar artefactos) se apoya en <code>gh</code> y en un repo remoto. Sin <code>origin</code> en GitHub, <strong>no hay CI</strong> que observar.</li>
-<li><strong>Cómo verifico:</strong> <code>gh auth status</code> dice <em>&quot;Logged in&quot;</em>; <code>git remote -v</code> lista un <code>origin</code> apuntando a <code>github.com</code>. Si falta <code>gh</code>: macOS → <code>brew install gh</code>; Windows → <code>winget install --id GitHub.cli</code>; Linux → <a href="https://cli.github.com/"><code>cli.github.com</code></a>. Si falta el remoto, vuelve a M04 (Git break: conectar el repo a GitHub).</li>
+<li><strong>Cómo verifico:</strong> <code>gh auth status</code> dice <em>&quot;Logged in&quot;</em>; <code>git remote -v</code> lista un <code>origin</code> apuntando a <code>github.com</code>. Si falta <code>gh</code>: macOS → <code>brew install gh</code>; Windows → <code>winget install --id GitHub.cli</code>; Linux → <a href="https://cli.github.com/"><code>cli.github.com</code></a>. Si falta el remoto, vuelve a M03 (Paso 0.3: crear el repo en GitHub y conectarlo).</li>
 </ul>
-<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este módulo asume que el repo ya tiene <code>origin</code> en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup de SSH antes de continuar — sin remoto no hay CI.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> este módulo asume que el repo ya tiene <code>origin</code> en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup del remoto (HTTPS o SSH; ver M03 Paso 0.3) antes de continuar — sin remoto no hay CI.</p>
 </aside>
 <hr>
 <h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
@@ -630,7 +630,7 @@ git remote -v      # debe haber un `origin` apuntando a GitHub</code></pre></div
 <tr>
 <td><code>git</code> con remoto</td>
 <td><code>git remote -v</code></td>
-<td>M04 Git break — conectar repo a GitHub</td>
+<td>M03 Paso 0.3 — conectar repo a GitHub</td>
 </tr>
 <tr>
 <td>Cuenta de GitHub con permisos <code>write</code></td>

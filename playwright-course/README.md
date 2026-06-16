@@ -80,7 +80,7 @@ playwright-course/
 - **pnpm** 10+ (`npm install -g pnpm`).
 - VS Code con la extensión oficial **Playwright Test for VSCode**.
 - GitHub CLI (`gh`) para el módulo M06.
-- Recomendado: haber completado [TypeScript para QA](../typescript-qa-course/). Git/GitHub se enseña embebido aquí (M00 + *Git breaks* en M03/M04); el [curso completo de Git/GitHub](../git-github-course/) es referencia profunda opcional.
+- Recomendado: haber completado [TypeScript para QA](../typescript-qa-course/). Git/GitHub se enseña embebido aquí (M00 fundamentos; crear y conectar el repo a GitHub en M03; PRs y push de trabajo en M04); el [curso completo de Git/GitHub](../git-github-course/) es referencia profunda opcional.
 
 ## Setup inicial
 

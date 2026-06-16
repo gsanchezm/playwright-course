@@ -435,7 +435,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
       </p>
     </header>
 <h1 id="módulo-03-refactor-a-pom-oop-incremental">Módulo 03 — Refactor a POM (OOP incremental)</h1>
-<p><strong>Duración estimada:</strong> 80-105 min (incluye Git JIT — branches y conflictos, tejidos en el flujo del refactor)
+<p><strong>Duración estimada:</strong> 80-105 min (incluye Git JIT — branches, conexión a GitHub y conflictos, tejidos en el flujo del refactor)
 <strong>Pieza que suma al framework:</strong> <code>pages/BasePage.ts</code> + <code>LoginPage.ts</code> + <code>CatalogPage.ts</code> + <code>CheckoutPage.ts</code>. El spec de M02 se refactoriza y se nota cuánto se limpia.</p>
 <hr>
 <h2 id="arquitectura-al-terminar-este-módulo">🏗️ Arquitectura al terminar este módulo</h2>
@@ -592,6 +592,63 @@ git switch -c feature/m03-pom</code></pre></div>
 <blockquote><p>🌿 <strong>Git JIT — por qué una rama aquí</strong>
 El refactor cruza varios archivos a la vez; aislarlo en <code>feature/m03-pom</code> protege <code>main</code>. Más abajo, al cerrar el módulo (Paso 10), harás el merge a <code>main</code> y verás un conflicto a propósito.</p>
 </blockquote>
+<p><strong>0.3 — Crea el repo en GitHub y conéctalo</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo el repositorio remoto en github.com y conecto mi repo local con él.<ol>
+<li>En github.com, botón <strong>New repository</strong> (verde, arriba a la derecha o en <code>github.com/new</code>).</li>
+<li>Lo nombro <code>omnipizza-playwright</code>, lo dejo <strong>Public</strong> (o Private, da igual para el curso).</li>
+<li><strong>NO</strong> marco &quot;Add a README&quot;, &quot;Add .gitignore&quot; ni licencia — el repo local <strong>ya tiene</strong> esos archivos y un commit inicial.</li>
+<li><strong>Create repository.</strong> GitHub te muestra la pantalla &quot;…or push an existing repository from the command line&quot;: de ahí copias la URL (HTTPS o SSH).</li>
+<li>Conecto el remoto y subo <code>main</code> + la rama de feature:</li>
+</ol>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git remote add origin &lt;url-que-copiaste&gt;
+git remote -v                        # confirma que quedó (fetch + push)
+git push -u origin main              # sube main y deja upstream
+git push -u origin feature/m03-pom   # sube tu rama de trabajo</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> hasta ahora todo vive <strong>solo en tu laptop</strong>. Conectar <code>origin</code> es lo que convierte tu repo local en algo compartible: respaldas el trabajo, y a partir de M04 podrás abrir Pull Requests para code review. Lo hacemos <strong>una sola vez</strong> por repo; los módulos siguientes asumen que <code>origin</code> ya existe. El <code>-u</code> (<code>--set-upstream</code>) vincula tu rama local con su gemela remota, así los siguientes <code>git push</code> / <code>git pull</code> ya no necesitan argumentos.</li>
+<li><strong>Cómo verifico:</strong> recargo el repo en github.com y abro el <strong>selector de ramas</strong> (el dropdown que dice &quot;main&quot;): aparecen <strong><code>main</code></strong> y <strong><code>feature/m03-pom</code></strong>. En la terminal, <code>git remote -v</code> lista <code>origin</code> y <code>git status</code> dice <code>Your branch is up to date with &#39;origin/feature/m03-pom&#39;</code>.</li>
+</ul>
+<blockquote><p>🌿 <strong>Git JIT — local vs remoto, ¿cuándo eliges HTTPS o SSH?</strong>
+Al crear el repo, GitHub te ofrece dos URLs para <code>origin</code>. No cambian el contenido — sólo <strong>cómo te autentica</strong> cada push:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>HTTPS</th>
+<th>SSH</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>URL</td>
+<td><code>https://github.com/tu-usuario/omnipizza-playwright.git</code></td>
+<td><code>git@github.com:tu-usuario/omnipizza-playwright.git</code></td>
+</tr>
+<tr>
+<td>Autenticación</td>
+<td><strong>PAT</strong> (Personal Access Token) en vez de contraseña</td>
+<td>Par de llaves SSH (<code>ssh-keygen</code>) registrado en GitHub</td>
+</tr>
+<tr>
+<td>Setup inicial</td>
+<td>Cero (pegas el token la 1ª vez; el OS lo cachea)</td>
+<td>Generar llave + subir la pública a GitHub Settings → SSH keys</td>
+</tr>
+<tr>
+<td>Recomendado para</td>
+<td>Empezar rápido</td>
+<td>Quien ya tiene llaves o pushea a diario</td>
+</tr>
+</tbody></table>
+<p>Elige una y úsala consistente. Si te equivocas, <code>git remote set-url origin &lt;otra-url&gt;</code> la cambia sin perder nada.</p>
+</blockquote>
+<aside class="callout callout--warn"><p>⚠️ <strong>Gotchas al conectar el remoto</strong></p>
+<ul>
+<li><strong>Autenticación:</strong> con HTTPS, GitHub <strong>ya no acepta tu contraseña</strong> en el push — pide un <strong>PAT</strong> (Settings → Developer settings → Personal access tokens). Con SSH, el error <code>Permission denied (publickey)</code> significa que tu llave no está registrada.</li>
+<li><strong>Repo no-vacío:</strong> si marcaste README/.gitignore al crearlo, el primer <code>git push</code> falla con <code>! [rejected] ... (fetch first)</code> porque el remoto tiene un commit que tu local no. Por eso lo creamos <strong>vacío</strong>. (Si ya te pasó: <code>git pull origin main --allow-unrelated-histories</code>, resuelves y vuelves a pushear.)</li>
+<li><strong><code>-u</code> sólo la primera vez:</strong> el <code>-u</code> es para el push <strong>inicial</strong> de cada rama. Después, <code>git push</code> a secas ya sabe a dónde ir.</li>
+</ul>
+</aside>
 <hr>
 <h3 id="paso-1-dependencias-requeridas">Paso 1 — Dependencias requeridas</h3>
 <p><strong>1.1 — Confirma que no hace falta instalar nada</strong></p>
@@ -870,24 +927,80 @@ test.describe("POM — login + catálogo por mercado (M03)", () =&gt; {
 <li><strong>Por qué:</strong> el reto te hace <strong>orquestar</strong> Pages sin escribir locators inline (la única línea inline esperada es la del <code>nav-checkout-desktop</code>). Es donde compruebas que internalizaste la &quot;regla de oro&quot;: si necesitas un locator que no existe, lo añades al Page, no al spec.</li>
 <li><strong>Cómo verifico:</strong> los 4 tests del reto terminan en verde (<code>Reto-MX</code>, <code>Reto-US</code>, <code>Reto-CH</code>, <code>Reto-JP</code>). Cada <code>TODO</code> del reto trae su propio formato <strong>Qué hacer / Pista / Cómo verificar</strong> — resuélvelos tú; el README no los resuelve por ti.</li>
 </ul>
-<hr>
-<h3 id="paso-10-cerrar-la-rama-merge-a-main">Paso 10 — Cerrar la rama: merge a <code>main</code></h3>
-<p><strong>10.1 — Versiona el spec refactorizado</strong></p>
+<p><strong>9.2 — Commitea el refactor del spec en <code>feature/m03-pom</code></strong></p>
 <ul>
-<li><strong>Qué hago:</strong> commiteo el refactor del spec en la rama:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add modulo-03-pom/ejemplo.spec.ts modulo-03-pom/reto.spec.ts
+<li><strong>Qué hago:</strong> desde la rama <code>feature/m03-pom</code>, commiteo los dos specs refactorizados (el ejemplo del Paso 8.1 y el reto del 9.1):<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git add modulo-03-pom/ejemplo.spec.ts modulo-03-pom/reto.spec.ts
 git commit -m "feat(m03): refactor specs to use Page Object Model"</code></pre></div>
 </li>
-<li><strong>Por qué:</strong> cierras la rama con el trabajo completo y commiteado antes de integrarlo.</li>
-<li><strong>Cómo verifico:</strong> <code>git status</code> está limpio (<code>nothing to commit</code>); <code>git log --oneline -1</code> muestra el commit del refactor.</li>
+<li><strong>Por qué:</strong> el entregable estrella del módulo (los specs refactorizados) queda <strong>commiteado en la rama del módulo antes de cambiar de rama</strong>. Esto deja el árbol de trabajo <strong>limpio</strong> para la práctica de sincronización del Paso 9.5: vas a saltar entre ramas (<code>hotfix/locator</code>, <code>feature/extra-test</code>) y, con todo commiteado, esos saltos son seguros. Es la regla de oro de Git que este módulo enseña: <strong>commitea antes de cambiar de rama</strong>, nunca arrastres cambios sin commitear de una rama a otra.</li>
+<li><strong>Cómo verifico:</strong> <code>git status</code> dice <code>On branch feature/m03-pom</code> y <code>nothing to commit, working tree clean</code>; <code>git log --oneline -1</code> muestra el commit del refactor de specs.</li>
 </ul>
-<p><strong>10.2 — Mergea <code>feature/m03-pom</code> a <code>main</code></strong></p>
+<hr>
+<h3 id="paso-95-sincronizar-ramas-en-ambos-sentidos-github-local">Paso 9.5 — Sincronizar ramas en ambos sentidos (GitHub ⇄ local)</h3>
+<p>Ya conectaste <code>origin</code> en el Paso 0.3. Ahora practica el ida-y-vuelta: una rama nace en GitHub y baja a tu local; otra nace local y sube a GitHub. En equipo esto pasa todo el tiempo — un compañero crea una rama desde la web, o tú abres una desde tu máquina.</p>
+<blockquote><p><strong>Analogía QA:</strong> tu repo <strong>local</strong> es tu estación de trabajo; <strong><code>origin</code></strong> (GitHub) es el <strong>ambiente compartido del equipo</strong>. Una rama remota es como un build que alguien dejó en el ambiente compartido: no está en tu máquina hasta que la <strong>traes</strong> (<code>fetch</code> + <code>switch</code>). Y una rama tuya no existe para el equipo hasta que la <strong>publicas</strong> (<code>push -u</code>).</p>
+</blockquote>
+<p><strong>9.5.1 — GitHub → local: traer una rama creada en la web</strong></p>
 <ul>
-<li><strong>Qué hago:</strong> vuelvo a <code>main</code> e integro:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git switch main
-git merge feature/m03-pom
-git branch -d feature/m03-pom</code></pre></div>
+<li><strong>Qué hago:</strong> simulo que un compañero (o yo desde otra máquina) creó una rama en GitHub, y la bajo a mi local.<ol>
+<li>En github.com, abro el <strong>selector de ramas</strong>, escribo <code>hotfix/locator</code> y clic en <strong>Create branch: hotfix/locator from &#39;main&#39;</strong>.</li>
+<li>En mi terminal local, la traigo y me cambio a ella:</li>
+</ol>
+<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git fetch origin                # entera a tu local de las ramas nuevas del remoto
+git switch hotfix/locator       # crea la rama local rastreando origin/hotfix/locator</code></pre></div>
 </li>
-<li><strong>Por qué:</strong> el refactor ya está probado en verde; integrarlo a <code>main</code> lo hace oficial. Borrar la rama mergeada mantiene el repo limpio.</li>
-<li><strong>Cómo verifico:</strong> <code>git log --oneline --graph -5</code> muestra los commits del POM en <code>main</code>. Si <code>main</code> no avanzó desde que ramificaste, verás un <strong>fast-forward</strong> (sin commit extra); si avanzó, un <strong>merge commit</strong> con dos padres. Ambos son correctos.</li>
+<li><strong>Por qué:</strong> <code>git fetch</code> <strong>no</strong> modifica tus ramas — sólo actualiza tu copia del estado del remoto (<code>origin/*</code>). El <code>git switch hotfix/locator</code> es la magia: cuando el nombre coincide con una rama remota, Git crea la local <strong>con tracking automático</strong> (equivale al viejo <code>git checkout -b hotfix/locator --track origin/hotfix/locator</code>). Así un <code>git pull</code> futuro sobre esa rama ya sabe de dónde jalar.</li>
+<li><strong>Cómo verifico:</strong> <code>git branch -vv</code> muestra la rama local con su upstream entre corchetes:<div class="code-block"><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-plain">* hotfix/locator  a1b2c3d [origin/hotfix/locator] ...</code></pre></div>
+Ese <code>[origin/hotfix/locator]</code> es la prueba de que está siguiendo a la remota.</li>
+</ul>
+<p><strong>9.5.2 — local → GitHub: publicar una rama que nació en tu máquina</strong></p>
+<ul>
+<li><strong>Qué hago:</strong> creo una rama local y la subo a <code>origin</code> para que el equipo la vea.<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git switch -c feature/extra-test    # rama nueva, sólo local por ahora
+git push -u origin feature/extra-test</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> la rama existió <strong>sólo en tu disco</strong> hasta el <code>push</code>. El <code>-u</code> (igual que en el Paso 0.3) la vincula con su gemela remota en su primer viaje; después basta <code>git push</code>.</li>
+<li><strong>Cómo verifico:</strong> recargo github.com y abro el selector de ramas: <code>feature/extra-test</code> aparece. <code>git branch -vv</code> ahora la muestra con <code>[origin/feature/extra-test]</code>.</li>
+</ul>
+<p><strong>Resumen — los dos sentidos:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Sentido</th>
+<th>Nació en</th>
+<th>Cómo lo sincronizas</th>
+<th>Cómo verificas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>GitHub → local</strong></td>
+<td>la web de GitHub</td>
+<td><code>git fetch origin</code> + <code>git switch &lt;rama&gt;</code></td>
+<td><code>git branch -vv</code> muestra <code>[origin/&lt;rama&gt;]</code></td>
+</tr>
+<tr>
+<td><strong>local → GitHub</strong></td>
+<td>tu máquina (<code>git switch -c</code>)</td>
+<td><code>git push -u origin &lt;rama&gt;</code></td>
+<td>aparece en el selector de ramas de github.com</td>
+</tr>
+</tbody></table>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> estas dos ramas (<code>hotfix/locator</code>, <code>feature/extra-test</code>) son <strong>sólo para practicar la sincronización</strong> — no las mergees ni las uses para el refactor. La rama del módulo sigue siendo <code>feature/m03-pom</code> (con los Page Objects <strong>y</strong> los specs ya commiteados desde los Pasos 6.1 y 9.2), que mergeas a <code>main</code> en el Paso 10. Como ya commiteaste todo antes de este paso, saltar entre ramas aquí es seguro: no arrastras cambios sin commitear. Si quieres dejar el repo limpio después, bórralas con <code>git branch -d</code> (local) y <code>git push origin --delete &lt;rama&gt;</code> (remoto).</p>
+</aside>
+<aside class="callout callout--learn-more"><p>📚 <strong>Profundización opcional Git:</strong> <a href="../git-github-course/modulo-03-undo-remotos-tags/02-remotos.md">Trabajar con remotos</a> · <a href="../git-github-course/modulo-06-github/02-crear-subir-repo.md">Crear y subir un repo</a></p>
+</aside>
+<hr>
+<h3 id="paso-10-cerrar-la-rama-merge-a-main">Paso 10 — Cerrar la rama: merge a <code>main</code></h3>
+<p><strong>10.1 — Mergea <code>feature/m03-pom</code> a <code>main</code></strong></p>
+<ul>
+<li><strong>Qué hago:</strong> confirmo que la rama del módulo trae <strong>todo</strong> commiteado, <strong>sincronizo su gemela remota</strong> y la integro a <code>main</code>:<div class="code-block"><span class="code-lang">bash</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-bash">git log feature/m03-pom --oneline         # confirma: Page Objects (6.1) + specs (9.2) están aquí
+git push origin feature/m03-pom           # sube a origin los commits de la rama (ya tiene upstream del Paso 0.3)
+git switch main
+git merge feature/m03-pom
+git push origin --delete feature/m03-pom  # limpia la rama remota ya integrada
+git branch -d feature/m03-pom             # ...y la local (ahora sí: integrada y en sync con su upstream)</code></pre></div>
+</li>
+<li><strong>Por qué:</strong> los Page Objects (Paso 6.1) y los specs refactorizados (Paso 9.2) <strong>ya están commiteados</strong> en <code>feature/m03-pom</code>, así que esta no es la primera vez que se versionan: aquí sólo integras. El primer <code>git push origin feature/m03-pom</code> sube a <code>origin</code> los commits que el Paso 0.3 dejó <strong>sólo</strong> en tu local (en 0.3 pusheaste la rama recién creada; los commits de 6.1 y 9.2 vinieron <strong>después</strong> y nunca se subieron, así que <code>origin/feature/m03-pom</code> quedó atrás). Lo escribimos con el nombre explícito de la rama — no un <code>git push</code> a secas — porque el Paso 9.5 te dejó parado en <code>feature/extra-test</code>, y un <code>push</code> pelón subiría <strong>esa</strong> rama, no la del módulo. Por eso <code>git switch main</code> puede hacerse desde <strong>cualquier</strong> rama en la que el Paso 9.5 te haya dejado — el merge trae los commits de <code>feature/m03-pom</code> sin importar dónde estabas parado, porque vives integrando una rama completa, no arrastrando trabajo a medias. El orden del cierre importa: <strong>primero</strong> borras la rama remota integrada (<code>git push origin --delete</code>) y <strong>luego</strong> la local, porque <code>git branch -d</code> valida que la rama esté integrada <strong>contra su upstream</strong> (<code>origin/feature/m03-pom</code>), no contra <code>main</code>. Si borraras la local con el upstream aún atrasado, <code>-d</code> fallaría con <code>the branch &#39;feature/m03-pom&#39; is not fully merged</code> aunque el merge a <code>main</code> haya sido perfecto; al sincronizar (<code>push</code>) y limpiar el remoto antes, <code>-d</code> ya no encuentra un upstream desfasado y borra sin protestar.</li>
+<li><strong>Cómo verifico:</strong> el <code>git log feature/m03-pom --oneline</code> muestra <strong>ambos</strong> commits (los Page Objects y el refactor de specs) antes del merge. Tras integrar, <code>git log --oneline --graph -5</code> los muestra en <code>main</code>. Si <code>main</code> no avanzó desde que ramificaste, verás un <strong>fast-forward</strong> (sin commit extra); si avanzó, un <strong>merge commit</strong> con dos padres. Ambos son correctos. El <code>git branch -d</code> termina con <code>Deleted branch feature/m03-pom</code> (sin el error <code>not fully merged</code>), y la rama remota ya no aparece: ni en <code>git branch -r</code> ni en el selector de ramas de github.com.</li>
 </ul>
 <blockquote><table>
 <thead>
@@ -914,7 +1027,7 @@ git branch -d feature/m03-pom</code></pre></div>
 </tr>
 </tbody></table>
 </blockquote>
-<p><strong>10.3 — (Opcional, demostración) Provoca y resuelve un conflicto</strong></p>
+<p><strong>10.2 — (Opcional, demostración) Provoca y resuelve un conflicto</strong></p>
 <ul>
 <li><strong>Qué hago:</strong> para <em>practicar</em> conflictos, simulo dos cambios al mismo método. En la rama cambio un locator de <code>LoginPage</code>:<div class="code-block"><span class="code-lang">typescript</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-typescript">// En feature/m03-pom
 get emailInput() { return this.page.getByLabel('Correo'); }</code></pre></div>
@@ -955,6 +1068,9 @@ Si te arrepientes a mitad: <code>git merge --abort</code> regresa el repo al est
 <li><input disabled="" type="checkbox"> Completaste el reto E2E con <code>CheckoutPage</code>.</li>
 <li><input disabled="" type="checkbox"> Sabes que <code>abstract</code> llega en M05 — no lo introdujimos aquí.</li>
 <li><input disabled="" type="checkbox"> Aislaste el refactor en <code>feature/m03-pom</code> y lo mergeaste a <code>main</code>.</li>
+<li><input disabled="" type="checkbox"> Creaste el repo en GitHub (<code>omnipizza-playwright</code>, sin archivos iniciales) y conectaste <code>origin</code>.</li>
+<li><input disabled="" type="checkbox"> Subiste <code>main</code> y <code>feature/m03-pom</code> con <code>git push -u</code> y los ves en el selector de ramas.</li>
+<li><input disabled="" type="checkbox"> Sincronizaste una rama en <strong>ambos sentidos</strong> (GitHub → local con <code>fetch</code>/<code>switch</code>; local → GitHub con <code>push -u</code>).</li>
 </ul>
 <hr>
 <h2 id="qué-viene-en-m04">¿Qué viene en M04?</h2>

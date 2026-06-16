@@ -173,9 +173,9 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
   git remote -v      # debe haber un `origin` apuntando a GitHub
   ```
 - **Por qué:** todo el módulo (secrets, push, PR, descargar artefactos) se apoya en `gh` y en un repo remoto. Sin `origin` en GitHub, **no hay CI** que observar.
-- **Cómo verifico:** `gh auth status` dice *"Logged in"*; `git remote -v` lista un `origin` apuntando a `github.com`. Si falta `gh`: macOS → `brew install gh`; Windows → `winget install --id GitHub.cli`; Linux → [`cli.github.com`](https://cli.github.com/). Si falta el remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
+- **Cómo verifico:** `gh auth status` dice *"Logged in"*; `git remote -v` lista un `origin` apuntando a `github.com`. Si falta `gh`: macOS → `brew install gh`; Windows → `winget install --id GitHub.cli`; Linux → [`cli.github.com`](https://cli.github.com/). Si falta el remoto, vuelve a M03 (Paso 0.3: crear el repo en GitHub y conectarlo).
 
-> 💡 **Para el facilitador:** este módulo asume que el repo ya tiene `origin` en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup de SSH antes de continuar — sin remoto no hay CI.
+> 💡 **Para el facilitador:** este módulo asume que el repo ya tiene `origin` en GitHub. Si alguien todavía no lo tiene, dedícale 5 minutos al setup del remoto (HTTPS o SSH; ver M03 Paso 0.3) antes de continuar — sin remoto no hay CI.
 
 ---
 
@@ -197,7 +197,7 @@ Antes de tocar CI, asegúrate de que el framework de M05 corre verde **en local*
   | Herramienta | Cómo verificar | Cómo instalar si falta |
   |---|---|---|
   | `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Windows: `winget install --id GitHub.cli` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
-  | `git` con remoto | `git remote -v` | M04 Git break — conectar repo a GitHub |
+  | `git` con remoto | `git remote -v` | M03 Paso 0.3 — conectar repo a GitHub |
   | Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
 - **Por qué:** estas tres viven fuera de `package.json`. Si te falta el permiso `write`, el push y los secrets funcionan, pero el reto (crear issues automáticos) fallará con `403`.
 - **Cómo verifico:** los tres comandos responden sin error; `gh repo view --json viewerPermission` devuelve `ADMIN` o `WRITE`.

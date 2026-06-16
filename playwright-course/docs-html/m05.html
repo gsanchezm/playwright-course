@@ -420,6 +420,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-
       <li><a href="#conceptos-jit">Conceptos JIT</a></li>
       <li><a href="#arquitectura">Arquitectura</a></li>
       <li><a href="#paso-a-paso">Paso a paso</a></li>
+      <li><a href="#cómo-probar-los-endpoints-en-swagger-sin-código">🔎 Cómo probar los endpoints en Swagger (sin código)</a></li>
       <li><a href="#cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</a></li>
       <li><a href="#outcome-esperado">Outcome esperado</a></li>
     </ol>
@@ -657,6 +658,8 @@ Una clase <code>abstract</code> <strong>no se puede instanciar</strong> (<code>n
 <li><strong>Por qué:</strong> <code>AuthService</code> es la primera <strong>hija concreta</strong>: prueba que el contrato de <code>BaseService</code> funciona. El factory <code>create()</code> es <code>static async</code> porque crear el <code>APIRequestContext</code> requiere <code>await</code> — y un <code>constructor</code> no puede ser <code>async</code>.</li>
 <li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> verde; el editor reconoce <code>AuthService.create</code> y <code>auth.login</code>.</li>
 </ul>
+<blockquote><p>🔎 <strong>Pruébalo en Swagger (sin código):</strong> <code>POST /api/auth/login</code> (no requiere auth) → body <code>{ &quot;username&quot;: &quot;standard_user&quot;, &quot;password&quot;: &quot;pizza123&quot; }</code> → <strong>Execute</strong> → copia el <code>access_token</code> de la respuesta. Eso es exactamente lo que hace <code>auth.login(user)</code> aquí abajo. <a href="https://omnipizza-backend.onrender.com/api/docs">Abrir Swagger</a> · (el walkthrough completo está en <a href="#-c%C3%B3mo-probar-los-endpoints-en-swagger-sin-c%C3%B3digo">🔎 Cómo probar los endpoints en Swagger</a>)</p>
+</blockquote>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { request, type APIRequestContext } from "@playwright/test";
 import { BaseService } from "./BaseService";
 import type { LoginResponse, User } from "../types";
@@ -725,6 +728,8 @@ Un método <code>static</code> pertenece a la <strong>clase</strong>, no a la in
 <li><strong>Por qué:</strong> <code>Pizza</code> y <code>Order</code> necesitan <strong>token y mercado</strong>, a diferencia de <code>Auth</code> (que aún no tiene token). El header <code>X-Country-Code</code> hace que el backend filtre por mercado. <code>PizzaService</code> es la base del <strong>reto</strong> (le añadirás métodos después).</li>
 <li><strong>Cómo verifico:</strong> <code>pnpm exec tsc --noEmit</code> verde con las 3 hijas implementadas.</li>
 </ul>
+<blockquote><p>🔎 <strong>Pruébalo en Swagger (sin código):</strong> <code>GET /api/pizzas</code> (⚠️ <strong>requiere auth</strong> — primero pega el token con <strong>Authorize</strong>) → añade el header <code>X-Country-Code: MX</code> → <strong>Execute</strong> → verás el catálogo con precios por mercado. Es lo que devuelve <code>PizzaService.list()</code>. Cambia el header a <code>US</code>/<code>CH</code>/<code>JP</code> y observa cómo cambia la <code>currency</code>. <a href="https://omnipizza-backend.onrender.com/api/docs">Abrir Swagger</a></p>
+</blockquote>
 <div class="code-block"><span class="code-lang">ts</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-ts">import { BaseService } from "./BaseService";
 import { createAuthedContext } from "./AuthService";
 import type { CountryCode, Pizza, PizzasResponse } from "../types";
@@ -754,7 +759,11 @@ export class PizzaService extends BaseService {
     return body.pizzas ?? [];
   }
 }</code></pre></div>
-<p><code>OrderService.ts</code> sigue exactamente el mismo molde (<code>basePath() → &quot;/api/orders&quot;</code>, factory con auth, <code>createOrder()</code> y <code>listMine()</code>).</p>
+<p><code>OrderService.ts</code> sigue el mismo molde (<code>basePath() → &quot;/api/orders&quot;</code>, factory con auth, <code>createOrder()</code> y <code>listMine()</code>). Con un matiz importante en la API real de OmniPizza: <strong><code>/api/orders</code> sirve solo para LEER</strong> — <code>GET /api/orders</code> es el historial y <code>GET /api/orders/{order_id}</code> el detalle. <strong>La orden se CREA con <code>POST /api/checkout</code></strong>, no con <code>POST /api/orders</code>. Por eso <code>listMine()</code> hace <code>GET</code> sobre el <code>basePath</code> y <code>createOrder()</code> postea al endpoint de checkout (no al <code>basePath</code>) — así está ya en el código.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Por qué <code>createOrder()</code> no usa <code>this.url()</code> — y postea directo a <code>/api/checkout</code>.</strong> En esta capa hay una asimetría deliberada: <code>listMine()</code> lee con <code>GET</code> sobre el <code>basePath</code> (<code>/api/orders</code>), pero <code>createOrder()</code> <strong>ya postea</strong> a <code>${this.baseURL}/api/checkout</code> (mira <code>OrderService.ts</code>). El motivo es que la API real <strong>no crea órdenes en <code>/api/orders</code></strong> (ese endpoint es solo lectura: historial y detalle); la creación vive en <strong><code>POST /api/checkout</code></strong>. Como el endpoint de creación cae fuera del <code>basePath</code> del servicio, <code>createOrder()</code> construye la URL directo desde <code>baseURL</code> en vez de usar <code>this.url()</code>/<code>basePath()</code> (que armaría <code>/api/orders</code>). El body que envía cumple <code>OrderPayload</code> (<code>country_code</code>, <code>items</code>, <code>name</code>, <code>address</code>, <code>phone</code> + el campo de dirección por mercado, p. ej. <code>colonia</code> en MX, y opcionalmente la propina como <code>propina</code>). Puedes confirmar el endpoint en Swagger (ver más abajo).</p>
+</aside>
+<blockquote><p>🔎 <strong>Pruébalo en Swagger (sin código):</strong> la orden se crea con <code>POST /api/checkout</code> (⚠️ requiere auth). Tras crearla, <code>GET /api/orders</code> muestra el historial y <code>GET /api/orders/{order_id}</code> el detalle. <a href="https://omnipizza-backend.onrender.com/api/docs">Abrir Swagger</a> · pasos detallados en <a href="#-c%C3%B3mo-probar-los-endpoints-en-swagger-sin-c%C3%B3digo">🔎 Cómo probar los endpoints en Swagger</a>.</p>
+</blockquote>
 <p><strong>2.5 — Escribir <code>services/index.ts</code> (barrel export)</strong></p>
 <ul>
 <li><strong>Qué hago:</strong> reexporto las 3 clases y el helper desde un solo <code>index.ts</code>.</li>
@@ -985,6 +994,89 @@ git commit -m "feat(m05): API layer con BaseService abstracta"
 git log --oneline -1</code></pre></div>
 <blockquote><p>🪟 <strong>Windows / PowerShell:</strong> los comandos <code>git</code> son idénticos; no necesitas escapar nada aquí.</p>
 </blockquote>
+<hr>
+<h2 id="cómo-probar-los-endpoints-en-swagger-sin-código">🔎 Cómo probar los endpoints en Swagger (sin código)</h2>
+<p>Antes (o en vez) de correr un test, puedes <strong>ver con tus propios ojos</strong> qué hace cada endpoint: ir a la URL, mandar la petición, y leer la respuesta. Es el equivalente a abrir Postman, pero ya viene servido por el backend. Esto te da la <strong>fuente de la verdad</strong> contra la que comparar lo que devuelven <code>AuthService</code>, <code>PizzaService</code> y <code>OrderService</code>.</p>
+<aside class="callout callout--tip"><p>💡 <strong>Para el facilitador:</strong> haz este recorrido en vivo <strong>antes</strong> de leer el código de los servicios. Cuando luego vean <code>auth.login()</code> o <code>pizzas.list()</code>, ya sabrán exactamente qué request/response está envolviendo cada método — el <code>.ts</code> deja de ser &quot;magia&quot;.</p>
+</aside>
+<h3 id="tabla-de-endpoints-la-chuleta">Tabla de endpoints (la chuleta)</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Método</th>
+<th>¿Requiere auth?</th>
+<th>Headers relevantes</th>
+<th>Lo envuelve</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/auth/login</code></td>
+<td>POST</td>
+<td>No</td>
+<td>—</td>
+<td><code>AuthService.login()</code></td>
+</tr>
+<tr>
+<td><code>/api/pizzas</code></td>
+<td>GET</td>
+<td><strong>Sí</strong> (Bearer)</td>
+<td><code>X-Country-Code</code> (MX/US/CH/JP), <code>X-Language</code> (opc.)</td>
+<td><code>PizzaService.list()</code></td>
+</tr>
+<tr>
+<td><code>/api/checkout</code></td>
+<td>POST</td>
+<td><strong>Sí</strong> (Bearer)</td>
+<td><code>Authorization: Bearer</code>, <code>X-Country-Code</code></td>
+<td><code>OrderService.createOrder()</code></td>
+</tr>
+<tr>
+<td><code>/api/orders</code></td>
+<td>GET</td>
+<td><strong>Sí</strong> (Bearer)</td>
+<td><code>Authorization: Bearer</code></td>
+<td><code>OrderService.listMine()</code></td>
+</tr>
+<tr>
+<td><code>/api/orders/{order_id}</code></td>
+<td>GET</td>
+<td><strong>Sí</strong> (Bearer)</td>
+<td><code>Authorization: Bearer</code></td>
+<td>(detalle de una orden)</td>
+</tr>
+</tbody></table>
+<blockquote><p><strong>Headers transversales:</strong> <code>Authorization: Bearer &lt;token&gt;</code> autentica cualquier endpoint protegido. <code>X-Country-Code</code> (uno de <strong>MX / US / CH / JP</strong>) elige el mercado y por tanto precios/moneda. <code>X-Language</code> (<strong>en / es / de / fr / ja</strong>, opcional) traduce los textos de la respuesta.</p>
+</blockquote>
+<aside class="callout callout--tip"><p>💡 <strong>Crear vs. leer órdenes:</strong> la orden <strong>se crea con <code>POST /api/checkout</code></strong>, mientras que <code>/api/orders</code> es solo lectura (historial y detalle). Por eso <code>OrderService.createOrder()</code> postea a <code>/api/checkout</code> y <code>listMine()</code> hace <code>GET</code> sobre <code>/api/orders</code> (ver la nota del Paso 2.4 para el porqué del diseño).</p>
+</aside>
+<h3 id="walkthrough-paso-a-paso">Walkthrough paso a paso</h3>
+<p><strong>1 — Abre el Swagger UI.</strong> Ve a <strong><a href="https://omnipizza-backend.onrender.com/api/docs">https://omnipizza-backend.onrender.com/api/docs</a></strong> (es <strong>FastAPI</strong>, así que verás la interfaz Swagger con todos los endpoints agrupados).</p>
+<aside class="callout callout--warn"><p>⚠️ <strong>Render free-tier &quot;duerme&quot;.</strong> La primera petición del día puede tardar <strong>30-40s</strong> mientras el servicio &quot;despierta&quot; (cold start). Si la primera llamada se queda colgada o da un timeout, reintenta — es el mismo motivo por el que la primera corrida de <code>pnpm test:api</code> tarda más.</p>
+</aside>
+<p><strong>2 — Autentícate (obtén el token).</strong> Expande <strong><code>POST /api/auth/login</code></strong> → botón <strong>&quot;Try it out&quot;</strong> → en el body pega:</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{ "username": "standard_user", "password": "pizza123" }</code></pre></div>
+<p>→ <strong>Execute</strong>. En la respuesta (200) verás el cuerpo con <strong><code>access_token</code></strong> (más <code>token_type</code>, <code>username</code> y <code>behavior</code>). <strong>Copia el valor de <code>access_token</code></strong> — es lo que vas a autorizar en el siguiente paso. (Esto es lo mismo que devuelve <code>auth.login(user)</code> en el código, tipado como <code>LoginResponse</code>.)</p>
+<p><strong>3 — Autoriza (mete el token en Swagger).</strong> Pulsa el botón <strong>Authorize</strong> (arriba a la derecha, con el candado) → en el modal (esquema <strong>HTTP Bearer</strong>) pega el token → <strong>Authorize</strong> → <strong>Close</strong>. A partir de ahora Swagger añade <code>Authorization: Bearer &lt;token&gt;</code> automáticamente a cada llamada protegida.</p>
+<aside class="callout callout--warn"><p>⚠️ <strong>Pega SOLO el token, sin la palabra <code>Bearer</code>.</strong> El esquema HTTP Bearer de Swagger ya antepone <code>Bearer </code> por ti. Si pegas <code>Bearer eyJ...</code> se duplica el prefijo (<code>Bearer Bearer ...</code>) y obtendrás <strong>401</strong>.</p>
+</aside>
+<p><strong>4 — Ejecuta un endpoint protegido (<code>GET /api/pizzas</code>).</strong> Expande <strong><code>GET /api/pizzas</code></strong> (⚠️ requiere auth — por eso el paso 3 va primero) → <strong>&quot;Try it out&quot;</strong> → en el campo del header <strong><code>X-Country-Code</code></strong> escribe <strong><code>MX</code></strong> → <strong>Execute</strong>. Verás el catálogo de pizzas con <strong>precios en la moneda del mercado</strong>. Cambia <code>X-Country-Code</code> a <code>US</code> / <code>CH</code> / <code>JP</code> y vuelve a <strong>Execute</strong>: los precios y la <code>currency</code> cambian. (Esto es exactamente lo que itera <code>ejemplo.spec.ts</code> con su <code>for (const market of markets)</code>.)</p>
+<p><strong>5 — Crea una orden y míralas (<code>POST /api/checkout</code> → <code>GET /api/orders</code>).</strong> Expande <strong><code>POST /api/checkout</code></strong> (el que <strong>crea</strong> la orden) → <strong>&quot;Try it out&quot;</strong> → pega un body válido. Un body mínimo para <strong>MX</strong> (toma un <code>pizza_id</code> real del catálogo del paso 4):</p>
+<div class="code-block"><span class="code-lang">json</span><button class="code-copy" type="button" aria-label="Copiar bloque de código">Copiar</button><pre><code class="lang-json">{
+  "country_code": "MX",
+  "items": [{ "pizza_id": 1, "quantity": 1 }],
+  "name": "QA Tester",
+  "address": "Av. Siempre Viva 742",
+  "phone": "5512345678",
+  "colonia": "Centro",
+  "propina": 10
+}</code></pre></div>
+<p>→ <strong>Execute</strong>. La respuesta (2xx) confirma la orden creada con su <code>order_id</code>.</p>
+<aside class="callout callout--warn"><p>⚠️ Si recibes <strong>422</strong>, al body le falta un campo <strong>requerido</strong>: revisa que <code>pizza_id</code> exista (cópialo del paso 4) y que esté el <strong>campo de dirección del mercado</strong> — el único obligatorio por mercado: en <strong>MX</strong> <code>colonia</code>, en <strong>US</strong> <code>zip_code</code> (5 dígitos), en <strong>CH</strong> <code>plz</code>, en <strong>JP</strong> <code>prefectura</code>. La <strong>propina es opcional</strong> y NO causa 422 si la omites (<code>propina</code> en MX, <code>tip</code> en US, <code>trinkgeld</code> en CH, <code>chip</code> en JP).</p>
+</aside>
+<p>Después, expande <strong><code>GET /api/orders</code></strong> → <strong>Execute</strong> → verás el <strong>historial</strong> con la orden que acabas de crear. Y <strong><code>GET /api/orders/{order_id}</code></strong> → pega el <code>order_id</code> de arriba → <strong>Execute</strong> → verás el <strong>detalle</strong> de esa orden.</p>
+<aside class="callout callout--tip"><p>💡 <strong>El &quot;premio&quot; de este recorrido:</strong> ahora cada método de servicio tiene un referente visible. Cuando un test API falle, abre Swagger, repite la llamada a mano, y compara la respuesta real con lo que el test esperaba — así sabes si el bug está en el test, en el servicio, o en el backend.</p>
+</aside>
 <hr>
 <h2 id="cómo-ejecutar-este-módulo">▶️ Cómo ejecutar este módulo</h2>
 <ul>

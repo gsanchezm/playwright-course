@@ -1,6 +1,6 @@
 # Módulo 03 — Refactor a POM (OOP incremental)
 
-**Duración estimada:** 80-105 min (incluye Git JIT — branches y conflictos, tejidos en el flujo del refactor)
+**Duración estimada:** 80-105 min (incluye Git JIT — branches, conexión a GitHub y conflictos, tejidos en el flujo del refactor)
 **Pieza que suma al framework:** `pages/BasePage.ts` + `LoginPage.ts` + `CatalogPage.ts` + `CheckoutPage.ts`. El spec de M02 se refactoriza y se nota cuánto se limpia.
 
 ---
@@ -145,6 +145,39 @@ pages/
 
 > 🌿 **Git JIT — por qué una rama aquí**
 > El refactor cruza varios archivos a la vez; aislarlo en `feature/m03-pom` protege `main`. Más abajo, al cerrar el módulo (Paso 10), harás el merge a `main` y verás un conflicto a propósito.
+
+**0.3 — Crea el repo en GitHub y conéctalo**
+- **Qué hago:** creo el repositorio remoto en github.com y conecto mi repo local con él.
+  1. En github.com, botón **New repository** (verde, arriba a la derecha o en `github.com/new`).
+  2. Lo nombro `omnipizza-playwright`, lo dejo **Public** (o Private, da igual para el curso).
+  3. **NO** marco "Add a README", "Add .gitignore" ni licencia — el repo local **ya tiene** esos archivos y un commit inicial.
+  4. **Create repository.** GitHub te muestra la pantalla "…or push an existing repository from the command line": de ahí copias la URL (HTTPS o SSH).
+  5. Conecto el remoto y subo `main` + la rama de feature:
+  ```bash
+  git remote add origin <url-que-copiaste>
+  git remote -v                        # confirma que quedó (fetch + push)
+  git push -u origin main              # sube main y deja upstream
+  git push -u origin feature/m03-pom   # sube tu rama de trabajo
+  ```
+- **Por qué:** hasta ahora todo vive **solo en tu laptop**. Conectar `origin` es lo que convierte tu repo local en algo compartible: respaldas el trabajo, y a partir de M04 podrás abrir Pull Requests para code review. Lo hacemos **una sola vez** por repo; los módulos siguientes asumen que `origin` ya existe. El `-u` (`--set-upstream`) vincula tu rama local con su gemela remota, así los siguientes `git push` / `git pull` ya no necesitan argumentos.
+- **Cómo verifico:** recargo el repo en github.com y abro el **selector de ramas** (el dropdown que dice "main"): aparecen **`main`** y **`feature/m03-pom`**. En la terminal, `git remote -v` lista `origin` y `git status` dice `Your branch is up to date with 'origin/feature/m03-pom'`.
+
+> 🌿 **Git JIT — local vs remoto, ¿cuándo eliges HTTPS o SSH?**
+> Al crear el repo, GitHub te ofrece dos URLs para `origin`. No cambian el contenido — sólo **cómo te autentica** cada push:
+>
+> | | HTTPS | SSH |
+> |---|---|---|
+> | URL | `https://github.com/tu-usuario/omnipizza-playwright.git` | `git@github.com:tu-usuario/omnipizza-playwright.git` |
+> | Autenticación | **PAT** (Personal Access Token) en vez de contraseña | Par de llaves SSH (`ssh-keygen`) registrado en GitHub |
+> | Setup inicial | Cero (pegas el token la 1ª vez; el OS lo cachea) | Generar llave + subir la pública a GitHub Settings → SSH keys |
+> | Recomendado para | Empezar rápido | Quien ya tiene llaves o pushea a diario |
+>
+> Elige una y úsala consistente. Si te equivocas, `git remote set-url origin <otra-url>` la cambia sin perder nada.
+
+> ⚠️ **Gotchas al conectar el remoto**
+> - **Autenticación:** con HTTPS, GitHub **ya no acepta tu contraseña** en el push — pide un **PAT** (Settings → Developer settings → Personal access tokens). Con SSH, el error `Permission denied (publickey)` significa que tu llave no está registrada.
+> - **Repo no-vacío:** si marcaste README/.gitignore al crearlo, el primer `git push` falla con `! [rejected] ... (fetch first)` porque el remoto tiene un commit que tu local no. Por eso lo creamos **vacío**. (Si ya te pasó: `git pull origin main --allow-unrelated-histories`, resuelves y vuelves a pushear.)
+> - **`-u` sólo la primera vez:** el `-u` es para el push **inicial** de cada rama. Después, `git push` a secas ya sabe a dónde ir.
 
 ---
 
@@ -442,28 +475,74 @@ export default defineConfig({
 - **Por qué:** el reto te hace **orquestar** Pages sin escribir locators inline (la única línea inline esperada es la del `nav-checkout-desktop`). Es donde compruebas que internalizaste la "regla de oro": si necesitas un locator que no existe, lo añades al Page, no al spec.
 - **Cómo verifico:** los 4 tests del reto terminan en verde (`Reto-MX`, `Reto-US`, `Reto-CH`, `Reto-JP`). Cada `TODO` del reto trae su propio formato **Qué hacer / Pista / Cómo verificar** — resuélvelos tú; el README no los resuelve por ti.
 
----
-
-### Paso 10 — Cerrar la rama: merge a `main`
-
-**10.1 — Versiona el spec refactorizado**
-- **Qué hago:** commiteo el refactor del spec en la rama:
+**9.2 — Commitea el refactor del spec en `feature/m03-pom`**
+- **Qué hago:** desde la rama `feature/m03-pom`, commiteo los dos specs refactorizados (el ejemplo del Paso 8.1 y el reto del 9.1):
   ```bash
   git add modulo-03-pom/ejemplo.spec.ts modulo-03-pom/reto.spec.ts
   git commit -m "feat(m03): refactor specs to use Page Object Model"
   ```
-- **Por qué:** cierras la rama con el trabajo completo y commiteado antes de integrarlo.
-- **Cómo verifico:** `git status` está limpio (`nothing to commit`); `git log --oneline -1` muestra el commit del refactor.
+- **Por qué:** el entregable estrella del módulo (los specs refactorizados) queda **commiteado en la rama del módulo antes de cambiar de rama**. Esto deja el árbol de trabajo **limpio** para la práctica de sincronización del Paso 9.5: vas a saltar entre ramas (`hotfix/locator`, `feature/extra-test`) y, con todo commiteado, esos saltos son seguros. Es la regla de oro de Git que este módulo enseña: **commitea antes de cambiar de rama**, nunca arrastres cambios sin commitear de una rama a otra.
+- **Cómo verifico:** `git status` dice `On branch feature/m03-pom` y `nothing to commit, working tree clean`; `git log --oneline -1` muestra el commit del refactor de specs.
 
-**10.2 — Mergea `feature/m03-pom` a `main`**
-- **Qué hago:** vuelvo a `main` e integro:
+---
+
+### Paso 9.5 — Sincronizar ramas en ambos sentidos (GitHub ⇄ local)
+
+Ya conectaste `origin` en el Paso 0.3. Ahora practica el ida-y-vuelta: una rama nace en GitHub y baja a tu local; otra nace local y sube a GitHub. En equipo esto pasa todo el tiempo — un compañero crea una rama desde la web, o tú abres una desde tu máquina.
+
+> **Analogía QA:** tu repo **local** es tu estación de trabajo; **`origin`** (GitHub) es el **ambiente compartido del equipo**. Una rama remota es como un build que alguien dejó en el ambiente compartido: no está en tu máquina hasta que la **traes** (`fetch` + `switch`). Y una rama tuya no existe para el equipo hasta que la **publicas** (`push -u`).
+
+**9.5.1 — GitHub → local: traer una rama creada en la web**
+- **Qué hago:** simulo que un compañero (o yo desde otra máquina) creó una rama en GitHub, y la bajo a mi local.
+  1. En github.com, abro el **selector de ramas**, escribo `hotfix/locator` y clic en **Create branch: hotfix/locator from 'main'**.
+  2. En mi terminal local, la traigo y me cambio a ella:
   ```bash
+  git fetch origin                # entera a tu local de las ramas nuevas del remoto
+  git switch hotfix/locator       # crea la rama local rastreando origin/hotfix/locator
+  ```
+- **Por qué:** `git fetch` **no** modifica tus ramas — sólo actualiza tu copia del estado del remoto (`origin/*`). El `git switch hotfix/locator` es la magia: cuando el nombre coincide con una rama remota, Git crea la local **con tracking automático** (equivale al viejo `git checkout -b hotfix/locator --track origin/hotfix/locator`). Así un `git pull` futuro sobre esa rama ya sabe de dónde jalar.
+- **Cómo verifico:** `git branch -vv` muestra la rama local con su upstream entre corchetes:
+  ```
+  * hotfix/locator  a1b2c3d [origin/hotfix/locator] ...
+  ```
+  Ese `[origin/hotfix/locator]` es la prueba de que está siguiendo a la remota.
+
+**9.5.2 — local → GitHub: publicar una rama que nació en tu máquina**
+- **Qué hago:** creo una rama local y la subo a `origin` para que el equipo la vea.
+  ```bash
+  git switch -c feature/extra-test    # rama nueva, sólo local por ahora
+  git push -u origin feature/extra-test
+  ```
+- **Por qué:** la rama existió **sólo en tu disco** hasta el `push`. El `-u` (igual que en el Paso 0.3) la vincula con su gemela remota en su primer viaje; después basta `git push`.
+- **Cómo verifico:** recargo github.com y abro el selector de ramas: `feature/extra-test` aparece. `git branch -vv` ahora la muestra con `[origin/feature/extra-test]`.
+
+**Resumen — los dos sentidos:**
+
+| Sentido | Nació en | Cómo lo sincronizas | Cómo verificas |
+|---|---|---|---|
+| **GitHub → local** | la web de GitHub | `git fetch origin` + `git switch <rama>` | `git branch -vv` muestra `[origin/<rama>]` |
+| **local → GitHub** | tu máquina (`git switch -c`) | `git push -u origin <rama>` | aparece en el selector de ramas de github.com |
+
+> 💡 **Para el facilitador:** estas dos ramas (`hotfix/locator`, `feature/extra-test`) son **sólo para practicar la sincronización** — no las mergees ni las uses para el refactor. La rama del módulo sigue siendo `feature/m03-pom` (con los Page Objects **y** los specs ya commiteados desde los Pasos 6.1 y 9.2), que mergeas a `main` en el Paso 10. Como ya commiteaste todo antes de este paso, saltar entre ramas aquí es seguro: no arrastras cambios sin commitear. Si quieres dejar el repo limpio después, bórralas con `git branch -d` (local) y `git push origin --delete <rama>` (remoto).
+
+> 📚 **Profundización opcional Git:** [Trabajar con remotos](../../git-github-course/modulo-03-undo-remotos-tags/02-remotos.md) · [Crear y subir un repo](../../git-github-course/modulo-06-github/02-crear-subir-repo.md)
+
+---
+
+### Paso 10 — Cerrar la rama: merge a `main`
+
+**10.1 — Mergea `feature/m03-pom` a `main`**
+- **Qué hago:** confirmo que la rama del módulo trae **todo** commiteado, **sincronizo su gemela remota** y la integro a `main`:
+  ```bash
+  git log feature/m03-pom --oneline         # confirma: Page Objects (6.1) + specs (9.2) están aquí
+  git push origin feature/m03-pom           # sube a origin los commits de la rama (ya tiene upstream del Paso 0.3)
   git switch main
   git merge feature/m03-pom
-  git branch -d feature/m03-pom
+  git push origin --delete feature/m03-pom  # limpia la rama remota ya integrada
+  git branch -d feature/m03-pom             # ...y la local (ahora sí: integrada y en sync con su upstream)
   ```
-- **Por qué:** el refactor ya está probado en verde; integrarlo a `main` lo hace oficial. Borrar la rama mergeada mantiene el repo limpio.
-- **Cómo verifico:** `git log --oneline --graph -5` muestra los commits del POM en `main`. Si `main` no avanzó desde que ramificaste, verás un **fast-forward** (sin commit extra); si avanzó, un **merge commit** con dos padres. Ambos son correctos.
+- **Por qué:** los Page Objects (Paso 6.1) y los specs refactorizados (Paso 9.2) **ya están commiteados** en `feature/m03-pom`, así que esta no es la primera vez que se versionan: aquí sólo integras. El primer `git push origin feature/m03-pom` sube a `origin` los commits que el Paso 0.3 dejó **sólo** en tu local (en 0.3 pusheaste la rama recién creada; los commits de 6.1 y 9.2 vinieron **después** y nunca se subieron, así que `origin/feature/m03-pom` quedó atrás). Lo escribimos con el nombre explícito de la rama — no un `git push` a secas — porque el Paso 9.5 te dejó parado en `feature/extra-test`, y un `push` pelón subiría **esa** rama, no la del módulo. Por eso `git switch main` puede hacerse desde **cualquier** rama en la que el Paso 9.5 te haya dejado — el merge trae los commits de `feature/m03-pom` sin importar dónde estabas parado, porque vives integrando una rama completa, no arrastrando trabajo a medias. El orden del cierre importa: **primero** borras la rama remota integrada (`git push origin --delete`) y **luego** la local, porque `git branch -d` valida que la rama esté integrada **contra su upstream** (`origin/feature/m03-pom`), no contra `main`. Si borraras la local con el upstream aún atrasado, `-d` fallaría con `the branch 'feature/m03-pom' is not fully merged` aunque el merge a `main` haya sido perfecto; al sincronizar (`push`) y limpiar el remoto antes, `-d` ya no encuentra un upstream desfasado y borra sin protestar.
+- **Cómo verifico:** el `git log feature/m03-pom --oneline` muestra **ambos** commits (los Page Objects y el refactor de specs) antes del merge. Tras integrar, `git log --oneline --graph -5` los muestra en `main`. Si `main` no avanzó desde que ramificaste, verás un **fast-forward** (sin commit extra); si avanzó, un **merge commit** con dos padres. Ambos son correctos. El `git branch -d` termina con `Deleted branch feature/m03-pom` (sin el error `not fully merged`), y la rama remota ya no aparece: ni en `git branch -r` ni en el selector de ramas de github.com.
 
 > | Prefijo de rama | Uso |
 > |---|---|
@@ -472,7 +551,7 @@ export default defineConfig({
 > | `chore/` | Upgrade de dependencias, limpieza |
 > | `refactor/` | Reestructurar sin cambiar comportamiento |
 
-**10.3 — (Opcional, demostración) Provoca y resuelve un conflicto**
+**10.2 — (Opcional, demostración) Provoca y resuelve un conflicto**
 - **Qué hago:** para *practicar* conflictos, simulo dos cambios al mismo método. En la rama cambio un locator de `LoginPage`:
   ```typescript
   // En feature/m03-pom
@@ -525,6 +604,9 @@ export default defineConfig({
 - [ ] Completaste el reto E2E con `CheckoutPage`.
 - [ ] Sabes que `abstract` llega en M05 — no lo introdujimos aquí.
 - [ ] Aislaste el refactor en `feature/m03-pom` y lo mergeaste a `main`.
+- [ ] Creaste el repo en GitHub (`omnipizza-playwright`, sin archivos iniciales) y conectaste `origin`.
+- [ ] Subiste `main` y `feature/m03-pom` con `git push -u` y los ves en el selector de ramas.
+- [ ] Sincronizaste una rama en **ambos sentidos** (GitHub → local con `fetch`/`switch`; local → GitHub con `push -u`).
 
 ---
 

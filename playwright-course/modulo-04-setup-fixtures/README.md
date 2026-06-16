@@ -647,7 +647,7 @@ pnpm test:setup
   | **Rebase and merge** | Aplica tus commits sobre `main` sin merge commit | Equipos que rebasean |
 - **Cómo verifico:** `gh pr view --web` abre el PR en el navegador; `git push` posteriores ya no piden `-u`.
 
-> 📌 La **primera vez** que conectas el repo a GitHub: en github.com crea **New repository** (`qa-playwright-curso`, sin README inicial), luego `git remote add origin git@github.com:tu-usuario/qa-playwright-curso.git` y `git push -u origin main`. `git remote -v` confirma que quedó.
+> 📌 El remoto `origin` **ya quedó conectado en M03 (Paso 0.3 — crear el repo en GitHub y conectarlo)**. Aquí **no** vuelves a crear el repo ni a correr `git remote add origin`: sólo subes tu rama de trabajo con `git push -u` y abres el PR. Si por algún motivo aún no tienes `origin` (saltaste M03), regresa a ese paso antes de continuar — `git remote -v` te dice si ya está.
 
 ---
 
