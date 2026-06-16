@@ -1,0 +1,22 @@
+{
+  "name": "regex-qa-course",
+  "version": "1.0.0",
+  "description": "Curso de Expresiones Regulares orientado a Pruebas de Software (ejecutable con tsx, sin framework de testing)",
+  "private": true,
+  "scripts": {
+    "m1": "tsx modulo-01-fundamentos/ejemplo.ts",
+    "m2": "tsx modulo-02-clases-cuantificadores/ejemplo.ts",
+    "m3": "tsx modulo-03-grupos-captura/ejemplo.ts",
+    "m4": "tsx modulo-04-anclas-banderas/ejemplo.ts",
+    "m5": "tsx modulo-05-lookaround/ejemplo.ts",
+    "m6": "tsx modulo-06-regex-en-pruebas/ejemplo.ts",
+    "m7": "tsx modulo-07-avanzado-seguro/ejemplo.ts",
+    "verify": "tsx modulo-01-fundamentos/ejemplo.ts && tsx modulo-02-clases-cuantificadores/ejemplo.ts && tsx modulo-03-grupos-captura/ejemplo.ts && tsx modulo-04-anclas-banderas/ejemplo.ts && tsx modulo-05-lookaround/ejemplo.ts && tsx modulo-06-regex-en-pruebas/ejemplo.ts && tsx modulo-07-avanzado-seguro/ejemplo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0"
+  }
+}
