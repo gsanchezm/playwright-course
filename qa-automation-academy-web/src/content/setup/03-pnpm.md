@@ -4,7 +4,7 @@
 
 > **Sitio oficial:** https://pnpm.io/
 
-> **Versión recomendada:** **9.x o superior**.
+> **Versión recomendada:** **10.x o superior**.
 ---
 
 ![Guía visual de pnpm](/pnpm-guide.jpg)
@@ -29,6 +29,8 @@ $ corepack enable
 $ corepack prepare pnpm@latest --activate
 ```
 
+> ⚠️ **Corepack fue removido a partir de Node 25.** En Node 24 funciona, pero la Opción A (`npm install -g pnpm`) funciona siempre — es la recomendada.
+
 ### Opción C: con script standalone
 
 #### macOS / Linux
@@ -52,7 +54,7 @@ $ brew install pnpm
 
 ```bash
 $ pnpm --version
-9.12.0    # ← debe ser 9.x o superior
+10.x.x    # ← debe ser 10.x o superior
 ```
 
 Si imprime un número de versión, está listo.
@@ -89,6 +91,19 @@ Estos son los que usarás durante los cursos:
 
 ---
 
+## 🧩 TypeScript global (opcional)
+
+En el curso usaremos TypeScript dentro de cada proyecto (Playwright ya lo trae). Aun así, instalarlo de forma global ayuda para verificar versiones y compilar fuera de proyectos:
+
+```bash
+$ npm install -g typescript   # útil para verificar versiones y compilar fuera de proyectos
+$ tsc -v                       # Version 5.x.x
+```
+
+> **Buena práctica:** en cada proyecto agrégalo como dev-dependency con `pnpm add -D typescript`. Playwright ya lo incluye al crear el proyecto en TypeScript.
+
+---
+
 ## ⚠️ Problemas comunes
 
 ### "command not found: pnpm" después de instalar
@@ -98,6 +113,25 @@ Estos son los que usarás durante los cursos:
 
 ### "pnpm install" se queda colgado en Windows
 - Probablemente Windows Defender está escaneando los archivos. Excluye la carpeta del proyecto en Defender.
+- Abre **PowerShell como Administrador** y excluye la carpeta del store de pnpm:
+
+```powershell
+> Add-MpPreference -ExclusionPath $(pnpm store path)
+```
+
+### "ejecución de scripts está deshabilitada" (Windows)
+- Abre **PowerShell como Administrador** y ejecuta:
+
+```powershell
+> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+### "libatomic.so.1: cannot open shared object file" (Linux)
+- El binario de pnpm necesita esa librería. Instálala:
+
+```bash
+$ sudo apt install -y libatomic1
+```
 
 ### "ERR_PNPM_PEER_DEP_ISSUES"
 - Tu `package.json` tiene un peer dependency conflict. Puedes ignorar warnings con `pnpm install --no-strict-peer-dependencies` o arreglarlo actualizando las versiones.

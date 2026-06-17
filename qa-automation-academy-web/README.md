@@ -14,7 +14,7 @@ Vive como proyecto independiente dentro del monorepo y **no modifica** `typescri
 ## Requisitos
 
 - Node.js 20.x
-- pnpm 9 (`corepack pnpm --version`)
+- pnpm 10 (`pnpm --version`)
 
 ## Desarrollo local
 

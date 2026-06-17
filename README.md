@@ -153,8 +153,8 @@ pnpm test:e2e:ui  # tests con UI mode
 |---------|------------|
 | **Idioma de comentarios** | Español (la audiencia es LATAM) |
 | **Idioma de código** | Inglés (variables, funciones, clases, selectores) |
-| **Gestor de paquetes** | pnpm 9+ (no npm, no yarn) |
-| **Versión de Node** | 20 LTS recomendada (mínimo 18) |
+| **Gestor de paquetes** | pnpm 10+ (no npm, no yarn) |
+| **Versión de Node** | 24 LTS recomendada (mínimo 20) |
 | **TypeScript** | strict: true en todos los proyectos |
 | **Locators de Playwright** | `getByRole` / `getByLabel` / `getByTestId` (nunca CSS frágil) |
 | **Estilo de commits** | `<tipo>: <descripción imperativa>` (ver curso de Git, módulo 2) |

@@ -77,10 +77,10 @@ Version 1.47.0    # ← debe ser 1.40+
 
 Y corre el test "hello world" del módulo 1:
 ```bash
-$ pnpm test modulo-01-vision-general/hello.spec.ts
+$ pnpm m1
 ```
 
-**Resultado esperado:** 6 tests verdes (2 tests × 3 navegadores).
+**Resultado esperado:** los smoke del Módulo 1 corren y pasan en verde.
 
 ---
 

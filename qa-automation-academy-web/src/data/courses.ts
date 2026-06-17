@@ -90,6 +90,16 @@ const META: Record<string, CourseMeta> = {
     level: "Avanzado",
     progress: 0,
   },
+  "css-xpath": {
+    track: "CSS/XPath",
+    title: "CSS Selectors y XPath para QA",
+    description:
+      "Localiza cualquier elemento con criterio: de selectores CSS y XPath básicos a ejes, :has() y técnicas de resiliencia anti-flaky.",
+    logoBg: "white",
+    duration: "6–8 h",
+    level: "Intermedio",
+    progress: 0,
+  },
 };
 
 function moduleCount(section: DocSection): number {
@@ -139,5 +149,6 @@ export const courseTracks: string[] = [
   "Regex",
   "TypeScript",
   "Git",
+  "CSS/XPath",
   "Playwright",
 ];

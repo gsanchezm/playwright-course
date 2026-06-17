@@ -1,0 +1,215 @@
+<!doctype html>
+<!--
+  ============================================================
+  fixtures/omnipizza.html — el campo de practica del curso
+  ============================================================
+  jsdom NO ejecuta JS. La app real muestra login (/), catalogo (/catalog),
+  carrito y checkout (/checkout) en RUTAS separadas; aqui se APLANAN en UN
+  documento donde TODOS los estados coexisten pre-renderizados: tab activo,
+  card agotada, carrito abierto, banner de error visible y confirmacion de
+  pedido visible a la vez.
+
+  FIDELIDAD = a nivel de ELEMENTO. Los hooks REALES (verificados en los tests
+  de playwright-course) se conservan para que los selectores transfieran a la
+  app live:
+    · boton de login con nombre accesible "Sign In"
+    · inputs de login SIN <label> (el rotulo es un <div>): se localizan por
+      placeholder o data-testid
+    · testids con sufijo de viewport: -desktop
+    · pizzas como <h3>; tarjetas con testid dinamico [data-testid^="pizza-card-"]
+    · add-to-cart icon-only sin nombre accesible: [data-testid^="add-to-cart-"]
+    · banderas de mercado = <button> con emoji como nombre accesible
+    · mensaje de error real: "Invalid credentials"
+  Todo lo demas (clases BEM, hashes css-*, checkbox/radio, footer, badges,
+  whitespace deliberado) es SCAFFOLDING SINTETICO, marcado <!-- (S) -->, anadido
+  para ejercitar tecnicas que la app real no expone. Se superpone SOBRE los
+  hooks reales, nunca los reemplaza.
+
+  ⚠️ READ-ONLY para los autores de lecciones: NO editar este archivo. Si una
+  leccion necesita un elemento que no existe, reportarlo (no parchar aqui).
+  ============================================================
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>OmniPizza</title>
+</head>
+<body data-app="omnipizza" data-viewport="desktop">
+
+  <!-- ===================== HEADER / NAV ===================== -->
+  <header class="site-header css-1a2b3c" data-testid="app-header">
+    <a class="brand" href="/" data-testid="brand-home"><img src="/assets/logo-omnipizza.svg" alt="OmniPizza"></a>
+    <nav class="main-nav" aria-label="Principal">
+      <a class="nav-link is-active" href="/catalog" data-testid="nav-catalog-desktop" aria-current="page">Catálogo</a>
+      <a class="nav-link" href="/checkout" data-testid="nav-checkout-desktop">Checkout</a>
+      <a class="nav-link nav-link--external" href="https://help.omnipizza.com/faq" target="_blank" rel="noopener">Ayuda</a>
+    </nav>
+    <div class="nav-search">
+      <input type="search" class="search-input" placeholder="Busca tu pizza favorita..." data-testid="catalog-search-desktop" value="">
+    </div>
+    <button class="cart-toggle" data-testid="nav-cart-desktop" aria-label="Carrito">
+      <svg class="icon icon-cart" aria-hidden="true"></svg>
+      <span class="cart-badge" data-testid="nav-cart-count">2</span>
+    </button>
+  </header>
+
+  <!-- ===================== LOGIN ===================== -->
+  <main class="login-view" data-testid="login-view">
+    <h1 class="hero-title">Crafting moments of pure flavor.</h1>
+
+    <section class="market-picker" data-testid="market-picker">
+      <div class="market-grid">
+        <!-- el nombre accesible de cada bandera es el EMOJI, no el pais (REAL) -->
+        <button class="market-flag is-selected" data-testid="market-MX" data-country="MX" data-currency="MXN" aria-pressed="true">🇲🇽</button>
+        <button class="market-flag" data-testid="market-US" data-country="US" data-currency="USD" aria-pressed="false">🇺🇸</button>
+        <button class="market-flag" data-testid="market-CH" data-country="CH" data-currency="CHF" aria-pressed="false">🇨🇭</button>
+        <button class="market-flag" data-testid="market-JP" data-country="JP" data-currency="JPY" aria-pressed="false">🇯🇵</button>
+      </div>
+    </section>
+
+    <form id="login-form" class="login-form css-9z8y7x" data-testid="login-form" novalidate>
+      <h2 class="form-title">Welcome back!</h2>
+      <p class="form-subtitle">Please enter your details.</p>
+      <div class="field">
+        <!-- "Username" es un <div>, NO un <label for> (REAL): getByLabel falla -->
+        <div class="field-label">Username</div>
+        <input class="text-input" type="text" placeholder="standard_user" data-testid="username-desktop" autocomplete="username" value="">
+      </div>
+      <div class="field">
+        <div class="field-label">Password</div>
+        <input class="text-input" type="password" placeholder="••••••••" data-testid="password-desktop" autocomplete="current-password" value="">
+      </div>
+      <div class="login-error" role="alert" aria-live="assertive" data-testid="login-error">Invalid credentials</div>
+      <button class="btn btn--primary" type="submit" data-testid="login-button-desktop">Sign In</button>
+    </form>
+  </main>
+
+  <!-- ===================== CATALOGO ===================== -->
+  <section class="catalog" data-testid="catalog-view">
+    <div class="category-bar" role="tablist" data-testid="category-bar">
+      <button class="chip is-active" role="tab" data-testid="category-all" aria-selected="true">Todas</button>
+      <button class="chip" role="tab" data-testid="category-popular" aria-selected="false">Populares</button>
+      <button class="chip" role="tab" data-testid="category-veggie" aria-selected="false">Veggie</button>
+      <button class="chip" role="tab" data-testid="category-meat" aria-selected="false">Carnes</button>
+      <button class="chip" role="tab" data-testid="category-sides" aria-selected="false">Acompañamientos</button>
+    </div>
+
+    <!-- MIXED-TYPE SIBLINGS: este <h2> precede a los <article>, por eso dentro
+         de .catalog el nth-child de un article NO coincide con su nth-of-type. -->
+    <h2 class="section-heading">Nuestro menú</h2>
+
+    <div class="pizza-grid" data-testid="pizza-grid">
+      <article class="pizza-card css-7h3k1p" data-testid="pizza-card-101" data-category="popular" data-price="189">
+        <img class="pizza-img" src="/img/pepperoni.webp" alt="Pepperoni">
+        <span class="badge badge--popular">Popular</span>
+        <h3 class="pizza-name">Pepperoni</h3>
+        <p class="pizza-desc">Clásica con pepperoni y mozzarella.</p>
+        <!-- (S) whitespace DELIBERADO: normalize-space() lo limpia, text() crudo no -->
+        <span class="price" data-testid="price-101">
+   $189.00
+  </span>
+        <button class="btn btn--icon add-to-cart" data-testid="add-to-cart-101" aria-label=""><svg class="icon icon-plus" aria-hidden="true"></svg></button>
+      </article>
+
+      <article class="pizza-card css-7h3k1p" data-testid="pizza-card-102" data-category="veggie" data-price="175">
+        <img class="pizza-img" src="/img/cuatro-quesos.webp" alt="Cuatro Quesos">
+        <span class="badge badge--sin-gluten">Sin Gluten</span>
+        <h3 class="pizza-name">Cuatro Quesos</h3>
+        <p class="pizza-desc">Mozzarella, gorgonzola, parmesano y de cabra.</p>
+        <span class="price">$175.00</span>
+        <button class="btn btn--icon add-to-cart" data-testid="add-to-cart-102" aria-label=""><svg class="icon icon-plus" aria-hidden="true"></svg></button>
+      </article>
+
+      <article class="pizza-card css-7h3k1p is-soldout" data-testid="pizza-card-103" data-category="meat" data-price="210" data-sold-out="true">
+        <img class="pizza-img" src="/img/suprema-carnes.webp" alt="Suprema de Carnes">
+        <span class="badge badge--new">Nuevo</span>
+        <h3 class="pizza-name">Suprema de Carnes</h3>
+        <p class="pizza-desc">Res, tocino, jamón y salchicha italiana.</p>
+        <span class="price">$210.00</span>
+        <button class="btn btn--icon add-to-cart" data-testid="add-to-cart-103" aria-label="" disabled>Agotado</button>
+      </article>
+
+      <article class="pizza-card css-7h3k1p" data-testid="pizza-card-104" data-category="sides" data-price="99">
+        <img class="pizza-img" src="/img/pan-ajo.webp" alt="Pan de Ajo">
+        <h3 class="pizza-name">Pan de Ajo</h3>
+        <p class="pizza-desc">Crujiente con mantequilla de ajo.</p>
+        <span class="price">$99.00</span>
+        <button class="btn btn--icon add-to-cart" data-testid="add-to-cart-104" aria-label=""><svg class="icon icon-plus" aria-hidden="true"></svg></button>
+      </article>
+    </div>
+
+    <!-- (S) toppings: la app real no tiene checkbox; necesario para :checked/:disabled -->
+    <fieldset class="toppings" data-testid="toppings">
+      <legend>Extras</legend>
+      <label><input type="checkbox" class="topping" name="extra" value="queso" checked> Queso extra</label>
+      <label><input type="checkbox" class="topping" name="extra" value="champinon"> Champiñones</label>
+      <label><input type="checkbox" class="topping" name="extra" value="jalapeno" disabled> Jalapeño</label>
+    </fieldset>
+  </section>
+
+  <!-- ===================== CARRITO (abierto) ===================== -->
+  <aside class="cart-drawer is-open" data-testid="cart-drawer" aria-label="Carrito">
+    <h2 class="cart-title">Tu carrito</h2>
+    <ul class="cart-lines" data-testid="cart-lines">
+      <li class="cart-line" data-testid="cart-line-101" data-pizza-id="101">
+        <span class="line-name">Pepperoni</span>
+        <span class="line-qty" data-testid="qty-101">x2</span>
+        <span class="line-subtotal">$378.00</span>
+        <button class="line-remove" data-testid="remove-101" aria-label="Eliminar Pepperoni">×</button>
+      </li>
+      <li class="cart-line" data-testid="cart-line-102" data-pizza-id="102">
+        <span class="line-name">Cuatro Quesos</span>
+        <span class="line-qty" data-testid="qty-102">x1</span>
+        <span class="line-subtotal">$175.00</span>
+        <button class="line-remove" data-testid="remove-102" aria-label="Eliminar Cuatro Quesos">×</button>
+      </li>
+    </ul>
+    <div class="cart-summary">
+      <div class="summary-row summary-row--subtotal"><span>Subtotal</span><span>$553.00</span></div>
+      <div class="summary-row summary-row--tax"><span>IVA (16%)</span><span>$88.48</span></div>
+      <div class="summary-row summary-row--total" data-testid="cart-total"><span>Total</span><span class="amount">$641.48</span></div>
+    </div>
+    <a class="btn btn--primary go-checkout" href="/checkout" data-testid="go-to-checkout-desktop">Ir a pagar</a>
+  </aside>
+
+  <!-- ===================== BANNERS + CHECKOUT + CONFIRMACION ===================== -->
+  <div class="banner banner--promo" role="status" data-testid="promo-banner" data-dismissible="true">2x1 en pizzas Veggie los martes 🍕</div>
+  <div class="banner banner--warning" role="alert" aria-live="polite" data-testid="coldstart-banner" hidden>El servidor está despertando, espera unos segundos…</div>
+
+  <main class="checkout-view" data-testid="checkout-view">
+    <h2 class="checkout-title">Datos de entrega</h2>
+    <form class="checkout-form" data-testid="checkout-form">
+      <div class="field"><div class="field-label">Nombre completo</div><input class="text-input" data-testid="checkout-fullname-desktop" placeholder="Juan Pérez" value=""></div>
+      <div class="field"><div class="field-label">Teléfono</div><input class="text-input" data-testid="checkout-phone-desktop" placeholder="+52 55 0000 0000" value=""></div>
+      <div class="field"><div class="field-label">Dirección</div><input class="text-input" data-testid="checkout-address-desktop" placeholder="Avenida Reforma 123" value=""></div>
+      <div class="field"><div class="field-label">Código postal</div><input class="text-input is-invalid" data-testid="checkout-zip-desktop" placeholder="11550" aria-invalid="true" value=""></div>
+      <!-- (S) radios de pago: necesario para :checked/:disabled de tipo radio -->
+      <fieldset class="payment" data-testid="payment-methods">
+        <legend>Método de pago</legend>
+        <label><input type="radio" name="pay" value="card" checked> Tarjeta</label>
+        <label><input type="radio" name="pay" value="cash"> Efectivo</label>
+        <label><input type="radio" name="pay" value="transfer" disabled> Transferencia</label>
+      </fieldset>
+      <!-- (S) whitespace DELIBERADO en el total -->
+      <div class="order-total" data-testid="order-total">
+  Total: $641.48
+ </div>
+      <button class="btn btn--primary" type="submit" data-testid="place-order-desktop" disabled>Place order</button>
+    </form>
+    <div class="order-confirmation" role="alert" data-testid="order-confirmation" data-order-id="ORD-2026-0481">¡Pedido confirmado! #ORD-2026-0481</div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer" data-testid="app-footer">
+    <nav class="footer-links" aria-label="Pie">
+      <a class="footer-link" href="/legal/terminos.pdf" data-testid="link-terms">Términos (PDF)</a>
+      <a class="footer-link" href="https://omnipizza.com/privacidad" target="_blank" rel="noopener noreferrer">Privacidad</a>
+      <a class="footer-link" href="mailto:hola@omnipizza.com" data-testid="link-email">Contacto</a>
+      <a class="footer-link footer-link--social" href="https://twitter.com/omnipizza" data-social="twitter">Twitter</a>
+      <a class="footer-link footer-link--social" href="https://instagram.com/omnipizza" data-social="instagram">Instagram</a>
+    </nav>
+    <small class="copyright">© 2026 OmniPizza. Todos los derechos reservados.</small>
+  </footer>
+
+</body>
+</html>

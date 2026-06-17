@@ -1,6 +1,6 @@
 # 08 — Herramientas de IA (opcional)
 
-> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 11 del curso de Playwright](../playwright-course/modulo-11-ia/) sobre IA en testing.
+> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 7 del curso de Playwright](../playwright-course/modulo-07-ia-mcp/) sobre IA en testing.
 
 > Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Recomiendo configurar al menos GitHub Copilot.
 
@@ -10,11 +10,11 @@
 
 | Herramienta | Costo | Para qué | Necesaria para |
 |-------------|-------|----------|----------------|
-| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 11.1 |
-| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + soporte MCP | Módulo 11.2 |
-| **Playwright MCP** | Gratis | Permite a un LLM controlar Playwright | Módulo 11.2 |
+| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 7 |
+| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + soporte MCP | Módulo 7 |
+| **Playwright MCP** | Gratis | Permite a un LLM controlar Playwright | Módulo 7 |
 | **Cursor** | $20/mes (gratis básico) | Editor con IA integrada (alternativa a VS Code) | Cualquier módulo |
-| **ChatGPT / Claude.ai** | Gratis (con límites) | Chat web para prompts | Módulo 11.3 |
+| **ChatGPT / Claude.ai** | Gratis (con límites) | Chat web para prompts | Módulo 7 |
 
 ---
 
@@ -51,12 +51,23 @@
 
 ## 2. Claude Desktop
 
-**¿Qué es?** App oficial de Anthropic para chatear con Claude. Es importante porque **soporta MCP nativamente**, lo que te permite conectar Claude con Playwright (módulo 11.2).
+**¿Qué es?** App oficial de Anthropic para chatear con Claude. Es importante porque **soporta MCP nativamente**, lo que te permite conectar Claude con Playwright (módulo 7).
 
 - **Sitio oficial:** https://claude.ai/download
 - **Precio:** plan Free con uso limitado, plan Pro $20/mes.
 
 ### Setup
+
+**Crear cuenta en Claude (claude.ai)**
+
+1. Entra a https://claude.ai desde tu navegador.
+2. Haz clic en **Sign up** y regístrate con tu correo (recibirás un "enlace mágico" de inicio de sesión), con Google o con Apple.
+3. Verifica tu número de teléfono cuando lo solicite y confirma que eres mayor de edad.
+4. Escribe tu nombre y envía tu primer mensaje.
+
+> El plan **gratuito** basta para el módulo de IA. Claude **no usa contraseña**: el acceso es por enlace mágico, Google o Apple.
+
+**Instalar la app de escritorio**
 
 1. **Descarga e instala** desde https://claude.ai/download
    - macOS: `.dmg`
@@ -122,7 +133,7 @@ Si MCP está bien configurado, **abrirá un navegador real** y te responderá co
 
 ## 5. ChatGPT / Claude.ai (web)
 
-Para hacer prompts del módulo 11.3, basta con la versión web gratuita de cualquiera:
+Para hacer prompts del módulo 7, basta con la versión web gratuita de cualquiera:
 
 - **ChatGPT:** https://chat.openai.com/
 - **Claude:** https://claude.ai/

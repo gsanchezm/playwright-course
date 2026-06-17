@@ -76,7 +76,7 @@ playwright-course/
 
 ## Requisitos
 
-- Node.js **v20+** (v18+ mínimo).
+- Node.js **v24 LTS** (v20+ mínimo).
 - **pnpm** 10+ (`npm install -g pnpm`).
 - VS Code con la extensión oficial **Playwright Test for VSCode**.
 - GitHub CLI (`gh`) para el módulo M06.

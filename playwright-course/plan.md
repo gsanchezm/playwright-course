@@ -586,7 +586,7 @@ pnpm exec playwright test --grep "@smoke"                  # tags
        steps:
          - uses: actions/checkout@v4
          - uses: actions/setup-node@v4
-           with: { node-version: 20 }
+           with: { node-version: 24 }
          - run: npm i -g pnpm && pnpm i
          - run: pnpm exec playwright install --with-deps
          - run: pnpm exec playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2

@@ -1,0 +1,25 @@
+{
+  "name": "css-xpath-qa-course",
+  "version": "1.0.0",
+  "description": "Curso de CSS Selectors y XPath orientado a Pruebas de Software (ejecutable con tsx + jsdom contra un fixture estatico de OmniPizza, sin framework de testing)",
+  "private": true,
+  "scripts": {
+    "m1": "tsx modulo-01-css-fundamentos/ejemplo.ts",
+    "m2": "tsx modulo-02-css-atributos-combinadores/ejemplo.ts",
+    "m3": "tsx modulo-03-css-pseudoclases/ejemplo.ts",
+    "m4": "tsx modulo-04-xpath-fundamentos/ejemplo.ts",
+    "m5": "tsx modulo-05-xpath-texto-funciones/ejemplo.ts",
+    "m6": "tsx modulo-06-xpath-ejes/ejemplo.ts",
+    "m7": "tsx modulo-07-css-vs-xpath-resilientes/ejemplo.ts",
+    "m8": "tsx modulo-08-tecnicas-1-percent/ejemplo.ts",
+    "verify": "tsx modulo-01-css-fundamentos/ejemplo.ts && tsx modulo-02-css-atributos-combinadores/ejemplo.ts && tsx modulo-03-css-pseudoclases/ejemplo.ts && tsx modulo-04-xpath-fundamentos/ejemplo.ts && tsx modulo-05-xpath-texto-funciones/ejemplo.ts && tsx modulo-06-xpath-ejes/ejemplo.ts && tsx modulo-07-css-vs-xpath-resilientes/ejemplo.ts && tsx modulo-08-tecnicas-1-percent/ejemplo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.10.0",
+    "jsdom": "^29.1.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

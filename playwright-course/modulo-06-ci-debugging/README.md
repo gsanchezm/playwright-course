@@ -261,7 +261,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - uses: pnpm/action-setup@v4
         with:
@@ -316,7 +316,7 @@ jobs:
 | `matrix` + `exclude` | `project × shard` expande 4×2 = 8 combinaciones; el `exclude` quita `api`+`shard 2` → **7 jobs** |
 | `env:` a nivel job | Variables disponibles en **todos** los steps. Las credenciales vienen de `secrets.*` (encriptadas — Paso 5); `DEFAULT_COUNTRY: MX` va en texto plano porque **no es un secreto**: es el mercado por defecto que consumen los tests data-driven (M02) |
 | `actions/checkout@v4` | Clona tu repo dentro del runner — sin esto el runner está vacío |
-| `actions/setup-node@v4` (`node-version: 20`) | Instala Node 20, la misma major que usas en local |
+| `actions/setup-node@v4` (`node-version: 24`) | Instala Node 24, la misma major que usas en local |
 | `pnpm/action-setup@v4` (`version: 10`) | Instala pnpm **pineado a la versión 10**. Alternativa: `corepack enable` (activa el pnpm que declare `package.json`); aquí se usa la action para dejar la versión fijada y visible en el propio YAML |
 | `pnpm install --frozen-lockfile` | Falla si `pnpm-lock.yaml` no cuadra con `package.json` — CI instala **exactamente** lo lockeado: builds reproducibles |
 | `playwright install --with-deps` | Descarga los navegadores **y** las librerías del SO que necesitan (el runner es un Linux pelado) |

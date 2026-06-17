@@ -38,7 +38,7 @@ export const snippets: Snippet[] = [
     language: "bash",
     lines: [
       { tokens: [c("# Instala todo lo necesario para los 4 cursos")] },
-      { tokens: [cmd("brew"), t(" install node@20 git")] },
+      { tokens: [cmd("brew"), t(" install node@24 git")] },
       { tokens: [cmd("npm"), t(" install -g pnpm")] },
       { tokens: [t("")] },
       { tokens: [c("# Configura tu identidad de Git")] },

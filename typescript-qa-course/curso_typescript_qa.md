@@ -9,7 +9,7 @@
 ## 0. Preparación del Entorno (Pre-curso)
 *Este módulo se realiza ANTES del día del curso.*
 
-- **Instalar Node.js (v18+):** Descargar desde https://nodejs.org/ (versión LTS).
+- **Instalar Node.js (v24 LTS; v20+ funciona):** Descargar desde https://nodejs.org/ (versión LTS).
 - **Instalar Visual Studio Code:** Descargar desde https://code.visualstudio.com/
 - **Extensiones recomendadas de VS Code:** Error Lens, Pretty TypeScript Errors, Material Icon Theme.
 - **Instalar pnpm:** Ejecutar `npm install -g pnpm` (gestor de paquetes rápido y moderno).

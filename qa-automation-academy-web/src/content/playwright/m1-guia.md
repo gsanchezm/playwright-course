@@ -77,8 +77,8 @@ Vas a escribir tu primer caso de prueba automatizado **como lo haría un tester 
 
 Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git --version`):
 
-- **Node.js 20.x** (`node -v` → `v20.x.x`)
-- **pnpm 9+** (`pnpm -v` → `9.x.x` o superior)
+- **Node.js 24.x** (`node -v` → `v24.x.x`)
+- **pnpm 10+** (`pnpm -v` → `10.x.x` o superior)
 - **Git** instalado (`git --version`)
 - Estar **dentro de la carpeta del curso**:
   ```bash

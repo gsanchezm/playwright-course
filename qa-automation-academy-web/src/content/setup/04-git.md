@@ -123,6 +123,13 @@ Si ves estas líneas, **Git está listo** y configurado profesionalmente.
 - No marcaste **"Git from the command line..."** durante la instalación. Reinstala con los pasos de arriba.
 - Reinicia Windows Terminal después de instalar.
 
+### ¿Ya tengo Git pero viejo?
+Comprueba con `git --version`. Para actualizar en Windows sin desinstalar, ejecuta:
+```bash
+$ git update-git-for-windows
+```
+Si eso falla, descarga el instalador más reciente de [git-scm.com](https://git-scm.com/download/win) y ejecútalo encima.
+
 ### Mis commits aparecen como "user@hostname" en vez de mi nombre
 - No configuraste `user.name` y `user.email`. Hazlo ahora con los comandos de arriba.
 

@@ -4,7 +4,7 @@
 
 > **Sitio oficial:** https://nodejs.org/
 
-> **Versión recomendada para el curso:** **v20 LTS** (Long Term Support).
+> **Versión recomendada para el curso:** **v24 LTS "Krypton"** (Long Term Support).
 
 ---
 
@@ -15,7 +15,8 @@
 Si no tienes Homebrew, instálalo primero desde https://brew.sh/
 
 ```bash
-$ brew install node@20
+$ brew install node@24
+$ brew link --overwrite node@24
 ```
 
 ### Opción B: instalador oficial
@@ -28,10 +29,10 @@ $ brew install node@20
 `nvm` te permite tener varias versiones de Node y cambiar entre ellas. Útil si trabajas en proyectos con distintas versiones.
 
 ```bash
-$ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+$ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 $ source ~/.zshrc
-$ nvm install 20
-$ nvm use 20
+$ nvm install --lts
+$ nvm use --lts
 ```
 
 - **Sitio oficial de nvm:** https://github.com/nvm-sh/nvm
@@ -62,7 +63,7 @@ $ nvm use 20
 ### Ubuntu / Debian (con NodeSource — recomendado)
 
 ```bash
-$ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+$ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 $ sudo apt install -y nodejs
 ```
 
@@ -84,13 +85,52 @@ Abre una terminal **nueva** (las viejas no ven los cambios de PATH) y ejecuta:
 
 ```bash
 $ node --version
-v20.11.0    # ← debe ser 20.x.x o superior
+v24.x.x    # ← debe ser 24.x.x (LTS)
 
 $ npm --version
 10.2.4      # ← cualquier versión 9.x o 10.x está bien
 ```
 
 Si los dos comandos imprimen versiones, **Node.js está listo**.
+
+---
+
+### Ya tengo Node y quiero actualizar a la LTS
+
+Elige el flujo según cómo instalaste Node originalmente:
+
+- **Instalado con el `.msi` (Windows):** baja el instalador **LTS** de https://nodejs.org/ y ejecútalo encima. Reemplaza automáticamente la versión anterior (no necesitas desinstalar nada).
+
+- **Homebrew (macOS):**
+  ```bash
+  $ brew install node@24
+  $ brew link --overwrite node@24
+  ```
+
+- **nvm (todos los sistemas):**
+  ```bash
+  $ nvm install --lts
+  $ nvm use --lts
+  ```
+  En Linux, fija además la LTS como versión por defecto:
+  ```bash
+  $ nvm alias default 'lts/*'
+  ```
+
+- **NodeSource (Linux):**
+  ```bash
+  $ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+  $ sudo apt install -y nodejs
+  ```
+
+- **Chocolatey (Windows):**
+  ```powershell
+  > choco upgrade nodejs-lts
+  ```
+
+Tus paquetes globales y proyectos se conservan; solo cambia el motor de Node. Reabre la terminal y verifica con `node -v`.
+
+> ⚠️ Evita las versiones "Current" impares (25, 26…): pueden ser inestables y algunas removieron Corepack.
 
 ---
 
@@ -110,8 +150,8 @@ Si los dos comandos imprimen versiones, **Node.js está listo**.
   $ source ~/.zshrc
   ```
 
-### Tengo Node.js v18 ¿es suficiente?
-Sí, los cursos funcionan con v18+, pero **v20 LTS es lo recomendado**. Si tu proyecto del trabajo usa v18, no lo cambies.
+### Tengo Node.js v20 ¿es suficiente?
+Sí, los cursos funcionan con **v20+**, pero **v24 LTS es lo recomendado**. Si tu proyecto del trabajo usa otra versión, no la cambies.
 
 ### ¿Puedo usar Bun o Deno en vez de Node.js?
 Para este curso, **no**. Usaremos Node.js + pnpm porque son los más comunes en equipos de QA reales. Bun/Deno son alternativas válidas pero no las cubrimos.

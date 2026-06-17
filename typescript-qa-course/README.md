@@ -18,7 +18,7 @@ Node.js es el motor que ejecuta JavaScript/TypeScript fuera del navegador.
 - Verifica la instalación abriendo una terminal:
 
 ```bash
-node --version    # Debe mostrar v18.x.x o superior
+node --version    # v24 LTS recomendado (v20+ funciona)
 ```
 
 ### 2. Instalar pnpm
@@ -27,7 +27,7 @@ pnpm es un gestor de paquetes rápido y eficiente (alternativa moderna a npm).
 
 ```bash
 npm install -g pnpm
-pnpm --version    # Debe mostrar 9.x.x o superior
+pnpm --version    # pnpm 10.x.x o superior
 ```
 
 ### 3. Instalar Visual Studio Code

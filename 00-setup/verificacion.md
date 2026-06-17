@@ -13,6 +13,7 @@ echo "=== Terminal y shell ===" && echo $SHELL
 echo "" && echo "=== Node.js ===" && node --version
 echo "" && echo "=== npm ===" && npm --version
 echo "" && echo "=== pnpm ===" && pnpm --version
+echo "" && echo "=== TypeScript ===" && tsc -v
 echo "" && echo "=== Git ===" && git --version
 echo "" && echo "=== Git config ===" && git config --global user.name && git config --global user.email
 echo "" && echo "=== VS Code ===" && code --version
@@ -28,13 +29,16 @@ echo "" && echo "=== SSH a GitHub ===" && ssh -T git@github.com
 /bin/zsh                              ← o /bin/bash
 
 === Node.js ===
-v20.11.0                              ← v20.x o superior
+v24.x.x                               ← v24.x (LTS)
 
 === npm ===
 10.2.4                                ← cualquier 9.x o 10.x
 
 === pnpm ===
-9.12.0                                ← v9.x o superior
+10.x.x                                ← v10.x o superior
+
+=== TypeScript ===
+Version 5.x.x
 
 === Git ===
 git version 2.45.2                    ← v2.40 o superior
@@ -58,8 +62,8 @@ Hi tu-usuario! You've successfully authenticated, but GitHub does not provide sh
 
 ### 📘 Para el curso de TypeScript
 
-- [ ] `node --version` muestra v18+
-- [ ] `pnpm --version` muestra 9+
+- [ ] `node --version` muestra v20+ (v24 LTS recomendado)
+- [ ] `pnpm --version` muestra 10+
 - [ ] VS Code abre con `code .`
 - [ ] La extensión "Pretty TypeScript Errors" está instalada (opcional)
 
@@ -107,7 +111,7 @@ Debe mostrar tu commit con tu nombre como autor.
 $ cd playwright-course
 $ pnpm install
 $ pnpm exec playwright install
-$ pnpm test modulo-01-vision-general/hello.spec.ts
+$ pnpm m1
 ```
 Debe correr 6 tests verdes (2 tests × 3 navegadores).
 
@@ -132,8 +136,8 @@ Debe correr 6 tests verdes (2 tests × 3 navegadores).
 Marca todo lo siguiente:
 
 - [ ] Mi terminal es moderna (Terminal.app, iTerm2, Windows Terminal o equivalente)
-- [ ] Node.js v18+ instalado y verificado
-- [ ] pnpm v9+ instalado y verificado
+- [ ] Node.js v20+ (v24 LTS recomendado) instalado y verificado
+- [ ] pnpm v10+ instalado y verificado
 - [ ] Git v2.40+ instalado y configurado con mi nombre y correo
 - [ ] VS Code instalado con las extensiones recomendadas
 - [ ] Cuenta de GitHub creada con 2FA activado

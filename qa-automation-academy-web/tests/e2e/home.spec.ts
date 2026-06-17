@@ -75,7 +75,7 @@ test.describe("Home — smoke", () => {
 
     // Tab Setup: comandos de instalación
     await region.getByRole("tab", { name: "Setup" }).click();
-    await expect(region).toContainText("brew install node@20");
+    await expect(region).toContainText("brew install node@24");
     await expect(region).toContainText("playwright install");
 
     // Tab TypeScript: tipo BugReport real del curso

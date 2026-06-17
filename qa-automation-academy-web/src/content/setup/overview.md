@@ -9,7 +9,7 @@
 | Herramienta | TypeScript | Git/GitHub | Playwright |
 |-------------|:----------:|:----------:|:----------:|
 | Terminal moderna | ✅ | ✅ | ✅ |
-| Node.js (v20 LTS) | ✅ | — | ✅ |
+| Node.js (v24 LTS) | ✅ | — | ✅ |
 | pnpm | ✅ | — | ✅ |
 | Git | ✅ recomendado | ✅ | ✅ |
 | VS Code | ✅ | ✅ | ✅ |

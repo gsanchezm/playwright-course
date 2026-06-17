@@ -46,6 +46,10 @@ GitHub **exige 2FA** desde 2023 para hacer push a la mayoría de repos. Configú
 
 Para hacer `git push` necesitas autenticarte. Hay 2 métodos: HTTPS con token, o **SSH con llaves**. SSH es **mucho mejor** porque lo configuras una vez y nunca más te pide nada.
 
+> **MUY IMPORTANTE (Windows): ¿Git Bash o PowerShell?**
+> En Windows puedes generar la llave SSH **de dos formas**, y los comandos son **diferentes**. El error más común del curso es **mezclar comandos de una terminal en la otra**. Por eso, abajo te damos las dos versiones completas.
+> **Elige UNA sola terminal y úsala para TODOS los pasos.** Si eres principiante, te recomendamos **Git Bash** (los comandos son idénticos a los de Mac/Linux).
+
 ### 4.1 Generar tu llave SSH
 
 ```bash
@@ -71,10 +75,43 @@ $ pbcopy < ~/.ssh/id_ed25519.pub
 ```
 La llave queda en tu portapapeles.
 
-#### Windows (Git Bash)
+> 💡 **Opción con llavero (para no volver a teclear la passphrase).** Si le pusiste passphrase a la llave, crea (o edita) el archivo `~/.ssh/config` con este contenido para que macOS la recuerde en el Llavero:
+> ```
+> Host github.com
+>     AddKeysToAgent yes
+>     UseKeychain yes
+>     IdentityFile ~/.ssh/id_ed25519
+> ```
+> Luego agrega la llave al agente guardando la passphrase en el llavero:
+> ```bash
+> $ ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+> ```
+> En macOS anteriores a Monterey (12) la opción era `-K` en lugar de `--apple-use-keychain`.
+
+#### Windows — Git Bash (recomendado)
+Una vez generada la llave, inicia el agente, agrega la llave privada y copia la **pública** al portapapeles:
 ```bash
-$ cat ~/.ssh/id_ed25519.pub | clip
+$ eval "$(ssh-agent -s)"
+$ ssh-add ~/.ssh/id_ed25519
+$ clip < ~/.ssh/id_ed25519.pub
 ```
+
+#### Windows — PowerShell nativo
+Los comandos cambian (sobre todo iniciar el agente y copiar). La **primera vez** debes habilitar el agente de Windows con PowerShell **como Administrador**:
+```powershell
+> Get-Service ssh-agent | Set-Service -StartupType Automatic
+> Start-Service ssh-agent
+```
+Después, ya como usuario normal, agrega la llave privada y copia la **pública**:
+```powershell
+> ssh-add $env:USERPROFILE\.ssh\id_ed25519
+> Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | Set-Clipboard
+```
+
+> ⚠️ **Diferencias clave entre las dos terminales (no las mezcles):**
+> - **Ruta de la llave:** en Git Bash es `~/.ssh/id_ed25519`; en PowerShell es `$env:USERPROFILE\.ssh\id_ed25519` (con barra invertida `\`).
+> - **Iniciar el agente:** `eval "$(ssh-agent -s)"` es de bash y **NO funciona en PowerShell** (da error). En PowerShell se usa `Start-Service ssh-agent`.
+> - **Copiar la llave:** en Git Bash es `clip < archivo`; en PowerShell es `Get-Content archivo | Set-Clipboard`.
 
 #### Linux
 ```bash
@@ -82,13 +119,20 @@ $ cat ~/.ssh/id_ed25519.pub
 # selecciona y copia con Ctrl+Shift+C
 ```
 
+> 📋 **Reglas para que GitHub acepte la llave:**
+> - Es **UNA sola línea** que empieza con `ssh-ed25519` y termina con tu correo, **sin saltos de línea ni espacios al inicio**.
+> - Copia la llave **PÚBLICA** (el archivo que termina en `.pub`). **NUNCA** el archivo sin `.pub`: esa es tu llave **PRIVADA** y es secreta.
+> - Si al pegar ves el error **"Key is invalid"**, casi siempre copiaste la privada por error o se coló un salto de línea; vuelve a copiar el `.pub`.
+
 ### 4.3 Pegar la llave en GitHub
 
 1. Ve a **GitHub → Settings → SSH and GPG keys → New SSH key**.
 2. **Title:** algo descriptivo, ej. `Mi laptop personal MacBook Pro 2023`.
 3. **Key type:** Authentication Key.
-4. **Key:** pega el contenido del portapapeles.
+4. **Key:** pega el contenido del portapapeles. Debe quedar en **una sola línea** empezando con `ssh-ed25519`.
 5. **Add SSH key**.
+
+> 💡 **Tips para el Title de la llave.** El título te sirve para saber desde qué equipo te conectas y, si pierdes un dispositivo, cuál revocar. Usa algo que **identifique el equipo**, ej. `Laptop Dell Windows - personal`, `iMac Casa`, `MacBook Trabajo (junio 2026)`. Para ver el nombre real de tu equipo ejecuta `hostname` (en macOS también `scutil --get ComputerName`). **Evita títulos genéricos** como `llave1`.
 
 ### 4.4 Probar la conexión
 

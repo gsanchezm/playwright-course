@@ -26,15 +26,15 @@ Está dirigido a:
 
 | Herramienta | Versión | Para qué |
 |---|---|---|
-| **Node.js** | v18 o superior (LTS) | Motor que ejecuta TypeScript/JavaScript. Descarga: https://nodejs.org/ |
-| **pnpm** | 9.x o superior | Gestor de paquetes. Instálalo con `npm install -g pnpm` |
+| **Node.js** | v24 LTS recomendado (v20+ funciona) | Motor que ejecuta TypeScript/JavaScript. Descarga: https://nodejs.org/ |
+| **pnpm** | 10.x o superior | Gestor de paquetes. Instálalo con `npm install -g pnpm` |
 | **VS Code** (recomendado) | — | Editor con resaltado de regex. Descarga: https://code.visualstudio.com/ |
 
 Verifica:
 
 ```bash
-node --version    # v18.x.x o superior
-pnpm --version    # 9.x.x o superior
+node --version    # v24 LTS recomendado (v20+ funciona)
+pnpm --version    # 10.x.x o superior
 ```
 
 No necesitas conocimientos previos de regex. Sí ayuda manejar lo básico de TypeScript (variables, funciones, arrays), pero el código está comentado paso a paso.
