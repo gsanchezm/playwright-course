@@ -1,82 +1,85 @@
-import { Link } from "react-router-dom";
 import Container from "@/components/Container";
-import Eyebrow from "@/components/Eyebrow";
 import Button from "@/components/Button";
-import CodeShowcase from "@/components/CodeShowcase";
 import Icon from "@/components/Icon";
-import Badge from "@/components/Badge";
+import HeroCodeWindow from "@/components/HeroCodeWindow";
 
-const techBadges = [
-  { label: "Setup", status: "live" as const },
-  { label: "TypeScript", status: "live" as const },
-  { label: "Regex", status: "live" as const },
-  { label: "Git / GitHub", status: "live" as const },
-  { label: "Playwright", status: "live" as const },
+const LECCION_DEMO = "/leccion";
+
+const stats = [
+  { value: "4", label: "tecnologías" },
+  { value: "150+", label: "lecciones" },
+  { value: "100%", label: "práctico" },
 ];
 
 export default function Hero() {
   return (
     <section
       id="top"
-      className="relative overflow-hidden bg-qa-hero"
+      className="relative overflow-hidden"
       aria-labelledby="hero-title"
     >
-      {/* Decorative orbs */}
-      <div aria-hidden="true" className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-qa-cyan/10 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute right-0 top-40 h-96 w-96 rounded-full bg-qa-violet/10 blur-3xl" />
+      {/* Blob radial verde difuminado (flota suave) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-[-10%] top-[-6%] h-[460px] w-[460px] rounded-full bg-accent/20 blur-3xl animate-qaa-float"
+      />
 
-      <Container className="relative py-16 sm:py-24 lg:py-32">
-        <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
+      <Container className="relative py-16 sm:py-20 lg:py-24">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.04fr_1fr] lg:gap-16">
           {/* Left: copy + CTAs */}
           <div>
-            <Eyebrow>QA Automation Academy</Eyebrow>
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3.5 py-1.5 font-mono text-[12.5px] font-medium text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+              Práctica real, no solo videos
+            </span>
 
             <h1
               id="hero-title"
-              className="mt-4 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-qa-text sm:text-4xl lg:text-5xl xl:text-6xl"
+              className="mt-5 font-display font-extrabold leading-[1.04] tracking-[-0.035em] text-qa-text text-[clamp(38px,5vw,58px)]"
             >
-              Aprende automatización con{" "}
-              <span className="bg-qa-accent bg-clip-text text-transparent">
-                ejercicios reales
-              </span>
-              , desde TypeScript hasta Playwright.
+              Aprende QA escribiendo{" "}
+              <span className="text-accent">código de verdad</span>.
             </h1>
 
-            <p className="mt-5 max-w-2xl font-sans text-base leading-relaxed text-qa-muted sm:text-lg sm:mt-6">
-              Una academia práctica para QA que quieren dar el salto a
-              automatización: tipado, flujo real de Git/GitHub y tests E2E con
-              Playwright, en una sola ruta.
+            <p className="mt-5 max-w-xl font-sans text-base leading-relaxed text-qa-muted sm:text-[17px]">
+              Una academia práctica y gratuita: resuelve ejercicios reales de
+              Regex, TypeScript, Git/GitHub y Playwright, y obtén feedback
+              automático al correr los tests.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:mt-8">
-              <Button as="a" href="#rutas" variant="primary">
-                Explorar rutas
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button as="a" href="/cursos" variant="accent">
+                Explorar cursos
                 <Icon name="arrow-right" className="h-4 w-4" />
               </Button>
-              <Link
-                to="/docs/setup"
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-qa-line bg-qa-panel/40 px-6 py-3 font-sans font-medium text-qa-text backdrop-blur-sm transition-all hover:border-qa-cyan hover:text-qa-cyan"
-              >
-                Empezar con Setup
-                <Icon name="arrow-right" className="h-4 w-4" />
-              </Link>
+              <Button as="a" href={LECCION_DEMO} variant="ghost">
+                Ver una lección
+              </Button>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-qa-muted">
-                Stack de rutas
-              </span>
-              {techBadges.map((b) => (
-                <Badge key={b.label} status={b.status} className="">
-                  {b.label}
-                </Badge>
+            <dl className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+              {stats.map((s, i) => (
+                <div key={s.label} className="flex items-center gap-2">
+                  <dt className="sr-only">{s.label}</dt>
+                  <dd className="flex items-baseline gap-1.5 font-mono text-sm text-qa-muted">
+                    <span className="text-base font-bold text-qa-text">
+                      {s.value}
+                    </span>
+                    {s.label}
+                  </dd>
+                  {i < stats.length - 1 && (
+                    <span className="text-qa-line" aria-hidden="true">
+                      ·
+                    </span>
+                  )}
+                </div>
               ))}
-            </div>
+            </dl>
           </div>
 
-          {/* Right: code showcase — only on large screens */}
-          <div className="hidden lg:block lg:pl-4">
-            <CodeShowcase />
+          {/* Right: code window */}
+          <div className="relative lg:pl-2">
+            <HeroCodeWindow />
           </div>
         </div>
       </Container>

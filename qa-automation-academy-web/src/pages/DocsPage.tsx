@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import DocSidebar from "@/components/docs/DocSidebar";
 import MarkdownContent from "@/components/docs/MarkdownContent";
+import ThemeToggle from "@/components/ThemeToggle";
 import { docsNav } from "@/data/docsNav";
 
 // Eagerly import all .md files as raw strings, grouped by section folder.
@@ -190,7 +191,7 @@ export default function DocsPage() {
             className="flex items-center gap-2 font-display text-sm font-semibold text-qa-text"
             aria-label="QA Automation Academy — ir al inicio"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-qa-accent text-qa-base">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-accent text-accent-fg">
               <span className="font-mono text-[10px] font-bold">QA</span>
             </span>
             <span className="hidden sm:block">
@@ -212,6 +213,11 @@ export default function DocsPage() {
                 </span>
               </>
             )}
+          </div>
+
+          {/* Theme toggle */}
+          <div className="ml-auto">
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -311,7 +317,7 @@ export default function DocsPage() {
             ) : (
               /* Not found / coming soon */
               <div className="py-20 text-center">
-                <p className="font-mono text-xs uppercase tracking-[0.18em] text-qa-cyan">
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-accent">
                   Próximamente
                 </p>
                 <h1 className="mt-4 font-display text-3xl font-semibold text-qa-text">
@@ -324,7 +330,7 @@ export default function DocsPage() {
                 <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                   <Link
                     to="/docs/setup"
-                    className="inline-flex items-center gap-2 rounded-full bg-qa-accent px-5 py-2.5 font-mono text-sm font-medium text-qa-base transition-all hover:-translate-y-px"
+                    className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-mono text-sm font-medium text-accent-fg transition-all hover:-translate-y-px"
                   >
                     Ir al Setup
                     <svg

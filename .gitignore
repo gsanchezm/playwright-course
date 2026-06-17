@@ -217,4 +217,5 @@ $RECYCLE.BIN/
 docs/
 .claude/
 CLAUDE.md
+design_handoff_qa_academy_redesign/
 # End of https://www.toptal.com/developers/gitignore/api/node,macos,windows,visualstudiocode

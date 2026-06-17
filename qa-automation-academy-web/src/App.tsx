@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "@/sections/Header";
 import Hero from "@/sections/Hero";
-import PathsGrid from "@/sections/PathsGrid";
-import TypescriptProgress from "@/sections/TypescriptProgress";
-import Methodology from "@/sections/Methodology";
-import Highlights from "@/sections/Highlights";
+import TechStrip from "@/sections/TechStrip";
+import HowItWorks from "@/sections/HowItWorks";
+import StartHere from "@/sections/StartHere";
+import CtaBand from "@/sections/CtaBand";
 import Footer from "@/sections/Footer";
 import DocsPage from "@/pages/DocsPage";
+import CursosPage from "@/pages/CursosPage";
+import LeccionPage from "@/pages/LeccionPage";
 
 function LandingPage() {
   return (
@@ -14,10 +16,10 @@ function LandingPage() {
       <Header />
       <main>
         <Hero />
-        <PathsGrid />
-        <TypescriptProgress />
-        <Methodology />
-        <Highlights />
+        <TechStrip />
+        <HowItWorks />
+        <StartHere />
+        <CtaBand />
       </main>
       <Footer />
     </div>
@@ -29,6 +31,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/cursos" element={<CursosPage />} />
+        <Route path="/leccion" element={<LeccionPage />} />
         <Route path="/docs" element={<Navigate to="/docs/setup" replace />} />
         <Route path="/docs/:section" element={<DocsPage />} />
         <Route path="/docs/:section/:slug" element={<DocsPage />} />

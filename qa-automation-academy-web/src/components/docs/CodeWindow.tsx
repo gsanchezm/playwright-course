@@ -1,15 +1,10 @@
 import { tokenizeTs } from "@/lib/tokenize-ts";
-import type { Line, Token } from "@/data/snippets";
-
-const tokenClass: Record<Token["kind"], string> = {
-  plain: "text-qa-text",
-  keyword: "text-qa-lavender",
-  string: "text-qa-cyan",
-  comment: "text-qa-muted/60 italic",
-  fn: "text-qa-periwinkle",
-  type: "text-qa-blue",
-  cmd: "text-qa-lavender",
-};
+import {
+  codeTokenClass,
+  codeWindowClass,
+  codeChromeClass,
+} from "@/lib/code-theme";
+import type { Line } from "@/data/snippets";
 
 type Props = {
   code: string;
@@ -60,16 +55,16 @@ export default function CodeWindow({ code, language, filename }: Props) {
   const label = filename ?? (language ? language.toUpperCase() : null);
 
   return (
-    <div className="my-6 relative overflow-hidden rounded-2xl border border-qa-line bg-qa-panel shadow-card shadow-glow">
+    <div className={`my-6 ${codeWindowClass} shadow-card`}>
       {/* Window chrome */}
-      <div className="flex h-10 items-center gap-4 border-b border-qa-line bg-qa-elevated px-4">
+      <div className={codeChromeClass}>
         <div className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="h-2.5 w-2.5 rounded-full bg-qa-violet/60" />
-          <span className="h-2.5 w-2.5 rounded-full bg-qa-periwinkle/60" />
-          <span className="h-2.5 w-2.5 rounded-full bg-qa-cyan/60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-code-red" />
+          <span className="h-2.5 w-2.5 rounded-full bg-code-yellow" />
+          <span className="h-2.5 w-2.5 rounded-full bg-code-green" />
         </div>
         {label && (
-          <span className="ml-auto truncate font-mono text-[11px] text-qa-muted">
+          <span className="ml-auto truncate font-mono text-[11px] text-code-base/70">
             {label}
           </span>
         )}
@@ -80,7 +75,7 @@ export default function CodeWindow({ code, language, filename }: Props) {
           <div key={i} className="flex gap-4 px-6">
             <span
               aria-hidden="true"
-              className="w-6 shrink-0 select-none text-right text-qa-muted/40"
+              className="w-6 shrink-0 select-none text-right text-code-comment/60"
             >
               {i + 1}
             </span>
@@ -89,7 +84,7 @@ export default function CodeWindow({ code, language, filename }: Props) {
                 <span>&nbsp;</span>
               ) : (
                 line.tokens.map((tok, j) => (
-                  <span key={j} className={tokenClass[tok.kind]}>
+                  <span key={j} className={codeTokenClass[tok.kind]}>
                     {tok.text}
                   </span>
                 ))

@@ -65,7 +65,7 @@ export default function MarkdownContent({ content }: Props) {
         return (
           <Link
             to={href}
-            className="text-qa-cyan underline underline-offset-2 transition-colors hover:text-qa-ice"
+            className="font-medium text-accent underline underline-offset-2 transition-opacity hover:opacity-80"
           >
             {children}
           </Link>
@@ -76,7 +76,7 @@ export default function MarkdownContent({ content }: Props) {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-qa-cyan underline underline-offset-2 transition-colors hover:text-qa-ice"
+          className="font-medium text-accent underline underline-offset-2 transition-opacity hover:opacity-80"
         >
           {children}
         </a>
@@ -93,10 +93,10 @@ export default function MarkdownContent({ content }: Props) {
       </ol>
     ),
     li: ({ children }) => (
-      <li className="leading-relaxed marker:text-qa-cyan/70">{children}</li>
+      <li className="leading-relaxed marker:text-accent/70">{children}</li>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="my-4 border-l-2 border-qa-cyan/50 bg-qa-elevated/60 py-3 pl-4 pr-3 font-sans text-sm italic text-qa-muted">
+      <blockquote className="my-4 border-l-2 border-accent/50 bg-qa-elevated/60 py-3 pl-4 pr-3 font-sans text-sm italic text-qa-muted">
         {children}
       </blockquote>
     ),
@@ -105,7 +105,7 @@ export default function MarkdownContent({ content }: Props) {
       if (isInline) {
         return (
           <code
-            className="rounded bg-qa-panel px-1.5 py-0.5 font-mono text-sm text-qa-cyan"
+            className="rounded bg-qa-elevated px-1.5 py-0.5 font-mono text-[0.875em] text-qa-text ring-1 ring-qa-line"
             {...rest}
           >
             {children}
@@ -168,7 +168,7 @@ export default function MarkdownContent({ content }: Props) {
       </details>
     ),
     summary: ({ children }) => (
-      <summary className="cursor-pointer select-none font-medium text-qa-text marker:text-qa-cyan">
+      <summary className="cursor-pointer select-none font-medium text-qa-text marker:text-accent">
         {children}
       </summary>
     ),

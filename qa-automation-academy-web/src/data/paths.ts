@@ -47,7 +47,7 @@ export const paths: LearningPath[] = [
   },
   {
     id: "playwright",
-    title: "Playwright para automatización web",
+    title: "Automatización con Playwright",
     status: "live",
     description:
       "De cero a suites E2E mantenibles con la herramienta más moderna del ecosistema de testing web. Incluye Git esencial integrado: empieza aquí sin haber tomado otro curso de Git.",
@@ -63,7 +63,7 @@ export const paths: LearningPath[] = [
   },
   {
     id: "git-github",
-    title: "Git y GitHub para testers",
+    title: "Git y GitHub para QA",
     status: "live",
     description:
       "Material de referencia profunda. Lo esencial vive integrado en el curso de Playwright. Toma este si quieres dominar workflows de equipo, rebase interactivo y mantenimiento de repos.",

@@ -13,6 +13,16 @@ export type DocItem = {
   group?: string;
 };
 
+// Orden canónico de los cursos. Fuente de verdad única usada por la vista
+// Cursos (grid) y por la sidebar de /docs para mantenerlos consistentes.
+export const sectionOrder = [
+  "setup",
+  "regex",
+  "typescript",
+  "git-github",
+  "playwright",
+] as const;
+
 export const docsNav: DocSection[] = [
   {
     id: "setup",
@@ -77,7 +87,7 @@ export const docsNav: DocSection[] = [
   },
   {
     id: "git-github",
-    title: "Git y GitHub para testers",
+    title: "Git y GitHub para QA",
     accent: "periwinkle",
     available: true,
     items: [
@@ -120,7 +130,7 @@ export const docsNav: DocSection[] = [
   },
   {
     id: "playwright",
-    title: "Playwright para QA",
+    title: "Automatización con Playwright",
     accent: "lavender",
     available: true,
     items: [

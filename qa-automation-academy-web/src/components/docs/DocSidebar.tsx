@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { NavLink, Link, useParams } from "react-router-dom";
-import { docsNav, type DocItem } from "@/data/docsNav";
+import { docsNav, sectionOrder, type DocItem } from "@/data/docsNav";
 
-const accentClass: Record<string, string> = {
-  cyan: "text-qa-cyan border-qa-cyan",
-  periwinkle: "text-qa-periwinkle border-qa-periwinkle",
-  lavender: "text-qa-lavender border-qa-lavender",
-  muted: "text-qa-muted border-qa-muted",
-};
+// Secciones en el orden canónico de la academia.
+const orderedSections = [...docsNav].sort(
+  (a, b) => sectionOrder.indexOf(a.id as (typeof sectionOrder)[number]) -
+    sectionOrder.indexOf(b.id as (typeof sectionOrder)[number]),
+);
 
 type Props = {
   onNavigate?: () => void;
@@ -119,9 +118,8 @@ export default function DocSidebar({ onNavigate }: Props) {
         Inicio
       </Link>
 
-      {docsNav.map((section) => {
+      {orderedSections.map((section) => {
         const isExpanded = expandedSections.has(section.id);
-        const accentColor = accentClass[section.accent].split(" ")[0];
         const groups = groupItems(section.items);
         const hasGroups = groups.some((g) => g.group !== null);
 
@@ -142,7 +140,7 @@ export default function DocSidebar({ onNavigate }: Props) {
               {section.available && <Chevron open={isExpanded} />}
               <span
                 className={`font-mono text-[11px] uppercase tracking-[0.18em] font-semibold ${
-                  section.available ? accentColor : "text-qa-muted/50"
+                  section.available ? "text-qa-text" : "text-qa-muted/50"
                 }`}
               >
                 {section.title}
@@ -254,7 +252,7 @@ function SidebarLink({
           indent ? "pl-8" : "pl-4"
         } ${
           isActive
-            ? `border-qa-cyan bg-qa-cyan/8 text-qa-text font-medium`
+            ? `border-accent bg-accent-soft text-qa-text font-medium`
             : "border-transparent text-qa-muted hover:border-qa-line hover:text-qa-text"
         }`
       }

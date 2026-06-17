@@ -2,7 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Tokens semánticos del rediseño QA Academy.
+  Se guardan como canales oklch "desnudos" (L C H) para que Tailwind pueda
+  componerlos con el modificador de opacidad: oklch(var(--bg) / <alpha-value>).
+  El tema se conmuta con data-theme en <html>. Default: dark.
+*/
 @layer base {
+  :root,
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg: 0.17 0.012 165;
+    --surface: 0.205 0.015 165;
+    --surface-2: 0.25 0.016 165;
+    --border: 0.31 0.018 165;
+    --text: 0.95 0.008 150;
+    --text-dim: 0.68 0.015 150;
+    --accent: 0.74 0.14 158;
+    --accent-soft: 0.3 0.05 162;
+    /* Texto legible SOBRE el acento. En dark el acento es verde brillante -> texto oscuro. */
+    --accent-fg: 0.17 0.012 165;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 44px -16px rgba(0, 0, 0, 0.55);
+  }
+
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg: 0.985 0.006 145;
+    --surface: 1 0 0;
+    --surface-2: 0.965 0.008 145;
+    --border: 0.905 0.01 145;
+    --text: 0.24 0.02 160;
+    --text-dim: 0.52 0.02 160;
+    --accent: 0.56 0.13 158;
+    --accent-soft: 0.95 0.045 158;
+    /* En light el acento es verde medio -> texto blanco. */
+    --accent-fg: 1 0 0;
+    --shadow: 0 1px 2px rgba(20, 40, 30, 0.04), 0 14px 34px -14px rgba(20, 40, 30, 0.14);
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -20,11 +57,22 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-qa-cyan ring-offset-2 ring-offset-qa-base;
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-qa-base;
   }
 
   .text-balance {
     text-wrap: balance;
+  }
+
+  /*
+    Transición suave al conmutar de tema. Solo aplica a elementos sin una
+    transición propia: las utilidades transition-* de Tailwind (capa utilities)
+    ganan por orden de cascada donde estén declaradas.
+  */
+  *,
+  *::before,
+  *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -38,4 +86,3 @@
     scroll-behavior: auto !important;
   }
 }
-
