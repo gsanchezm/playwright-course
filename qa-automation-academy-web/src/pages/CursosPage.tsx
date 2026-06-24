@@ -32,7 +32,7 @@ export default function CursosPage() {
               Explora los cursos
             </h1>
             <p className="mt-4 font-sans text-base leading-relaxed text-qa-muted sm:text-[17px]">
-              Cuatro tecnologías, una misma forma de aprender: ejercicios reales
+              Seis tecnologías, una misma forma de aprender: ejercicios reales
               con feedback al correr los tests. Elige por dónde empezar.
             </p>
           </header>

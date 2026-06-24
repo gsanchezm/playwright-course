@@ -4,7 +4,7 @@ const steps = [
   {
     num: "01",
     title: "Elige una ruta",
-    desc: "Regex, TypeScript, Git/GitHub o Playwright. Cada curso arranca desde cero y avanza por módulos.",
+    desc: "Regex, TypeScript, Git/GitHub, CSS/XPath, Playwright o Fluent Interface. Cada curso arranca desde cero y avanza por módulos.",
   },
   {
     num: "02",

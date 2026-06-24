@@ -100,6 +100,16 @@ const META: Record<string, CourseMeta> = {
     level: "Intermedio",
     progress: 0,
   },
+  "fluent-interface": {
+    track: "Fluent Interface",
+    title: "Fluent Interface — POM encadenable",
+    description:
+      "Lleva tu Page Object Model al siguiente nivel: acciones encadenables que devuelven this, una cola thenable y Pages awaitable para escribir E2E que se leen como user stories — con criterio honesto de cuándo SÍ y cuándo NO.",
+    logoBg: "white",
+    duration: "4–5 h",
+    level: "Avanzado",
+    progress: 0,
+  },
 };
 
 function moduleCount(section: DocSection): number {
@@ -151,4 +161,5 @@ export const courseTracks: string[] = [
   "Git",
   "CSS/XPath",
   "Playwright",
+  "Fluent Interface",
 ];

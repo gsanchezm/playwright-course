@@ -41,6 +41,11 @@ const cssXpathModules = import.meta.glob(
   { query: "?raw", import: "default", eager: true }
 ) as Record<string, string>;
 
+const fluentInterfaceModules = import.meta.glob(
+  "../content/fluent-interface/*.md",
+  { query: "?raw", import: "default", eager: true }
+) as Record<string, string>;
+
 function buildSlugMap(
   modules: Record<string, string>
 ): Record<string, string> {
@@ -58,6 +63,7 @@ const gitGithubContent = buildSlugMap(gitGithubModules);
 const playwrightContent = buildSlugMap(playwrightModules);
 const regexContent = buildSlugMap(regexModules);
 const cssXpathContent = buildSlugMap(cssXpathModules);
+const fluentInterfaceContent = buildSlugMap(fluentInterfaceModules);
 
 // Legacy URLs ("section/slug") that were renamed and should redirect.
 // /docs/playwright/mN-detalles → /docs/playwright/mN-guia
@@ -77,6 +83,7 @@ function getContent(section: string, slug: string): string | null {
   if (section === "playwright") return playwrightContent[slug] ?? null;
   if (section === "regex") return regexContent[slug] ?? null;
   if (section === "css-xpath") return cssXpathContent[slug] ?? null;
+  if (section === "fluent-interface") return fluentInterfaceContent[slug] ?? null;
   return null;
 }
 

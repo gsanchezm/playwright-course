@@ -1,7 +1,7 @@
 export type DocSection = {
   id: string;
   title: string;
-  accent: "cyan" | "periwinkle" | "lavender" | "muted";
+  accent: "cyan" | "periwinkle" | "lavender" | "violet" | "muted";
   available: boolean;
   items: DocItem[];
 };
@@ -22,6 +22,7 @@ export const sectionOrder = [
   "git-github",
   "css-xpath",
   "playwright",
+  "fluent-interface",
 ] as const;
 
 export const docsNav: DocSection[] = [
@@ -282,6 +283,32 @@ export const docsNav: DocSection[] = [
       { slug: "m8-iframes-y-relativos", label: "8.5 iframes y relativos", group: "Módulo 8 · Técnicas del 1%" },
       { slug: "m8-reto", label: "🚩 Reto M8", group: "Módulo 8 · Técnicas del 1%" },
       { slug: "m8-sintesis", label: "🧠 Síntesis M8", group: "Módulo 8 · Técnicas del 1%" },
+      { slug: "sintesis-global", label: "🧠 Síntesis global", group: "Cierre" },
+    ],
+  },
+  {
+    id: "fluent-interface",
+    title: "Fluent Interface — Page Objects encadenables",
+    accent: "violet",
+    available: true,
+    items: [
+      { slug: "m1-el-dolor-de-repetir", label: "1.1 El dolor de repetir", group: "Módulo 1 · Fundamentos del encadenamiento" },
+      { slug: "m1-return-this", label: "1.2 return this: la idea base", group: "Módulo 1 · Fundamentos del encadenamiento" },
+      { slug: "m1-reto", label: "🚩 Reto M1", group: "Módulo 1 · Fundamentos del encadenamiento" },
+      { slug: "m1-sintesis", label: "🧠 Síntesis M1", group: "Módulo 1 · Fundamentos del encadenamiento" },
+      { slug: "m2-la-cola-y-step", label: "2.1 La cola y step()", group: "Módulo 2 · El motor: cola thenable" },
+      { slug: "m2-then-awaitable", label: "2.2 then(): el Page awaitable", group: "Módulo 2 · El motor: cola thenable" },
+      { slug: "m2-query-terminal", label: "2.3 query(): terminal", group: "Módulo 2 · El motor: cola thenable" },
+      { slug: "m2-reto", label: "🚩 Reto M2", group: "Módulo 2 · El motor: cola thenable" },
+      { slug: "m2-sintesis", label: "🧠 Síntesis M2", group: "Módulo 2 · El motor: cola thenable" },
+      { slug: "m3-builder-fluido", label: "3.1 Builder fluido", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m3-dry-y-2-formas", label: "3.2 DRY + 2 formas de locator", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m3-transicion-de-pagina", label: "3.3 Transición de página", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m3-assertions-encadenables", label: "3.4 Assertions encadenables", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m3-reto", label: "🚩 Reto M3", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m3-sintesis", label: "🧠 Síntesis M3", group: "Módulo 3 · Patrones de POM fluido" },
+      { slug: "m4-reto-e2e", label: "🚩 4.1 Reto E2E completo", group: "Módulo 4 · Proyecto E2E y criterio" },
+      { slug: "m4-cuando-si-cuando-no", label: "4.2 ¿Cuándo SÍ / cuándo NO?", group: "Módulo 4 · Proyecto E2E y criterio" },
       { slug: "sintesis-global", label: "🧠 Síntesis global", group: "Cierre" },
     ],
   },

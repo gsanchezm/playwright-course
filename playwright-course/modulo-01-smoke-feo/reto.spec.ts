@@ -154,5 +154,5 @@ test.describe("Smoke Reto M01", () => {
 //
 // Guarda la respuesta — en M03 (POM) la vamos a medir en concreto.
 // Pista de lo que viene: en M03 estas ~8 líneas se vuelven 1 sola:
-//     await loginPage.loginAs("MX", USERNAME, PASSWORD);
+//     await loginPage.loginInMarket(standardUser, "MX");
 // ============================================================

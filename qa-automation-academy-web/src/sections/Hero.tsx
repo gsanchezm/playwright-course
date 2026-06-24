@@ -6,7 +6,7 @@ import HeroCodeWindow from "@/components/HeroCodeWindow";
 const LECCION_DEMO = "/leccion";
 
 const stats = [
-  { value: "4", label: "tecnologías" },
+  { value: "6", label: "tecnologías" },
   { value: "150+", label: "lecciones" },
   { value: "100%", label: "práctico" },
 ];
@@ -43,8 +43,8 @@ export default function Hero() {
 
             <p className="mt-5 max-w-xl font-sans text-base leading-relaxed text-qa-muted sm:text-[17px]">
               Una academia práctica y gratuita: resuelve ejercicios reales de
-              Regex, TypeScript, Git/GitHub y Playwright, y obtén feedback
-              automático al correr los tests.
+              Regex, TypeScript, Git/GitHub, CSS/XPath, Playwright y Fluent
+              Interface, y obtén feedback automático al correr los tests.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">

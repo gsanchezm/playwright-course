@@ -292,6 +292,8 @@ Sólo **después** de ese ejercicio empieza el refactor. El patrón se gana; no 
 
 **Paso a paso de implementación:**
 
+> **Nota (artefacto histórico):** los snippets de abajo son del **plan de diseño v3** y quedaron desactualizados frente al código entregado. La API vigente de M03 vive en `pages/*.ts` y se documenta en `modulo-03-pom/README.md`: `BasePage.tid()` es viewport-aware (sufijo `-desktop`/`-responsive`); `LoginPage` usa los testids reales (`usernameInput`/`passwordInput`/`signInButton`, no `emailInput`/`submitButton`); y las acciones siguen el POM **tradicional** (`async`, devuelven `Promise<void>`, un `await` por acción). La variante **Fluent Interface** (acciones encadenables que devuelven `this`) se extrajo a un curso aparte, `fluent-interface-course/`. Trata esta sección como intención de diseño, no como la API actual.
+
 1. **Ritual de reactivar el dolor** (ver arriba).
 2. **Crear `pages/BasePage.ts`** como **clase normal** (sin `abstract`):
    ```typescript
