@@ -11,33 +11,41 @@ import type { Market } from "../types";
 export class CheckoutPage extends BasePage {
   readonly path = "/checkout";
 
+  private txtFullName: string = "checkout-fullname";
+  private txtPhone: string = "checkout-phone";
+  private txtAddress: string = "checkout-address";
+  private txtZip: string = "checkout-zip";
+  private btnPlaceOrder: string = "place-order";
+  private lblOrderTotal: string = "order-total";
+  private lblOrderConfirmation: string = "order-confirmation";
+
   // --- Locators privados ---
   private get fullNameInput(): Locator {
-    return this.tid("checkout-fullname");
+    return this.tid(this.txtFullName);
   }
 
   private get phoneInput(): Locator {
-    return this.tid("checkout-phone");
+    return this.tid(this.txtPhone);
   }
 
   private get addressInput(): Locator {
-    return this.tid("checkout-address");
+    return this.tid(this.txtAddress);
   }
 
   private get zipInput(): Locator {
-    return this.tid("checkout-zip");
+    return this.tid(this.txtZip);
   }
 
   private get placeOrderButton(): Locator {
-    return this.tid("place-order");
+    return this.tid(this.btnPlaceOrder);
   }
 
   private get orderTotal(): Locator {
-    return this.page.getByTestId("order-total");
+    return this.page.getByTestId(this.lblOrderTotal);
   }
 
   private get orderConfirmation(): Locator {
-    return this.page.getByTestId("order-confirmation");
+    return this.page.getByTestId(this.lblOrderConfirmation);
   }
 
   // --- Acciones ---

@@ -10,22 +10,27 @@ export type Category = "all" | "popular" | "veggie" | "meat" | "sides";
 export class CatalogPage extends BasePage {
   readonly path = "/catalog";
 
+  private cardPizza: string = "pizza-card-";
+  private btnAddToCart: string = "add-to-cart-";
+  private btnCategory: string = "category-";
+  private lblCartCount: string = "nav-cart-count";
+
   // --- Locators privados ---
   private get pizzaCards(): Locator {
     // testids dinámicos: [data-testid^="pizza-card-"] es legítimo
-    return this.page.locator('[data-testid^="pizza-card-"]');
+    return this.page.locator(`[data-testid^="${this.cardPizza}"]`);
   }
 
   private get addToCartButtons(): Locator {
-    return this.page.locator('[data-testid^="add-to-cart-"]');
+    return this.page.locator(`[data-testid^="${this.btnAddToCart}"]`);
   }
 
   private categoryButton(category: Category): Locator {
-    return this.page.getByTestId(`category-${category}`);
+    return this.page.getByTestId(`${this.btnCategory}${category}`);
   }
 
   private get cartCount(): Locator {
-    return this.page.getByTestId("nav-cart-count");
+    return this.page.getByTestId(this.lblCartCount);
   }
 
   // --- Acciones ---

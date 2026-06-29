@@ -13,25 +13,31 @@ import type { CountryCode, User } from "../types";
 export class LoginPage extends BasePage {
   readonly path = "/";
 
+  private txtUsername: string = "username";
+  private txtPassword: string = "password";
+  private btnMarket: string = "market-";
+  private btnSignIn: string = "login-button";
+  private lblError: string = "login-error";
+
   // --- Locators privados: documentación interna del Page ---
   private get usernameInput(): Locator {
-    return this.tid("username");
+    return this.tid(this.txtUsername);
   }
 
   private get passwordInput(): Locator {
-    return this.tid("password");
+    return this.tid(this.txtPassword);
   }
 
   private get signInButton(): Locator {
-    return this.tid("login-button");
+    return this.tid(this.btnSignIn);
   }
 
   private get errorMessage(): Locator {
-    return this.page.getByTestId("login-error");
+    return this.page.getByTestId(this.lblError);
   }
 
   private marketFlag(code: CountryCode): Locator {
-    return this.page.getByTestId(`market-${code}`);
+    return this.page.getByTestId(`${this.btnMarket}${code}`);
   }
 
   // --- Acciones públicas: la interfaz del POM ---
