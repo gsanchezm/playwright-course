@@ -52,7 +52,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 
 ```
 playwright-course/
-├── playwright.config.ts              # projects: setup, ui-chromium/firefox/webkit, api, anonymous
+├── playwright.config.ts              # projects: ui-anon (M01-M03), setup, ui-chromium/firefox/webkit, api
 ├── .env.example                      # plantilla versionada
 ├── .env                              # secretos locales (gitignored)
 ├── .auth/                            # storageState por rol (gitignored)

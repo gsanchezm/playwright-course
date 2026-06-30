@@ -11,12 +11,16 @@ import type { Market } from "../types";
 export class CheckoutPage extends BasePage {
   readonly path = "/checkout";
 
-  private txtFullName: string = "checkout-fullname";
-  private txtPhone: string = "checkout-phone";
-  private txtAddress: string = "checkout-address";
-  private txtZip: string = "checkout-zip";
-  private btnPlaceOrder: string = "place-order";
+  // testids verificados contra la app en vivo (2026-06-29). Nombre/teléfono/
+  // dirección y el botón llevan sufijo -desktop/-responsive → se resuelven con
+  // tid(); zip-code y order-total NO llevan sufijo → getByTestId directo.
+  private txtFullName: string = "full-name";
+  private txtPhone: string = "phone";
+  private txtAddress: string = "address";
+  private txtZip: string = "zip-code";
+  private btnPlaceOrder: string = "place-order-btn";
   private lblOrderTotal: string = "order-total";
+  // ⚠️ sin verificar: pantalla post-orden (no se capturó sin enviar el form)
   private lblOrderConfirmation: string = "order-confirmation";
 
   // --- Locators privados ---
@@ -33,7 +37,8 @@ export class CheckoutPage extends BasePage {
   }
 
   private get zipInput(): Locator {
-    return this.tid(this.txtZip);
+    // zip-code NO lleva sufijo -desktop → getByTestId directo (no tid)
+    return this.page.getByTestId(this.txtZip);
   }
 
   private get placeOrderButton(): Locator {

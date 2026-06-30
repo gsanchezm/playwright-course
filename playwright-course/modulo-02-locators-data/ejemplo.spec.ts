@@ -13,13 +13,6 @@ import type { Market, User, Currency } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
 
-// Este spec EJERCITA el flujo de login por UI (elige mercado + credenciales),
-// así que debe correr ANÓNIMO. El project ui-chromium inyecta el storageState
-// autenticado del setup (M04); si lo heredáramos, page.goto("/") rebotaría al
-// catálogo y la pantalla de login (botones market-*) nunca aparecería.
-// Lo reseteamos a un estado vacío solo para este archivo.
-test.use({ storageState: { cookies: [], origins: [] } });
-
 // Casting tipado del JSON: TypeScript verifica que el JSON cumple el contrato.
 const markets = marketsJson as Market[];
 const users = usersJson as User[];

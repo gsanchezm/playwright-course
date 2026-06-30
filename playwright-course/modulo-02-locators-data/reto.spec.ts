@@ -15,7 +15,7 @@
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
@@ -25,13 +25,6 @@ import { test, expect } from "@playwright/test";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
-
-// Este reto ENSEÑA el flujo de login por UI (elige mercado + credenciales),
-// así que debe correr ANÓNIMO. El project ui-chromium inyecta el storageState
-// autenticado del setup (M04); si lo heredáramos, page.goto("/") rebotaría al
-// catálogo y la pantalla de login (botones market-*) nunca aparecería.
-// Lo reseteamos a un estado vacío solo para este archivo.
-test.use({ storageState: { cookies: [], origins: [] } });
 
 const markets = marketsJson as Market[];
 const users = usersJson as User[];

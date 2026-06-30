@@ -13,13 +13,6 @@
 
 import { test, expect } from "@playwright/test";
 
-// Este spec EJERCITA el flujo de login por UI (elige mercado + credenciales),
-// así que debe correr ANÓNIMO. El project ui-chromium inyecta el storageState
-// autenticado del setup (M04); si lo heredáramos, page.goto("/") rebotaría al
-// catálogo y la pantalla de login (botones market-*) nunca aparecería.
-// Lo reseteamos a un estado vacío solo para este archivo.
-test.use({ storageState: { cookies: [], origins: [] } });
-
 // Credenciales leídas de .env (M01 ya enseña secrets desde día 1).
 const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";

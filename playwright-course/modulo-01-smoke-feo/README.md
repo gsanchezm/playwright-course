@@ -236,7 +236,7 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
   | Lo que genera el installer | Lo dejamos en M01 como | Por qué |
   |---|---|---|
   | `testDir: "./tests"` | `testDir: "."` + `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | El curso vive en `modulo-*/`, no en `tests/` |
-  | `projects: [chromium, firefox, webkit]` | **solo** `ui-chromium` | Multi-browser distrae en M01; **firefox/webkit vuelven en M04** |
+  | `projects: [chromium, firefox, webkit]` | **solo** `ui-anon` (anónimo) | Multi-browser distrae en M01; **firefox/webkit + el `ui-chromium` autenticado nacen en M04** |
   | bloque `dotenv` **comentado** | **descomentado** → `import "dotenv/config"` | El installer dejó el hook; solo lo enciendes (ya instalaste `dotenv` en 1.3) |
   | `trace: "on-first-retry"` | `trace: "retain-on-failure"` | En M01 no hay `retries`; con `on-first-retry` nunca verías el trace al fallar |
   | (sin timeouts custom) | `timeout` + `expect.timeout` + `actionTimeout`/`navigationTimeout` generosos | Render free tier despierta en 30-40s; sin esto el 1er run sería flaky |
@@ -282,10 +282,13 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
 
-  // --- Projects (en M01 solo uno; el installer traía chromium+firefox+webkit) ---
+  // --- Projects (en M01 solo uno y ANÓNIMO; el installer traía chromium+firefox+webkit) ---
   projects: [
     {
-      name: "ui-chromium",
+      // Anónimo a propósito: M01-M03 son ejercicios de login por UI, sin
+      // sesión heredada. El project autenticado (ui-chromium + storageState
+      // + setup) nace en M04, no antes.
+      name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
@@ -324,7 +327,7 @@ export default defineConfig({
 | `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
 | `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
 | `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M04 vuelven firefox/webkit y se monta el setup project |
-| `name: "ui-chromium"` | Identificador del project: lo que pasas en `--project=ui-chromium` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M05 (convención de nombres del curso) |
+| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | `anon` porque M01-M03 corren **sin sesión** (su lección ES el login); el `ui-chromium` autenticado nace en M04. El prefijo `ui-` (vs `api` de M05) es la convención del curso |
 | `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
 ---
@@ -425,7 +428,7 @@ EOF
   # Ver scripts actuales: busca la sección "scripts"
   cat package.json
   ```
-- **Por qué:** `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium`. Un atajo memorable evita teclear el comando largo en cada corrida.
+- **Por qué:** `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon`. Un atajo memorable evita teclear el comando largo en cada corrida.
 - **Cómo verifico:** `cat package.json` — confirma que aparece la entrada `"m1"`. (Aún no puedes ejecutarlo: el spec file no existe hasta el Paso 7.)
 
 Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`:
@@ -438,11 +441,11 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
   "test:debug": "playwright test --debug",
   "typecheck": "tsc --noEmit",
   "report": "playwright show-report",
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium"
+  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon"
 }
 ```
 
-> 💡 **Para el facilitador:** explica que `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium`. Los alumnos pueden inspeccionar cualquier script con `cat package.json`.
+> 💡 **Para el facilitador:** explica que `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon`. Los alumnos pueden inspeccionar cualquier script con `cat package.json`.
 
 ---
 
@@ -559,7 +562,7 @@ Ahora sí, **el código del módulo**.
   pnpm test:ui
 
   # B) Modo headed — abre el navegador real, sin UI mode
-  pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-chromium
+  pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-anon
 
   # C) Headless — la forma rápida (sin ventana)
   pnpm m1
@@ -570,7 +573,7 @@ Ahora sí, **el código del módulo**.
 **8.2 — Depurar paso a paso con `--debug` (Playwright Inspector)**
 - **Qué hago:** corro el smoke en modo depuración:
   ```bash
-  pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug
+  pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon --debug
   # (o el atajo del curso: pnpm test:debug)
   ```
   Se abre el **Playwright Inspector** (una ventana aparte) junto al navegador. Usa el botón **▶ (Resume)** para avanzar entre acciones y **⤼ (Step over)** para ejecutar **una sola** línea a la vez.
@@ -626,7 +629,7 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
 **10.1 — Completar TC-003 en `reto.spec.ts`**
 - **Qué hago:** abro `reto.spec.ts` y escribo TC-003 **copiando deliberadamente** las mismas líneas que ya viste duplicadas. Cada TODO trae **qué hacer**, **pista** (el método de Playwright) y **cómo verificar**. No intento ser elegante — el dolor es el ejercicio. Al terminar:
   ```bash
-  pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium
+  pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-anon
   ```
 - **Por qué:** este tercer smoke vuelve a duplicar ~8 líneas de login. Medir cuántas copiaste pone número a la deuda técnica que M03 va a saldar con el Page Object Model.
 - **Cómo verifico:** el test pasa en verde **y** al final del archivo puedes responder las 3 preguntas del comentario final.

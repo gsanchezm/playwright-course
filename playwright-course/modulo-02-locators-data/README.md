@@ -586,19 +586,19 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
       navigationTimeout: 45_000,
     },
     projects: [
-      { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+      { name: "ui-anon", use: { ...devices["Desktop Chrome"] } },
     ],
   });
   ```
-- **Por qué:** M02 añade **datos**, no configuración del runner. Si tu config difiere de M01, algo se coló de otro módulo.
+- **Por qué:** M02 añade **datos**, no configuración del runner. Si tu config difiere de M01, algo se coló de otro módulo. (Sigue siendo un solo project **anónimo** `ui-anon`: M02 también es login por UI. El project autenticado `ui-chromium` llega en M04.)
 - **Cómo verifico:** un diff mental contra M01 da cero cambios; `pnpm m2` arranca sin errores de config.
 
 **3.3 — Añade el script `m2` a `package.json`**
 - **Qué hago:** agrego el atajo del módulo.
   ```json
   "scripts": {
-    "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium",
-    "m2": "playwright test modulo-02-locators-data --project=ui-chromium"
+    "m1": "playwright test modulo-01-smoke-feo --project=ui-anon",
+    "m2": "playwright test modulo-02-locators-data --project=ui-anon"
   }
   ```
 - **Por qué:** un atajo por módulo mantiene los comandos cortos y consistentes con el resto del curso (`pnpm m1`, `pnpm m2`, …).

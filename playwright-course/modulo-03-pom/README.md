@@ -380,7 +380,7 @@ pages/
 - **Cómo verifico:** el `include` contiene `"pages/**/*.ts"` (ya está en el `tsconfig.json` del repo, junto con `types/`, `helpers/`, `services/`, `fixtures/`, `tests/` y `modulo-*`).
 
 **7.2 — Confirma el script `m3` en `package.json`**
-- **Qué hago:** verifico que exista `"m3": "playwright test modulo-03-pom --project=ui-chromium"`.
+- **Qué hago:** verifico que exista `"m3": "playwright test modulo-03-pom --project=ui-anon"`.
 - **Por qué:** es el atajo del módulo. Sin él, tendrías que escribir el comando completo cada vez.
 - **Cómo verifico:** `pnpm m3` arranca el runner sobre `modulo-03-pom`.
 
@@ -389,7 +389,7 @@ pages/
 > # playwright.config.ts — SIN CAMBIOS vs M01/M02
 > # (M03 refactoriza los tests a Page Object Model; el runner corre igual)
 > ```
-> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-chromium`). **Entra:** nada en el config — el incremental de M03 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M04**.
+> **Se mantiene:** todo (dotenv, baseURL, timeouts, el único project **anónimo** `ui-anon`). **Entra:** nada en el config — el incremental de M03 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M04** (ahí nacen el setup project y el `ui-chromium` autenticado).
 
 Tu `playwright.config.ts` sigue idéntico a M02:
 
@@ -587,7 +587,7 @@ Ya conectaste `origin` en el Paso 0.3. Ahora practica el ida-y-vuelta: una rama 
 - **Comando del módulo:** `pnpm m3`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-anon`)
 - **Verificar tipos (herencia POM):** `pnpm typecheck` — ojo: la herencia introduce errores sutiles
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m3` (no `VAR=x pnpm m3`, sintaxis bash que falla en PowerShell)

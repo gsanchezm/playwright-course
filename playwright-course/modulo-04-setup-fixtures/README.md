@@ -49,10 +49,10 @@ playwright-course/
 │              │            │   storageState)         │
 └─────────────────────────────────────────────────────┘
 
-┌─────────────┐         ┌────────────────┐
-│   api       │         │  anonymous     │
-│ (sin setup) │         │ (sin setup)    │
-└─────────────┘         └────────────────┘
+┌─────────────┐         ┌──────────────────────┐
+│   api       │         │  ui-anon (M01-M03)   │
+│ (sin setup) │         │ (sin setup, anónimo) │
+└─────────────┘         └──────────────────────┘
    ↑                       ↑
    ↑ NO heredan cookies de UI — flujos negativos y API limpios
 ```
@@ -360,14 +360,14 @@ La v3 **no usa `globalSetup` con login por UI** porque:
 > + testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
 >
 >   projects: [
-> -   { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+>     { name: "ui-anon", use: { ...devices["Desktop Chrome"] }, testMatch: [/modulo-0[123]-.*/] },   // se queda: M01-M03 anónimos
 > +   { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
-> +   { name: "ui-chromium", use: { ...devices["Desktop Chrome"],  storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/] },
-> +   { name: "ui-firefox",  use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/] },
-> +   { name: "ui-webkit",   use: { ...devices["Desktop Safari"],  storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/] },
+> +   { name: "ui-chromium", use: { ...devices["Desktop Chrome"],  storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/] },
+> +   { name: "ui-firefox",  use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/] },
+> +   { name: "ui-webkit",   use: { ...devices["Desktop Safari"],  storageState: STORAGE_STATE }, dependencies: ["setup"], testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/] },
 >   ]
 > ```
-> **Se mantiene:** baseURL, timeouts, reporter, `trace`. **Entra:** const `STORAGE_STATE`; project `setup` (corre primero, hace login vía API); **firefox y webkit** (multi-browser nace aquí, no en M06); `storageState` + `dependencies: ["setup"]` + `testIgnore` por project; y `testMatch` ampliado para detectar los `*.setup.ts`.
+> **Se mantiene:** baseURL, timeouts, reporter, `trace`, y el project **`ui-anon`** (M01-M03 siguen corriendo anónimos ahí). **Entra:** const `STORAGE_STATE`; project `setup` (corre primero, hace login vía API); los **`ui-chromium`/`ui-firefox`/`ui-webkit` autenticados** (multi-browser nace aquí, no en M06) con `storageState` + `dependencies: ["setup"]` + `testIgnore` (que excluye `setup` **y** los M01-M03); y `testMatch` ampliado para detectar los `*.setup.ts`.
 
 Este es el módulo donde `playwright.config.ts` **se transforma de verdad**. Hazlo en micro-pasos para no perderte.
 
@@ -398,8 +398,15 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
 
-  // 🆕 projects: setup (corre primero) → ui-* (heredan storageState)
+  // 🆕 projects: ui-anon (se queda de M01-M03, anónimo) + setup (corre
+  //    primero) → ui-* autenticados (heredan storageState)
   projects: [
+    {
+      // Viene de M01-M03: login por UI, sin sesión heredada. Se queda anónimo.
+      name: "ui-anon",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: [/modulo-0[123]-.*\/.*\.spec\.ts/],
+    },
     {
       name: "setup",
       testMatch: /tests\/setup\/.*\.setup\.ts/,
@@ -408,19 +415,20 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/],
+      // ignora setup + M01-M03 (esos corren anónimos en ui-anon)
+      testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /modulo-0[123]-.*/],
     },
   ],
 });
@@ -437,7 +445,7 @@ export default defineConfig({
   | `testIgnore` en cada `ui-*` | Evita que el `auth.setup.ts` corra dos veces |
 
 - **Por qué:** el project `setup` corre **primero** y genera el badge; los `ui-*` lo heredan vía `storageState` + `dependencies`. El `storageState` va **por project** (no en el `use:` raíz) para que los flujos negativos/API no lo hereden; el `testIgnore` evita que el setup corra dos veces.
-- **Cómo verifico:** `pnpm exec playwright test --list` corre sin error de parseo y **incluye** los projects `setup` + los tres `ui-*` (en el repo completo verás además `api` y `anonymous`, que no heredan `storageState`).
+- **Cómo verifico:** `pnpm exec playwright test --list` corre sin error de parseo y **incluye** los projects `setup` + los tres `ui-*` autenticados (en el repo completo verás además `api` y `ui-anon` — este último corre M01-M03 anónimos y no hereda `storageState`).
 
 > 🔍 **Detalle que parece obvio — `dependencies: ["setup"]`**
 > **Qué es:** la **precondición declarativa** de la tabla de Conceptos JIT, a nivel de project: "este project no arranca hasta que el project `setup` termine **en verde**".
@@ -446,11 +454,11 @@ export default defineConfig({
 
 > 🔍 **Detalle que parece obvio — `storageState: STORAGE_STATE` (en cada project `ui-*`, NO en el `use:` raíz)**
 > **Qué es:** la asignación del badge **por project** que acabas de escribir (`ui-chromium`, `ui-firefox`, `ui-webkit`) — no va en el bloque `use:` global de `defineConfig`.
-> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una sola vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**: también los projects `api` y `anonymous` (llegan en M05/M06), que deben correr **sin** sesión.
+> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una sola vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**: también `ui-anon` (los M01-M03, que son de login por UI) y el project `api` (M05), que deben correr **sin** sesión.
 > **Qué pasa si lo cambias:** si lo subes al `use:` raíz, los flujos negativos (login inválido, acceso anónimo) arrancan **ya logueados** y dejan de probar lo que dicen probar; y los tests de API heredan cookies de UI que no les corresponden. Los falsos verdes más peligrosos del módulo nacen aquí.
 
 > 🔍 **Detalle que parece obvio — `testIgnore: [/tests\/setup\/.*/]`**
-> **Qué es:** la ruta que cada project `ui-*` **ignora**. (En el repo final el array crece a tres patrones: `/tests\/api\/.*/` y `/modulo-05-api-layer\/.*/` se añaden en M05 para que la suite de API no se cuele en los projects de UI.)
+> **Qué es:** la ruta que cada project `ui-*` autenticado **ignora**. (Además de `setup`, el array incluye `/modulo-0[123]-.*/` para mantener M01-M03 fuera —esos corren anónimos en `ui-anon`—; y en M05 se añaden `/tests\/api\/.*/` + `/modulo-05-api-layer\/.*/` para que la suite de API no se cuele en los projects de UI.)
 > **Por qué así (y no la alternativa obvia):** sin ese ignore, el `testMatch` global (`/tests\/.*\.(spec|setup)\.ts/`) haría que `auth.setup.ts` también cayera dentro de los projects `ui-*`. Como esos projects dependen de `setup`, el login terminaría ejecutándose **dos veces**: una en el project `setup` y otra dentro de cada `ui-*`.
 > **Qué pasa si lo cambias:** si quitas `/tests\/setup\/.*/`, verás `auth.setup.ts` duplicado en el reporte y un POST de login extra por browser; con multi-browser eso es login ×3 innecesario y más lento.
 
@@ -498,7 +506,7 @@ export default defineConfig({
   1. **Es un `setup.ts`, no un `spec.ts`** — el `testMatch` de `playwright.config.ts` los distingue.
   2. Hace **login por API** (un `POST /api/auth/login`), no por UI.
   3. Persiste cookies/localStorage en `.auth/user.json` con `context.storageState({ path })`.
-  4. **NO aparece en `tests/` regulares** — vive en `tests/setup/` para que el project `api` y los flujos negativos (`anonymous`) **no lo hereden**.
+  4. **NO aparece en `tests/` regulares** — vive en `tests/setup/` para que el project `api` y el project anónimo `ui-anon` (M01-M03 + flujos negativos) **no lo hereden**.
 - **Por qué:** entender que el setup es **un test más** (visible en el reporte) y no un hook escondido es lo que hace clic con `dependencies`.
 - **Cómo verifico:** localizas en el archivo el endpoint `POST /api/auth/login` y las dos claves de `localStorage` (`access_token`, `username`).
 

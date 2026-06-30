@@ -38,7 +38,7 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 │   ├── ejemplo.spec.ts             ← 🆕 smoke canary, regression, demo trace
 │   └── reto.md                     ← 🆕 segundo workflow con cron + issues automáticos
 ├── package.json
-├── playwright.config.ts            ← (proyectos: setup, ui-{chromium,firefox,webkit}, api, anonymous)
+├── playwright.config.ts            ← (proyectos: ui-anon, setup, ui-{chromium,firefox,webkit}, api)
 └── tsconfig.json
 ```
 
@@ -349,14 +349,13 @@ jobs:
 > +     video: "retain-on-failure",
 >     },
 >     projects: [
->       // ... setup, ui-chromium/firefox/webkit, api (de M04/M05) ...
-> +     { name: "anonymous", use: { ...devices["Desktop Chrome"] }, testMatch: /tests\/.*\.anon\.spec\.ts/ },
+>       // sin cambios: ui-anon (M01-M03), setup, ui-chromium/firefox/webkit, api
 >     ]
 >   })
 > ```
-> **Se mantiene:** projects `setup` + 3 browsers + `api`. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI), `video: "retain-on-failure"`, y el 5º project `anonymous` (flujos sin sesión: login negativo, signup).
+> **Se mantiene:** TODOS los projects (`ui-anon`, `setup`, los 3 browsers, `api`) — **M06 ya no añade projects**. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI) y `video: "retain-on-failure"`.
 
-M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `anonymous` para flujos negativos. Editas **un solo archivo** (`playwright.config.ts`) en tres micro-pasos.
+M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y `video` al fallar. Editas **un solo archivo** (`playwright.config.ts`) en dos micro-pasos. (El project anónimo `ui-anon` para flujos negativos **ya existe desde M01** — corre M01-M03 y cualquier `*.anon.spec.ts`.)
 
 **3.1 — Añadir los flags de comportamiento en CI**
 - **Qué hago:** agrego `fullyParallel`, `forbidOnly`, `retries` y `workers` al objeto que pasa `defineConfig({ ... })`.
@@ -408,17 +407,7 @@ M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `w
 > **Por qué así (y no la alternativa obvia):** capturar video y screenshots de cada test verde es desperdicio puro: nadie revisa el video de un test que pasó. Limitarlos al fallo te da el material de diagnóstico justo cuando lo necesitas, sin inflar los artefactos.
 > **Qué pasa si lo cambias:** `video: "on"` multiplica el tamaño de `test-results/` y el tiempo de cada job; desactivarlo del todo te deja sin el clip que muchas veces explica el fallo más rápido que la propia traza.
 
-**3.3 — Añadir el 5º project `anonymous`**
-- **Qué hago:** agrego un quinto objeto al array `projects[]`, sin `storageState`.
-  ```ts
-  {
-    name: "anonymous",   // 🆕 para tests sin sesión (login negativo, etc.)
-    use: { ...devices["Desktop Chrome"] },
-    testMatch: /tests\/.*\.anon\.spec\.ts/,
-  },
-  ```
-- **Por qué:** los tests negativos (login fallido, signup) necesitan empezar **sin sesión**. Si heredaran el `storageState` del `setup`, llegarían ya logueados y el caso negativo no tendría sentido.
-- **Cómo verifico:** `pnpm exec playwright test --list --project=anonymous` no lanza error de proyecto desconocido (lista 0 tests mientras no exista un `*.anon.spec.ts`, lo cual es correcto).
+> 💡 **Ya no se agrega un project aquí.** Los tests negativos (login fallido, signup) necesitan empezar **sin sesión** — para eso está el project **`ui-anon`**, que **ya existe desde M01** (corre M01-M03 y cualquier `*.anon.spec.ts`, sin `storageState`). M06 **no añade projects**: solo los flags de CI de 3.1-3.2. Si heredaran el `storageState` del `setup`, los flujos negativos llegarían ya logueados y no tendrían sentido — por eso viven en `ui-anon`, no en los `ui-*` autenticados.
 
 > 🔷 **TypeScript — config tipado (`PlaywrightTestConfig` / `projects[]`)**
 > `defineConfig(...)` no es decorativo: aplica el tipo `PlaywrightTestConfig`, así que el editor te autocompleta `retries`, `workers`, `projects[]` y te marca en rojo si escribes una clave inexistente o un valor del tipo equivocado (p.ej. `trace: "siempre"`). `projects` es un **array tipado** de objetos con forma fija: cada entrada debe tener `name`, y opcionalmente `use`, `dependencies`, `testMatch`/`testIgnore`. Esa forma fija es lo que una `interface` describe.
@@ -466,19 +455,19 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "api",
@@ -486,9 +475,10 @@ export default defineConfig({
       testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
     },
     {
-      name: "anonymous",   // 🆕 para tests sin sesión (login negativo, etc.)
+      // ui-anon: existe desde M01 (M01-M03 anónimos) + flujos negativos *.anon.spec.ts
+      name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: /tests\/.*\.anon\.spec\.ts/,
+      testMatch: [/modulo-0[123]-.*\/.*\.spec\.ts/, /tests\/.*\.anon\.spec\.ts/],
     },
   ],
 });
@@ -504,9 +494,8 @@ export default defineConfig({
 | `forbidOnly: !!process.env.CI` | Hace fallar el job si dejaste un `test.only(...)` por error |
 | `reporter: process.env.CI ? [...] : [...]` | `github` annotations + `junit` para integración externa |
 | `video: "retain-on-failure"` | Video disponible en el HTML report cuando algo se cae |
-| Project `anonymous` | Tests sin storageState (login negativo, signup flows) |
 
-**3.4 — Añadir los scripts de M06 al `package.json`**
+**3.3 — Añadir los scripts de M06 al `package.json`**
 - **Qué hago:** agrego tres scripts al bloque `"scripts"` de `package.json`.
   ```json
   "scripts": {

@@ -43,9 +43,12 @@ export default defineConfig({
 
   // --- Projects ---
   // 1. `setup` corre primero (login vía API, persiste storageState).
-  // 2. Los `ui-*` dependen de `setup` y heredan el storageState.
-  // 3. `api` y `anonymous` NO heredan storageState (cookies de UI
-  //    no deben contaminar tests de API ni flujos negativos).
+  // 2. `ui-chromium/firefox/webkit` dependen de `setup` y heredan el
+  //    storageState autenticado → para M04+ (cuando el curso ya enseña
+  //    setup project + sesión persistida).
+  // 3. `ui-anon` corre M01-M03 (los módulos de login por UI) ANÓNIMOS:
+  //    sin `setup`, sin `storageState`. El concepto de sesión heredada
+  //    entra hasta M04, no antes. `api` tampoco hereda storageState.
   projects: [
     {
       name: "setup",
@@ -55,19 +58,19 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
     },
     {
       name: "api",
@@ -75,10 +78,13 @@ export default defineConfig({
       testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
     },
     {
-      // Para tests de login negativo u otros flujos anónimos
-      name: "anonymous",
+      // M01-M03: módulos de login por UI. Corren ANÓNIMOS (sin setup,
+      // sin storageState) porque su lección ES el login — no tendría
+      // sentido arrastrar una sesión de API. También cubre flujos
+      // negativos `*.anon.spec.ts`.
+      name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: /tests\/.*\.anon\.spec\.ts/,
+      testMatch: [/modulo-0[123]-.*\/.*\.spec\.ts/, /tests\/.*\.anon\.spec\.ts/],
     },
   ],
 });
