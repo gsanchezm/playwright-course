@@ -58,19 +58,19 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
     },
     {
       name: "api",

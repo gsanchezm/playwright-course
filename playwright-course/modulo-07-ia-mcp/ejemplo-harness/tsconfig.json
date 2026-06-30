@@ -13,14 +13,7 @@
   },
   "include": [
     "playwright.config.ts",
-    "types/**/*.ts",
-    "types/**/*.d.ts",
-    "helpers/**/*.ts",
-    "pages/**/*.ts",
-    "services/**/*.ts",
-    "fixtures/**/*.ts",
-    "tests/**/*.ts",
-    "modulo-*/**/*.ts"
-  ],
-  "exclude": ["modulo-07-ia-mcp/ejemplo-harness"]
+    "src/**/*.ts",
+    "src/**/*.json"
+  ]
 }
