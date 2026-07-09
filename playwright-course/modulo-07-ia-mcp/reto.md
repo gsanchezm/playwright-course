@@ -1,143 +1,328 @@
-# Reto — M07 IA + Playwright MCP
+# Reto - M07 IA Test Harness
 
 ## Objetivo
 
-Generar un test E2E **completo y verde** usando **solo prompts** + Playwright MCP, sin escribir código a mano. Mide qué tan productivo es realmente tu stack de IA hoy.
+Generar un framework E2E desde cero usando Claude Code + Playwright MCP, sin escribir codigo de produccion a mano. Tu trabajo es dirigir, verificar y corregir con prompts.
+
+## Restricciones
+
+- El proyecto debe vivir en una **carpeta externa vacia**, no dentro del repo del curso.
+- El package manager debe ser `pnpm`.
+- La app objetivo es OmniPizza:
+  - UI: `https://omnipizza-frontend.onrender.com`
+  - API: `https://omnipizza-backend.onrender.com`
+- Para otro SUT, cambia solo la URL de UI y la URL de API; los prompts no deben asumir features de OmniPizza.
+- El flujo principal es **Claude Code** en terminal + **VS Code** como IDE.
+- Claude debe usar **Playwright MCP** para confirmar selectores reales antes de crear specs UI.
+- No se permite editar manualmente el codigo generado, salvo que documentes exactamente por que Claude Code no pudo corregirlo tras 3 intentos.
 
 ## Setup
 
-1. Tener el framework de M01..M06 funcionando (`pnpm test:smoke` debe pasar en local).
-2. Un cliente MCP configurado (ver [`README.md`](./README.md) — Claude Code, Copilot Agent, Gemini CLI o Claude Desktop).
-3. OmniPizza despierto: corre `pnpm m1` una vez para warmup antes de empezar.
+Desde la raiz del curso:
+
+Primero pide a Claude Code crear o refrescar los scripts multiplataforma:
+
+```text
+prompts/00-create-setup-scripts.md
+```
+
+Despues ejecuta el script generado segun tu sistema operativo.
+
+Windows:
+
+```powershell
+.\playwright-course\modulo-07-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
+cd C:\tmp\omnipizza-ai-harness
+claude
+```
+
+macOS/Linux:
 
 ```bash
-$ mkdir modulo-07-ia-mcp/sandbox
+./playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
+cd "$HOME/tmp/omnipizza-ai-harness"
+claude
 ```
 
-Todos los archivos generados por la IA caen en `modulo-07-ia-mcp/sandbox/` (la carpeta ya está gitignored en el `.gitignore` del curso — compruébalo con `git check-ignore modulo-07-ia-mcp/sandbox/`).
+El setup crea `PROJECT_BRIEF.md` y `CLAUDE.md` dentro de la carpeta externa.
+`PROJECT_BRIEF.md` guarda el contexto del SUT; `CLAUDE.md` da instrucciones
+cortas que Claude Code lee desde el arranque.
 
----
+Dentro de Claude Code, acepta la configuracion MCP del proyecto cuando aparezca.
 
-## Pasos
+## Pasos obligatorios
 
-### 1. Verifica conexión MCP
+### 1. Verificacion de ambiente
 
-Prompt (en inglés):
-```
-Call the "browser_navigate" tool with url "https://example.com",
-then "browser_snapshot", and tell me how many links the page has.
-```
+Pega el prompt:
 
-✅ **Cómo verificar:** la IA debe responder con un número concreto (ej. "1 enlace: More information..."). Si responde sin invocar tool, **MCP no está conectado** — revisa el setup.
-
-### 2. Genera el test de "happy path checkout"
-
-Prompt (cópialo tal cual en inglés y adáptalo a tu cliente):
-```
-CONTEXT: I am in the playwright-course repo. Read these files before generating:
-- playwright.config.ts
-- pages/BasePage.ts
-- pages/LoginPage.ts
-- pages/CatalogPage.ts
-- pages/CheckoutPage.ts (if it exists; otherwise ignore)
-- tests/setup/auth.setup.ts
-
-TASK: generate modulo-07-ia-mcp/sandbox/checkout-happy.spec.ts that:
-1. Uses the storageState from .auth/user.json (does NOT log in via the UI).
-2. Navigates to the catalog.
-3. Adds 1 "Large" Margarita to the cart.
-4. Goes to checkout.
-5. Asserts with web-first assertions that:
-   - The displayed total is > 0
-   - The "Margarita" item appears in the order summary
-
-RULES:
-- Role-based locators (getByRole, getByLabel, getByTestId). No deep CSS.
-- No waitForTimeout. If you need to wait, use expect(...).toBeVisible() or waitFor.
-- Follow the repo naming conventions (English for identifiers, Spanish for comments).
-- Before writing any code, navigate OmniPizza with MCP and confirm the real selectors.
-
-DELIVERY: only the .spec.ts file; do not explain, I will read it.
+```text
+prompts/01-bootstrap-environment.md
 ```
 
-✅ **Cómo verificar:** la IA debe **abrir el browser via MCP** (lo ves en tu pantalla o reporta la URL navegada), **luego** escribir el spec. Si genera sin navegar, los selectors van a estar inventados.
+Debe confirmar:
 
-### 3. Corre el test
+- version de Node;
+- version de pnpm;
+- version de Claude Code;
+- conexion MCP real;
+- carpeta externa lista.
+
+Evidencia: pega en tu entrega el resumen de Claude o captura de `claude mcp list`.
+
+### 2. Fundacion del framework
+
+Pega:
+
+```text
+prompts/02-master-architect.md
+```
+
+Debe crear:
+
+- `AGENTS.md`;
+- `PROJECT_BRIEF.md` actualizado si hace falta;
+- `package.json`;
+- `playwright.config.ts`;
+- `tsconfig.json`;
+- `.env.example`;
+- `src/core/`;
+- `src/shared/`.
+
+No debe crear `auth`, `catalog`, `cart`, `checkout` ni ninguna feature todavia.
+
+Verifica:
 
 ```bash
-$ pnpm exec playwright test modulo-07-ia-mcp/sandbox/checkout-happy.spec.ts --project=ui-chromium --headed
+pnpm install
+pnpm typecheck
 ```
 
-✅ **Cómo verificar:** el test pasa al primer intento. Si falla:
-- **No edites a mano.** Pasa el output del fallo a la IA y pide el fix.
-- Repite máximo 3 iteraciones. Si después de 3 sigue rojo, anota qué falló — ése es el límite real de tu stack hoy.
+Si falla, usa `prompts/07-healer-review.md`.
 
-### 4. Genera el caso negativo
+### 3. Plan de pruebas UI/API
 
-Prompt (en inglés):
-```
-Generate modulo-07-ia-mcp/sandbox/checkout-empty-cart.spec.ts:
-- Authenticated storage state (same as the previous one).
-- Goes straight to /checkout WITHOUT adding anything to the cart.
-- Asserts that an empty-cart message appears (navigate first to confirm
-  the real text, e.g. "Tu carrito está vacío" or its real equivalent).
-- Asserts that the "Confirmar pedido" button is disabled or absent.
+Pega:
 
-Same rules as before.
+```text
+prompts/03-test-plan.md
 ```
 
-✅ **Cómo verificar:** corre el spec. Pasa o fallida-pero-con-fix-evidente en una iteración.
+Debe crear `TEST_PLAN.md` con:
 
-### 5. Refactor a fixture
+- evidencia UI encontrada con Playwright MCP;
+- endpoints API confirmados o bloqueados;
+- matriz de casos `ui` y `api`;
+- slices detectadas y orden de implementacion.
 
-Prompt (en inglés):
-```
-Both specs in sandbox/ repeat the storageState load. Refactor:
-- Create sandbox/fixtures.ts exporting an extended test that comes
-  already authenticated.
-- Modify both specs to use that fixture.
-- Do not change the assertions.
+Si existe menu, sidebar, tabs o navegacion compartida, el plan debe exigir un
+Page Object llamado `MenuPage`.
 
-Run the tests afterwards; if they fail, give me the fix before showing me
-the final code.
-```
+### 4. Slices verticales
 
-✅ **Cómo verificar:** ambos tests verdes; los specs son más cortos; el fixture no duplica lógica que ya esté en `fixtures/omnipizza.ts`.
+Genera las slices una por una con:
 
-### 6. Bonus — bug hunting
-
-Prompt (en inglés):
-```
-I want you to explore OmniPizza looking for real bugs. Without my guidance:
-1. Navigate as an anonymous user and try weird things (infinite cart,
-   random coupons, refreshing between steps).
-2. Capture screenshots of any unexpected state.
-3. Give me a prioritized list of 3 bugs with: description, steps to
-   reproduce, severity, screenshot.
-
-Do not generate tests for this — just the report.
+```text
+prompts/04-slice-generator.md
 ```
 
-✅ **Cómo verificar:** recibes un reporte estructurado. Aunque ningún "bug" sea real, mide qué tan bien explora.
+Usa las slices que `TEST_PLAN.md` haya propuesto:
 
----
+```text
+SLICE=<slice folder name from TEST_PLAN.md>
+SEED_SLICE=<empty for first slice, otherwise a completed slice>
+```
 
-## Resultado esperado
+Despues de cada slice:
 
-Al terminar tienes:
+```bash
+pnpm typecheck
+pnpm exec playwright test src/features/<slice> --project=ui-chromium
+pnpm exec playwright test src/features/<slice> --project=api
+```
 
-- [ ] 2 specs verdes en `sandbox/` generados **sin escribir código a mano**.
-- [ ] 1 archivo `fixtures.ts` que la IA refactorizó.
-- [ ] Sensación clara de qué prompts funcionan y cuáles no para *tu* stack.
-- [ ] Una decisión informada: ¿adoptas IA + MCP en tu workflow real o no?
+Si la slice no tiene `*.api.spec.ts`, omite el comando API.
 
-## Bonus
+Regla: si Claude genera locators sin navegar con MCP, rechaza la salida y pide que navegue primero.
 
-- Repite el reto con **otro LLM** (si configuraste Claude y Copilot, prueba con el segundo). Compara: tiempo total, # de iteraciones, calidad del código.
-- Mide el costo: tokens consumidos vs. tiempo ahorrado vs. lo que pagas por mes.
+### 5. Fixtures e inyeccion de dependencias
 
----
+Pega:
 
-> 📚 **Si quieres llevarlo más lejos:**
-> - Integra el MCP server en tu pipeline de CI para que la IA genere reportes de regresión automáticos.
-> - Escribe **tu propio MCP server** que exponga tu sistema interno (Jira, TestRail, Allure) para que el LLM lea casos manuales y los convierta a Playwright sin copy-paste.
+```text
+prompts/05-fixtures-di.md
+```
+
+Debe cablear flows/servicios desde `src/shared/fixtures.ts` sin meter logica de feature en `shared/`.
+
+Verifica:
+
+```bash
+pnpm typecheck
+```
+
+### 6. Scripts y CI
+
+Pega:
+
+```text
+prompts/06-ci-scripts.md
+```
+
+Debe agregar scripts utiles y workflow de GitHub Actions.
+Este paso va despues de tener specs reales, no antes. El workflow se valida
+localmente aqui; solo corre en GitHub cuando el paso 8 crea el repo y hace push.
+
+Verifica:
+
+```bash
+pnpm test:api
+pnpm test:ui
+```
+
+### 7. Healer final
+
+Pega:
+
+```text
+prompts/07-healer-review.md
+```
+
+con los outputs reales de:
+
+```bash
+pnpm typecheck
+pnpm test:api
+pnpm test:ui
+```
+
+Claude debe corregir solo lo necesario.
+
+### 8. Commit, repo en GitHub y CI
+
+Si quieres publicar por GitHub, pega:
+
+```text
+prompts/08-git-github-pr.md
+```
+
+Hace el commit, crea un repo privado con `gh repo create` y hace push a `main`; ahi
+corre el workflow del paso 6 en GitHub Actions. Observa el run y, si sale rojo, usa
+`prompts/07-healer-review.md`. `gh` es opcional: si no esta instalado o autenticado,
+deja el commit local listo y muestra el comando para crear el repo despues.
+
+### 9. Crear skill reutilizable opcional
+
+Si ya completaste el flujo manual, pega:
+
+```text
+prompts/09-create-reusable-skill.md
+```
+
+Debe crear:
+
+- `skills/ai-test-harness-builder/SKILL.md`
+- `skills/ai-test-harness-builder/references/workflow.md`
+
+La skill debe quedar generica para cualquier SUT y no debe instalarse globalmente
+sin que tu lo pidas.
+
+### 10. Usar la skill para settear otro ambiente
+
+Pega:
+
+```text
+prompts/10-use-skill-to-bootstrap-harness.md
+```
+
+Usa valores nuevos:
+
+```text
+UI_URL=<url de UI>
+API_URL=<url de API>
+TARGET_DIR=<nueva carpeta externa vacia>
+```
+
+Debe crear un segundo workspace con `PROJECT_BRIEF.md`, `CLAUDE.md`, MCP config,
+prompts y `.gitignore`, sin generar todavia la fundacion ni features.
+
+## Criterios de aceptacion
+
+- [ ] Proyecto externo creado y versionado.
+- [ ] `AGENTS.md` define patrones, principios y reglas de exports.
+- [ ] `TEST_PLAN.md` contiene matriz UI/API basada en evidencia.
+- [ ] `src/core/` no depende de `src/features/`.
+- [ ] Cada feature vive en su slice.
+- [ ] Si hay navegacion compartida, existe `MenuPage`.
+- [ ] Al menos un test `@smoke` pasa.
+- [ ] Hay al menos un spec UI y un spec API, o un bloqueo API documentado con evidencia.
+- [ ] No hay `waitForTimeout`.
+- [ ] No hay XPath ni CSS profundo.
+- [ ] Tests con 1-2 assertions reales (las esperas web-first de sincronizacion y los metodos nombrados del Page/Flow no cuentan; un unit de forma usa una sola asercion de objeto `toEqual`).
+- [ ] Codigo con guard clauses / early return (Clean Code, no Clean Architecture por capas).
+- [ ] Casos que solo varian por input son data-driven sobre `shared/data/*.json`, no copiados.
+- [ ] Specs co-localizados en cada slice; sin carpeta `tests/` separada.
+- [ ] `pnpm typecheck` pasa o hay diagnostico claro tras 3 intentos.
+- [ ] Hay evidencia de uso real de Playwright MCP.
+- [ ] Entrega incluye reflexion breve sobre limites reales de Claude Code.
+
+## Entrega
+
+Incluye:
+
+```text
+Ruta del proyecto:
+Comando usado para setup:
+Resultado de claude mcp list:
+Resultado de pnpm typecheck:
+Resultado de pnpm test:api:
+Resultado de pnpm test:ui:
+Commit + repo URL + estado del CI si aplica:
+Skill creada si aplica:
+Segundo ambiente creado con skill si aplica:
+Numero de iteraciones de fix:
+Leccion aprendida:
+```
+
+## Bonus opcional
+
+### Test ids en el frontend
+
+Si tienes acceso al repo frontend del SUT y permiso para modificarlo, ejecuta este
+prompt desde el frontend:
+
+```text
+prompts/11-frontend-testid-instrumentation.md
+```
+
+Entrega adicional:
+
+```text
+Ruta del frontend:
+TESTID_INVENTORY.md:
+Checks frontend ejecutados:
+Resumen de data-testid agregados:
+```
+
+### Diseno del proyecto desde el codigo (multi-repo / monorepo)
+
+Si tienes el codigo fuente del SUT (no solo las URLs), genera un `PROJECT_DESIGN.md`
+antes del plan:
+
+```text
+prompts/12-multirepo-project-design.md   (frontend y backend separados)
+prompts/13-monorepo-project-design.md    (frontend y backend en un repo)
+```
+
+Solo leen el codigo (no lo modifican ni generan tests). Escriben `PROJECT_DESIGN.md`
+y anexan un resumen a `PROJECT_BRIEF.md`, que `prompts/03-test-plan.md` ya lee.
+
+### Bug hunting
+
+Pide a Claude dentro del harness generado:
+
+```text
+Explore the target system as a QA engineer. Use Playwright MCP, do not create tests yet. Find three real risks or bugs, capture evidence, and propose which one should become the next automated test.
+```
+
+No automatices el bug hasta que tengas pasos de reproduccion estables.

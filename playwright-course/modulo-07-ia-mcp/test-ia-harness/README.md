@@ -1,9 +1,10 @@
-# omnipizza-ai-harness
+# test-ia-harness
 
 Harness E2E **portable** (Playwright + TypeScript) sobre la app **OmniPizza**.
-Es una **referencia de la forma esperada** del playbook de IA del Módulo 07 (no su
-salida literal — ver el playbook): la fundación de un framework limpio que un alumno
-(con ayuda de su IA) completa slice por slice.
+Es la **referencia de forma esperada** del Modulo 07: un framework limpio que
+Claude Code puede generar en una carpeta externa siguiendo los prompts del modulo.
+En una corrida real tambien debe existir `TEST_PLAN.md`: se crea antes de las
+slices y documenta los casos UI/API que despues implementa la IA.
 
 ## Qué incluye la fundación
 
@@ -13,17 +14,19 @@ salida literal — ver el playbook): la fundación de un framework limpio que un
 - `src/shared/` — `types` (contratos de dominio), `fixtures` (Dependency
   Injection) y `data/` (`users.json`, `markets.json`).
 - `src/features/` — donde viven las **slices verticales** (auth, catalog, cart,
-  checkout). Las genera el alumno/IA siguiendo `AGENTS.md`.
+  checkout). Las genera Claude Code (u otro agente de IA) siguiendo `AGENTS.md`.
 
 > Lee **`AGENTS.md`** antes de generar cualquier slice: define el árbol, la tabla
 > patrón→casa, los nombres de export fijos y las reglas de locators/API.
+> Lee tambien **`TEST_PLAN.md`** en el harness generado: ahi viven los escenarios
+> y endpoints confirmados para no repetirlos en cada prompt.
 
 ## Cómo correr
 
 ```bash
 # 1. Instalar dependencias y navegadores
 pnpm install
-pnpm exec playwright install
+pnpm install:browsers
 
 # 2. Configurar entorno (copia y ajusta)
 cp .env.example .env
@@ -33,12 +36,14 @@ pnpm typecheck
 
 # 4. Ejecutar tests
 pnpm test            # toda la suite
-pnpm test:ui         # sólo project ui-chromium
-pnpm test:api        # sólo project api (*.api.spec.ts)
-pnpm report          # abrir el último reporte HTML
+pnpm test:ui         # solo project ui-chromium
+pnpm test:api        # solo project api (*.api.spec.ts)
+pnpm test:smoke      # pruebas marcadas @smoke
+pnpm test:headed     # UI con browser visible
+pnpm report          # abrir el ultimo reporte HTML
 ```
 
-> `pnpm typecheck` sólo pasa "verde" una vez que existen las slices de
+> `pnpm typecheck` solo pasa "verde" una vez que existen las slices de
 > `src/features/` (los fixtures las importan por sus nombres fijos). La fundación
 > en sí (core/ y shared/) es consistente de forma aislada.
 

@@ -9,7 +9,6 @@
 // ============================================================
 
 import { test, expect } from "../../shared/fixtures";
-import type { CountryCode } from "../../shared/types";
 import { OrderBuilder } from "./checkout.builder";
 
 test.describe("checkout (UI)", () => {
@@ -33,31 +32,26 @@ test.describe("checkout (UI)", () => {
 });
 
 test.describe("OrderBuilder (unit)", () => {
-  test("arma el payload de MX con country_code MX y colonia seteada", () => {
+  test("arma el payload de MX con la forma exacta del contrato", () => {
     const payload = new OrderBuilder()
       .forMarket("MX")
       .addItem("pizza-1", 2)
       .withTip(20)
       .build();
 
-    // País correcto y campo de dirección específico de MX presente.
-    const expectedCode: CountryCode = "MX";
-    expect(payload.country_code).toBe(expectedCode);
-    expect(payload.colonia).toBe("Polanco");
-    expect(payload.propina).toBe(20);
-
-    // Campos base poblados desde el perfil del mercado.
-    expect(payload.name).toBe("Juan Pérez");
-    expect(payload.phone).toBe("+52 55 1234 5678");
-    expect(payload.address).toBe("Avenida Reforma 123");
-
-    // Items en la forma del contrato (pizza_id + quantity).
-    expect(payload.items).toHaveLength(1);
-    expect(payload.items[0]).toEqual({ pizza_id: "pizza-1", quantity: 2 });
-
-    // No se filtran campos de otros mercados.
-    expect(payload.zip_code).toBeUndefined();
-    expect(payload.plz).toBeUndefined();
-    expect(payload.prefectura).toBeUndefined();
+    // Una sola aserción de objeto (regla del harness: 1 assertion por test).
+    // toEqual verifica de un golpe la forma COMPLETA del payload MX —datos base
+    // del mercado, colonia y propina— y, al exigir igualdad exacta, garantiza
+    // que NO se filtran campos de otros mercados (zip_code/plz/prefectura): un
+    // campo de sobra haria fallar la prueba.
+    expect(payload).toEqual({
+      country_code: "MX",
+      items: [{ pizza_id: "pizza-1", quantity: 2 }],
+      name: "Juan Pérez",
+      address: "Avenida Reforma 123",
+      phone: "+52 55 1234 5678",
+      colonia: "Polanco",
+      propina: 20,
+    });
   });
 });

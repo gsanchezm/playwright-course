@@ -1,169 +1,198 @@
-# Módulo 07 — IA + Playwright MCP
+# Modulo 07 - IA Test Harness con Claude Code + Playwright MCP
 
-**Duración estimada:** 45-60 min
-**Pieza que suma al framework:** integración de un **asistente de IA** (Claude / Copilot / ChatGPT / Gemini) capaz de **controlar el navegador real** vía Playwright MCP, para generar, depurar y mantener tests usando lenguaje natural. No agrega código nuevo al framework — agrega un **copiloto operativo** sobre la suite que ya tienes desde M01..M06.
+**Duracion estimada:** 90-120 min<br>
+**Pieza que suma al framework:** un **AI Test Harness** generado desde cero por Claude Code en una carpeta externa vacia, con Playwright, pnpm, MCP, patrones de diseno, principios SOLID/DRY/KISS y vertical slicing.
 
-> ⚠️ Este módulo es **opcional** y se hace mejor *después* de M06. Asume que ya entiendes locators, POM, fixtures, API layer y CI — porque la IA va a generar contra ese framework.
+Este modulo ya no trata de pedirle a la IA "un test suelto". El objetivo es mas profesional: aprender a usar Claude Code como un ingeniero asistido por IA para **crear, verificar, refactorizar y mantener** un framework E2E completo para cualquier SUT indicando solo la URL de UI y la URL de API. OmniPizza es el ejemplo del curso, no una regla hardcodeada de los prompts.
+
+> Idea central: la IA no reemplaza el criterio tecnico. La IA ejecuta el trabajo mecanico; tu controlas arquitectura, alcance, verificacion y calidad.
 
 ---
 
-## 🧭 Reencuadre: CLI-first (lee esto antes de configurar nada)
+## Resultado esperado
 
-Antes de tocar MCP o Agents, ubica este módulo en el mapa del curso. **Los fundamentos AI-assisted *reales* — los que de verdad te hacen mejor automatizando — son CLI y ya viven en el core del curso:**
+Al terminar tendras una carpeta externa, por ejemplo:
 
-| Herramienta AI-assisted (CLI) | Dónde la aprendiste | Para qué sirve |
+```text
+C:\tmp\omnipizza-ai-harness
+# o en macOS/Linux:
+~/tmp/omnipizza-ai-harness
+```
+
+con un proyecto generado por Claude Code:
+
+```text
+omnipizza-ai-harness/
+  .claude/
+  .vscode/
+  src/
+    core/
+    shared/
+    features/
+      <slices-descubiertas-por-la-ia>/
+        <slice>.spec.ts / <slice>.api.spec.ts
+  CLAUDE.md
+  AGENTS.md
+  PROJECT_BRIEF.md
+  package.json
+  playwright.config.ts
+  tsconfig.json
+  pnpm-lock.yaml
+```
+
+La referencia esperada vive en [`test-ia-harness`](./test-ia-harness/). No es para copiarla manualmente: sirve para revisar si la salida de la IA tiene la forma correcta.
+
+---
+
+## Stack recomendado
+
+| Capa | Decision del modulo | Motivo |
 |---|---|---|
-| `playwright codegen <url>` | **M02** | Graba tus clics y **genera locators role-first** automáticamente |
-| `playwright test --debug` (Inspector) | **M01** | Pausa, ejecuta paso a paso, **te sugiere selectors** en vivo |
-| `playwright show-trace` (Trace Viewer) | **M06** | Reproduce el fallo con DOM/red/screenshots para **diagnosticar flakiness** |
+| Agente principal | **Claude Code** | Excelente para modificar repos, leer contexto y ejecutar comandos. |
+| IDE | **VS Code** | Editor comun para QA/automation y compatible con MCP. |
+| Browser automation para IA | **Playwright MCP** | Claude puede navegar el SUT con snapshots de accesibilidad. |
+| Package manager | **pnpm via Corepack** | Rapido, reproducible y consistente con el curso. |
+| Entrega opcional | **GitHub CLI (`gh`)** | Permite crear commit, repo privado y push a main al final, sin hacerlo requisito del harness. |
+| Arquitectura | Vertical slices + patrones concretos | Evita un framework gigante sin responsabilidad clara. |
 
-Esas tres no necesitan ningún LLM: son determinísticas, gratis y offline. **Son tu base.** M07 es el **apéndice acelerador**: MCP y Agents valen la pena *cuando ya dominas locators y el modelo mental del framework* — porque tú vas a revisar y endurecer lo que la IA genera. Si todavía no distingues un locator frágil de uno robusto, la IA te va a sepultar en slop sin que lo notes.
+Fuentes oficiales usadas para fijar el flujo:
 
-> 🎯 **Lema del módulo:** **CLI para aprender · MCP + Agents para acelerar.** No saltes la columna izquierda de la tabla para llegar a la derecha; el orden importa.
+- Playwright MCP: `https://playwright.dev/docs/getting-started-mcp`
+- Claude Code MCP: `https://code.claude.com/docs/en/mcp`
+- pnpm/Corepack: `https://pnpm.io/installation`
+- Playwright install: `https://playwright.dev/docs/intro`
+- GitHub CLI: `https://cli.github.com/manual/`
 
 ---
 
-## 🏗️ Arquitectura al terminar este módulo
+## Modelo mental
 
-M07 **no agrega archivos nuevos al framework de producción** — agrega una **capa de tooling** (MCP server + cliente LLM) que vive *afuera* del repo o en archivos de configuración locales (`.vscode/mcp.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, etc.).
+Un ingeniero novato suele hacer esto:
 
-```
-TU MÁQUINA
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│   Cliente LLM                  Playwright MCP server         │
-│   ┌─────────────────┐          ┌──────────────────────┐      │
-│   │ Claude Desktop  │          │  @playwright/mcp     │      │
-│   │ VS Code Copilot │ ◄──MCP──►│  (npx, stdio o sse)  │      │
-│   │ ChatGPT app     │          │                      │      │
-│   │ Gemini CLI      │          │   ~25 tools:         │      │
-│   └─────────────────┘          │   · browser_navigate │      │
-│           ▲                    │   · browser_click    │      │
-│           │ "Genera un test    │   · browser_type     │      │
-│           │  de login para     │   · browser_snapshot │      │
-│           │  OmniPizza"        │   · browser_evaluate │      │
-│                                │   · ...y más         │      │
-│                                └──────────┬───────────┘      │
-│                                           │                  │
-│                                           ▼                  │
-│                                    ┌─────────────┐           │
-│                                    │  Chromium   │           │
-│                                    │  Firefox    │           │
-│                                    │  WebKit     │           │
-│                                    └─────┬───────┘           │
-│                                          │ HTTP              │
-└──────────────────────────────────────────┼──────────────────┘
-                                           ▼
-                          https://omnipizza-frontend.onrender.com
-                              (la app real, sobre la que la
-                               IA explora y genera tests)
+```text
+"Claude, hazme un framework de Playwright completo."
 ```
 
-**Qué cambia en tu workflow:**
+Eso produce codigo grande, fragil y dificil de revisar.
 
-| Antes de M07 | Después de M07 |
+En este modulo lo hacemos asi:
+
+```text
+1. Script prepara carpeta, MCP config y prompts.
+2. Claude verifica ambiente.
+3. Claude crea la fundacion, no features.
+4. Claude explora UI/API y escribe `TEST_PLAN.md`.
+5. Claude genera una slice pequena con casos UI/API del plan.
+6. Tu corres tests.
+7. Claude corrige con output real.
+8. Claude repite slices copiando el patron aprobado.
+```
+
+La diferencia es el **contrato**. `AGENTS.md` define reglas estables para que cada prompt sea corto y no gaste tokens repitiendo arquitectura.
+
+---
+
+## Patrones de diseno exigidos
+
+Cada patron tiene una casa fija. Si Claude lo duplica o lo mueve, se corrige.
+
+| Patron | Ubicacion |
 |---|---|
-| Escribes selectors a mano viendo DevTools | Le pides a la IA *"abre el catálogo y dame los locators role-based de las pizzas y los filtros"* |
-| Debug de tests flakey leyendo trace | Le pegas el trace a la IA, te explica la causa probable |
-| Migración de tests de Cypress / Selenium | Le pasas el test viejo + URL, te devuelve la versión en Playwright |
-| Mantenimiento cuando la UI cambia | La IA navega la nueva UI y actualiza locators rotos |
+| POM | `src/features/*/*.page.ts` |
+| Service / Adapter | `src/features/*/*.service.ts` |
+| Template Method | `src/core/BasePage.ts` y `src/core/BaseService.ts` |
+| Factory | `src/features/*/*.factory.ts` |
+| Builder | solo entidades complejas, `*.builder.ts` |
+| Facade | `src/features/*/*.flow.ts` |
+| Singleton | `src/core/env.ts` |
+| Observer | `src/core/reporter.ts` |
+| Strategy | Se agrega despues si el SUT requiere estrategias, por ejemplo auth UI/API |
+| Dependency Injection | `src/shared/fixtures.ts` |
+
+Reglas de diseno:
+
+- **SRP:** un archivo, una razon principal para cambiar.
+- **OCP:** agregar una feature no debe tocar `core/`.
+- **DIP:** specs dependen de flows/fixtures, no de implementaciones internas.
+- **DRY:** duplicacion comun vive en `core/` o `shared/`.
+- **KISS/YAGNI:** una slice no recibe `service`, `factory`, `builder` o `strategy` si no lo necesita.
+- **Vertical slicing:** cada feature se entiende en su carpeta.
+- **Clean Code:** nombres con intencion, unidades pequenas, guard clauses / early return. Es Clean Code (practicas), no Clean Architecture por capas.
+- **Assertions:** 1 por test, maximo 2. Mas que eso suele ser error de diseno; agrupa verificaciones en metodos nombrados del Page/Flow. Un test unitario de forma usa una sola asercion de objeto (`toEqual`).
+- **Data-driven:** casos que solo cambian por input se parametrizan sobre `src/shared/data/*.json`, no se copian.
+- **Specs co-localizados:** cada spec vive en su slice (`*.spec.ts` / `*.api.spec.ts`); sin carpeta `tests/` separada.
+- **MenuPage:** si el SUT tiene menu, sidebar, tabs o navegacion compartida, ese Page Object debe llamarse `MenuPage`.
 
 ---
 
-## Analogía de apertura
+## Setup automatico multiplataforma
 
-Sin MCP, un LLM es un **consultor remoto**: le describes el bug por teléfono y él te dicta el fix sin ver la app. Útil, pero ciego.
+El primer paso didactico es usar IA para generar o refrescar los scripts de setup.
+Despues ejecutas el script para crear una carpeta externa con los archivos minimos
+que Claude necesita antes de generar el framework. En esa carpeta se crea
+`PROJECT_BRIEF.md`; por eso el prompt `02-master-architect.md` lo puede leer
+despues.
 
-Con **Playwright MCP**, ese consultor **se sienta a tu lado y abre tu navegador**. Ve la página, hace clic, lee el DOM, captura un screenshot. Cuando le pides *"genera un test que compre una pizza vegana"*, primero **navega** OmniPizza, **observa** los botones reales, y *luego* escribe el `.spec.ts` con locators que sí existen.
+### Prompt 00: crear scripts de setup
 
-> 🎯 **En breve:** MCP convierte al LLM de **autocompletado** a **operador real del browser**, con la misma API que usas tú en Playwright.
+Desde el repo del curso, pega [`prompts/00-create-setup-scripts.md`](./prompts/00-create-setup-scripts.md).
 
----
+Este prompt le pide a Claude Code crear o refrescar:
 
-## ¿Qué es MCP y por qué importa para QA?
+- `scripts/setup-ai-harness.ps1` para Windows;
+- `scripts/setup-ai-harness.sh` para macOS/Linux.
 
-**MCP (Model Context Protocol)** es un estándar abierto creado por Anthropic en 2024 que define **cómo un LLM habla con herramientas externas** — bases de datos, APIs, sistemas de archivos… o un browser.
+Es parte del flujo porque usas IA para preparar tu propio
+ambiente, no sólo para generar tests.
 
-| MCP en 1 línea | Analogía QA |
-|---|---|
-| Un **puerto USB-C universal** entre LLMs y herramientas | Como TestRail/Xray: el LLM no inventa, **consulta la fuente de verdad** y opera sobre ella |
+### Windows
 
-**Playwright MCP** (`@playwright/mcp` de Microsoft) expone Playwright **como tools MCP** con prefijo `browser_`: `browser_navigate`, `browser_click`, `browser_type`, `browser_take_screenshot`, `browser_snapshot`, `browser_evaluate`, etc. El LLM invoca esas tools como funciones; cada llamada **abre/manipula un browser real** en tu máquina.
-
-> 📚 Spec oficial: [Model Context Protocol](https://modelcontextprotocol.io/) · Repo: [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp)
-
----
-
-## ⚠️ No confundas: tres cosas distintas con nombres parecidos
-
-El ecosistema "Playwright + IA" tiene **tres herramientas** cuyos nombres se confunden todo el tiempo. Sepáralas en tu cabeza desde ya:
-
-| Herramienta | Qué es | Cómo "ve" la página | Para quién / cuándo |
-|---|---|---|---|
-| **`npx playwright …`** (CLI clásico) | El binario de siempre: `test`, `codegen`, `show-trace`, `--debug`. **No usa IA.** | N/A (lo manejas tú) | **Todos**, siempre. Es el core (M01–M06). |
-| **`@playwright/mcp`** (MCP server) | Expone Playwright como **tools MCP**; el LLM las invoca para abrir/manipular un browser real. Lee la página vía **accessibility tree**. | Accessibility tree (texto estructurado, roles + nombres) | Un **cliente LLM con MCP** (Claude, Copilot agent, Gemini CLI). Es lo que configuras en este módulo. |
-| **`@playwright/cli`** (agent-cli) | El motor detrás de los **Playwright Agents** (planner/generator/healer). Da al agente **snapshots YAML** de la página. | Snapshots YAML | **Agentes de codegen** dentro de Claude Code / Copilot. Ver la sección "Playwright Agents" más abajo. |
-
-> 🎯 **Regla mnemónica:** `npx playwright` = *tú* manejas · `@playwright/mcp` = *el LLM* maneja un browser en vivo (accessibility-tree) · `@playwright/cli` = *el agente de codegen* trabaja sobre snapshots YAML. Las tres conviven; no son sustitutas.
-
-> 📚 Guía oficial de MCP con Playwright: [playwright.dev/docs/getting-started-mcp](https://playwright.dev/docs/getting-started-mcp).
-
----
-
-## ¿Qué LLM elegir? Comparativa (mayo 2026)
-
-Los 4 ecosistemas grandes soportan MCP de forma nativa. Las diferencias están en **dónde corres el cliente**, **cómo lo configuras** y **fortalezas para código**.
-
-| LLM | Cliente MCP | Setup | Mejor para | Costo |
-|---|---|---|---|---|
-| **Claude (Anthropic)** | Claude Desktop · Claude Code (CLI) · Cursor | `claude_desktop_config.json` con `mcpServers` | Razonamiento largo, refactor complejo, **review de PRs**. Es el cliente de referencia (Anthropic creó MCP). | Pro ~$20/mes; API por tokens |
-| **GitHub Copilot** | VS Code (Agent mode) · Visual Studio | `.vscode/mcp.json` con clave `servers` | Trabajo **dentro del editor**, autocompletado + agent en el mismo flujo. Ideal si ya pagas Copilot. | $10–$19/mes |
-| **ChatGPT (OpenAI)** | ChatGPT app (web/desktop) vía Connectors · Apps SDK | Connectors UI o `mcp-config.json` | UI visual, plugins/Apps SDK, multiplataforma. Útil para **demos a stakeholders no-técnicos**. | Plus $20/mes |
-| **Gemini (Google)** | Gemini CLI · Vertex AI Agent Builder · Gemini API | `~/.gemini/settings.json` (CLI) o config de Vertex | Integración con **Google Workspace** (Sheets de bug-tracking), contexto largo barato. | Free tier generoso; CLI gratis |
-
-> 💡 **Recomendación didáctica:** para el curso usa **Claude Code** o **VS Code + Copilot agent mode** — los dos están maduros, viven en la terminal/editor (no requieren cambiar de ventana) y tienen los mejores docs para Playwright MCP.
-
-### Cuál elegir según tu contexto
-
-```
-¿Ya pagas Copilot y vives en VS Code?         →  Copilot Agent + MCP
-¿Quieres el flujo más estable para Playwright? →  Claude Code o Claude Desktop
-¿Stack 100% Google / GCP?                      →  Gemini CLI
-¿Necesitas mostrar la IA a stakeholders?       →  ChatGPT (UI más amigable)
-¿Apenas explorando, presupuesto 0?             →  Gemini CLI (free tier)
+```powershell
+.\playwright-course\modulo-07-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
 ```
 
----
-
-## Setup paso a paso
-
-### 0) Prerequisitos comunes
+### macOS/Linux
 
 ```bash
-$ node --version        # ≥ 20
-$ pnpm --version        # ≥ 9
-$ npx --version
+chmod +x playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh
+./playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
 ```
 
-Playwright MCP se descarga con `npx`. **No requiere instalación previa** — la primera invocación baja el paquete.
+OmniPizza es el SUT por defecto. Para otro sistema, cambia solo las URLs:
 
-> ⚠️ Tu repo de `playwright-course/` debe estar limpio y con `pnpm install` ya corrido (M01). El MCP server abre el browser **independiente** de tu suite, pero el LLM va a leer tus archivos de tests.
-
-### 1) Setup para Claude Code (recomendado)
+```powershell
+.\playwright-course\modulo-07-ia-mcp\scripts\setup-ai-harness.ps1 `
+  -TargetDir C:\tmp\mi-harness `
+  -UiUrl https://mi-ui.example.com `
+  -ApiUrl https://mi-api.example.com
+```
 
 ```bash
-# 1. Asegúrate de tener Claude Code instalado
-$ claude --version
-
-# 2. Agrega Playwright MCP al config global
-$ claude mcp add playwright npx @playwright/mcp@latest
-
-# 3. Reinicia Claude Code y verifica
-$ claude mcp list
-playwright    npx @playwright/mcp@latest    ✓ connected
+./playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/mi-harness" \
+  --ui-url https://mi-ui.example.com \
+  --api-url https://mi-api.example.com
 ```
 
-Alternativa manual editando `~/.claude.json`:
+El script:
+
+- valida `node`, `pnpm`, `claude`, `git`, `gh` opcional y `code` opcional;
+- habilita `pnpm` via Corepack si falta;
+- crea la carpeta destino;
+- escribe `PROJECT_BRIEF.md`;
+- escribe `CLAUDE.md` con instrucciones cortas para Claude Code;
+- escribe `.mcp.json` para Claude Code;
+- escribe `.vscode/mcp.json` para VS Code;
+- copia prompts compactos a `prompts/`;
+- crea `.gitignore`;
+- abre la carpeta en VS Code si `code` existe.
+
+> Si un comando requiere instalacion global, el script te muestra el comando y se detiene. No instala herramientas silenciosamente.
+
+---
+
+## Configuracion MCP
+
+El setup crea esta configuracion en la carpeta externa:
 
 ```json
 {
@@ -176,274 +205,259 @@ Alternativa manual editando `~/.claude.json`:
 }
 ```
 
-📐 Las dos claves del bloque `mcpServers` significan lo mismo en los cuatro setups de abajo (en VS Code la clave externa se llama `servers` en vez de `mcpServers`, pero `command`/`args` funcionan igual):
-
-| Clave | Qué es |
-|---|---|
-| `command` | El **ejecutable** que lanza el server. `npx` lo descarga al vuelo — por eso no instalas nada antes. |
-| `args` | El **paquete + los flags** del server. Ejemplo: `"args": ["@playwright/mcp@latest", "--headless"]`. |
-
-Flags útiles del server (verificados con `npx @playwright/mcp@latest --help`, v0.0.76):
-
-- `--headless` — corre el browser **sin ventana** (por defecto es headed: ves la ventana).
-- `--isolated` — mantiene el perfil del browser **en memoria**, sin guardarlo a disco: cada sesión arranca limpia.
-- `--storage-state <ruta>` — carga un storage state (p. ej. tu `.auth/user.json` de M04) en las sesiones aisladas: el browser arranca ya logueado.
-- `--port <puerto>` — levanta el server en modo **SSE/HTTP** en ese puerto (en vez de stdio); necesario para clientes remotos como ChatGPT.
-
-### 2) Setup para Claude Desktop
-
-Abre el config en VS Code y pega el bloque de abajo. Si el archivo no existe (instalación fresca), créalo con ese mismo comando — `code` abre el archivo nuevo y lo crea al guardar:
+Claude Code tambien permite agregarlo manualmente:
 
 ```bash
-# macOS
-$ code ~/"Library/Application Support/Claude/claude_desktop_config.json"
+claude mcp add playwright npx @playwright/mcp@latest
+claude mcp list
 ```
 
-> 🪟 **Windows / PowerShell:** `code $env:APPDATA\Claude\claude_desktop_config.json`
+Verificacion dentro de Claude Code:
 
-```json
-{
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
+```text
+Use Playwright MCP to navigate to https://example.com, call browser_snapshot, and tell me how many links are visible. Do not answer without using the browser tool.
 ```
 
-Cierra y reabre Claude Desktop. En el chat verás el icono 🔧 con las tools de Playwright disponibles.
+Debe usar la tool. Si responde de memoria, MCP no esta conectado.
 
-### 3) Setup para VS Code + Copilot Agent
+---
 
-Crea `.vscode/mcp.json` en la raíz de `playwright-course/` (si la carpeta `.vscode/` ya existe, salta el `mkdir`) y pega el bloque de abajo:
+## Prompt extra para test ids
+
+Si el frontend del SUT no tiene `data-testid` estables y el equipo te permite
+modificar ese repositorio, usa [`prompts/11-frontend-testid-instrumentation.md`](./prompts/11-frontend-testid-instrumentation.md).
+
+Este prompt se ejecuta en el **repo frontend**, no en el harness externo. Sirve
+para que la IA analice componentes, botones, inputs, links, dropdowns, imagenes,
+labels, estados y otros elementos visibles, agregue `data-testid` sin cambiar
+comportamiento, y genere `TESTID_INVENTORY.md`.
+
+Recomendacion: usarlo antes de `prompts/03-test-plan.md` cuando tienes control
+del frontend. Si no tienes permiso de modificar el SUT, no lo uses; el harness
+debe trabajar con roles, labels y selectores existentes.
+
+---
+
+## Prompt extra: diseno del proyecto (multi-repo / monorepo)
+
+Si tienes acceso al codigo fuente del SUT (no solo a las URLs), puedes generar un
+`PROJECT_DESIGN.md` con rutas, endpoints, entidades y auth confirmados desde el
+codigo, para que `prompts/03-test-plan.md` arme un plan mas preciso:
+
+- Multi-repo (frontend y backend separados): [`prompts/12-multirepo-project-design.md`](./prompts/12-multirepo-project-design.md).
+- Monorepo (frontend y backend en un repo): [`prompts/13-monorepo-project-design.md`](./prompts/13-monorepo-project-design.md).
+
+Son de solo lectura: analizan el codigo, no lo modifican ni generan tests. Escriben
+`PROJECT_DESIGN.md` y anexan un resumen a `PROJECT_BRIEF.md`, que `03` ya lee (por
+eso `03` no cambia). Recomendacion: correrlos antes de `prompts/03-test-plan.md`.
+
+---
+
+## Flujo de trabajo
+
+### 1. Preparar carpeta externa
+
+Windows:
+
+```powershell
+.\playwright-course\modulo-07-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
+cd C:\tmp\omnipizza-ai-harness
+claude
+```
+
+macOS/Linux:
 
 ```bash
-$ mkdir .vscode
-$ code .vscode/mcp.json
+./playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
+cd "$HOME/tmp/omnipizza-ai-harness"
+claude
 ```
 
-```json
-{
-  "servers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
+Acepta el workspace trust y la configuracion MCP cuando Claude lo pida.
+
+### 2. Ejecutar el prompt 01
+
+Pega [`prompts/01-bootstrap-environment.md`](./prompts/01-bootstrap-environment.md).
+
+Este prompt le pide a Claude que:
+
+- verifique versiones reales;
+- inicialice pnpm si hace falta;
+- prepare comandos base;
+- confirme MCP con una navegacion real;
+- no genere el framework todavia.
+
+### 3. Ejecutar el prompt 02
+
+Pega [`prompts/02-master-architect.md`](./prompts/02-master-architect.md).
+
+Este prompt crea la fundacion:
+
+- `AGENTS.md`;
+- `package.json`;
+- `playwright.config.ts`;
+- `tsconfig.json`;
+- `.env.example`;
+- `src/core/`;
+- `src/shared/`.
+
+No debe crear features, auth, datos de dominio ni page objects de la aplicacion todavia.
+
+### 4. Crear el plan de pruebas
+
+Pega [`prompts/03-test-plan.md`](./prompts/03-test-plan.md).
+
+Este prompt obliga a Claude a explorar antes de codificar:
+
+- navega la UI con Playwright MCP;
+- descubre endpoints desde la URL de API (`/openapi.json`, `/docs`, `/health` o probes livianos);
+- detecta features y propone nombres de slices;
+- si existe menu, sidebar, tabs o navegacion compartida, exige `MenuPage`;
+- crea `TEST_PLAN.md` con matriz de casos UI/API;
+- marca como bloqueado cualquier endpoint que no pueda confirmar.
+
+El objetivo es que no tengas que disenar todos los casos manualmente. Tu
+trabajo es revisar que el plan sea razonable antes de permitir que la IA implemente.
+
+### 5. Generar slices
+
+Pega [`prompts/04-slice-generator.md`](./prompts/04-slice-generator.md) una vez por slice propuesta en `TEST_PLAN.md`.
+
+Usa las variables que el propio plan defina:
+
+```text
+SLICE=<slice folder name from TEST_PLAN.md>
+SEED_SLICE=<empty for first slice, otherwise a completed slice>
 ```
 
-Abre VS Code, activa **Agent mode** en el panel de Copilot Chat, y verifica que Playwright aparezca como tool disponible.
-
-### 4) Setup para Gemini CLI
+Despues de cada slice:
 
 ```bash
-$ pnpm add -g @google/gemini-cli
-$ gemini auth login
+pnpm typecheck
+pnpm exec playwright test src/features/<slice> --project=ui-chromium
+pnpm exec playwright test src/features/<slice> --project=api
 ```
 
-Abre `~/.gemini/settings.json` en VS Code y pega el bloque de abajo (si no existe, ese mismo comando lo crea al guardar):
+Si no existe `*.api.spec.ts` para esa slice, omite el comando API. Si falla, no
+edites a mano. Pega el error con [`prompts/07-healer-review.md`](./prompts/07-healer-review.md).
+
+### 6. Cablear DI y CI
+
+Cuando las slices existan:
+
+1. Pega [`prompts/05-fixtures-di.md`](./prompts/05-fixtures-di.md).
+2. Pega [`prompts/06-ci-scripts.md`](./prompts/06-ci-scripts.md).
+3. Corre:
 
 ```bash
-$ code ~/.gemini/settings.json
+pnpm typecheck
+pnpm test:api
+pnpm test:ui
 ```
 
-> 🪟 **Windows / PowerShell:** `code $env:USERPROFILE\.gemini\settings.json`
+CI se agrega aqui porque antes de tener specs reales no hay suficiente evidencia
+para decidir que debe correr el pipeline. El workflow se valida localmente; solo
+corre en GitHub cuando el paso 8 crea el repo y hace push.
 
-```json
-{
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
+### 7. Revision final
+
+Pega [`prompts/07-healer-review.md`](./prompts/07-healer-review.md) con el output real de typecheck, UI y API.
+
+Claude debe entregar:
+
+- suite verde o diagnostico claro;
+- lista corta de cambios;
+- anti-patterns corregidos;
+- archivos modificados.
+
+### 8. Commit, repo en GitHub y CI
+
+Si quieres publicar el harness y ver el CI en verde, pega [`prompts/08-git-github-pr.md`](./prompts/08-git-github-pr.md).
+
+Este prompt hace el commit, crea un repo privado con `gh repo create` y hace push
+directo a `main`; ahi es donde el workflow del paso 6 por fin corre en GitHub
+Actions. Despues observa el run (`gh run watch`) y, si sale rojo, lo arreglas con
+`prompts/07-healer-review.md`. `gh` es opcional: si no esta instalado o autenticado,
+el flujo deja el commit local listo y te muestra el comando exacto para crear el
+repo despues.
+
+### 9. Crear skill reutilizable opcional
+
+Cuando ya hiciste el flujo manual al menos una vez, pega [`prompts/09-create-reusable-skill.md`](./prompts/09-create-reusable-skill.md).
+
+Este paso crea un artefacto local en `skills/ai-test-harness-builder/` para
+reutilizar el protocolo con otro SUT. No instala nada globalmente: primero se
+revisa como material didactico y despues, si conviene, se puede copiar o instalar
+en el entorno personal de tu agente (Claude Code, Codex, Antigravity, GitHub Copilot, ...).
+
+### 10. Usar la skill para settear otro ambiente
+
+Para practicar el uso de skills, pega [`prompts/10-use-skill-to-bootstrap-harness.md`](./prompts/10-use-skill-to-bootstrap-harness.md).
+
+Este prompt usa la skill local para preparar una nueva carpeta externa desde:
+
+```text
+UI_URL=<url de UI>
+API_URL=<url de API>
+TARGET_DIR=<nueva carpeta externa vacia>
 ```
 
-### 5) Setup para ChatGPT
-
-ChatGPT no acepta un comando local arbitrario por seguridad. Las dos rutas viables son:
-
-1. **Connectors / Apps SDK** — si tu org tiene OpenAI Business y publica el MCP server remoto.
-2. **MCP remoto via HTTP/SSE** — corre `npx @playwright/mcp@latest --port 9000` y conéctalo desde ChatGPT como custom connector. El flag `--port` es el que habilita el modo SSE/HTTP (sin él, el server habla stdio); no existe un flag `--transport`.
-
-> 💡 Si estás explorando solo, Claude Code, Claude Desktop, Copilot o Gemini CLI son más simples para empezar.
+La idea es ver el contraste: primero hiciste el flujo manual con prompts, luego
+encapsulaste el protocolo en una skill, y finalmente usas esa skill para settear
+otro ambiente con menos instrucciones.
 
 ---
 
-## Verificación: el primer "hola navegador"
+## Protocolo de eficiencia de tokens
 
-Con el cliente configurado, escribe este prompt (cópialo en inglés — los modelos rinden mejor con prompts de tooling en inglés):
+Usa estas reglas durante todo el modulo:
 
+1. **No pegues codigo completo si Claude puede leer archivos.**
+2. **No repitas arquitectura en cada prompt:** esta en `AGENTS.md`.
+3. **No repitas casos ni endpoints en cada prompt:** estan en `TEST_PLAN.md`.
+4. **Pide una slice por vez.**
+5. **Obliga a navegar con MCP antes de generar locators.**
+6. **Pega outputs de error completos, no explicaciones tuyas.**
+7. **Pide diffs pequenos:** "fix only the failing file".
+8. **Corta loops:** maximo 3 intentos por fallo antes de documentar el limite.
+
+Prompt corto para mantener disciplina:
+
+```text
+Read AGENTS.md first. Make the smallest change that fixes the failing check. Do not refactor unrelated files. Run the check again and report only the result.
 ```
-Open https://omnipizza-frontend.onrender.com, wait for the home page
-to finish loading, and give me a list of the buttons visible in the
-header with their role + accessible name attributes.
-```
-
-Lo que debe pasar:
-1. La IA invoca la tool `browser_navigate`.
-2. Se abre una ventana de Chromium (ventana visible — modo headed — si no usaste `--headless`).
-3. Invoca `browser_snapshot` para leer el accessibility tree.
-4. Te devuelve la lista de botones con `getByRole('button', { name: '...' })` listos para pegar.
-
-> ⚠️ **Si OmniPizza está dormido** (Render free tier), la primera carga tarda 30-40s — igual que en M01. La IA debe **esperar el `load`**, no fallar al primer intento.
 
 ---
 
-## Casos de uso prácticos (lo que vas a usar en el día a día)
+## Senales de mala salida de IA
 
-### Caso 1 — Generar un test desde lenguaje natural
+Rechaza o corrige si ves:
 
-**Prompt (en inglés):**
-```
-Generate a Playwright test that:
-1. Logs in as standard_user / pizza123
-2. Adds a large Margarita to the cart
-3. Goes to checkout
-4. Verifies the total is greater than 0
-
-Use the project's POM pattern (read pages/LoginPage.ts and pages/CatalogPage.ts).
-Write the file to modulo-07-ia-mcp/sandbox/checkout.spec.ts.
-```
-
-> 🔍 `standard_user` / `pizza123` es una de las 5 personas reales de OmniPizza (Quick-Login, estilo SauceDemo); la pizza se llama **Margarita** (no "Margherita"). El login usa **username**, no email.
-
-**Qué hace la IA:**
-- Lee tus POMs existentes (Claude/Copilot leen el filesystem).
-- Navega OmniPizza, identifica selectors reales con MCP.
-- Genera el spec usando *tus* convenciones, no plantillas genéricas.
-
-### Caso 2 — Refactor de un test flaky
-
-**Prompt (en inglés):**
-```
-This test fails 1 out of every 5 runs in CI with "locator timeout".
-Here is the code:
-
-<<paste the .spec.ts>>
-
-Here is the trace from the latest failure (test-results/.../trace.zip,
-already extracted).
-
-Find the most likely root cause and give me the fix using web-first assertions.
-```
-
-### Caso 3 — Migración manual → automatizado
-
-**Prompt (en inglés):**
-```
-I have this manual test case:
-
-Title: "Apply invalid coupon"
-Steps:
-1. Log in as standard_user / pizza123
-2. Add 1 pizza to the cart
-3. Go to checkout
-4. Apply coupon "INVALID123"
-5. Verify a red error message appears
-
-Convert it into a Playwright test. Before writing any code, navigate
-OmniPizza and confirm the real selectors for the coupon input and the
-error message.
-```
-
-### Caso 4 — Generar data sintética para fixtures
-
-**Prompt (en inglés):**
-```
-I need 12 sample shipping customers for data/customers.json following
-this shape:
-
-{ fullName, phone, address, zipCode, market: 'MX' | 'US' | 'CH' | 'JP' }
-
-Distribution: 4 MX, 4 US, 2 CH, 2 JP. Use realistic localized data per market.
-Output the JSON, ready to commit.
-```
-
-> 🔍 Ojo: NO le pidas regenerar `data/users.json` — ese archivo contiene las **5 personas reales** de OmniPizza (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`, todas con rol `customer`). Aquí generas data de *clientes* (direcciones de envío), que es lo tedioso de inventar a mano.
-
-(Para esto MCP no es estrictamente necesario, pero muestra la otra mitad del valor del LLM: ayudante para tareas tediosas alrededor del framework.)
+- locators CSS profundos o XPath;
+- `waitForTimeout`;
+- tests que hacen login UI en todos los specs sin razon;
+- `core/` importando features;
+- una slice que toca archivos de otra feature sin necesidad;
+- builders para objetos simples;
+- services UI mezclados con Page Objects;
+- comentarios largos explicando lo obvio;
+- codigo que no compila;
+- "TODO" en archivos del harness.
 
 ---
 
-## Playwright Agents (planner / generator / healer) — 🧪 experimental
+## Entregable
 
-> ⚠️ **EXPERIMENTAL.** Esta feature llegó en **Playwright v1.56 (octubre 2025)**, tiene **bugs abiertos**, y requiere **VS Code 1.105+** (o un cliente compatible). La API y los archivos generados **van a cambiar**: cada vez que actualices Playwright, **regenera las definiciones**. No la lleves a producción todavía; aquí la conoces para estar listo cuando madure.
+Sube o comparte:
 
-Mientras MCP te da un **browser en vivo** controlado por el LLM (un copiloto operativo, paso a paso), los **Playwright Agents** son tres **roles especializados** que cubren el ciclo *plan → genera → mantén* de un test, cada uno con un prompt-chatmode propio:
-
-| Agente | Qué hace |
-|---|---|
-| 🧭 **planner** | Lee un requisito/PRD y lo descompone en un **plan de prueba** (escenarios, casos, pasos) — un `spec` en lenguaje estructurado, todavía sin código. |
-| 🎭 **generator** | Toma ese plan y **genera el código** del test (los `.spec.ts`), navegando la app real para anclar locators (sobre snapshots YAML de la página, vía `@playwright/cli`). |
-| 🔧 **healer** | Cuando un test **falla por un cambio de UI**, navega la nueva pantalla y **repara los locators rotos** en vez de borrarlos. Es el caso "mantenimiento" del flujo, automatizado. |
-
-> 🎯 **Diferencia clave con MCP:** MCP = *tú* conversas con un LLM que opera un browser. Agents = un **pipeline de roles** (plan → genera → cura) pensado para **codegen y mantenimiento a escala**, no para exploración manual.
-
-### Cómo inicializar los Agents (micro-pasos)
-
-**A.1 — Ejecuta el init**
-- **Qué hago:** desde la raíz del proyecto, corro el comando de scaffolding eligiendo tu cliente con `--loop`:
-  ```bash
-  $ npx playwright init-agents --loop=vscode
-  # alternativas según tu cliente:
-  $ npx playwright init-agents --loop=claude
-  $ npx playwright init-agents --loop=opencode
-  ```
-- **Por qué:** cada cliente (VS Code/Copilot, Claude Code, OpenCode) consume los chatmodes en un formato propio; `--loop` genera las definiciones **para ese loop concreto**. Elegir mal el loop = los agentes no aparecen en tu cliente.
-- **Cómo verifico:** el comando termina sin error y reporta los archivos creados (ver A.2).
-
-**A.2 — Revisa los archivos generados**
-- **Qué hago:** inspecciono lo que el init dejó en el repo:
-  - `.github/*.chatmode.md` — las definiciones de los tres agentes (planner/generator/healer) como **chatmodes** que tu cliente carga.
-  - `specs/` — carpeta donde el **planner** deja sus planes de prueba en lenguaje estructurado.
-  - `tests/seed.spec.ts` — un test **semilla** que da contexto al generator (convenciones, imports, patrón base del que partir).
-- **Por qué:** entender qué se generó evita tratarlo como caja negra; el `seed.spec.ts` es tu palanca para que el generator copie *tus* convenciones (igual que en MCP le pasas los POMs).
-- **Cómo verifico:** tres `ls` separados listan las tres piezas — `ls .github/*.chatmode.md`, `ls specs`, `ls tests/seed.spec.ts`; al abrir tu cliente compatible, los chatmodes **planner/generator/healer** aparecen seleccionables.
-
-**A.3 — Regenera al actualizar (recordatorio)**
-- **Qué hago:** cada vez que suba la versión de Playwright, vuelvo a correr `npx playwright init-agents --loop=<...>`.
-- **Por qué:** al ser experimental, el formato de los chatmodes y del seed cambia entre releases; definiciones viejas + Playwright nuevo = agentes que fallan en silencio.
-- **Cómo verifico:** `npx playwright --version` coincide con la versión para la que regeneraste; los agentes siguen respondiendo en tu cliente.
-
-> 📚 Doc oficial (sigue la **última** versión, no fijes un número): [playwright.dev/docs/test-agents](https://playwright.dev/docs/test-agents).
-
-> 💡 **Para el facilitador:** demuestra el flujo completo solo si el grupo ya tiene VS Code 1.105+ y la versión de Playwright que trae Agents; de lo contrario, muéstralo como *roadmap* y quédate en MCP, que es estable. El valor pedagógico aquí es el **modelo mental** (plan → genera → cura), no el tooling exacto, que aún se mueve.
+1. ruta del proyecto externo;
+2. captura o output de `claude mcp list`;
+3. `pnpm typecheck` verde;
+4. `pnpm test:api` y `pnpm test:ui`, o reporte de maximo 3 iteraciones si no quedan verdes;
+5. respuesta breve: que hizo bien Claude Code y que tuviste que corregir.
 
 ---
 
-## Buenas prácticas con IA + Playwright
+## Referencia
 
-1. **No commitees código que la IA no haya probado.** Si te genera un test, córrelo (`pnpm exec playwright test ...`) antes de hacer commit.
-2. **Pide locators role-based**, no XPath ni CSS profundo. Tu prompt debe incluir *"prefiere `getByRole`, `getByLabel`, `getByTestId`"*.
-3. **Dale contexto del framework**, no archivos sueltos. *"Lee `playwright.config.ts` y `pages/BasePage.ts` antes de generar"* funciona mejor que pegar fragmentos.
-4. **Limita el alcance.** "Genera 1 test para checkout" → ✅. "Genera la suite completa" → ❌ (vas a obtener slop sin revisar).
-5. **Revisa el diff.** La IA tiende a meter `waitForTimeout(3000)` y otros anti-patterns. Quítalos antes de mergear.
-6. **Cuidado con secrets.** Nunca pegues `.env` real en el prompt. Usa placeholders (`<API_TOKEN>`).
-7. **MCP corre browsers reales.** Si tu prompt dice "borra todos los pedidos", la IA puede *de verdad* borrarlos. Apunta a **staging**, no producción.
-
----
-
-## Outcome esperado
-
-- [ ] Tienes al menos **un cliente MCP configurado** (Claude, Copilot, ChatGPT o Gemini) y tu cliente muestra el server conectado (Claude Code: `claude mcp list`; VS Code: la lista de tools en Agent mode; Gemini CLI: `/mcp` dentro de la sesión).
-- [ ] Ejecutaste el prompt de verificación y la IA navegó OmniPizza con éxito.
-- [ ] Generaste **un test nuevo** usando IA + MCP, lo corriste y pasó.
-- [ ] Identificaste qué LLM se adapta mejor a tu flujo y por qué.
-- [ ] Conoces las 7 buenas prácticas con IA (y los anti-patterns que evitan) al usarla en tu suite.
-
----
-
-## Reto
-
-Resuelve [`reto.md`](./reto.md) — generar un test E2E completo usando solo prompts, sin tocar código a mano.
-
----
-
-> 📚 **Profundización opcional:**
-> - [Playwright MCP — README oficial](https://github.com/microsoft/playwright-mcp) — lista completa de tools y opciones (`--isolated`, `--storage-state`, `--port`)
-> - [Model Context Protocol — Spec](https://modelcontextprotocol.io/specification) — para entender cómo escribir tu propio MCP server (por ejemplo, exponer tu sistema de bug-tracking interno)
-> - [Anthropic — Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) — patrones para agentes que generan/mantienen tests
+[`test-ia-harness`](./test-ia-harness/) contiene una version de referencia de la arquitectura esperada. Usala para comparar estructura, nombres y responsabilidades, no como solucion para copiar.

@@ -2,8 +2,9 @@
 
 Este documento es el **contrato** que cualquier IA (o persona) debe leer **antes**
 de generar una slice. La fundación ya existe; tú sólo agregas features siguiendo
-estas reglas al pie de la letra. Si dudas entre dos diseños, elige el que respete
-este contrato.
+estas reglas al pie de la letra. En una corrida real, lee tambien `TEST_PLAN.md`
+para saber que casos UI/API implementar. Si dudas entre dos diseños, elige el que
+respete este contrato.
 
 ---
 
@@ -20,7 +21,7 @@ este contrato.
 ## 2. Árbol de carpetas
 
 ```
-ejemplo-harness/
+test-ia-harness/
 ├── package.json
 ├── tsconfig.json
 ├── playwright.config.ts
@@ -174,13 +175,52 @@ no afirmes nada duro sobre ella.
 
 ---
 
+## 8.1 Diseño de código y de tests (Clean Code)
+
+Esto es **Clean Code** (prácticas), no *Clean Architecture* por capas. El árbol
+`core/ · shared/ · features/` ya es una separación limpia; **no** la reestructures.
+
+- **Nombres con intención; unidades pequeñas (SRP); sin duplicación (DRY); simple
+  (KISS/YAGNI).**
+- **Guard clauses / early return.** Valida precondiciones y retorna temprano:
+  primero los casos borde, luego el camino feliz. Nada de pirámides de `if`.
+- **Assertions por test: 1, máximo 2.** Cada test valida **un** comportamiento.
+  Las esperas web-first de sincronización (`expect(locator).toBeVisible()` usadas
+  para esperar, o métodos nombrados como `expectLoaded()`) **no** cuentan como
+  assertion. Si un resultado necesita varias verificaciones relacionadas,
+  agrúpalas detrás de un método nombrado del Page/Flow (`expectOrderConfirmed()`).
+  Más de 2 assertions sueltas = error de diseño de la prueba: pártela.
+  - **Excepción (unit de forma):** un test unitario de un builder/factory verifica
+    la forma completa del objeto con **una** aserción de objeto
+    (`expect(payload).toEqual({...})`), no con muchos `expect` sueltos.
+- **Data-driven testing.** Cuando varios casos difieren **sólo por input**, no
+  copies el test: parametrízalo sobre datos tipados de `shared/data/*.json`
+  (tipos en `shared/types`), un test por caso:
+
+  ```ts
+  for (const c of cases) {
+    test(c.name, async ({ /* fixtures */ }) => {
+      // ... 1–2 assertions por caso
+    });
+  }
+  ```
+
+- **Specs co-localizados.** Cada spec vive en su slice
+  (`features/<slice>/<slice>.spec.ts`, `<slice>.api.spec.ts`). **No** hay una
+  carpeta `tests/` separada. El project UI corre todos los `*.spec.ts` **excepto**
+  los `*.api.spec.ts` (los excluye con `testIgnore: /.*\.api\.spec\.ts/`); el
+  project API corre solo los `*.api.spec.ts`.
+
+---
+
 ## 9. Cómo debe usar esto la IA
 
-1. **Lee este archivo entero** antes de generar una slice.
+1. **Lee este archivo entero** y `TEST_PLAN.md` antes de generar una slice.
 2. Respeta los **nombres de export** de la sección 5 — los fixtures ya los importan.
 3. Reutiliza la fundación: extiende `BasePage`/`BaseService`, lee config de `env`,
    tipos de `shared/types`, datos de `shared/data`.
-4. Aplica las **reglas de locators y API** (secciones 6–7) sin inventar testids ni
-   endpoints: usa sólo los verificados.
+4. Aplica las **reglas de locators y API** (secciones 6–7) y el **diseño de código
+   y tests** (§8.1: guard clauses, 1–2 assertions, data-driven) sin inventar
+   testids ni endpoints: usa sólo los verificados.
 5. Agrega **sólo** las piezas que la slice gana (sección 4). Menos es más.
 6. Verifica con `pnpm typecheck` antes de dar por terminada una slice.
