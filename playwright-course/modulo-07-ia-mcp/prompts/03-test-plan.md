@@ -80,6 +80,7 @@ RULES:
 - Mark inferred API facts clearly as "inference"; do not present them as confirmed.
 - If API discovery is limited, define API candidate cases only as blocked/unknown. Do not invent passing API tests later.
 - Do not write src/features/* yet.
+- When you enumerate "expected files later" (per slice and per test-matrix row), use ONLY co-located vertical-slice paths: src/features/<slice>/<slice>.page.ts | .service.ts | .flow.ts | .factory.ts | .spec.ts | .api.spec.ts, src/shared/data/<slice>.json, and src/shared/MenuPage.ts for shared navigation. NEVER name layer folders (src/pages, src/services, src/flows, src/data, src/tests) — this is a vertical-slice harness (see AGENTS.md).
 - Do not edit AGENTS.md unless discovery proves a generic contract is wrong.
 - Do not mention example application names or domains unless they are visible in the current SUT.
 

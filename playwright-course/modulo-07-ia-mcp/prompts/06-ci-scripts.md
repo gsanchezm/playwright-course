@@ -17,14 +17,19 @@ You AUTHOR and locally validate the workflow here; it only RUNS on GitHub after 
 REQUIREMENTS:
 1. package.json scripts:
    - test
-   - test:ui
+   - test:ui        (project ui-chromium — fast feedback)
+   - test:cross     (ui-chromium + ui-firefox + ui-webkit + ui-mobile-chrome + ui-mobile-safari)
+   - test:firefox
+   - test:webkit
+   - test:mobile    (ui-mobile-chrome + ui-mobile-safari)
    - test:api
-   - test:smoke
+   - test:smoke     (playwright test --grep @smoke --project=ui-chromium)
    - test:headed
    - typecheck
    - report
    - install:browsers
-2. .github/workflows/playwright.yml:
+2. .github/workflows/playwright.yml with TWO jobs:
+   Job "test" — runs on push + pull_request; fast, chromium-only:
    - checkout
    - setup Node
    - setup pnpm
@@ -35,6 +40,12 @@ REQUIREMENTS:
    - pnpm test:api
    - pnpm test:ui
    - upload Playwright report on failure
+   Job "cross-browser" — opt-in only (on: workflow_dispatch and optionally a nightly schedule); full matrix:
+   - checkout / setup Node / setup pnpm / pnpm install --frozen-lockfile
+   - pnpm exec playwright install --with-deps chromium firefox webkit
+   - pnpm test:cross
+   - upload Playwright report on failure
+   Keep the cross-browser job OFF the per-push path so PRs stay fast; it runs on demand or on schedule.
 3. Keep secrets/env explicit through .env.example and CI env vars.
 4. Do not skip API tests when TEST_PLAN.md contains confirmed API cases.
 

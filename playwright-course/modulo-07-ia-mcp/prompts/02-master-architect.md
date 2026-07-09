@@ -17,6 +17,9 @@ FILES TO CREATE:
 1. AGENTS.md
    Include:
    - generic folder tree with CO-LOCATED specs: each feature's specs live inside its slice as `<slice>.spec.ts` and `<slice>.api.spec.ts`; there is NO separate top-level tests/ folder
+   - MANDATORY LAYOUT: the only src/ children are `src/core/`, `src/shared/` (with `src/shared/data/`), and `src/features/<slice>/`. Everything a slice needs (page, service, flow, factory/builder, specs, data) lives INSIDE `src/features/<slice>/`. The only shared cross-feature POM allowed is a flat `src/shared/MenuPage.ts` (created later, only when TEST_PLAN.md confirms shared navigation) — never a `src/shared/pages/` folder.
+   - FORBIDDEN LAYOUT (this is a vertical-slice harness, NOT a layered one): never create layer folders `src/pages/`, `src/services/`, `src/flows/`, `src/data/`, or `src/tests/` (including `src/tests/ui/` and `src/tests/api/`). If you catch yourself creating any of these, stop and put the file inside its feature slice instead.
+   - note that playwright.config.ts runs fullyParallel with a cross-browser + responsive UI matrix (ui-chromium/firefox/webkit + ui-mobile-chrome/ui-mobile-safari) and a single browserless `api` project
    - pattern-to-home table
    - export naming rules
    - locator rules
@@ -32,17 +35,30 @@ FILES TO CREATE:
    Use pnpm, TypeScript, Playwright, dotenv.
    Include scripts:
    - test
-   - test:ui
+   - test:ui              (project ui-chromium only — fast feedback loop)
+   - test:cross           (the full UI matrix: ui-chromium + ui-firefox + ui-webkit + ui-mobile-chrome + ui-mobile-safari)
+   - test:firefox         (project ui-firefox)
+   - test:webkit          (project ui-webkit)
+   - test:mobile          (projects ui-mobile-chrome + ui-mobile-safari)
    - test:api
-   - test:smoke
+   - test:smoke           (playwright test --grep @smoke --project=ui-chromium — smoke stays chromium-only for speed)
    - test:headed
    - typecheck
    - report
    - install:browsers
 3. playwright.config.ts
-   Projects:
-   - ui-chromium for **/*.spec.ts, but excluding **/*.api.spec.ts via testIgnore: /.*\.api\.spec\.ts/ (API specs must NOT run in the browser)
-   - api for **/*.api.spec.ts
+   Enable parallel execution and a cross-browser + responsive UI matrix:
+   - fullyParallel: true
+   - forbidOnly: !!process.env.CI
+   - retries: process.env.CI ? 2 : 0
+   - workers: process.env.CI ? 2 : undefined   (CI pinned to 2 for stability; local uses ~50% of cores)
+   Projects (all five UI projects share the SAME testIgnore: /.*\.api\.spec\.ts/ so API specs never launch a browser):
+   - ui-chromium       use: { ...devices["Desktop Chrome"] }
+   - ui-firefox        use: { ...devices["Desktop Firefox"] }
+   - ui-webkit         use: { ...devices["Desktop Safari"] }
+   - ui-mobile-chrome  use: { ...devices["Pixel 5"] }    (responsive viewport <768px — exercises the "-responsive" testid branch)
+   - ui-mobile-safari  use: { ...devices["iPhone 13"] }
+   - api for **/*.api.spec.ts via testMatch: /.*\.api\.spec\.ts/ and use: { baseURL: process.env.API_URL } (no browser)
    Use env-driven base URLs:
    - BASE_URL for UI
    - API_URL for API
@@ -62,7 +78,7 @@ FILES TO CREATE:
 
 ARCHITECTURE RULES:
 - POM = app-specific page objects created after discovery.
-- Shared navigation/menu POM = MenuPage only when TEST_PLAN.md confirms a menu/navigation component exists.
+- Shared navigation/menu POM = MenuPage (flat `src/shared/MenuPage.ts`) only when TEST_PLAN.md confirms a menu/navigation component exists.
 - Service/Adapter = feature API clients created after API discovery.
 - Template Method = src/core/BasePage.ts and src/core/BaseService.ts.
 - Factory/Builder = only for discovered complex entities.
@@ -87,6 +103,7 @@ QUALITY RULES:
 - Follow Clean Code practices: clear names, small single-purpose units, DRY/KISS. This is Clean Code, not layered Clean Architecture; keep the core/shared/features split.
 - Use guard clauses / early returns; avoid deep nesting.
 - Specs are co-located in each feature slice; no separate tests/ folder.
+- Do NOT scaffold layer folders (src/pages, src/services, src/flows, src/data, src/tests). This is a vertical-slice harness: those homes are inside src/features/<slice>/. Creating any layer folder is a structural error to reject.
 - Identifiers in English.
 - Comments only when useful, in Spanish.
 - Real compiling TypeScript.

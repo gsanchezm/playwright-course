@@ -27,6 +27,28 @@ Do not invent selectors, endpoints, request bodies, response shapes, entities, o
 TASK:
 Generate src/features/SLICE as one vertical slice.
 
+TARGET LAYOUT (do not deviate):
+Every file for this slice lives INSIDE its own feature folder, with specs co-located:
+
+  src/features/<SLICE>/
+    <SLICE>.page.ts
+    <SLICE>.service.ts
+    <SLICE>.flow.ts
+    <SLICE>.factory.ts | <SLICE>.builder.ts   (only if needed)
+    <SLICE>.spec.ts                            (UI cases)
+    <SLICE>.api.spec.ts                        (API cases)
+  src/shared/data/<SLICE>.json                 (only for data-driven cases)
+
+FORBIDDEN LAYOUT (this is a vertical-slice harness, NOT a layered one):
+Never create or write into layer folders. If any of these appear, the slice is wrong:
+  - src/pages/        (page objects go in src/features/<SLICE>/<SLICE>.page.ts)
+  - src/services/     (API clients go in src/features/<SLICE>/<SLICE>.service.ts)
+  - src/flows/        (flows go in src/features/<SLICE>/<SLICE>.flow.ts)
+  - src/data/         (typed datasets go in src/shared/data/<SLICE>.json)
+  - src/tests/, src/tests/ui/, src/tests/api/  (specs are co-located, never in a tests/ tree)
+The ONLY shared homes you may touch are src/shared/fixtures.ts, src/shared/types.ts, src/shared/data/,
+and src/shared/MenuPage.ts (a flat file, only when TEST_PLAN.md confirms a shared menu/navigation — do NOT create a src/shared/pages/ folder).
+
 TYPICAL FILES:
 - SLICE.page.ts when the slice has UI behavior
 - SLICE.service.ts when the slice has confirmed API behavior
@@ -36,7 +58,7 @@ TYPICAL FILES:
 - SLICE.spec.ts when TEST_PLAN.md contains UI cases for this slice
 - SLICE.api.spec.ts when TEST_PLAN.md contains confirmed API cases for this slice
 - src/shared/data/SLICE.json only when the slice has data-driven cases (varying only by input)
-- src/shared/pages/MenuPage.ts only when TEST_PLAN.md confirms shared menu/navigation exists
+- src/shared/MenuPage.ts (flat file, NOT a pages/ folder) only when TEST_PLAN.md confirms shared menu/navigation exists
 
 RULES:
 - Do not edit unrelated slices.
@@ -63,6 +85,11 @@ Run:
 - pnpm typecheck
 - if SLICE.spec.ts exists: pnpm exec playwright test src/features/SLICE --project=ui-chromium
 - if SLICE.api.spec.ts exists: pnpm exec playwright test src/features/SLICE --project=api
+Use ui-chromium for the fast per-slice loop. Once the slice is green on chromium, optionally
+re-run it across the full cross-browser + responsive matrix to catch engine/viewport-specific issues:
+- pnpm exec playwright test src/features/SLICE --project=ui-firefox --project=ui-webkit --project=ui-mobile-chrome --project=ui-mobile-safari
+Responsive note: the mobile projects (<768px) exercise the "-responsive" testid branch, so a locator that
+only resolves the "-desktop" suffix will surface here.
 
 DELIVERY:
 Return:

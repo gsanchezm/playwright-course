@@ -97,7 +97,10 @@ pnpm exec playwright test src/features/<slice> --project=ui-chromium
 pnpm exec playwright test src/features/<slice> --project=api
 ```
 
-Omite el comando API cuando la feature no genero `*.api.spec.ts`.
+Omite el comando API cuando la feature no genero `*.api.spec.ts`. `ui-chromium` es el
+loop rapido; con la slice ya verde, `pnpm test:cross` la corre en la matriz completa
+(chromium + firefox + webkit + Pixel 5 + iPhone 13). Los projects moviles (<768px)
+ejercitan la rama `-responsive` de los testids.
 
 ## Reglas de token
 

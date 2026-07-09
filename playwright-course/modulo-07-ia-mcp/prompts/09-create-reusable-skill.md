@@ -51,9 +51,9 @@ Document the reusable workflow:
    - create CLAUDE.md
    - configure Playwright MCP
 3. Foundation:
-   - generate AGENTS.md
-   - package.json
-   - playwright.config.ts
+   - generate AGENTS.md — it MUST specify a vertical-slice layout (src/core, src/shared, src/features/<slice>/ with co-located <slice>.spec.ts / <slice>.api.spec.ts) and MUST forbid layer folders (src/pages, src/services, src/flows, src/data, src/tests). Never describe a layered pages/services/flows/tests structure.
+   - package.json (test, test:ui, test:cross, test:firefox, test:webkit, test:mobile, test:api, test:smoke, test:headed, typecheck, report, install:browsers)
+   - playwright.config.ts with fullyParallel: true and a cross-browser + responsive UI matrix (ui-chromium/ui-firefox/ui-webkit + ui-mobile-chrome/ui-mobile-safari, all sharing testIgnore for *.api.spec.ts) plus a single browserless `api` project
    - src/core
    - src/shared
 4. Discovery:
@@ -76,6 +76,7 @@ Document the reusable workflow:
 
 RULES:
 - Keep the skill generic for any SUT.
+- The workflow MUST describe the vertical-slice layout (src/features/<slice>/ with co-located specs) and MUST NOT describe or scaffold layer folders (src/pages, src/services, src/flows, src/data, src/tests). "Vertical slice" means one feature folder owns its page/service/flow/specs — not a spec spread across layer folders.
 - Do not copy full source files into the skill.
 - Do not include README.md, changelog, or extra docs.
 - Do not include secrets, .env, reports, node_modules, or test artifacts.

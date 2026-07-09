@@ -1,7 +1,7 @@
 # Modulo 07 - IA Test Harness con Claude Code + Playwright MCP
 
 **Duracion estimada:** 90-120 min<br>
-**Pieza que suma al framework:** un **AI Test Harness** generado desde cero por Claude Code en una carpeta externa vacia, con Playwright, pnpm, MCP, patrones de diseno, principios SOLID/DRY/KISS y vertical slicing.
+**Pieza que suma al framework:** un **AI Test Harness** generado desde cero por Claude Code en una carpeta externa vacia, con Playwright, pnpm, MCP, patrones de diseno, principios SOLID/DRY/KISS, vertical slicing, ejecucion en paralelo y una matriz cross-browser + responsive (Chromium/Firefox/WebKit + Pixel 5 / iPhone 13).
 
 Este modulo ya no trata de pedirle a la IA "un test suelto". El objetivo es mas profesional: aprender a usar Claude Code como un ingeniero asistido por IA para **crear, verificar, refactorizar y mantener** un framework E2E completo para cualquier SUT indicando solo la URL de UI y la URL de API. OmniPizza es el ejemplo del curso, no una regla hardcodeada de los prompts.
 
@@ -338,8 +338,19 @@ pnpm exec playwright test src/features/<slice> --project=ui-chromium
 pnpm exec playwright test src/features/<slice> --project=api
 ```
 
-Si no existe `*.api.spec.ts` para esa slice, omite el comando API. Si falla, no
-edites a mano. Pega el error con [`prompts/07-healer-review.md`](./prompts/07-healer-review.md).
+Usa `ui-chromium` para el loop rapido. Cuando la slice quede verde, opcionalmente
+corre la matriz completa cross-browser + responsive:
+
+```bash
+pnpm exec playwright test src/features/<slice> \
+  --project=ui-firefox --project=ui-webkit \
+  --project=ui-mobile-chrome --project=ui-mobile-safari
+```
+
+Los projects moviles usan viewport <768px y activan la rama `-responsive` de los
+testids; un locator que solo resuelve `-desktop` fallara ahi. Si no existe
+`*.api.spec.ts` para esa slice, omite el comando API. Si falla, no edites a mano.
+Pega el error con [`prompts/07-healer-review.md`](./prompts/07-healer-review.md).
 
 ### 6. Cablear DI y CI
 
@@ -356,8 +367,12 @@ pnpm test:ui
 ```
 
 CI se agrega aqui porque antes de tener specs reales no hay suficiente evidencia
-para decidir que debe correr el pipeline. El workflow se valida localmente; solo
-corre en GitHub cuando el paso 8 crea el repo y hace push.
+para decidir que debe correr el pipeline. El workflow tiene dos jobs: `test`
+(chromium, corre en cada push/PR: smoke + api + ui) y `cross-browser` (opt-in via
+`workflow_dispatch` o nightly: instala Chromium/Firefox/WebKit y corre
+`pnpm test:cross`). Asi los PRs quedan rapidos y la matriz completa corre bajo
+demanda. El workflow se valida localmente; solo corre en GitHub cuando el paso 8
+crea el repo y hace push.
 
 ### 7. Revision final
 

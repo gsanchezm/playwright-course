@@ -141,7 +141,10 @@ pnpm exec playwright test src/features/<slice> --project=ui-chromium
 pnpm exec playwright test src/features/<slice> --project=api
 ```
 
-Si la slice no tiene `*.api.spec.ts`, omite el comando API.
+Si la slice no tiene `*.api.spec.ts`, omite el comando API. `ui-chromium` es el loop
+rapido; cuando la slice quede verde, opcionalmente corre la matriz completa con
+`pnpm test:cross` (chromium + firefox + webkit + Pixel 5 + iPhone 13). Los projects
+moviles usan viewport <768px y activan la rama `-responsive` de los testids.
 
 Regla: si Claude genera locators sin navegar con MCP, rechaza la salida y pide que navegue primero.
 
@@ -262,6 +265,8 @@ prompts y `.gitignore`, sin generar todavia la fundacion ni features.
 - [ ] Codigo con guard clauses / early return (Clean Code, no Clean Architecture por capas).
 - [ ] Casos que solo varian por input son data-driven sobre `shared/data/*.json`, no copiados.
 - [ ] Specs co-localizados en cada slice; sin carpeta `tests/` separada.
+- [ ] No existen carpetas de capa (`src/pages`, `src/services`, `src/flows`, `src/data`, `src/tests`): todo vive en `src/features/<slice>/`.
+- [ ] `playwright.config.ts` corre en paralelo (`fullyParallel`) con matriz cross-browser + responsive (`ui-chromium`/`ui-firefox`/`ui-webkit` + `ui-mobile-chrome`/`ui-mobile-safari`) y un project `api` sin navegador.
 - [ ] `pnpm typecheck` pasa o hay diagnostico claro tras 3 intentos.
 - [ ] Hay evidencia de uso real de Playwright MCP.
 - [ ] Entrega incluye reflexion breve sobre limites reales de Claude Code.

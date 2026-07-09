@@ -35,13 +35,22 @@ cp .env.example .env
 pnpm typecheck
 
 # 4. Ejecutar tests
-pnpm test            # toda la suite
-pnpm test:ui         # solo project ui-chromium
-pnpm test:api        # solo project api (*.api.spec.ts)
-pnpm test:smoke      # pruebas marcadas @smoke
+pnpm test            # toda la suite (5 projects UI + api, en paralelo)
+pnpm test:ui         # solo project ui-chromium (loop rapido)
+pnpm test:cross      # matriz completa: chromium + firefox + webkit + movil (Pixel 5 / iPhone 13)
+pnpm test:firefox    # solo ui-firefox
+pnpm test:webkit     # solo ui-webkit
+pnpm test:mobile     # solo los projects moviles (viewport responsive <768px)
+pnpm test:api        # solo project api (*.api.spec.ts, sin browser)
+pnpm test:smoke      # pruebas @smoke en chromium (rapido)
 pnpm test:headed     # UI con browser visible
 pnpm report          # abrir el ultimo reporte HTML
 ```
+
+> **Paralelo + cross-browser + responsive.** `playwright.config.ts` corre
+> `fullyParallel: true`. La UI se prueba en 5 projects (Chrome/Firefox/WebKit +
+> Pixel 5 / iPhone 13) y la API en uno sin navegador. Los projects moviles usan un
+> viewport <768px, que activa la rama `-responsive` de `tid()` en `BasePage`.
 
 > `pnpm typecheck` solo pasa "verde" una vez que existen las slices de
 > `src/features/` (los fixtures las importan por sus nombres fijos). La fundación

@@ -61,6 +61,29 @@ test-ia-harness/
 
 ---
 
+## 2.1 Ejecución: paralelo + cross-browser + responsive
+
+`playwright.config.ts` corre `fullyParallel: true` (cada archivo en su worker; los
+tests del archivo también en paralelo). La UI se prueba en **cinco projects** y la
+API en uno solo, sin navegador:
+
+| Project | Device | Sirve para |
+|---|---|---|
+| `ui-chromium` | Desktop Chrome | Loop rápido de desarrollo (default de `test:ui`). |
+| `ui-firefox` | Desktop Firefox | Motor Gecko. |
+| `ui-webkit` | Desktop Safari | Motor WebKit. |
+| `ui-mobile-chrome` | Pixel 5 | Viewport <768px → rama **`-responsive`** de `tid()`. |
+| `ui-mobile-safari` | iPhone 13 | Responsive + WebKit móvil. |
+| `api` | — (sin browser) | Sólo los `*.api.spec.ts` (`testMatch`). |
+
+Scripts: `test:ui` (chromium), `test:cross` (los 5 UI), `test:firefox`,
+`test:webkit`, `test:mobile` (los 2 móviles), `test:api`, `test:smoke`
+(`@smoke` en chromium por velocidad). Los projects móviles ejercitan los testids
+`-responsive`; un locator que sólo resuelve `-desktop` fallará ahí — eso es la red
+de seguridad responsive, no un bug del test.
+
+---
+
 ## 3. Patrón → casa (cada patrón vive EXACTAMENTE una vez)
 
 | Patrón                | Dónde vive                          | Archivo |
@@ -207,9 +230,9 @@ Esto es **Clean Code** (prácticas), no *Clean Architecture* por capas. El árbo
 
 - **Specs co-localizados.** Cada spec vive en su slice
   (`features/<slice>/<slice>.spec.ts`, `<slice>.api.spec.ts`). **No** hay una
-  carpeta `tests/` separada. El project UI corre todos los `*.spec.ts` **excepto**
-  los `*.api.spec.ts` (los excluye con `testIgnore: /.*\.api\.spec\.ts/`); el
-  project API corre solo los `*.api.spec.ts`.
+  carpeta `tests/` separada. Los projects de UI corren todos los `*.spec.ts`
+  **excepto** los `*.api.spec.ts` (los excluyen con `testIgnore: /.*\.api\.spec\.ts/`);
+  el project `api` corre solo los `*.api.spec.ts`.
 
 ---
 

@@ -159,8 +159,8 @@ export const docsNav: DocSection[] = [
       { slug: "m6-guia", label: "6.1 Guía del módulo", group: "Módulo 6 · CI + Debugging" },
       { slug: "m6-spec", label: "6.2 El spec paso a paso", group: "Módulo 6 · CI + Debugging" },
       { slug: "m6-reto", label: "🚩 Reto M6", group: "Módulo 6 · CI + Debugging" },
-      { slug: "m7-guia", label: "7.1 Guía del módulo", group: "Módulo 7 · IA + MCP" },
-      { slug: "m7-reto", label: "🚩 Reto M7", group: "Módulo 7 · IA + MCP" },
+      { slug: "m7-guia", label: "7.1 Guía del módulo", group: "Módulo 7 · AI Test Harness" },
+      { slug: "m7-reto", label: "🚩 Reto M7", group: "Módulo 7 · AI Test Harness" },
     ],
   },
   {
