@@ -23,7 +23,7 @@ export class ShippingCustomerFactory {
   static forMarket(code: CountryCode): Market {
     const market = markets.find((m) => m.code === code);
     if (!market) {
-      throw new Error(`Mercado "${code}" no encontrado en shared/data/markets.json`);
+      throw new Error(`Market "${code}" not found in shared/data/markets.json`);
     }
     // Copia defensiva: nadie debe mutar la fuente JSON compartida.
     return { ...market };

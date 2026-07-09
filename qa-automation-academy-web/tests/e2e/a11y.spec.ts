@@ -28,7 +28,7 @@ test.describe("Accesibilidad estructural — smoke", () => {
       const rel = (await link.getAttribute("rel")) ?? "";
       expect(
         rel,
-        `link #${i} target=_blank debe incluir rel="noopener"`
+        `link #${i} target=_blank should include rel="noopener"`
       ).toContain("noopener");
     }
   });
@@ -52,7 +52,7 @@ test.describe("Accesibilidad estructural — smoke", () => {
 
       expect(
         hasName,
-        `Elemento interactivo #${i} sin nombre accesible`
+        `Interactive element #${i} has no accessible name`
       ).toBeTruthy();
     }
   });

@@ -194,7 +194,7 @@ setup.beforeAll(() => {
 setup("wake up backend (warmup cold start)", async ({ request }) => {
   setup.setTimeout(90_000);
   const res = await request.get(`${API_URL}/health`, { timeout: 80_000 });
-  expect(res.ok(), "backend /health debe responder 200").toBeTruthy();
+  expect(res.ok(), "backend /health should respond 200").toBeTruthy();
 });
 
 // 2) Login por API → siembra el token en localStorage → persiste el badge.
@@ -202,9 +202,9 @@ setup("authenticate as standard_user", async ({ browser, request }) => {
   const apiRes = await request.post(`${API_URL}/api/auth/login`, {
     data: { username: USERNAME, password: PASSWORD },
   });
-  expect(apiRes.ok(), `login API debe ser 200. Status: ${apiRes.status()}`).toBeTruthy();
+  expect(apiRes.ok(), `login API should be 200. Status: ${apiRes.status()}`).toBeTruthy();
   const { access_token } = (await apiRes.json()) as { access_token: string };
-  expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
+  expect(access_token, "access_token should be present in the response").toBeTruthy();
 
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -253,7 +253,7 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   // eslint-disable-next-line no-empty-pattern
   defaultMarket: [async ({}, use) => {
     const mx = markets.find((m) => m.code === "MX");
-    if (!mx) throw new Error("Mercado MX no encontrado en data/markets.json");
+    if (!mx) throw new Error("MX market not found in data/markets.json");
     await use(mx);
   }, { scope: "worker" }],
 
@@ -264,7 +264,7 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   // eslint-disable-next-line no-empty-pattern
   standardUser: async ({}, use) => {
     const u = users.find((u) => u.username === "standard_user");
-    if (!u) throw new Error("standard_user no encontrado en data/users.json");
+    if (!u) throw new Error("standard_user not found in data/users.json");
     await use(u);
   },
 });

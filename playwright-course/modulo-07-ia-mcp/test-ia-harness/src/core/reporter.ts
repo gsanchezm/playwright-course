@@ -29,7 +29,7 @@ class SummaryReporter implements Reporter {
   // El subject nos avisa que la corrida empieza y cuántos tests hay.
   onBegin(_config: FullConfig, suite: Suite): void {
     this.total = suite.allTests().length;
-    console.log(`\n[harness] Iniciando corrida: ${this.total} test(s)\n`);
+    console.log(`\n[harness] Starting run: ${this.total} test(s)\n`);
   }
 
   // Reaccionamos a cada test que termina, acumulando el conteo.
@@ -52,8 +52,8 @@ class SummaryReporter implements Reporter {
   // El subject cierra la corrida: imprimimos el resumen final.
   onEnd(result: FullResult): void {
     console.log(
-      `\n[harness] Resumen — ${this.passed} ✓  ${this.failed} ✗  ${this.skipped} ⊘  ` +
-        `(de ${this.total}) → estado: ${result.status}\n`,
+      `\n[harness] Summary — ${this.passed} ✓  ${this.failed} ✗  ${this.skipped} ⊘  ` +
+        `(of ${this.total}) → status: ${result.status}\n`,
     );
   }
 }

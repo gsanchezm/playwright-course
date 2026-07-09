@@ -30,7 +30,7 @@ export class UserFactory {
   static byUsername(name: string): User {
     const user = users.find((u) => u.username === name);
     if (!user) {
-      throw new Error(`Usuario "${name}" no encontrado en shared/data/users.json`);
+      throw new Error(`User "${name}" not found in shared/data/users.json`);
     }
     return user;
   }
@@ -42,7 +42,7 @@ export class UserFactory {
    */
   static random(index?: number): User {
     if (users.length === 0) {
-      throw new Error("No hay usuarios en shared/data/users.json");
+      throw new Error("No users found in shared/data/users.json");
     }
     const i = index ?? UserFactory.cursor++;
     return users[((i % users.length) + users.length) % users.length];

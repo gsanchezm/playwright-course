@@ -82,7 +82,7 @@ export const test = base.extend<HarnessFixtures>({
   standardUser: async ({}, use) => {
     const user = users.find((u) => u.username === env.username);
     if (!user) {
-      throw new Error(`Usuario "${env.username}" no encontrado en shared/data/users.json`);
+      throw new Error(`User "${env.username}" not found in shared/data/users.json`);
     }
     await use(user);
   },
@@ -90,7 +90,7 @@ export const test = base.extend<HarnessFixtures>({
   defaultMarket: async ({}, use) => {
     const market = markets.find((m) => m.code === env.country);
     if (!market) {
-      throw new Error(`Mercado "${env.country}" no encontrado en shared/data/markets.json`);
+      throw new Error(`Market "${env.country}" not found in shared/data/markets.json`);
     }
     await use(market);
   },

@@ -42,7 +42,7 @@ setup("wake up backend (warmup cold start)", async ({ request }) => {
   // todos los tests que siguen tengan el backend despierto.
   setup.setTimeout(90_000);
   const res = await request.get(`${API_URL}/health`, { timeout: 80_000 });
-  expect(res.ok(), "backend /health debe responder 200").toBeTruthy();
+  expect(res.ok(), "backend /health should respond 200").toBeTruthy();
 });
 
 // Mercado por defecto que el SPA persiste tras seleccionar la bandera.
@@ -71,9 +71,9 @@ setup("authenticate as standard_user", async ({ browser, request }) => {
   const apiRes = await request.post(`${API_URL}/api/auth/login`, {
     data: { username: USERNAME, password: PASSWORD },
   });
-  expect(apiRes.ok(), `login API debe ser 200. Status: ${apiRes.status()}`).toBeTruthy();
+  expect(apiRes.ok(), `login API should be 200. Status: ${apiRes.status()}`).toBeTruthy();
   const { access_token } = (await apiRes.json()) as { access_token: string };
-  expect(access_token, "debe venir access_token en la respuesta").toBeTruthy();
+  expect(access_token, "access_token should be present in the response").toBeTruthy();
 
   // El SPA guarda `username` y `behavior` derivados del token.
   const claims = decodeJwt(access_token);

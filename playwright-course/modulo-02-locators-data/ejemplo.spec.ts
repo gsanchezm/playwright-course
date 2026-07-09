@@ -26,8 +26,8 @@ const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user");
 if (!standardUser) {
   throw new Error(
-    'data/users.json no contiene un usuario con username "standard_user". ' +
-      "Revisa el seed de datos antes de correr M02.",
+    'data/users.json does not contain a user with username "standard_user". ' +
+      "Check the data seed before running M02.",
   );
 }
 

@@ -36,7 +36,7 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   // eslint-disable-next-line no-empty-pattern
   defaultMarket: [async ({}, use) => {
     const mx = markets.find((m) => m.code === "MX");
-    if (!mx) throw new Error("Mercado MX no encontrado en data/markets.json");
+    if (!mx) throw new Error("MX market not found in data/markets.json");
     await use(mx);
   }, { scope: "worker" }],
 
@@ -53,7 +53,7 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   // eslint-disable-next-line no-empty-pattern
   standardUser: async ({}, use) => {
     const u = users.find((u) => u.username === "standard_user");
-    if (!u) throw new Error("standard_user no encontrado en data/users.json");
+    if (!u) throw new Error("standard_user not found in data/users.json");
     await use(u);
   },
 });
