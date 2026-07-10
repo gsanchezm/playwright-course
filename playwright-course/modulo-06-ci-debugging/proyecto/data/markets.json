@@ -1,0 +1,39 @@
+[
+  {
+    "code": "MX",
+    "currency": "MXN",
+    "fullName": "Juan Pérez",
+    "phone": "+52 55 1234 5678",
+    "address": "Avenida Reforma 123",
+    "colonia": "Polanco",
+    "zipCode": "11550",
+    "taxRate": 0.16
+  },
+  {
+    "code": "US",
+    "currency": "USD",
+    "fullName": "John Doe",
+    "phone": "+1 555 123 4567",
+    "address": "123 Main St",
+    "zipCode": "90210",
+    "taxRate": 0.08
+  },
+  {
+    "code": "CH",
+    "currency": "CHF",
+    "fullName": "Hans Müller",
+    "phone": "+41 44 123 45 67",
+    "address": "Bahnhofstrasse 1",
+    "zipCode": "8001",
+    "taxRate": 0.077
+  },
+  {
+    "code": "JP",
+    "currency": "JPY",
+    "fullName": "Taro Yamada",
+    "phone": "+81 3 1234 5678",
+    "address": "1-1 Chiyoda, Chiyoda-ku",
+    "zipCode": "100-0001",
+    "taxRate": 0.1
+  }
+]

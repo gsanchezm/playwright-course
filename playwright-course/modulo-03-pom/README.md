@@ -5,6 +5,8 @@
 
 ---
 
+> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del monorepo del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
+
 ## 🏗️ Arquitectura al terminar este módulo
 
 Aparece la carpeta **`pages/`** con el Page Object Model. Las clases `extends BasePage` para reutilizar helpers (testid, waitForUrl, etc.) sin duplicar código.

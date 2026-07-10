@@ -22,5 +22,9 @@
     "tests/**/*.ts",
     "modulo-*/**/*.ts"
   ],
-  "exclude": ["modulo-07-ia-mcp/ejemplo-harness"]
+  "exclude": [
+    "modulo-*/proyecto",
+    "modulo-07-ia-mcp/ejemplo-harness",
+    "modulo-07-ia-mcp/test-ia-harness"
+  ]
 }

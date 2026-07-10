@@ -1,5 +1,7 @@
 # M05 · Guía del módulo: API Layer
 
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+
 **Duración estimada:** 50-60 min
 **Piezas que suma al framework:**
 - `services/BaseService.ts` — **clase abstracta** (primera aparición del término en el curso).

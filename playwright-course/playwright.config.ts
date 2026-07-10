@@ -16,6 +16,11 @@ export default defineConfig({
   testDir: ".",
   testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
 
+  // --- Excluir proyectos autocontenidos (tienen su propio package.json/config) ---
+  // Cada módulo trae un `proyecto/` de referencia (clone-and-run) con su propio
+  // @playwright/test; NO debe entrar a la suite del monorepo. Igual el harness de M07.
+  testIgnore: [/modulo-.*\/proyecto\/.*/, /modulo-07-ia-mcp\/(ejemplo-harness|test-ia-harness)\/.*/],
+
   // --- Paralelismo y reintentos ---
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -58,19 +63,19 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-.*\/proyecto\/.*/, /modulo-07-ia-mcp\/(ejemplo-harness|test-ia-harness)\/.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-.*\/proyecto\/.*/, /modulo-07-ia-mcp\/(ejemplo-harness|test-ia-harness)\/.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-07-ia-mcp\/ejemplo-harness\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/, /modulo-0[123]-.*/, /modulo-.*\/proyecto\/.*/, /modulo-07-ia-mcp\/(ejemplo-harness|test-ia-harness)\/.*/],
     },
     {
       name: "api",

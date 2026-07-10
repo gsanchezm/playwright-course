@@ -1,5 +1,7 @@
 # M01 · Guía del módulo: primer smoke
 
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+
 **Duración estimada:** 45-60 min
 **Pieza que suma al framework:** **`modulo-01-smoke-feo/ejemplo.spec.ts`** plano, sin POM, sin fixtures, sin data-driven. **Todo el dolor es deliberado.**
 
