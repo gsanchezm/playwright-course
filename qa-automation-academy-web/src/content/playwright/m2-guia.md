@@ -511,7 +511,7 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
   projects: [
-    { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "ui-anon", use: { ...devices["Desktop Chrome"] } },
   ],
 });
 ```
@@ -520,8 +520,8 @@ Y añade el script `m2` a `package.json`:
 
 ```json
 "scripts": {
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium",
-  "m2": "playwright test modulo-02-locators-data --project=ui-chromium"
+  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon",
+  "m2": "playwright test modulo-02-locators-data --project=ui-anon"
 }
 ```
 

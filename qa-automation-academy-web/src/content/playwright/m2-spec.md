@@ -27,7 +27,7 @@ pnpm test:ui
 Abre `ejemplo.spec.ts` e identifica:
 
 1. **El bucle `for (const market of markets)`** — un `test()` por cada elemento del array.
-2. El **título dinámico** del test: `` `TC-${market.code} — login + catálogo en mercado ${market.code} @smoke` `` — cada test tiene un nombre único.
+2. El **título dinámico** del test: `` `TC-${market.code} — login + catalog in market ${market.code} @smoke` `` — cada test tiene un nombre único.
 3. La **validación condicional por mercado** (símbolo `$` en MX, `¥` en JP) — lógica de negocio data-driven.
 4. El **CSS selector legítimo** `[data-testid^="pizza-card-"]` — explica por qué baja al nivel 4 de la jerarquía: los testids son dinámicos.
 5. La **aserción de URL** `await expect(page).toHaveURL(/\/catalog/)` — el argumento es un **regex**, no un string.
@@ -40,7 +40,7 @@ Varias de esas líneas se leen "de pasada" pero esconden una decisión de diseñ
 > **Por qué así (y no la alternativa obvia):** importar un `.json` te da un tipo inferido amplio (y a veces `any`, según la config). El `as Market[]` te devuelve autocompletado y chequeo de `market.code`, `market.currency`, etc. en compile-time, que es donde queremos atrapar los errores.
 > **Qué pasa si lo cambias:** si quitas el `as Market[]`, el tipo pasa a ser el inferido del JSON (o `any`) y **pierdes el autocompletado y la seguridad** de `market.code` / `market.currency`. (Ojo: como es assertion, no validación, un JSON con datos basura sí compilaría — el contrato real lo defiende el `.d.ts` vía `tsc`, no este cast.)
 
-> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...) ``**
+> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, ...) ``**
 > **Qué es:** el título del test se construye con un *template string* que interpola `market.code` en cada vuelta del `for...of` sobre `markets`.
 > **Por qué así (y no la alternativa obvia):** cada iteración del bucle registra un `test()` distinto, y Playwright **exige títulos únicos** dentro del mismo describe — `${market.code}` garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, nombres distintos y legibles en el reporte. Además, el tag `@smoke` embebido en el título es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
 > **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
@@ -140,13 +140,13 @@ const currencySymbol: Partial<Record<Currency, string>> = {
   JPY: "¥",
 };
 
-test.describe("Smoke parametrizado por mercado (M02)", () => {
+test.describe("Smoke parameterized by market (M02)", () => {
   // OJO: Playwright NO tiene `test.each()` (eso es de Jest/Vitest).
   // Para parametrizar, un `for` recorre el array y REGISTRA un
   // `test()` por dato → 4 TCs independientes (TC-MX, TC-US, ...),
   // no un test que itera por dentro.
   for (const market of markets) {
-    test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, async ({ page }) => {
+    test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, async ({ page }) => {
       // --- PASO 1: Login ---
       // Jerarquía: primero por testid (OmniPizza los tiene), luego por CSS prefix.
       await page.goto("/");
@@ -197,11 +197,11 @@ test.describe("Smoke parametrizado por mercado (M02)", () => {
 // para "leer la etiqueta". (Para leer texto está getByText).
 // ============================================================
 
-test.describe("Referencia — jerarquía de locators", () => {
+test.describe("Reference — locator hierarchy", () => {
   // ──────────────────────────────────────────────────────────
   // BLOQUE A — Pantalla de login (no requiere autenticación)
   // ──────────────────────────────────────────────────────────
-  test.skip("locators en la pantalla de login", async ({ page }) => {
+  test.skip("locators on the login screen", async ({ page }) => {
     await page.goto("/");
 
     // 1️⃣ getByRole — PREFERIDO. Localiza por el rol de
@@ -253,7 +253,7 @@ test.describe("Referencia — jerarquía de locators", () => {
   // ──────────────────────────────────────────────────────────
   // BLOQUE B — Catálogo (requiere login primero)
   // ──────────────────────────────────────────────────────────
-  test.skip("locators en el catálogo", async ({ page }) => {
+  test.skip("locators in the catalog", async ({ page }) => {
     // Login mínimo para llegar al catálogo
     await page.goto("/");
     await page.getByTestId("market-MX").click();

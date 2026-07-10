@@ -67,10 +67,10 @@ import { test, expect } from "../fixtures/omnipizza";
 // login que queremos probar. `storageState: undefined` lo desactiva
 // SOLO para este describe (es el reverso del "storageState por
 // project" que configuraste en el paso 3.1 del README).
-test.describe("Reto M04 — PARTE A: login negativo (locked_out_user)", () => {
+test.describe("Challenge M04 — PART A: negative login (locked_out_user)", () => {
   test.use({ storageState: undefined });
 
-  test.skip("TODO — login bloqueado muestra 'Invalid credentials'", async ({
+  test.skip("TODO — blocked login shows 'Invalid credentials'", async ({
     page,
   }) => {
     // ────────────────────────────────────────────────────────
@@ -131,8 +131,8 @@ test.describe("Reto M04 — PARTE A: login negativo (locked_out_user)", () => {
 // ============================================================
 // PARTE B — Mock con latencia simulada
 // ============================================================
-test.describe("Reto M04 — PARTE B: mock con latencia @regression", () => {
-  test("respuesta lenta del backend muestra skeleton/loader", async ({
+test.describe("Challenge M04 — PART B: mock with latency @regression", () => {
+  test("slow backend response shows skeleton/loader", async ({
     page,
   }) => {
     // ────────────────────────────────────────────────────────

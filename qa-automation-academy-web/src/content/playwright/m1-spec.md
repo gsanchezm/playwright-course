@@ -21,8 +21,8 @@ import { test, expect } from "@playwright/test";
 const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-test.describe("Smoke OmniPizza — versión fea (M01)", () => {
-  test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) => {
+test.describe("Smoke OmniPizza — ugly version (M01)", () => {
+  test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
     // Paso 1 — abrir la pantalla de login
     await page.goto("/");
 
@@ -97,7 +97,7 @@ Tres formas de correrlo, en orden de utilidad pedagógica:
 pnpm test:ui
 
 # B) Modo headed — abre el navegador real, sin UI mode
-pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-chromium
+pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-anon
 
 # C) Headless — la forma rápida (sin ventana)
 pnpm m1
@@ -114,7 +114,7 @@ pnpm m1
 Cuando un locator no encuentra nada o quieres ver **qué hace cada `await`**, corre el smoke en modo depuración:
 
 ```bash
-pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug
+pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon --debug
 # (o el atajo del curso: pnpm test:debug)
 ```
 
@@ -174,13 +174,13 @@ import { test, expect } from "@playwright/test";
 const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-test.describe("Smoke OmniPizza — versión fea (M01)", () => {
+test.describe("Smoke OmniPizza — ugly version (M01)", () => {
   // Nota: OmniPizza vive en Render free tier y el primer request del
   // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
   // timeouts generosos del playwright.config.ts lo absorben. En M04 el
   // backend se despierta de forma controlada con un `auth.setup.ts`.
 
-  test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) => {
+  test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
     // Paso 1 — abrir la pantalla de login
     await page.goto("/");
 
@@ -198,7 +198,7 @@ test.describe("Smoke OmniPizza — versión fea (M01)", () => {
     await expect(page).toHaveURL(/\/catalog/);
   });
 
-  test("TC-002 — catálogo muestra al menos 1 pizza @smoke", async ({ page }) => {
+  test("TC-002 — catalog shows at least 1 pizza @smoke", async ({ page }) => {
     // Paso 1 — abrir login (OTRA VEZ)
     await page.goto("/");
 

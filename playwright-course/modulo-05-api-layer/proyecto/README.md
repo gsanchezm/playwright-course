@@ -1,6 +1,6 @@
 # m05-api-layer — proyecto autocontenido
 
-Snapshot **runnable** de `playwright_architecture` **al terminar el Módulo 05**
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 05**
 (capa de servicios / API testing) sobre **OmniPizza**. El "por qué" vive en
 [`../../modulo-05-api-layer/README.md`](../../modulo-05-api-layer/README.md).
 

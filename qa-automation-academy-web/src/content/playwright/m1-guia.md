@@ -231,7 +231,7 @@ El `.gitignore` del installer ya cubre los reportes y `node_modules/`, y trae `/
 > **📐 El config NO nace en blanco: lo genera el installer**
 > El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M04** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
 >
-> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-chromium`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni flags de CI (M06).
+> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni flags de CI (M06).
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
@@ -240,7 +240,7 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
 | Lo que genera el installer | Lo dejamos en M01 como | Por qué |
 |---|---|---|
 | `testDir: "./tests"` | `testDir: "."` + `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | El curso vive en `modulo-*/`, no en `tests/` |
-| `projects: [chromium, firefox, webkit]` | **solo** `ui-chromium` | Multi-browser distrae en M01; **firefox/webkit vuelven en M04** |
+| `projects: [chromium, firefox, webkit]` | **solo** `ui-anon` | Multi-browser distrae en M01; **firefox/webkit vuelven en M04** |
 | bloque `dotenv` **comentado** | **descomentado** → `import "dotenv/config"` | El installer dejó el hook; solo lo enciendes (ya instalaste `dotenv` en 1.C) |
 | `trace: "on-first-retry"` | `trace: "retain-on-failure"` | En M01 no hay `retries`; con `on-first-retry` nunca verías el trace al fallar |
 | (sin timeouts custom) | `timeout` + `expect.timeout` + `actionTimeout`/`navigationTimeout` generosos | Render free tier despierta en 30-40s; sin esto el 1er run sería flaky |
@@ -285,7 +285,7 @@ export default defineConfig({
   // --- Projects (en M01 solo uno; el installer traía chromium+firefox+webkit) ---
   projects: [
     {
-      name: "ui-chromium",
+      name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
@@ -310,7 +310,7 @@ export default defineConfig({
 | `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
 | `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
 | `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M04 vuelven firefox/webkit y se monta el setup project |
-| `name: "ui-chromium"` | Identificador del project: lo que pasas en `--project=ui-chromium` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M05 (convención de nombres del curso) |
+| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M05 (convención de nombres del curso) |
 | `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
 > 🔷 **TypeScript — operador `??` (nullish coalescing)**
@@ -433,7 +433,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
   "test:debug": "playwright test --debug",
   "typecheck": "tsc --noEmit",
   "report": "playwright show-report",
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-chromium"
+  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon"
 }
 ```
 
@@ -444,7 +444,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 - **Comando del módulo:** `pnpm m1`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed:** `pnpm test:headed`
-- **Depurar (Playwright Inspector):** `pnpm test:debug` (o `pnpm exec playwright test modulo-01-smoke-feo --project=ui-chromium --debug`) — pausa antes de cada acción y resalta el locator exacto
+- **Depurar (Playwright Inspector):** `pnpm test:debug` (o `pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon --debug`) — pausa antes de cada acción y resalta el locator exacto
 - **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
 - **Ver el HTML report:** `pnpm report` (o `pnpm exec playwright show-report`) — el artefacto compartible con pasos, trace, screenshot y video
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m1` (no `VAR=x pnpm m1`, que es sintaxis de bash y falla en PowerShell)
@@ -454,7 +454,7 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 ## Outcome esperado
 
 - [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` y `typescript` con `pnpm add -D dotenv typescript`.
-- [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-chromium`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
+- [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-anon`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
 - [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`** (al que le añadiste `.env` + `.auth/`).
 - [ ] Test verde contra OmniPizza live (`TC-001` y `TC-002`).
 - [ ] Entiendes por qué `sleep()` está prohibido (auto-waiting).

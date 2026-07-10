@@ -288,7 +288,7 @@ export { CheckoutPage } from "./CheckoutPage";
 > # playwright.config.ts — SIN CAMBIOS vs M01/M02
 > # (M03 refactoriza los tests a Page Object Model; el runner corre igual)
 > ```
-> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-chromium`). **Entra:** nada en el config — el incremental de M03 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M04**.
+> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-anon`). **Entra:** nada en el config — el incremental de M03 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M04**.
 
 **M03 no requiere cambios al config.** Sigue siendo el mismo de M01/M02.
 
@@ -310,7 +310,7 @@ Añade `m3` a `package.json`:
 
 ```json
 "scripts": {
-  "m3": "playwright test modulo-03-pom --project=ui-chromium"
+  "m3": "playwright test modulo-03-pom --project=ui-anon"
 }
 ```
 
@@ -335,7 +335,7 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
   projects: [
-    { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "ui-anon", use: { ...devices["Desktop Chrome"] } },
   ],
 });
 ```
@@ -404,7 +404,7 @@ Cosas a observar:
 - **Comando del módulo:** `pnpm m3`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-anon`)
 - **Verificar tipos (herencia POM):** `pnpm typecheck` — ojo: la herencia introduce errores sutiles
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m3` (no `VAR=x pnpm m3`, sintaxis bash que falla en PowerShell)

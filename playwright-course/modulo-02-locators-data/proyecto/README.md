@@ -1,6 +1,6 @@
 # m02-locators-data — proyecto autocontenido
 
-Snapshot **runnable** de `playwright_architecture` **al terminar el Módulo 02**
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 02**
 (locators + data-driven) sobre **OmniPizza**. Referencia de forma esperada del
 módulo, lista para clonar y correr aislada. El "por qué" vive en
 [`../../modulo-02-locators-data/README.md`](../../modulo-02-locators-data/README.md).

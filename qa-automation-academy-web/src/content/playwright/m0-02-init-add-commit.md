@@ -25,12 +25,12 @@ Estos son los 4 comandos que vas a usar **decenas de veces al día**:
 
 ## 2.1 Inicializar el proyecto real del curso
 
-> 🎯 **Esto NO es un sandbox desechable.** Aquí creas `playwright_architecture`, **el mismo proyecto que llenarás en M01** con `pnpm create playwright`. Todo lo que practiques en M00 (status / add / commit / diff / log) queda en su historial real. Tu primer commit del curso nace aquí.
+> 🎯 **Esto NO es un sandbox desechable.** Aquí creas `playwright-course`, **el mismo proyecto que llenarás en M01** con `pnpm create playwright`. Todo lo que practiques en M00 (status / add / commit / diff / log) queda en su historial real. Tu primer commit del curso nace aquí.
 
 ```bash
-$ mkdir playwright_architecture && cd playwright_architecture
+$ mkdir playwright-course && cd playwright-course
 $ git init
-Initialized empty Git repository in .../playwright_architecture/.git/
+Initialized empty Git repository in .../playwright-course/.git/
 
 $ git status
 On branch main
@@ -42,7 +42,7 @@ nothing to commit (create/copy files and use "git add" to track)
 
 `git init` crea la carpeta oculta `.git/` que contiene **todo el historial**. **No la borres jamás** — borrarla equivale a tirar la caja negra del avión. En M01 el installer de Playwright poblará esta misma carpeta con `tests/`, `playwright.config.ts`, etc., **encima de este historial**.
 
-> 🪟 **PowerShell:** usa `;` en vez de `&&` → `mkdir playwright_architecture; cd playwright_architecture; git init`. La carpeta `.git/` está oculta — verla con `Get-ChildItem -Force` (alias `ls -Force`).
+> 🪟 **PowerShell:** usa `;` en vez de `&&` → `mkdir playwright-course; cd playwright-course; git init`. La carpeta `.git/` está oculta — verla con `Get-ChildItem -Force` (alias `ls -Force`).
 
 > 💡 **¿Y si el proyecto ya existe en GitHub?** En equipos reales muchas veces clonas en vez de iniciar de cero:
 > ```bash
@@ -56,7 +56,7 @@ nothing to commit (create/copy files and use "git add" to track)
 Crea el primer archivo del proyecto y míralo recorrer los 3 estados. (En el **reto** harás esto "de verdad" con un `.gitignore` y un primer commit semántico; aquí lo paseamos para entender cada parada.)
 
 ```bash
-$ echo "# playwright_architecture" > README.md
+$ echo "# playwright-course" > README.md
 $ git status
 On branch main
 
@@ -77,8 +77,8 @@ $ git status
 Changes to be committed:
         new file:   README.md
 
-$ git commit -m "chore: bootstrap playwright_architecture project"
-[main (root-commit) a1b2c3d] chore: bootstrap playwright_architecture project
+$ git commit -m "chore: bootstrap playwright-course project"
+[main (root-commit) a1b2c3d] chore: bootstrap playwright-course project
  1 file changed, 1 insertion(+)
 
 $ git status
@@ -88,7 +88,7 @@ nothing to commit, working tree clean
 
 `working tree clean` = no hay diferencias entre tu editor, el staging y el historial. El `(root-commit)` indica que es el **primer** commit del repo.
 
-> 🪟 **PowerShell:** `echo "..." > archivo` funciona, pero genera el archivo en **UTF-16**. Para evitar sorpresas usa `Set-Content -Encoding utf8 README.md "# playwright_architecture"` o crea el archivo desde VS Code.
+> 🪟 **PowerShell:** `echo "..." > archivo` funciona, pero genera el archivo en **UTF-16**. Para evitar sorpresas usa `Set-Content -Encoding utf8 README.md "# playwright-course"` o crea el archivo desde VS Code.
 
 ## 2.3 Variantes de `git add`
 

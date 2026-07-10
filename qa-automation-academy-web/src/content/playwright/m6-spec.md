@@ -120,18 +120,18 @@ El flujo *"PR rojo → descargo artefactos → leo la traza"* es el día a día 
 import { test, expect } from "../fixtures/omnipizza";
 
 test.describe("M06 — smoke canary @smoke", () => {
-  test("home → catalog se mantiene operativo", async ({ page, catalogPage }) => {
+  test("home → catalog stays operational", async ({ page, catalogPage }) => {
     await page.goto("/catalog");
     await catalogPage.expectLoaded();
     await catalogPage.expectHasPizzas();
   });
 });
 
-test.describe("M06 — regression multi-categoría @regression", () => {
+test.describe("M06 — regression multi-category @regression", () => {
   const categories = ["popular", "veggie", "meat"] as const;
 
   for (const category of categories) {
-    test(`categoría ${category} carga y muestra pizzas`, async ({ page, catalogPage }) => {
+    test(`category ${category} loads and shows pizzas`, async ({ page, catalogPage }) => {
       await page.goto("/catalog");
       await catalogPage.waitForCatalog();
       await catalogPage.selectCategory(category);
@@ -141,8 +141,8 @@ test.describe("M06 — regression multi-categoría @regression", () => {
 });
 
 test.describe("M06 — trace on failure demo", () => {
-  test("este test falla intencionalmente para demostrar trace @debug", async ({ page }) => {
-    test.skip(!process.env.DEMO_FAIL, "Habilita con DEMO_FAIL=1 para ver el trace");
+  test("this test fails intentionally to demonstrate trace @debug", async ({ page }) => {
+    test.skip(!process.env.DEMO_FAIL, "Enable with DEMO_FAIL=1 to see the trace");
     await page.goto("/");
     // Falla intencional — la traza tendrá el screenshot exacto.
     await expect(page.locator("#this-does-not-exist")).toBeVisible({ timeout: 2_000 });

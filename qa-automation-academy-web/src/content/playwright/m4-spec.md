@@ -316,14 +316,14 @@ export function workerPrefix(info: TestInfo): string {
 import { test, expect } from "../fixtures/omnipizza";
 
 test.describe("Fixtures + storageState (M04)", () => {
-  test("entra directo al catálogo gracias al setup project @smoke", async ({ page, catalogPage }) => {
+  test("lands directly on the catalog thanks to the setup project @smoke", async ({ page, catalogPage }) => {
     // ⚠️ No hay llamada a login. El storageState ya trajo la sesión.
     await page.goto("/catalog");
     await catalogPage.expectLoaded();
     await catalogPage.expectHasPizzas();
   });
 
-  test("usa el worker fixture defaultMarket", async ({ page, catalogPage, defaultMarket }) => {
+  test("uses the defaultMarket worker fixture", async ({ page, catalogPage, defaultMarket }) => {
     // defaultMarket se creó UNA vez por worker
     expect(defaultMarket.code).toBe("MX");
     await page.goto("/catalog");
@@ -343,8 +343,8 @@ test.describe("Fixtures + storageState (M04)", () => {
 //   - Quieres determinismo absoluto en tests de red.
 // ============================================================
 
-test.describe("page.route() — mocking de red (M04)", () => {
-  test("UI muestra error cuando el API responde 500", async ({ page, catalogPage }) => {
+test.describe("page.route() — network mocking (M04)", () => {
+  test("UI shows an error when the API responds 500", async ({ page, catalogPage }) => {
     // 1. Registrar el mock ANTES del navigate
     await page.route("**/api/pizzas*", (route) => {
       route.fulfill({
@@ -364,7 +364,7 @@ test.describe("page.route() — mocking de red (M04)", () => {
     // Idealmente: await expect(page.getByTestId('catalog-error')).toBeVisible();
   });
 
-  test("UI muestra estado vacío cuando no hay pizzas", async ({ page }) => {
+  test("UI shows empty state when there are no pizzas", async ({ page }) => {
     await page.route("**/api/pizzas*", (route) => {
       route.fulfill({
         status: 200,
@@ -385,7 +385,7 @@ test.describe("page.route() — mocking de red (M04)", () => {
 
 import { uniqueEmail } from "../helpers/unique-data";
 
-test("uniqueEmail genera identificadores por worker", async ({}, testInfo) => {
+test("uniqueEmail generates identifiers per worker", async ({}, testInfo) => {
   const email1 = uniqueEmail(testInfo);
   const email2 = uniqueEmail(testInfo, "locked");
   expect(email1).toContain(`w${testInfo.workerIndex}`);

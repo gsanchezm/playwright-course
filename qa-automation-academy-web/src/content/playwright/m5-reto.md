@@ -47,8 +47,8 @@ const mxMarket = markets.find((m) => m.code === "MX")!;
 const API_URL =
   process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-test.describe("Reto M05 — extender PizzaService", () => {
-  test.skip("TODO — implementa getByMarket y getById, luego usa ambos", async () => {
+test.describe("Challenge M05 — extend PizzaService", () => {
+  test.skip("TODO — implement getByMarket and getById, then use both", async () => {
     // ────────────────────────────────────────────────────────
     // TODO 0 — Antes de escribir el test, MODIFICA el servicio
     // ────────────────────────────────────────────────────────

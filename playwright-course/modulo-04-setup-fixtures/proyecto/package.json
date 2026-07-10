@@ -1,7 +1,7 @@
 {
   "name": "omnipizza-m04-setup-fixtures",
   "version": "1.0.0",
-  "description": "Snapshot autocontenido de playwright_architecture al terminar el Modulo 04 (setup project + custom fixtures) sobre OmniPizza",
+  "description": "Snapshot autocontenido de playwright-course al terminar el Modulo 04 (setup project + custom fixtures) sobre OmniPizza",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {

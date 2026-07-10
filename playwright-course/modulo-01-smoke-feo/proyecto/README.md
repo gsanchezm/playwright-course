@@ -1,6 +1,6 @@
 # m01-smoke-feo — proyecto autocontenido
 
-Snapshot **runnable** de `playwright_architecture` **tal como queda al terminar el
+Snapshot **runnable** de `playwright-course` **tal como queda al terminar el
 Módulo 01** (smoke "feo") sobre la app **OmniPizza**. Es la **referencia de forma
 esperada** del módulo: el proyecto que el alumno construye paso a paso en
 [`../../modulo-01-smoke-feo/README.md`](../../modulo-01-smoke-feo/README.md), ya

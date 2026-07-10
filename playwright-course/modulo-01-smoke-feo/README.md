@@ -9,10 +9,10 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Este es el **punto de partida del framework**. El proyecto se llama **`playwright_architecture`** (lo creaste en M00 con `git init`). En M01 lo llenas con el **installer oficial** (`pnpm create playwright`) y luego lo **moldeas** a la arquitectura incremental del curso:
+Este es el **punto de partida del framework**. El proyecto se llama **`playwright-course`** (lo creaste en M00 con `git init`). En M01 lo llenas con el **installer oficial** (`pnpm create playwright`) y luego lo **moldeas** a la arquitectura incremental del curso:
 
 ```
-playwright_architecture/
+playwright-course/
 ├── .env                       ← 🆕 creas tú desde .env.example (gitignored)
 ├── .env.example               ← 🆕 plantilla versionada de variables
 ├── .gitignore                 ← lo trae el installer; le añades .env y .auth/
@@ -90,10 +90,10 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 - **Node.js 24.x** (`node -v` → `v24.x.x`)
 - **pnpm 10+** (`pnpm -v` → `10.x.x` o superior)
 - **Git** instalado (`git --version`)
-- Estar **dentro del proyecto** que creaste en M00 (`playwright_architecture`, ya con `git init` y tu primer commit):
+- Estar **dentro del proyecto** que creaste en M00 (`playwright-course`, ya con `git init` y tu primer commit):
   ```bash
-  cd playwright_architecture
-  pwd   # debe terminar en /playwright_architecture
+  cd playwright-course
+  pwd   # debe terminar en /playwright-course
   git log --oneline -1   # ves el primer commit que hiciste en M00
   ```
 
@@ -106,7 +106,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 > **Lección clave de este módulo:** no instalamos Playwright "a mano". Usamos el **installer oficial** (`pnpm create playwright`, [doc oficial](https://playwright.dev/docs/intro)) y luego **moldeamos** lo que genera a la arquitectura incremental del curso. El installer te da un *starter genérico* (3 navegadores, `testDir: "./tests"`, CI flags…). Tu trabajo en los Pasos 3-4 es **reconciliarlo** al estado mínimo de M01. Aprender a leer y recortar un scaffold es una habilidad real de QA.
 
 **1.1 — Lanzar el installer oficial**
-- **Qué hago:** desde la raíz `playwright_architecture/` (tu proyecto de M00), corro:
+- **Qué hago:** desde la raíz `playwright-course/` (tu proyecto de M00), corro:
   ```bash
   pnpm create playwright
   ```
@@ -160,10 +160,10 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 
 ### Paso 2 — Crear tu archivo `.env`
 
-> **Archivo que se crea en este paso:** `.env` (en la raíz `playwright_architecture/`, **gitignored**). El `.env.example` ya existe versionado.
+> **Archivo que se crea en este paso:** `.env` (en la raíz `playwright-course/`, **gitignored**). El `.env.example` ya existe versionado.
 
 **2.1 — Copiar la plantilla**
-- **Qué hago:** desde la raíz `playwright_architecture/`, `cp .env.example .env`
+- **Qué hago:** desde la raíz `playwright-course/`, `cp .env.example .env`
 - **Por qué:** el `.env` real **no está en el repo** (lo excluye `.gitignore`), pero sí versionamos `.env.example` como plantilla. Copiarla te da un `.env` con los valores correctos sin exponer secrets en Git.
 - **Cómo verifico:**
   ```bash
@@ -226,7 +226,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 > **📐 El config NO nace en blanco: lo genera el installer**
 > El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M04** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
 >
-> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-chromium`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni la matrix de CI real (M06).
+> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni la matrix de CI real (M06).
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
@@ -488,13 +488,13 @@ Ahora sí, **el código del módulo**.
 **7.3 — Escribir el caso TC-001**
 - **Qué hago:** dentro de un `test.describe`, agrega el primer test:
   ```ts
-  test.describe("Smoke OmniPizza — versión fea (M01)", () => {
+  test.describe("Smoke OmniPizza — ugly version (M01)", () => {
     // Nota: OmniPizza vive en Render free tier y el primer request del
     // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
     // timeouts generosos del playwright.config.ts lo absorben. En M04 el
     // backend se despierta de forma controlada con un `auth.setup.ts`.
 
-    test("TC-001 — login exitoso con usuario válido @smoke", async ({ page }) => {
+    test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
       // Paso 1 — abrir la pantalla de login
       await page.goto("/");
 
@@ -599,7 +599,7 @@ Ahora sí, **el código del módulo**.
 ### Paso 9 — Escribir TC-002 y observar el dolor (lectura guiada de 5 min)
 
 **9.1 — Escribir TC-002 a mano (sin atajos)**
-- **Qué hago:** dentro del mismo `describe`, añado un segundo test `TC-002 — catálogo muestra al menos 1 pizza @smoke`. **No te entrego el cuerpo a propósito** (híbrido by-design): tú lo escribes copiando las ~6 líneas de login de TC-001 (`goto`, `market-MX`, los dos `fill`, el `click` de login, el `expect` de URL) y luego añades una verificación nueva del catálogo: un locator que matchee las cards (`[data-testid^="pizza-card-"]`), un assert de que la primera está visible (con `timeout` generoso por el cold start) y un conteo `> 0`.
+- **Qué hago:** dentro del mismo `describe`, añado un segundo test `TC-002 — catalog shows at least 1 pizza @smoke`. **No te entrego el cuerpo a propósito** (híbrido by-design): tú lo escribes copiando las ~6 líneas de login de TC-001 (`goto`, `market-MX`, los dos `fill`, el `click` de login, el `expect` de URL) y luego añades una verificación nueva del catálogo: un locator que matchee las cards (`[data-testid^="pizza-card-"]`), un assert de que la primera está visible (con `timeout` generoso por el cold start) y un conteo `> 0`.
 - **Por qué:** reescribir el login completo a mano es lo que te hace **sentir la duplicación** en los dedos — ese es el motor pedagógico del curso. Si te entregara el código pegado, no dolería. (Si te atascas en la sintaxis del catálogo, las pistas exactas están en `reto.spec.ts`, TODO 6.)
 - **Cómo verifico:** `pnpm m1` muestra **2 verdes** (`TC-001` y `TC-002`).
 
@@ -645,7 +645,7 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
 Ya tienes el módulo verde: es el momento natural de guardar un punto de control en Git. (En este curso **Git es just-in-time**: aparece cuando el flujo lo pide, no como bloque inicial.)
 
 **11.1 — Preparar los archivos para el commit**
-- **Qué hago:** desde la raíz `playwright_architecture/`, agrego al staging lo que generó el installer y lo que creaste tú en este módulo:
+- **Qué hago:** desde la raíz `playwright-course/`, agrego al staging lo que generó el installer y lo que creaste tú en este módulo:
   ```bash
   git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github modulo-01-smoke-feo
   ```
@@ -673,7 +673,7 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 ## Outcome esperado
 
 - [ ] Instalaste Playwright con `pnpm create playwright` (installer oficial) y añadiste `dotenv` y `typescript` con `pnpm add -D dotenv typescript`.
-- [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-chromium`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
+- [ ] **Reconciliaste** el scaffold al estado M01: `testMatch` en vez de `testDir: "./tests"`, solo `ui-anon`, `dotenv` descomentado, `trace: retain-on-failure`, timeouts generosos; borraste `tests/example.spec.ts`.
 - [ ] Archivo `.env` creado a partir de `.env.example` y **excluido por `.gitignore`** (al que le añadiste `.env` + `.auth/`).
 - [ ] Test verde contra OmniPizza live (`TC-001` y `TC-002`).
 - [ ] Entiendes por qué `sleep()` está prohibido (auto-waiting).

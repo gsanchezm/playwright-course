@@ -2,18 +2,18 @@
 
 ## Objetivo
 
-Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un sandbox desechable**: aquí inicializas `playwright_architecture` — el MISMO repo que en M01 llenarás con `pnpm create playwright`. Al terminar, tu framework ya tendrá historial Git desde su línea cero.
+Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un sandbox desechable**: aquí inicializas `playwright-course` — el MISMO repo que en M01 llenarás con `pnpm create playwright`. Al terminar, tu framework ya tendrá historial Git desde su línea cero.
 
 > 🎯 Practicas el ciclo completo (`config → init → status → add → commit → diff → log`) sobre el proyecto real. El commit que hagas aquí seguirá vivo al final del curso.
 
 ## Setup
 
 **0.1 — Crear y entrar al proyecto**
-- **Qué hago:** `mkdir playwright_architecture && cd playwright_architecture`
-- **Por qué:** este es el directorio raíz de tu framework para todo el curso. Si ya lo creaste en la lección 2, solo entra con `cd playwright_architecture`.
-- **Cómo verifico:** `pwd` (PowerShell: `Get-Location`) termina en `/playwright_architecture` y la carpeta está vacía.
+- **Qué hago:** `mkdir playwright-course && cd playwright-course`
+- **Por qué:** este es el directorio raíz de tu framework para todo el curso. Si ya lo creaste en la lección 2, solo entra con `cd playwright-course`.
+- **Cómo verifico:** `pwd` (PowerShell: `Get-Location`) termina en `/playwright-course` y la carpeta está vacía.
 
-> 🪟 **PowerShell:** usa `;` en vez de `&&` → `mkdir playwright_architecture; cd playwright_architecture`.
+> 🪟 **PowerShell:** usa `;` en vez de `&&` → `mkdir playwright-course; cd playwright-course`.
 
 ## Pasos
 
@@ -32,7 +32,7 @@ Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un san
 - **Cómo verifico:**
   ```bash
   $ git init
-  Initialized empty Git repository in .../playwright_architecture/.git/
+  Initialized empty Git repository in .../playwright-course/.git/
   $ git status
   On branch main
 
@@ -72,12 +72,12 @@ Hacer el **primer commit real del proyecto del curso**. Este reto **NO es un san
 - **Qué hago:**
   ```bash
   $ git add .gitignore login.spec.ts
-  $ git commit -m "chore: bootstrap playwright_architecture with gitignore and first test"
+  $ git commit -m "chore: bootstrap playwright-course with gitignore and first test"
   ```
 - **Por qué:** fíjate que haces `add` por nombre (NO `git add .`) — así controlas que el `.env` no se cuele aunque el `.gitignore` fallara. Este es el commit raíz (`root-commit`) de tu proyecto.
 - **Cómo verifico:**
   ```bash
-  [main (root-commit) a1b2c3d] chore: bootstrap playwright_architecture ...
+  [main (root-commit) a1b2c3d] chore: bootstrap playwright-course ...
    2 files changed, 2 insertions(+)
   ```
 
@@ -110,7 +110,7 @@ Tu `git log --oneline` debe verse así:
 
 ```
 b4d5e6f (HEAD -> main) test: add logout case
-a1b2c3d chore: bootstrap playwright_architecture with gitignore and first test
+a1b2c3d chore: bootstrap playwright-course with gitignore and first test
 ```
 
 Y `git status` debe decir:
@@ -120,7 +120,7 @@ On branch main
 nothing to commit, working tree clean
 ```
 
-> ✅ Conserva esta carpeta `playwright_architecture`. En **M01** entrarás a ella y correrás `pnpm create playwright` — el installer poblará el proyecto **encima de este historial**, sin perder estos dos commits.
+> ✅ Conserva esta carpeta `playwright-course`. En **M01** entrarás a ella y correrás `pnpm create playwright` — el installer poblará el proyecto **encima de este historial**, sin perder estos dos commits.
 
 ## Bonus
 

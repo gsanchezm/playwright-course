@@ -414,7 +414,7 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
   projects: [
-    { name: "ui-chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "ui-anon", use: { ...devices["Desktop Chrome"] } },
   ],
 });
 ```
@@ -438,9 +438,9 @@ export default defineConfig({
   const users = usersJson as User[];
   const standardUser = users.find((u) => u.username === "standard_user")!;
 
-  test.describe("POM — login + catálogo por mercado (M03)", () => {
+  test.describe("POM — login + catalog per market (M03)", () => {
     for (const market of markets) {
-      test(`TC-${market.code} — flow limpio en ${market.fullName} @smoke`, async ({ page }) => {
+      test(`TC-${market.code} — clean flow in ${market.fullName} @smoke`, async ({ page }) => {
         const loginPage = new LoginPage(page);
         const catalogPage = new CatalogPage(page);
 
@@ -457,7 +457,7 @@ export default defineConfig({
 **8.2 — Ejecuta el ejemplo en UI mode**
 - **Qué hago:** corro `pnpm m3` (headless) y `pnpm test:ui` (recomendado la primera vez).
 - **Por qué:** UI mode te deja ver el flujo limpio paso a paso y confirmar que el comportamiento no cambió — solo la estructura.
-- **Cómo verifico:** el HTML report / la lista muestran 4 verdes (más el segundo `describe` "uso de acciones granulares"). Ese segundo bloque demuestra que el POM **no obliga** a usar siempre el método de alto nivel: puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
+- **Cómo verifico:** el HTML report / la lista muestran 4 verdes (más el segundo `describe` "using granular actions"). Ese segundo bloque demuestra que el POM **no obliga** a usar siempre el método de alto nivel: puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
 
 **8.3 — Comparativa antes/después**
 - **Qué hago:** abro M02 y M03 lado a lado y respondo: (1) si `username` cambia de testid, ¿cuántos archivos toco? (2) ¿dónde viviría un "logout"? (3) ¿por qué los locators son `private`?

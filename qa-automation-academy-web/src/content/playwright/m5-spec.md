@@ -1,6 +1,6 @@
 # El spec paso a paso
 
-Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: las clases de la capa de servicios, correr la suite API, leer el flujo `auth → list pizzas por mercado` y comparar API vs UI. Al final tienes el código completo de `ejemplo.spec.ts`.
+Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: las clases de la capa de servicios, correr la suite API, leer el flujo `auth → list pizzas by market` y comparar API vs UI. Al final tienes el código completo de `ejemplo.spec.ts`.
 
 ---
 
@@ -213,8 +213,8 @@ const markets = marketsJson as Market[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-test.describe("M05 — demostración de la capa de servicios @api", () => {
-  test("flujo completo: auth → list pizzas por mercado", async () => {
+test.describe("M05 — service layer demonstration @api", () => {
+  test("full flow: auth → list pizzas by market", async () => {
     // 1. Login via AuthService (clase concreta que extiende BaseService)
     const auth = await AuthService.create(API_URL);
     const { access_token } = await auth.login(standardUser);
@@ -233,7 +233,7 @@ test.describe("M05 — demostración de la capa de servicios @api", () => {
     }
   });
 
-  test("uniqueOrderId genera folios únicos por worker", async ({}, testInfo) => {
+  test("uniqueOrderId generates unique order ids per worker", async ({}, testInfo) => {
     const id1 = uniqueOrderId(testInfo);
     const id2 = uniqueOrderId(testInfo);
     expect(id1).not.toBe(id2);

@@ -38,7 +38,7 @@ Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
 //   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
@@ -54,9 +54,9 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("Reto M03 — E2E checkout con POM", () => {
+test.describe("Challenge M03 — E2E checkout with POM", () => {
   for (const market of markets) {
-    test(`Reto-${market.code} — checkout completo en ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — complete checkout in ${market.fullName}`, async ({
       page,
     }) => {
       // Instanciamos los 3 Page Objects con el mismo `page`.
@@ -151,10 +151,10 @@ test.describe("Reto M03 — E2E checkout con POM", () => {
       // Criterio de éxito:
       //   El test termina en VERDE para los 4 mercados.
       //   En la terminal verás:
-      //     ✓ Reto-MX — checkout completo en Mexico
-      //     ✓ Reto-US — checkout completo en United States
-      //     ✓ Reto-CH — checkout completo en Switzerland
-      //     ✓ Reto-JP — checkout completo en Japan
+      //     ✓ Challenge-MX — complete checkout in Mexico
+      //     ✓ Challenge-US — complete checkout in United States
+      //     ✓ Challenge-CH — complete checkout in Switzerland
+      //     ✓ Challenge-JP — complete checkout in Japan
 
 
       expect(market).toBeDefined(); // placeholder — quítalo cuando termines

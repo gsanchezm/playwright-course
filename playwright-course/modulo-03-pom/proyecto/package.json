@@ -1,7 +1,7 @@
 {
   "name": "omnipizza-m03-pom",
   "version": "1.0.0",
-  "description": "Snapshot autocontenido de playwright_architecture al terminar el Modulo 03 (Page Object Model) sobre OmniPizza",
+  "description": "Snapshot autocontenido de playwright-course al terminar el Modulo 03 (Page Object Model) sobre OmniPizza",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {

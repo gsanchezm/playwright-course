@@ -1,7 +1,7 @@
 {
   "name": "omnipizza-m01-smoke-feo",
   "version": "1.0.0",
-  "description": "Snapshot autocontenido de playwright_architecture al terminar el Modulo 01 (smoke feo) sobre OmniPizza",
+  "description": "Snapshot autocontenido de playwright-course al terminar el Modulo 01 (smoke feo) sobre OmniPizza",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {

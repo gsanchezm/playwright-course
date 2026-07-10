@@ -33,7 +33,7 @@ Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
@@ -48,7 +48,7 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("Reto M02 — parametrización extendida", () => {
+test.describe("Challenge M02 — extended parameterization", () => {
   // ────────────────────────────────────────────────────────
   // TODO 0 — Antes de venir aquí, edita estos DOS archivos:
   // ────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ test.describe("Reto M02 — parametrización extendida", () => {
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
 
   for (const market of markets) {
-    test(`Reto-${market.code} — catálogo carga en ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
       page,
     }) => {
       // ────────────────────────────────────────────────────────

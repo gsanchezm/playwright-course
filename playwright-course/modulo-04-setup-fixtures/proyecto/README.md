@@ -1,6 +1,6 @@
 # m04-setup-fixtures — proyecto autocontenido
 
-Snapshot **runnable** de `playwright_architecture` **al terminar el Módulo 04**
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 04**
 (setup project + custom fixtures + multi-browser) sobre **OmniPizza**. El "por qué"
 vive en [`../../modulo-04-setup-fixtures/README.md`](../../modulo-04-setup-fixtures/README.md).
 

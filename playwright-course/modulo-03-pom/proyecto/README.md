@@ -1,6 +1,6 @@
 # m03-pom — proyecto autocontenido
 
-Snapshot **runnable** de `playwright_architecture` **al terminar el Módulo 03**
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 03**
 (Page Object Model) sobre **OmniPizza**. El "por qué" vive en
 [`../../modulo-03-pom/README.md`](../../modulo-03-pom/README.md).
 

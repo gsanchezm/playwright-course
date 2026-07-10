@@ -18,7 +18,7 @@ pnpm test:ui
 
 - Los **mismos 4 tests** que en M02 (uno por mercado) corren en verde.
 - En el spec verás `loginPage.loginInMarket(user, 'MX')` en lugar del bloque de 5 líneas.
-- Hay un segundo `describe` ("uso de acciones granulares") que muestra que el POM **no obliga** a usar siempre el método de alto nivel — puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
+- Hay un segundo `describe` ("using granular actions") que muestra que el POM **no obliga** a usar siempre el método de alto nivel — puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
 
 ---
 
@@ -61,9 +61,9 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("POM — login + catálogo por mercado (M03)", () => {
+test.describe("POM — login + catalog per market (M03)", () => {
   for (const market of markets) {
-    test(`TC-${market.code} — flow limpio en ${market.fullName} @smoke`, async ({ page }) => {
+    test(`TC-${market.code} — clean flow in ${market.fullName} @smoke`, async ({ page }) => {
       // El spec ahora se lee como user story, no como instrucción técnica.
       const loginPage = new LoginPage(page);
       const catalogPage = new CatalogPage(page);
@@ -75,8 +75,8 @@ test.describe("POM — login + catálogo por mercado (M03)", () => {
   }
 });
 
-test.describe("POM — uso de acciones granulares", () => {
-  test("demostración de API del POM @smoke", async ({ page }) => {
+test.describe("POM — using granular actions", () => {
+  test("POM API demonstration @smoke", async ({ page }) => {
     const loginPage = new LoginPage(page);
     const catalogPage = new CatalogPage(page);
 
@@ -86,7 +86,7 @@ test.describe("POM — uso de acciones granulares", () => {
 
     await catalogPage.waitForCatalog();
     const names = await catalogPage.getPizzaNames();
-    console.log(`Pizzas en MX: ${names.length}`);
+    console.log(`Pizzas in MX: ${names.length}`);
   });
 });
 

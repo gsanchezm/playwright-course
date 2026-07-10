@@ -35,7 +35,7 @@ playwright-course/
 ├── types/                         ← (M02 — los mismos contratos sirven a UI y API)
 ├── modulo-05-api-layer/           ← 🆕 ESTE MÓDULO
 │   ├── README.md
-│   ├── ejemplo.spec.ts            ← 🆕 flujo: auth → list pizzas por mercado
+│   ├── ejemplo.spec.ts            ← 🆕 flujo: auth → list pizzas by market
 │   └── reto.spec.ts               ← 🆕 extender PizzaService con getByMarket + getById
 └── playwright.config.ts           ← ✏️ project `api` (sin storageState, sin setup)
 ```

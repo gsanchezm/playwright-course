@@ -39,7 +39,7 @@ En un repo de Playwright **completo** (el que tendrás al final del curso), esto
 
 > 🎯 **Secuencia importante:** en M00 creas un `.gitignore` **mínimo** — lo justo para que tu primer commit del proyecto no arrastre secretos ni dependencias. El `.gitignore` **definitivo y completo** se consolida en **M01**: cuando corras `pnpm create playwright`, el installer trae su propio `.gitignore` (con `/test-results/`, `/playwright-report/`, `/playwright/.auth/`, etc.) y en M01 solo le **añades** `.env` y `.auth/`. **No dupliques aquí la lista final** — la armas una vez, bien, en M01.
 
-En la **raíz** de `playwright_architecture`, crea el archivo desde VS Code (el nombre es exactamente `.gitignore`, sin extensión):
+En la **raíz** de `playwright-course`, crea el archivo desde VS Code (el nombre es exactamente `.gitignore`, sin extensión):
 
 ```bash
 $ code .gitignore

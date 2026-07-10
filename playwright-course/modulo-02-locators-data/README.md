@@ -658,7 +658,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   const markets = marketsJson as Market[];
 
   for (const market of markets) {
-    test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, async ({ page }) => {
+    test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, async ({ page }) => {
       // ...login, navegación al catálogo, validación de currency...
       const symbol = currencySymbol[market.currency];
       if (!symbol) return; // guard clause / fast return
@@ -674,7 +674,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 > **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL del catálogo —querystring (`?locale=`), ids, el locale dentro del path (`/mx/catalog`) o un slash final— y el regex tolera todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
 > **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **IGUALDAD exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
 
-> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catálogo en mercado ${market.code} @smoke`, ...) ``**
+> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, ...) ``**
 > **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`: nombres distintos y legibles en el reporte (la regla de títulos únicos ya la viste en el "Por qué").
 > **Por qué así (y no la alternativa obvia):** además, el tag `@smoke` va **embebido en el título** a propósito: es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
 > **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
@@ -712,7 +712,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 ### Paso 8 — Catálogo de locators (lectura, no ejecución)
 
 **8.1 — Escanea la chuleta de locators**
-- **Qué hago:** leo el `test.describe("Referencia — jerarquía de locators", …)` con sus dos `test.skip` al final de `ejemplo.spec.ts`.
+- **Qué hago:** leo el `test.describe("Reference — locator hierarchy", …)` con sus dos `test.skip` al final de `ejemplo.spec.ts`.
 - **Por qué:** **no se ejecuta** (`test.skip`) — es una **referencia viva** de cada nivel de la jerarquía con selectores REALES de OmniPizza (`getByRole({ name: "Sign In" })`, `getByPlaceholder("standard_user")`, `getByTestId("login-button-desktop")`, `getByAltText("Pepperoni")`, `[data-testid^="pizza-card-"]`). Vas a copiar de aquí para el reto.
 - **Cómo verifico:** identifico al menos un ejemplo por cada nivel (role → label/placeholder/text → testid → CSS → XPath).
 

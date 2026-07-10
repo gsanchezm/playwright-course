@@ -1,6 +1,6 @@
 # m06-ci-debugging — proyecto autocontenido (framework completo)
 
-Snapshot **runnable** de `playwright_architecture` **al terminar el Módulo 06**
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 06**
 (CI + debugging) sobre **OmniPizza**. Es el **capstone**: el framework **completo**,
 con las 6 capas y los 6 módulos, cableado para correr la suite entera en CI. El "por
 qué" vive en [`../../modulo-06-ci-debugging/README.md`](../../modulo-06-ci-debugging/README.md).

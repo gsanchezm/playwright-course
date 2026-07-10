@@ -13,7 +13,7 @@ Cada TODO en el reto tiene:
 Sigue los TODOs en orden. Cuando termines, corre el reto:
 
 ```bash
-pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium
+pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-anon
 ```
 
 **Criterio de éxito:** el test pasa en verde **y** al final del archivo puedes responder las 3 preguntas del comentario final.
@@ -42,7 +42,7 @@ pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui
 // ============================================================
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-chromium
+//   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode, recomendado para depurar paso a paso:)
 //   pnpm test:ui
@@ -56,8 +56,8 @@ import { test, expect } from "@playwright/test";
 const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-test.describe("Smoke Reto M01", () => {
-  test("TC-003 — la categoría 'popular' filtra pizzas @smoke", async ({
+test.describe("Smoke Challenge M01", () => {
+  test("TC-003 — the 'popular' category filters pizzas @smoke", async ({
     page,
   }) => {
     // ────────────────────────────────────────────────────────

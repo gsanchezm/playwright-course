@@ -25,12 +25,12 @@ Estos son los 4 comandos que vas a usar **decenas de veces al día**:
 
 ## 2.1 Inicializar el proyecto real del curso
 
-> 🎯 **Esto NO es un sandbox desechable.** Aquí creas `playwright_architecture`, **el mismo proyecto que llenarás en M01** con `pnpm create playwright`. Todo lo que practiques en M00 (status / add / commit / diff / log) queda en su historial real. Tu primer commit del curso nace aquí.
+> 🎯 **Esto NO es un sandbox desechable.** Aquí creas `playwright-course`, **el mismo proyecto que llenarás en M01** con `pnpm create playwright`. Todo lo que practiques en M00 (status / add / commit / diff / log) queda en su historial real. Tu primer commit del curso nace aquí.
 
 **2.1.1 — Crear la carpeta y entrar en ella**
-- **Qué hago:** `mkdir playwright_architecture && cd playwright_architecture`
+- **Qué hago:** `mkdir playwright-course && cd playwright-course`
 - **Por qué:** este es el directorio raíz de tu framework para todo el curso. El nombre es deliberado: en M01 el installer de Playwright lo poblará con `tests/`, `playwright.config.ts`, etc. — pero el repo Git ya existirá desde ahora.
-- **Cómo verifico:** `pwd` (PowerShell: `Get-Location`) termina en `/playwright_architecture`. La carpeta está vacía (`ls` no muestra nada aún).
+- **Cómo verifico:** `pwd` (PowerShell: `Get-Location`) termina en `/playwright-course`. La carpeta está vacía (`ls` no muestra nada aún).
 
 **2.1.2 — Inicializar el repositorio**
 - **Qué hago:** `git init`
@@ -39,7 +39,7 @@ Estos son los 4 comandos que vas a usar **decenas de veces al día**:
 
 ```bash
 $ git init
-Initialized empty Git repository in .../playwright_architecture/.git/
+Initialized empty Git repository in .../playwright-course/.git/
 
 $ git status
 On branch main
@@ -49,7 +49,7 @@ No commits yet
 nothing to commit (create/copy files and use "git add" to track)
 ```
 
-> 🪟 **PowerShell:** `mkdir playwright_architecture; cd playwright_architecture; git init`. La carpeta `.git/` está oculta — verla con `Get-ChildItem -Force` (alias `ls -Force`).
+> 🪟 **PowerShell:** `mkdir playwright-course; cd playwright-course; git init`. La carpeta `.git/` está oculta — verla con `Get-ChildItem -Force` (alias `ls -Force`).
 
 > 💡 **¿Y si el proyecto ya existe en GitHub?** En equipos reales muchas veces clonas en vez de iniciar de cero:
 > ```bash
@@ -63,12 +63,12 @@ nothing to commit (create/copy files and use "git add" to track)
 Vamos a crear el primer archivo del proyecto y verlo recorrer los 3 estados. (En el **reto** harás esto "de verdad" con un `.gitignore` y un primer commit semántico; aquí lo paseamos para entender cada parada.)
 
 **2.2.1 — Crear un archivo y ver el estado *working***
-- **Qué hago:** `echo "# playwright_architecture" > README.md` y luego `git status`
+- **Qué hago:** `echo "# playwright-course" > README.md` y luego `git status`
 - **Por qué:** un archivo nuevo arranca como **untracked** — existe en tu working directory pero Git todavía no lo sigue. `git status` es tu instrumento de orientación: te dice en qué estado está cada archivo.
 - **Cómo verifico:**
 
 ```bash
-$ echo "# playwright_architecture" > README.md
+$ echo "# playwright-course" > README.md
 $ git status
 On branch main
 
@@ -96,13 +96,13 @@ Changes to be committed:
 ```
 
 **2.2.3 — Grabar el commit (*staging → repository*)**
-- **Qué hago:** `git commit -m "chore: bootstrap playwright_architecture project"`
+- **Qué hago:** `git commit -m "chore: bootstrap playwright-course project"`
 - **Por qué:** `commit` toma una foto de **todo lo que está en staging** y la graba en `.git/` para siempre, firmada con tu identidad. El `(root-commit)` indica que es el **primer** commit del repo.
 - **Cómo verifico:**
 
 ```bash
-$ git commit -m "chore: bootstrap playwright_architecture project"
-[main (root-commit) a1b2c3d] chore: bootstrap playwright_architecture project
+$ git commit -m "chore: bootstrap playwright-course project"
+[main (root-commit) a1b2c3d] chore: bootstrap playwright-course project
  1 file changed, 1 insertion(+)
 
 $ git status
@@ -112,7 +112,7 @@ nothing to commit, working tree clean
 
 `working tree clean` = no hay diferencias entre tu editor, el staging y el historial. Todo está sincronizado.
 
-> 🪟 **PowerShell:** `echo "..." > archivo` funciona, pero genera el archivo en **UTF-16**. Para evitar sorpresas usa `Set-Content -Encoding utf8 README.md "# playwright_architecture"` o crea el archivo desde VS Code.
+> 🪟 **PowerShell:** `echo "..." > archivo` funciona, pero genera el archivo en **UTF-16**. Para evitar sorpresas usa `Set-Content -Encoding utf8 README.md "# playwright-course"` o crea el archivo desde VS Code.
 
 ## 2.3 Variantes de `git add`
 

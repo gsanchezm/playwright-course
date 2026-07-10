@@ -9,12 +9,12 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Este módulo **no agrega código de tests** al framework — pero sí **nace el proyecto real**: aquí creas `playwright_architecture` (el MISMO repo que M01 llenará con `pnpm create playwright`) y le das **disciplina de versionado**. El "antes y después" se ve en el repo:
+Este módulo **no agrega código de tests** al framework — pero sí **nace el proyecto real**: aquí creas `playwright-course` (el MISMO repo que M01 llenará con `pnpm create playwright`) y le das **disciplina de versionado**. El "antes y después" se ve en el repo:
 
 ```
-ANTES (sin Git, sin proyecto)       DESPUÉS (playwright_architecture con Git habit)
+ANTES (sin Git, sin proyecto)       DESPUÉS (playwright-course con Git habit)
 ─────────────────────────           ───────────────────────────────────────────────
-proyecto-suelto/                    playwright_architecture/
+proyecto-suelto/                    playwright-course/
 ├── tests_v1/                       ├── .git/                  ← 🆕 historial completo
 ├── tests_v2/                       ├── .gitignore             ← 🆕 mínimo (.env, node_modules/)
 ├── tests_FINAL/                    ├── login.spec.ts          ← 1 versión, N commits
@@ -101,7 +101,7 @@ Branches, push, Pull Requests y deshacer cambios entran *just-in-time* en M03 y 
 
 - [ ] `git config --list --global` muestra tu nombre y correo.
 - [ ] Puedes explicar working dir / staging / repository.
-- [ ] Hiciste el primer commit real del proyecto `playwright_architecture`.
+- [ ] Hiciste el primer commit real del proyecto `playwright-course`.
 - [ ] Tu `.gitignore` mínimo excluye `node_modules/` y `.env` (el definitivo se completa en M01).
 - [ ] Sabes leer un diff: líneas `-`/`+` y el encabezado de hunk `@@ -a,b +c,d @@`.
 - [ ] Puedes leer `git log --oneline` y entender qué pasó.
