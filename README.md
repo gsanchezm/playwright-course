@@ -90,19 +90,22 @@ pnpm tsx modulo-02-types/01-booleans.ts   # mini-clase específica
 |---|--------|------|
 | 0 | `modulo-00-git-esencial` | **Git esencial:** config, 3 estados, init/add/commit, `.gitignore`, log |
 | 1 | `modulo-01-smoke-feo` | Primer spec plano, `.env`, `dotenv` |
-| 2 | `modulo-02-locators-data` | Locators + data tipada + `test.each()` |
-| 3 | `modulo-03-pom` | POM incremental con `BasePage` · *Git break:* feature branches + conflictos |
-| 4 | `modulo-04-setup-fixtures` | Setup project + fixtures + `page.route()` · *Git break:* push/PR + deshacer cambios |
-| 5 | `modulo-05-api-layer` | API Layer con `BaseService` (abstract) |
-| 6 | `modulo-06-ci-debugging` | GitHub Actions matrix CI + Trace Viewer |
+| 2 | `modulo-02-locators` | Jerarquía de locators (`getByRole`→`getByTestId`→CSS), filtros, scoping, Codegen |
+| 3 | `modulo-03-data-driven` | `types/*` + `data/*.json` + `for...of` parametrizado por mercado |
+| 4 | `modulo-04-pom` | POM incremental con `BasePage` · *Git break:* feature branches + conflictos |
+| 5 | `modulo-05-fixtures` | `test.extend` + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR |
+| 6 | `modulo-06-setup` | Setup project: `auth.setup.ts` (login UI → `storageState`) · *Git break:* deshacer cambios |
+| 7 | `modulo-07-api-layer` | API Layer con `BaseService` (abstract) + `tests/api/` |
+| 8 | `modulo-08-ci-debugging` | GitHub Actions matrix CI (cross-browser) + Trace Viewer |
+| 9 | `modulo-09-ia-mcp` | *(opcional)* IA + Playwright MCP — copiloto que genera/depura/mantiene tests |
 
-**Comandos:**
+**Comandos** — cada módulo es un `proyecto/` autocontenido; entra a **su** carpeta y córrelo aislado:
 ```bash
-cd playwright-course
+cd playwright-course/modulo-01-smoke-feo/proyecto   # ejemplo con el Módulo 1
 pnpm install
 pnpm exec playwright install
 pnpm test:ui   # ⭐ recomendado para aprender
-pnpm m3        # un módulo específico
+pnpm m1        # atajo del módulo (m1, m2, … según la carpeta)
 ```
 
 ---

@@ -23,16 +23,16 @@ Si haces `git add .` aquí, **commiteas todo eso al historial** — incluyendo s
 
 ---
 
-En un repo de Playwright **completo** (el que tendrás al final del curso), estos son todos los archivos y carpetas que **nunca** deben subirse. Es tu mapa de referencia — pero ojo: la mayoría aún **no existe** en tu carpeta. En M00 solo necesitas el subconjunto mínimo (`node_modules/`, `.env`); el resto se cubre en M01/M04 cuando esas carpetas nacen.
+En un repo de Playwright **completo** (el que tendrás al final del curso), estos son todos los archivos y carpetas que **nunca** deben subirse. Es tu mapa de referencia — pero ojo: la mayoría aún **no existe** en tu carpeta. En M00 solo necesitas el subconjunto mínimo (`node_modules/`, `.env`); el resto se cubre en M01/M06 cuando esas carpetas nacen.
 
 | No commitear | Por qué | Nace en |
 |---|---|---|
 | `node_modules/` | Pesa cientos de MB; se reinstala con `pnpm install` | M01 (`pnpm install`) |
 | `.env` | Contiene secretos (credenciales, tokens) | M01 |
-| `.auth/` | `storageState` con sesiones autenticadas | M04 (`auth.setup.ts`) |
+| `.auth/` | `storageState` con sesiones autenticadas | M06 (`auth.setup.ts`) |
 | `playwright-report/` | HTML report que se regenera en cada corrida | M01 (1ª corrida) |
 | `test-results/` | Screenshots, videos, traces de fallos | M01 (1er fallo) |
-| `blob-report/`, `traces/` | Artefactos intermedios | M06 (CI) |
+| `blob-report/`, `traces/` | Artefactos intermedios | M08 (CI) |
 | `*.log`, `.DS_Store` | Ruido del sistema operativo y procesos | — |
 
 ## 3.1 Crear un `.gitignore` mínimo (el definitivo llega en M01)
@@ -57,7 +57,7 @@ node_modules/
 .env.local
 ```
 
-- **Por qué:** estas dos líneas cubren los dos riesgos reales que ya tienes hoy: `node_modules/` (peso) y `.env` (secretos). Lo demás (`test-results/`, `playwright-report/`, `.auth/`) todavía **no existe** en tu carpeta — esas carpetas nacen en M01/M04, y allí el installer + tú las cubrirán.
+- **Por qué:** estas dos líneas cubren los dos riesgos reales que ya tienes hoy: `node_modules/` (peso) y `.env` (secretos). Lo demás (`test-results/`, `playwright-report/`, `.auth/`) todavía **no existe** en tu carpeta — esas carpetas nacen en M01/M06, y allí el installer + tú las cubrirán.
 - **Cómo verifico:** `git status` muestra `.gitignore` como *untracked* (sí queremos versionarlo). Si más adelante creas un `.env`, `git status` **NO** debe listarlo.
 
 > 💡 Compromete `.gitignore` en tu **primer commit**, antes de `pnpm install`. Si ya instalaste y `node_modules/` quedó trackeado, sácalo del índice (sin borrarlo del disco) con: `git rm -r --cached node_modules/` y luego commitea.

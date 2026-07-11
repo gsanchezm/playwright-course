@@ -1,105 +1,78 @@
-# M06 · Guía del módulo: CI/CD + Debugging
+# M06 · Guía del módulo: Setup
 
-> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el **framework completo** (los 6 módulos + CI) ya armado, independiente del monorepo. Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test:setup` → `pnpm m6`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
 
-**Duración estimada:** 40-50 min
-**Pieza que suma al framework:** `.github/workflows/playwright.yml` con **matrix real por browser** + reports + traces como artefactos descargables.
+**Duración estimada:** 55-75 min
+**Piezas que suma al framework:**
+- `tests/setup/auth.setup.ts` — un SOLO test: login **por UI** → persiste `storageState` (el "badge").
+- `playwright.config.ts` con 2 projects: `setup` corre primero, `chromium` hereda el badge vía `dependencies`.
+- `.auth/` en `.gitignore` — el badge contiene una sesión válida y nunca se commitea.
+
+**La idea, en una frase:** inicia sesión **una vez** (como un usuario real), guarda la sesión en un archivo, y declara `dependencies: ['setup']` para que todos tus tests arranquen ya autenticados. Nada más. Ese es el módulo completo — un solo concepto, hecho bien.
 
 ---
 
-## 🏗️ Arquitectura al terminar este módulo (estado FINAL del framework)
+## 🏗️ Arquitectura al terminar este módulo
 
-Aparece **`.github/workflows/`** — el cuarto del robot. Con eso el framework queda completo: el mismo suite que corres con `pnpm m4` ahora corre **en paralelo en GitHub Actions** cada vez que abres un PR.
+Aparece la carpeta **`tests/setup/`** con un único `auth.setup.ts`, y el `playwright.config.ts` **cambia de orquestación por primera vez desde M01**: pasa de un project a **dos**, uno dependiendo del otro.
 
 ```
-playwright-course/                  ← 🎯 ESTADO FINAL del framework
-├── .auth/                          ← (M04 — gitignored)
-├── .env                            ← (M01 — gitignored)
-├── .env.example                    ← (M01)
-├── .github/                        ← 🆕
-│   └── workflows/                  ← 🆕
-│       └── playwright.yml          ← 🆕 matrix: 3 browsers × 2 shards + api
-├── .gitignore                      ← (M01)
-├── data/                           ← (M02) markets.json, users.json
-├── fixtures/                       ← (M04) omnipizza.ts
-├── helpers/                        ← (M04) unique-data.ts
-├── pages/                          ← (M03) Base + Login + Catalog + Checkout
-├── services/                       ← (M05) Base (abstract) + Auth + Order + Pizza
+modulo-06-setup/
+├── .auth/                          ← 🆕 (gitignored) badge persistido
+│   └── user.json                   ← 🆕 storageState generado por auth.setup.ts
 ├── tests/
-│   ├── api/                        ← (M05) auth.spec.ts, pizzas.spec.ts
-│   └── setup/                      ← (M04) auth.setup.ts
-├── types/                          ← (M02) omnipizza.d.ts
-├── modulo-00-git-esencial/         ← (lecciones — no contribuyen al framework)
-├── modulo-01-smoke-feo/            ← (M01)
-├── modulo-02-locators-data/        ← (M02)
-├── modulo-03-pom/                  ← (M03)
-├── modulo-04-setup-fixtures/       ← (M04)
-├── modulo-05-api-layer/            ← (M05)
-├── modulo-06-ci-debugging/         ← 🆕 ESTE MÓDULO
-│   ├── README.md
-│   ├── ejemplo.spec.ts             ← 🆕 smoke canary, regression, demo trace
-│   └── reto.md                     ← 🆕 segundo workflow con cron + issues automáticos
-├── package.json
-├── playwright.config.ts            ← (proyectos: setup, ui-{chromium,firefox,webkit}, api, anonymous)
-└── tsconfig.json
+│   ├── setup/
+│   │   └── auth.setup.ts           ← 🆕 login por UI → guarda .auth/user.json
+│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (goto /catalog, sin login)
+│   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
+├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
+├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
 ```
 
-**Pipeline en GitHub Actions** (qué pasa cuando haces `git push`):
+**Project graph** (cómo Playwright orquesta la ejecución):
 
 ```
-git push ──► trigger: on.push / on.pull_request
-                       │
-                       ▼
-           ┌─────────────────────────┐
-           │  matrix: project×shard  │  ← se expande en 7 jobs
-           └────────────┬────────────┘
-                        │
-   ┌──────────┬─────────┼──────────┬──────────┬──────────┬──────────┐
-   ▼          ▼         ▼          ▼          ▼          ▼          ▼
-chromium  chromium  firefox    firefox    webkit    webkit       api
-shard 1   shard 2   shard 1    shard 2    shard 1   shard 2      (1 job)
-   │         │         │          │          │          │          │
-   └─────────┴─────────┴──────────┴──────────┴──────────┴──────────┘
-                                  │
-                                  ▼
-                     ┌──────────────────────────┐
-                     │  Artefactos por job:     │
-                     │  · HTML report           │
-                     │  · test-results/*.zip    │  ◄── traces descargables
-                     └──────────────────────────┘
+┌─────────────┐   crea .auth/user.json   ┌───────────────────────────────┐
+│   setup     │ ───────────────────────► │  chromium                     │
+│ (login UI)  │      dependencies:       │  (hereda el badge vía          │
+│             │        ['setup']         │   storageState → autenticado)  │
+└─────────────┘                          └───────────────────────────────┘
 ```
 
-**Flujo de secrets** (cómo viajan las credenciales sin filtrarse):
+**Flujo del badge** (de dónde sale la sesión y quién la hereda):
 
 ```
-gh secret set BASE_URL          ──► GitHub almacena ENCRIPTADO
-                                          │
-                                          ▼
-       workflow.yml: env: BASE_URL: ${{ secrets.BASE_URL }}
-                                          │
-                                          ▼
-   playwright.config.ts: baseURL: process.env.BASE_URL  ◄── inyectado en runtime
-                                          │
-                                          ▼
-                              borrado al terminar el job
+auth.setup.ts ──► login por UI ──► page.context().storageState({ path })
+                                              │  serializa cookies + localStorage
+                                              ▼
+                                       .auth/user.json  (el "badge")
+                                              │  storageState: ".auth/user.json"
+                                              ▼
+                   cada test del project chromium arranca YA con esa sesión
 ```
+
+**Qué NO existe todavía:**
+
+| Carpeta / pieza | Llega en | Para qué |
+|---|---|---|
+| firefox / webkit (matriz cross-browser) | M08 | CI/CD con matrix por browser |
+| `services/`, `tests/api/` | M07 | Suite de API pura (BaseService abstracta) |
 
 ---
 
 ## Analogía de apertura
 
-Ya tenemos un framework completo, pero corre sólo en tu laptop. Lo que necesitamos ahora es que **un robot lo ejecute cada vez que alguien hace push** — eso es CI/CD. Y cuando un test falle, necesitamos la **caja negra del avión**: `Trace Viewer` reconstruye paso a paso qué hizo el test, con screenshots, red y consola, para encontrar el bug sin reproducirlo a mano.
+El tester manual, al llegar por la mañana, **se registra en recepción una sola vez** y recibe un **badge**. Con ese badge entra a todas las salas del día sin volver a identificarse en cada puerta. En M05 era como enseñar tu credencial **en cada puerta** (login por UI en cada test); aquí lo haces **una vez**, guardas el badge (`storageState`) y las puertas se abren solas (`dependencies` + `storageState`).
 
 ---
 
 ## ¿Qué aprenderás?
 
-1. **`fullyParallel`, `workers`, `shards`** — paralelismo real.
-2. **`retries` en CI vs local** — 2 vs 0, y por qué.
-3. **Trace Viewer protagónico** — leer una traza como un bug report multimedia.
-4. **GitHub Actions con matrix real** — 3 browsers × 2 shards + api.
-5. **`secrets.*`** — credenciales nunca en plaintext.
-6. **Artefactos dobles** — HTML report + traces descargables del PR.
+1. **`auth.setup.ts` como un project** — un test normal, con extensión `.setup.ts`, que corre primero.
+2. **`storageState`** — cómo Playwright serializa cookies **y** localStorage a un archivo, y cómo eso captura la sesión de OmniPizza **sin escribir el token a mano**.
+3. **`dependencies: ['setup']`** — la precondición declarativa: "no arranques hasta que setup termine en verde".
+4. **`storageState` por project** — por qué va en el project `chromium` y no en el `use:` raíz.
+5. **Renunciar al badge** con `test.use({ storageState: undefined })` para probar flujos anónimos / login negativo.
 
 ---
 
@@ -107,445 +80,313 @@ Ya tenemos un framework completo, pero corre sólo en tu laptop. Lo que necesita
 
 | Concepto | Analogía |
 |---|---|
-| `fullyParallel: true` | Varios testers corriendo la misma suite a la vez, cada uno en su worker |
-| `workers` | Cuántos testers paralelos tienes disponibles |
-| `--shard=1/4` | Repartir 200 TCs entre 4 máquinas: ésta corre 50 |
-| `retries: 2` | Reintenta 2 veces antes de marcar como roto |
-| `trace: 'retain-on-failure'` | Graba caja negra sólo cuando algo sale mal |
-| Trace Viewer | Reconstruye el vuelo sin tener que repetirlo |
-| `matrix.project` | Ambientes del test plan corriendo en paralelo en el pipeline |
-| `secrets.BASE_URL` | La caja fuerte del equipo: credenciales sólo durante la corrida |
+| `auth.setup.ts` (project) | Registro en recepción: se hace 1 vez, el badge vale todo el día |
+| `.setup.ts` (la extensión) | El sticker que marca "este test es un setup", no un caso normal |
+| `storageState` | El badge físico: cookies + localStorage serializados a un archivo |
+| `dependencies: ['setup']` | "No ejecutes hasta que setup haya terminado" — precondición declarativa |
+| `storageState` por project | Todos los TCs del project heredan el mismo badge |
+| `test.use({ storageState: undefined })` | Dejar el badge en recepción: entras anónimo a propósito |
 
 ---
 
-## Workflow
+## ¿Por qué UI login aquí (y no API)?
 
-El archivo `.github/workflows/playwright.yml` define:
+Este módulo usa el login **por UI** — exactamente el flujo que ya hiciste a mano en M01 — porque para **aprender el concepto** es lo más claro:
 
-```
-matrix:
-  project: [ui-chromium, ui-firefox, ui-webkit, api]
-  shard:   [1, 2]
-  exclude: api con shard 2    ← api corre 1 sola vez
-```
+- **Reusa lo conocido:** el alumno YA hizo este login. El setup es "hazlo una vez y guárdalo", no un concepto nuevo de red.
+- **Cero magia de `localStorage`:** `page.context().storageState()` serializa cookies **y** localStorage. Como OmniPizza guarda la sesión en localStorage, queda capturada **sin** que escribas `window.localStorage.setItem(...)` a mano — que es justo la parte que más confunde.
+- **Es el patrón canónico** de la doc oficial de Playwright (`auth.setup.ts` que llena el formulario y guarda `storageState`).
 
-Eso da **7 jobs en paralelo** (3 browsers × 2 shards + 1 api).
+> 💡 **Nota avanzada — API login (la optimización, no el concepto).**
+> El login por **API** es más rápido y determinista (un `POST /api/auth/login` en vez de navegar). Cuando la suite crezca y el setup se vuelva un cuello de botella, cámbialo: `request.post('/api/auth/login')` → obtén el token → siémbralo en `localStorage` → `storageState`. Pagas más complejidad (decodificar el JWT, replicar el store que el SPA escribe) a cambio de velocidad. **Para aprender, UI es más claro; API es la optimización** que aplicas cuando el número lo justifique.
 
 ---
 
-## Artefactos descargables
+## ¿Por qué un setup project (y no `globalSetup`)?
 
-Cada job sube **2 artefactos**:
+Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup project**, no `globalSetup`:
 
-1. **`playwright-report-<project>-shard<N>`** — HTML report navegable.
-2. **`playwright-traces-<project>-shard<N>`** — `test-results/` con traces, videos, screenshots.
+| Aspecto | `globalSetup` (hook) | `auth.setup.ts` (project) |
+|---|---|---|
+| Qué es | Una función que corre antes de todo, fuera del runner | Un **test normal** con extensión `.setup.ts` |
+| Visibilidad en el reporte | No aparece (es un hook escondido) | **Aparece como test** — ves si el login pasó o falló |
+| Orden con otros projects | Manual | Declarativo con `dependencies` |
+| Reutilización por rol | Difícil | Trivial (un `.setup.ts` por persona que autentica) |
 
-Desde un PR fallido, descargas la traza y la abres con:
-
-```bash
-pnpm exec playwright show-trace path/to/trace.zip
-```
+> El punto pedagógico: `dependencies: ['setup']` hace el orden **explícito y visible**. No escondes el login en un hook — lo declaras como un paso que el reporte muestra.
 
 ---
 
 ## Paso a paso
 
+> **Cómo leer esta sección:** cada paso dice exactamente **qué archivo se crea o edita** y en qué orden. Primero blindas el `.gitignore`, luego escribes el setup, luego el config que lo ata, y al final corres solo el setup y después el módulo completo.
+
 ### Paso 0 — Pre-requisitos
 
-Antes de tocar CI:
+Verifica que **M05 (Fixtures) quede verde** antes de empezar. M06 no depende del código de M05, pero sí del "dolor" que resuelve: en M05 el login corría por UI en **cada** test; aquí lo vas a hacer **una vez**. Tener M05 fresco hace clic el contraste.
 
 ```bash
-# Estando en playwright-course/
-pnpm m5            # API layer corre en verde
-pnpm typecheck     # sin errores
-
-# Para los pasos de GitHub vas a necesitar:
-gh --version       # GitHub CLI (recomendado: 2.40+)
-gh auth status     # debes estar logueado
-git remote -v      # debe haber un `origin` apuntando a GitHub
+# Desde el proyecto/
+pnpm typecheck     # debe pasar limpio
 ```
-
-Si no tienes `gh`, instálalo: macOS → `brew install gh`; Windows → `winget install --id GitHub.cli`; Linux → ver [`cli.github.com`](https://cli.github.com/).
-
-Si no tienes remoto, vuelve a M04 (Git break: conectar el repo a GitHub).
 
 ---
 
-### Paso 1 — Dependencias requeridas
+### Paso 1 — Blinda el `.gitignore` ANTES de generar el badge
 
-**M06 no añade paquetes npm.** Lo que se agrega es **YAML** (workflows) y un reporter adicional (`junit`) que ya viene en `@playwright/test`.
+**1.1 — Asegura que `.auth/` esté en `.gitignore`.** Abre el `.gitignore` y confirma que tenga `.auth/`. Si no, añádelo al final.
 
-```bash
-pnpm list @playwright/test dotenv typescript @types/node
-# Las 4 deben aparecer. Si no, ver M01 Paso 1.
+```gitignore
+# --- Secrets y storageState ---
+.env
+.env.local
+.auth/
 ```
 
-Herramientas externas que SÍ necesitas:
+El `storageState` que vas a generar contiene una **sesión válida** (el token vive en `localStorage`). Commitearlo es filtrar credenciales en el historial de Git.
 
-| Herramienta | Cómo verificar | Cómo instalar si falta |
-|---|---|---|
-| `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Windows: `winget install --id GitHub.cli` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
-| `git` con remoto | `git remote -v` | M04 Git break — conectar repo a GitHub |
-| Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
+> ⚠️ Haz esto **antes** del primer `pnpm test:setup`. Una vez que `.auth/user.json` entra al historial, sacarlo requiere reescribir commits.
+
+**Cómo verifico:** `git check-ignore .auth/` imprime `.auth/` (la ruta quedó cubierta), y `git status` **no** muestra `.auth/` ni siquiera después de correr el setup.
 
 ---
 
-### Paso 2 — Crear `.github/workflows/playwright.yml`
+### Paso 2 — Escribe `tests/setup/auth.setup.ts` (login por UI → badge)
 
-Crea la carpeta del workflow (un nivel por línea) y abre el archivo en VS Code — se crea al guardarlo:
-
-```bash
-mkdir .github
-mkdir .github/workflows
-code .github/workflows/playwright.yml
-```
-
-📄 `.github/workflows/playwright.yml` — pipeline matrix:
-
-```yaml
-# @file .github/workflows/playwright.yml
-name: Playwright Tests
-
-on:
-  push:
-    branches: [main, 'feature/**']
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
-  e2e:
-    name: ${{ matrix.project }} / shard ${{ matrix.shard }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: playwright-course
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [ui-chromium, ui-firefox, ui-webkit, api]
-        shard: [1, 2]
-        exclude:
-          # api no se beneficia de browsers ni shardear mucho
-          - project: api
-            shard: 2
-
-    env:
-      BASE_URL: ${{ secrets.BASE_URL }}
-      API_URL: ${{ secrets.API_URL }}
-      TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
-      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-      DEFAULT_COUNTRY: MX
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Run tests
-        run: |
-          if [ "${{ matrix.project }}" = "api" ]; then
-            pnpm exec playwright test --project=api
-          else
-            pnpm exec playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
-          fi
-
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-${{ matrix.project }}-shard${{ matrix.shard }}
-          path: playwright-course/playwright-report
-          retention-days: 7
-
-      - name: Upload traces and videos
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-traces-${{ matrix.project }}-shard${{ matrix.shard }}
-          path: playwright-course/test-results
-          retention-days: 7
-```
-
-> 🔍 **`defaults.run.working-directory` y los prefijos `playwright-course/` de los `path:`** existen porque en el repo del curso el proyecto vive en un subfolder `playwright-course/` dentro de la raíz del repo. El bloque `defaults.run.working-directory` aplica a **todos** los steps `run` del job (install, browsers y tests) — pero los `path:` de `upload-artifact` no lo respetan, por eso llevan el prefijo explícito. Si en TU repo la raíz ES el proyecto (el `package.json` vive en la raíz), omite ese bloque `defaults` y los prefijos `playwright-course/` de los `path:` (déjalos como `playwright-report` y `test-results`).
-
-**Anatomía del workflow, línea por línea** (las claves que el resto del módulo no explica):
-
-| Línea | Qué hace |
-|---|---|
-| `name: Playwright Tests` | Nombre del workflow tal como aparece en la pestaña **Actions** y en `gh workflow list` |
-| `on:` | Los tres disparadores: `push` a `main` o a ramas `feature/**`, `pull_request` contra `main`, y `workflow_dispatch` (el botón "Run workflow" para correrlo a mano) |
-| `jobs.e2e` + `name: ${{ matrix.project }} / shard ${{ matrix.shard }}` | `e2e` es el **id** del job; el `name` interpolado es la etiqueta legible de cada job de la matrix (p.ej. `ui-firefox / shard 2`) |
-| `runs-on: ubuntu-latest` | La VM donde corre cada job: un runner Linux efímero que GitHub crea y destruye en cada corrida |
-| `timeout-minutes: 30` | Mata el job si se cuelga más de 30 min — sin esto, un test colgado consume el runner indefinidamente |
-| `strategy.fail-fast: false` | Sin esta línea, el primer job fallido **cancela a todos sus hermanos** de la matrix — y pierdes los reportes de los demás browsers |
-| `matrix` + `exclude` | `project × shard` expande 4×2 = 8 combinaciones; el `exclude` quita `api`+`shard 2` → **7 jobs** |
-| `env:` a nivel job | Variables disponibles en **todos** los steps. Las credenciales vienen de `secrets.*` (encriptadas — Paso 5); `DEFAULT_COUNTRY: MX` va en texto plano porque **no es un secreto**: es el mercado por defecto que consumen los tests data-driven (M02) |
-| `actions/checkout@v4` | Clona tu repo dentro del runner — sin esto el runner está vacío |
-| `actions/setup-node@v4` (`node-version: 24`) | Instala Node 24, la misma major que usas en local |
-| `pnpm/action-setup@v4` (`version: 10`) | Instala pnpm **pineado a la versión 10**. Alternativa: `corepack enable` (activa el pnpm que declare `package.json`); aquí se usa la action para dejar la versión fijada y visible en el propio YAML |
-| `pnpm install --frozen-lockfile` | Falla si `pnpm-lock.yaml` no cuadra con `package.json` — CI instala **exactamente** lo lockeado: builds reproducibles |
-| `playwright install --with-deps` | Descarga los navegadores **y** las librerías del SO que necesitan (el runner es un Linux pelado) |
-| El `if/else` del step `Run tests` | `api` corre completo en su único job — si lo shardearas con `--shard=1/2` (y el shard 2 excluido), la mitad de sus tests **jamás se ejecutaría**; los projects `ui-*` sí se reparten con `--shard=N/2` |
-| `if: always()` | Sube los artefactos **aunque el job falle** — las trazas de los jobs rojos son justo las que necesitas |
-| `retention-days: 7` | GitHub borra los artefactos a los 7 días: suficiente para debuggear el PR sin acumular gigabytes |
-
-> ⚠️ **`if: always()` es crítico:** sin esa línea, los artefactos solo se suben cuando el job pasa — exactamente al revés de lo que necesitas. Las trazas de los jobs FALLIDOS son las que te interesan.
-
-> 🔷 **TypeScript — template literals `${...}` vs interpolación de Actions `${{ ... }}`**
-> Cuidado con las **dos** sintaxis de interpolación: en TS un template literal usa **una** llave — `` `shard ${n}` `` — y se evalúa en tu código; en este YAML, `${{ secrets.BASE_URL }}` usa **dobles** llaves y lo evalúa el motor de GitHub Actions, no TypeScript. El único TS de este módulo vive en `playwright.config.ts` (siguiente paso); el workflow es YAML.
-> 📚 Lo viste en [TS · M02 — types y template literals](/docs/typescript/m2-strings). Aquí lo aplicas para no confundir el `${...}` de TS con el `${{ ... }}` de Actions.
-
----
-
-### Paso 3 — Ajustes a `playwright.config.ts` (estado FINAL del curso)
-
-> **📐 Config — cambios vs M05 (estado FINAL del curso)**
-> ```diff
->   export default defineConfig({
-> +   fullyParallel: true,
-> +   forbidOnly: !!process.env.CI,
-> +   retries: process.env.CI ? 2 : 0,
-> +   workers: process.env.CI ? 2 : undefined,
-> -   reporter: [["html", { open: "never" }], ["list"]],
-> +   reporter: process.env.CI
-> +     ? [["github"], ["html", { open: "never" }], ["junit", { outputFile: "results.xml" }]]
-> +     : [["html", { open: "never" }], ["list"]],
->     use: {
-> +     video: "retain-on-failure",
->     },
->     projects: [
->       // ... setup, ui-chromium/firefox/webkit, api (de M04/M05) ...
-> +     { name: "anonymous", use: { ...devices["Desktop Chrome"] }, testMatch: /tests\/.*\.anon\.spec\.ts/ },
->     ]
->   })
-> ```
-> **Se mantiene:** projects `setup` + 3 browsers + `api`. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI), `video: "retain-on-failure"`, y el 5º project `anonymous` (flujos sin sesión: login negativo, signup).
-
-M06 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `anonymous` para flujos negativos.
-
-**Estado completo del config en M06 (= estado final del framework):**
+Crea `tests/setup/` y dentro `auth.setup.ts`. La extensión `.setup.ts` es la que el project `setup` matchea con su `testMatch`; la ubicación en `tests/setup/` lo mantiene separado de los `*.spec.ts` normales. **Un solo test**, sin warmup separado, sin modo serial, sin login por API, sin sembrar `localStorage` a mano.
 
 ```ts
-// @file playwright.config.ts
-// playwright.config.ts — Estado en M06 (FINAL)
+// @file modulo-06-setup/tests/setup/auth.setup.ts
+// ============================================================
+// M06 — Setup & auth: inicia sesión UNA vez, guarda el "badge"
+// ============================================================
+// Un SOLO test de setup. Sin warmup separado, sin modo serial,
+// sin login por API, sin sembrar localStorage a mano.
+// Haces lo que un usuario real hace (login por UI, igual que en
+// M01) y Playwright guarda la sesión completa en un archivo.
+// ============================================================
+
+import { test as setup, expect } from "@playwright/test";
+
+const authFile = ".auth/user.json"; // el "badge" que heredarán los tests
+
+setup("authenticate", async ({ page }) => {
+  // Render (free tier) duerme el backend tras 15 min → margen extra la 1ª vez.
+  setup.setTimeout(90_000);
+
+  // 1) Login por UI — exactamente el flujo que ya practicaste en M01.
+  await page.goto("/");
+  await page.getByTestId("market-MX").click();
+  await page.getByTestId("username-desktop").fill(process.env.TEST_USER_USERNAME ?? "standard_user");
+  await page.getByTestId("password-desktop").fill(process.env.TEST_USER_PASSWORD ?? "pizza123");
+  await page.getByRole("button", { name: "Sign In" }).click();
+
+  // 2) Señal inequívoca de sesión abierta: llegamos al catálogo.
+  await expect(page).toHaveURL(/\/catalog/);
+
+  // 3) Guardar el badge. storageState serializa cookies + localStorage;
+  //    OmniPizza guarda la sesión en localStorage, así que queda
+  //    capturada AUTOMÁTICAMENTE — sin escribir el token a mano.
+  await page.context().storageState({ path: authFile });
+});
+```
+
+El login por UI reusa lo que ya sabes (M01). El único ajuste nuevo es la última línea: `storageState({ path })` guarda la sesión completa a un archivo. Como OmniPizza persiste la sesión en `localStorage`, `storageState` la captura sola — no tocas `localStorage` tú.
+
+> 🔍 **Detalle que parece obvio — `import { test as setup }` (y la extensión `.setup.ts`)**
+> **Qué es:** es un test normal de Playwright, pero renombrado a `setup` por convención y guardado como `auth.setup.ts`. El project `setup` lo matchea con `testMatch: /.*\.setup\.ts/`.
+> **Por qué así (y no la alternativa obvia):** la extensión `.setup.ts` es lo que permite que **una sola** regla de `testMatch` capture el setup sin atrapar tus `*.spec.ts`. Y renombrar `test → setup` es solo legibilidad: deja claro que este archivo prepara el terreno, no prueba una feature.
+> **Qué pasa si lo cambias:** si lo renombras a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y `chromium` arranca sin sesión. Al revés: cualquier `*.setup.ts` suelto en `tests/` lo recogerá el setup project aunque no quieras.
+
+> 🔍 **Detalle que parece obvio — `await page.context().storageState({ path: authFile })`**
+> **Qué es:** serializa el estado del `BrowserContext` (cookies + localStorage del `page` que acaba de loguearse) a `.auth/user.json` — el "badge".
+> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" (y frágil) sería leer el token y escribir el JSON a mano. No hace falta: `storageState` **siempre** guarda cookies + localStorage juntos, así que captura la sesión sea cual sea el mecanismo. Como OmniPizza guarda la sesión en localStorage, el badge queda completo sin que toques `window.localStorage`.
+> **Qué pasa si lo cambias:** si omites esta línea, el login ocurre pero **no se persiste nada** → `.auth/user.json` no existe y `chromium` arranca anónimo. Si algún día OmniPizza migrara a cookies httpOnly, este mismo `storageState` seguiría funcionando sin tocar el setup.
+
+> 🔷 **TypeScript — `setup.setTimeout(90_000)` (número con separador `_`)**
+> El `_` en `90_000` es un **separador de dígitos**: TS lo ignora al compilar (`90_000 === 90000`), pero para el humano `90_000` se lee "noventa mil" de un vistazo. El gotcha: es solo azúcar visual, no cambia el valor.
+> 📚 Lo viste en [TS · M02 — Tipos](/docs/typescript/m2-numbers). Aquí lo aplicas para darle margen al cold start de Render en el primer login del día.
+
+---
+
+### Paso 3 — Escribe el `playwright.config.ts` (2 projects: setup → chromium)
+
+> **📐 Config — cambios vs M05 (aquí el config cambia de orquestación por 1ª vez)**
+> ```diff
+>   import { defineConfig, devices } from "@playwright/test";
+>   import "dotenv/config";
+>
+>   projects: [
+> -   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+> +   { name: "setup", testMatch: /.*\.setup\.ts/ },
+> +   {
+> +     name: "chromium",
+> +     use: { ...devices["Desktop Chrome"], storageState: ".auth/user.json" },
+> +     dependencies: ["setup"],
+> +   },
+>   ]
+> ```
+> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`. **Entra:** el project `setup` (corre primero, genera el badge) y, en `chromium`, `storageState` + `dependencies: ["setup"]`. **Nota lo que NO entra:** ni firefox/webkit (eso es M08), ni `testIgnore` gigantes (este proyecto solo tiene SUS tests).
+
+**3.1 — Reemplaza `projects` por la versión de 2 projects.**
+
+```ts
+// @file modulo-06-setup/playwright.config.ts
+// ============================================================
+// M06 — Setup & auth: el config MÍNIMO que hace falta
+// ============================================================
+// Solo 2 projects: `setup` corre primero y crea el badge;
+// `chromium` depende de él y arranca ya autenticado.
+// (Sin firefox/webkit: la matriz cross-browser vive en M08 · CI.
+//  Sin testIgnore gigantes: este proyecto solo tiene SUS tests.)
+// ============================================================
+
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
-const STORAGE_STATE = ".auth/user.json";
-
 export default defineConfig({
-  testDir: ".",
-  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
-
-  // 🆕 Paralelismo + reintentos solo en CI
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
-
+  testDir: "./tests",
   timeout: 60_000,
   expect: { timeout: 10_000 },
-
-  // 🆕 Reporters extra cuando estamos en CI
-  reporter: process.env.CI
-    ? [["github"], ["html", { open: "never" }], ["junit", { outputFile: "results.xml" }]]
-    : [["html", { open: "never" }], ["list"]],
+  reporter: [["html", { open: "never" }], ["list"]],
 
   use: {
     baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",   // 🆕 video al fallar
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
   },
 
   projects: [
-    { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
+    // 1) Corre primero → genera .auth/user.json (el badge).
+    { name: "setup", testMatch: /.*\.setup\.ts/ },
+
+    // 2) Hereda el badge vía storageState + dependencies → arranca autenticado.
     {
-      name: "ui-chromium",
-      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], storageState: ".auth/user.json" },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
-    },
-    {
-      name: "ui-firefox",
-      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
-    },
-    {
-      name: "ui-webkit",
-      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-05-api-layer\/.*/],
-    },
-    {
-      name: "api",
-      use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-05-api-layer\/.*\.spec\.ts/],
-    },
-    {
-      name: "anonymous",   // 🆕 para tests sin sesión (login negativo, etc.)
-      use: { ...devices["Desktop Chrome"] },
-      testMatch: /tests\/.*\.anon\.spec\.ts/,
     },
   ],
 });
 ```
 
-> 🔷 **TypeScript — config tipado (`PlaywrightTestConfig` / `projects[]`)**
-> `defineConfig(...)` no es decorativo: aplica el tipo `PlaywrightTestConfig`, así que el editor te autocompleta `retries`, `workers`, `projects[]` y te marca en rojo si escribes una clave inexistente o un valor del tipo equivocado (p.ej. `trace: "siempre"`). `projects` es un **array tipado** de objetos con forma fija: cada entrada debe tener `name`, y opcionalmente `use`, `dependencies`, `testMatch`/`testIgnore`. Esa forma fija es lo que una `interface` describe.
-> 📚 Lo viste en [TS · M06 — interfaces y contratos de objetos](/docs/typescript/m6-api-response). Aquí lo aplicas: cada objeto de `projects[]` cumple el contrato que Playwright espera.
+El project `setup` corre **primero** y genera el badge; `chromium` lo hereda vía `storageState` + `dependencies`. Fíjate que `chromium` **no** define `testMatch`: usa el default (`*.spec.ts`), así que NO recoge el `auth.setup.ts` — por eso este config no necesita `testIgnore`.
 
-**Diff conceptual vs M05:**
+> 🔍 **Detalle que parece obvio — `dependencies: ["setup"]`**
+> **Qué es:** la precondición declarativa, a nivel de project: "este project no arranca hasta que el project `setup` termine **en verde**".
+> **Por qué así (y no la alternativa obvia):** no es un `import`, ni un `globalSetup`, ni una llamada en un `beforeAll`. No ejecutas el login tú mismo — **declaras** el orden y Playwright construye el grafo (por eso el setup aparece como un test en el reporte y se reutiliza por rol).
+> **Qué pasa si lo cambias:** si borras `dependencies`, `chromium` ya **no espera** al setup. Puede arrancar antes de que `.auth/user.json` exista (o con uno viejo) → tests que fallan con "sesión no encontrada" de forma intermitente, según quién gane la carrera.
 
-| Cambio | Por qué |
-|---|---|
-| `fullyParallel: true` | Aprovecha múltiples workers en CI |
-| `retries: process.env.CI ? 2 : 0` | 2 reintentos solo en CI; en local, 0 (no escondas flakes) |
-| `workers: process.env.CI ? 2 : undefined` | Limita workers en CI (GitHub runners tienen 2 CPUs) |
-| `forbidOnly: !!process.env.CI` | Hace fallar el job si dejaste un `test.only(...)` por error |
-| `reporter: process.env.CI ? [...] : [...]` | `github` annotations + `junit` para integración externa |
-| `video: "retain-on-failure"` | Video disponible en el HTML report cuando algo se cae |
-| Project `anonymous` | Tests sin storageState (login negativo, signup flows) |
+> 🔍 **Detalle que parece obvio — `storageState: ".auth/user.json"` (en el project `chromium`, NO en el `use:` raíz)**
+> **Qué es:** la asignación del badge **por project** — dentro de `chromium`, no en el bloque `use:` global de `defineConfig`.
+> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**, incluido el propio `setup` (que debe correr **sin** sesión, porque su trabajo ES loguearse) y cualquier flujo anónimo/negativo futuro.
+> **Qué pasa si lo cambias:** si lo subes al `use:` raíz, el project `setup` arrancaría con una sesión que aún no existe (huevo y gallina), y tus flujos negativos (login inválido, acceso anónimo) arrancarían **ya logueados** y dejarían de probar lo que dicen probar. Los falsos verdes más peligrosos nacen aquí.
 
-> 🔍 **Detalle que parece obvio — `retries: process.env.CI ? 2 : 0`**
-> **Qué es:** dos reintentos automáticos cuando un test falla en CI; **cero** reintentos cuando corres en local.
-> **Por qué así (y no la alternativa obvia):** en CI los runners comparten CPU, la red es más lenta y Render hace cold start — un fallo aislado suele ser ruido, así que 2 reintentos evitan PRs rojos por flakes. En **local** lo quieres al revés: si un test falla, quieres **verlo fallar**, no que un reintento lo esconda y te haga creer que todo está verde.
-> **Qué pasa si lo cambias:** si pones `retries > 0` en local, estás ocultando flakes en el peor momento — el desarrollo. Un test inestable pasará "por casualidad" en el segundo intento y nunca lo arreglarás hasta que reviente en CI o en producción.
-
-> 🔍 **Detalle que parece obvio — `fullyParallel: true` (+ `workers`)**
-> **Qué es:** paraleliza a nivel de **test individual**, no sólo a nivel de archivo; `workers` limita cuántos corren a la vez.
-> **Por qué así (y no la alternativa obvia):** por defecto Playwright paraleliza entre archivos pero corre los tests *dentro* de un archivo en serie. Con `fullyParallel: true` cada test es candidato a su propio worker, exprimiendo los runners. `workers: process.env.CI ? 2 : undefined` topa el paralelismo a 2 en CI (los runners de GitHub tienen 2 CPUs) y deja que en local Playwright elija según tus cores.
-> **Qué pasa si lo cambias:** sin `fullyParallel`, un archivo con 30 tests se vuelve un cuello de botella secuencial. Si subes `workers` por encima de los CPUs reales del runner, los tests pelean por recursos, se vuelven lentos y aparecen flakes por timeouts.
-
-> 🔷 **TypeScript — operador ternario `cond ? a : b`**
-> `process.env.CI ? 2 : 0` es una **expresión** que devuelve un valor (no un `if` que ejecuta sentencias): se usa donde la propiedad espera un número. El gotcha: como `process.env.CI` es un `string | undefined`, el ternario lee su *truthiness* (la cadena vacía o `undefined` cuentan como falso) — de ahí el `!!` que verás en `forbidOnly` (recuadro siguiente).
-> 📚 Lo viste en [TS · M03 — funciones y lógica](/docs/typescript/m3-login). Aquí lo aplicas para que `retries`, `workers` y los reporters cambien según el entorno.
-
-> 🔍 **Detalle que parece obvio — `forbidOnly: !!process.env.CI`**
-> **Qué es:** en CI, hace **fallar el build** si quedó un `test.only(...)` o `describe.only(...)` olvidado en el código (el `!!` fuerza `process.env.CI` — un `string | undefined` — a un `boolean` real).
-> **Por qué así (y no la alternativa obvia):** un `.only` olvidado es silencioso y catastrófico: hace que Playwright corra **sólo ese test** e ignore todos los demás. El suite sale verde con 1 test ejecutado y 200 saltados — y nadie lo nota. `forbidOnly` convierte ese descuido en un error ruidoso que bloquea el merge.
-> **Qué pasa si lo cambias:** si lo pones en `false` (o no lo activas en CI), un `.only` puede pasar la revisión y dejar tu pipeline "verde" mientras en realidad no está testeando casi nada.
-
-> 🔍 **Detalle que parece obvio — `video: "retain-on-failure"` / `screenshot: "only-on-failure"`**
-> **Qué es:** video y screenshot se guardan **únicamente cuando el test falla**, mismo principio que el `trace`. En M06 sólo el `video` es nuevo: el `screenshot: "only-on-failure"` ya lo traías de módulos anteriores.
-> **Por qué así (y no la alternativa obvia):** capturar video y screenshots de cada test verde es desperdicio puro: nadie revisa el video de un test que pasó. Limitarlos al fallo te da el material de diagnóstico justo cuando lo necesitas, sin inflar los artefactos.
-> **Qué pasa si lo cambias:** `video: "on"` multiplica el tamaño de `test-results/` y el tiempo de cada job; desactivarlo del todo te deja sin el clip que muchas veces explica el fallo más rápido que la propia traza.
-
-Añade los scripts de M06 al `package.json`:
+**3.2 — Añade los scripts al `package.json`.** Agrega el atajo del módulo y el del setup aislado.
 
 ```json
 "scripts": {
-  "m6": "playwright test modulo-06-ci-debugging --project=ui-chromium",
-  "test:smoke": "playwright test --grep @smoke",
-  "test:regression": "playwright test --grep @regression"
+  "m6": "playwright test --project=chromium",
+  "test:setup": "playwright test --project=setup"
 }
 ```
 
-El patrón `process.env.CI ? X : Y` se apoya en que GitHub Actions (y casi todos los CI) **siempre** expone `CI=true` como variable de entorno en cada job — no la defines tú. Eso permite tener un solo config que se comporta distinto en local vs en pipeline, sin condicionales feas ni flags manuales en cada script.
+`test:setup` te deja correr **solo** el setup (para inspeccionar el badge); `m6` corre el módulo completo (setup arranca solo por `dependencies`).
 
-> 🔍 **Detalle que parece obvio — `process.env.CI`**
-> **Qué pasa si lo cambias:** si la seteas a mano en local, tu máquina se comporta como CI (2 retries, `forbidOnly`, reporters extra) y pierdes justo las ventajas de correr en local. Para *simular* CI a propósito, sí la seteas temporalmente: `CI=true pnpm m6` (bash) / `$env:CI="true"; pnpm m6` (PowerShell).
-
----
-
-### Paso 4 — Lectura guiada de `.github/workflows/playwright.yml`
-
-Abre el workflow y observa:
-
-1. **`on:`** — qué dispara el job (`push`, `pull_request`, `workflow_dispatch` para correr a mano).
-2. **`strategy.matrix`** — la combinación `project × shard` que produce los N jobs paralelos.
-3. **`steps:`** — `checkout` → `setup-node` → `pnpm install` → `playwright install` → `playwright test --shard ...` → upload artifacts.
-4. **`env:`** + **`secrets.*`** — cómo viajan `BASE_URL`, `API_URL`, `TEST_USER_*` sin estar en plaintext.
-5. **`if: always()`** en el `upload-artifact` — sube reports incluso cuando el test falla (es cuando más los necesitas).
-
-> 💡 **Pregúntate:** *"¿qué pasa si elimino la línea `if: always()`?"* — respuesta: en jobs fallidos NO se suben los artefactos, así que no puedes investigar. Es el bug más típico de pipelines de testing.
+**3.3 — Confirma el `tsconfig.json`.** El `include` ya trae `tests/**/*.ts`, así que el nuevo `auth.setup.ts` (vive bajo `tests/setup/`) queda cubierto y `pnpm typecheck` lo valida sin tocar nada más.
 
 ---
 
-### Paso 5 — Configurar los secrets
-
-Antes de pushear, configura los secrets en el repo. **Una sola vez:**
+### Paso 4 — Corre SOLO el setup project
 
 ```bash
-# Desde la raíz del repo:
-gh secret set BASE_URL --body "https://omnipizza-frontend.onrender.com"
-gh secret set API_URL --body "https://omnipizza-backend.onrender.com"
-gh secret set TEST_USER_USERNAME --body "standard_user"
-gh secret set TEST_USER_PASSWORD --body "pizza123"
-
-# Verifica
-gh secret list
-# Esperado: 4 secrets listados, sin mostrar el valor.
+pnpm test:setup
 ```
 
-**Alternativa por UI:** Settings → Secrets and variables → Actions → New repository secret.
+Correr el setup aislado te deja **ver el badge nacer** antes de que ningún test lo herede. Verás **un** test verde en el project `setup`: `authenticate`. Tras la corrida, aparece `.auth/user.json` en disco:
 
-> ⚠️ **Importante (seguridad):** el `.env` local **nunca** se commitea; en CI los valores viven en `secrets`, que GitHub inyecta como variables de entorno durante la corrida y luego desaparecen. Este es el mensaje de seguridad más importante del módulo.
+```bash
+ls .auth
+cat .auth/user.json    # fíjate: "cookies" y "origins" (ahí vive el localStorage)
+```
+
+Ese archivo contiene la sesión. **Está en `.gitignore`** — nunca lo commitees.
+
+> 💡 **Si falla** con `TimeoutError` o `ECONNREFUSED`: probablemente OmniPizza está dormido (cold start de Render). El `setup.setTimeout(90_000)` da margen; si aun así falla, vuelve a correr — el backend ya estará despierto.
+
+---
+
+### Paso 5 — Corre el módulo completo (el setup arranca solo)
+
+```bash
+# El project chromium declara dependencies: ['setup'],
+# así que Playwright corre setup automáticamente primero.
+pnpm m6
+```
+
+Esto demuestra el grafo — no invocas el setup tú: lo **declaras** y Playwright lo orquesta. Setup corre primero (genera/refresca `.auth/user.json`) y el `ejemplo.spec.ts` arranca **ya autenticado**: hace `page.goto("/catalog")` **sin** paso de login previo y el catálogo carga.
+
+```ts
+// @file modulo-06-setup/tests/ejemplo.spec.ts
+// ============================================================
+// M06 — Arranca YA autenticado gracias al setup project
+// ============================================================
+// Este spec corre en el project `chromium`, que declara
+// `dependencies: ['setup']` + `storageState: '.auth/user.json'`.
+// Antes de ejecutarlo, Playwright corre `tests/setup/auth.setup.ts`
+// (login por UI → guarda el badge) y este test HEREDA la sesión.
+//
+// Fíjate en lo que NO hay: ni goto('/'), ni selección de mercado,
+// ni fill de credenciales, ni click en "Sign In". El badge ya trajo
+// todo eso. Vamos DIRECTO al catálogo.
+// ============================================================
+
+import { test, expect } from "@playwright/test";
+
+test.describe("Setup & auth — sesión heredada (M06)", () => {
+  test("aterriza en /catalog sin hacer login @smoke", async ({ page }) => {
+    // ⚠️ No hay paso de login. El storageState ya trajo la sesión.
+    await page.goto("/catalog");
+
+    // Señal de sesión abierta: seguimos en /catalog (no nos rebotó a "/")
+    // y el catálogo muestra al menos una pizza.
+    await expect(page).toHaveURL(/\/catalog/);
+    const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+    await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+  });
+});
+```
+
+**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó.
 
 ---
 
 ## ▶️ Cómo ejecutar este módulo
 
-- **Comando del módulo:** `pnpm m6`
+- **Correr SOLO el setup (genera el badge):** desde `proyecto/`, `pnpm test:setup`
+- **Comando del módulo (completo):** `pnpm m6` (setup arranca solo por `dependencies`)
 - **UI mode:** `pnpm test:ui`
-- **Debug:** `pnpm test:debug`
+- **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
+- **Solo el reto:** `pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium`
 - **Ver el reporte:** `pnpm report`
-
-**Forzar traza / ver traza** (y comandos `gh` que ya usabas en los pasos):
-
-```bash
-# Local — forzar y leer trazas
-pnpm exec playwright test --trace=on
-pnpm exec playwright show-trace <trace.zip>
-pnpm exec playwright show-report
-DEMO_FAIL=1 pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium
-
-# GitHub CLI
-gh secret set BASE_URL
-gh secret list
-gh pr create
-gh pr checks --watch
-gh run list --workflow=playwright.yml --limit 5
-gh run view <run-id> --log
-gh run download <run-id>
-```
-
-**🪟 Windows / PowerShell:** las variables de entorno se setean con `$env:VAR="x"; pnpm m6` — **no** con `VAR=x pnpm m6` (esa sintaxis es de bash y en PowerShell falla). Ejemplos:
-
-```powershell
-# Forzar el fallo del demo en PowerShell
-$env:DEMO_FAIL="1"; pnpm exec playwright test modulo-06-ci-debugging --project=ui-chromium
-
-# Simular CI en local (2 retries, forbidOnly, reporters extra)
-$env:CI="true"; pnpm m6
-```
+- **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m6` (no `VAR=x pnpm m6`, sintaxis bash que falla en PowerShell)
 
 ---
 
 ## Outcome esperado
 
-- [ ] Configuraste los 4 secrets con `gh secret set` y los viste listados con `gh secret list`.
-- [ ] Sabes generar una traza con `--trace=on` y abrirla con `show-trace`.
-- [ ] Forzaste un fallo con `DEMO_FAIL=1` y leíste su traza.
-- [ ] El workflow de CI corre verde en tu PR (7 jobs en paralelo).
-- [ ] Sabes descargar artefactos de un job fallido con `gh run download`.
-- [ ] Explicas por qué `retries: 2` en CI pero `0` en local.
-- [ ] Completaste el reto: workflow programado con cron + creación de issue automática.
-- [ ] Entiendes que los secrets **nunca** viven en el repo.
+- [ ] `.auth/` está en `.gitignore` **antes** del primer `pnpm test:setup`.
+- [ ] `.auth/user.json` se crea al correr el setup (login por UI → `storageState`).
+- [ ] Puedes explicar por qué el login es **por UI** aquí (y cuándo cambiarías a API).
+- [ ] El test de `ejemplo.spec.ts` arranca **ya autenticado**: `page.goto("/catalog")` sin login.
+- [ ] Entiendes por qué `storageState` va **en el project** `chromium`, no en el `use:` raíz.
+- [ ] Sabes que `dependencies: ['setup']` declara el orden y hace visible el setup en el reporte.
+- [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, URL en `/login`) renunciando al badge con `test.use({ storageState: undefined })`.
+
+---
+
+## ¿Qué viene en M07?
+
+Hasta aquí manejaste la sesión **desde el navegador** (login por UI → badge). En **M07 (API layer)** vas a probar la API **directamente**, sin UI: una capa de servicios tipados (`BaseService` abstracta + factory) que hace requests HTTP y valida contratos. Es la otra mitad del testing — y el lugar natural para la optimización de "API login" que mencionamos en la nota avanzada de este módulo.

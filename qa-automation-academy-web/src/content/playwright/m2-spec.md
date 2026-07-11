@@ -1,13 +1,13 @@
 # El spec paso a paso
 
-Esta página cubre la parte de **lectura y ejecución del ejemplo** de M02: correr el spec parametrizado, leer el bucle `for...of` data-driven y revisar el catálogo de locators. Al final tienes el código completo de `ejemplo.spec.ts`.
+Esta página cubre la parte de **lectura y ejecución del ejemplo** de M02: correr el smoke de un mercado, leer cada locator del login/catálogo justificando su **nivel** en la jerarquía, y escanear la chuleta viva de locators. Al final tienes el código completo de `ejemplo.spec.ts`.
 
 ---
 
-## Paso 6 — Ejecutar el ejemplo
+## Paso 3 — Ejecutar el smoke
 
 ```bash
-# Headless — el smoke parametrizado, 4 mercados de un solo TC
+# Headless — el smoke de UN mercado (MX), con la jerarquía aplicada
 pnpm m2
 
 # UI mode — RECOMENDADO la primera vez
@@ -16,76 +16,67 @@ pnpm test:ui
 
 **Qué debería pasar:**
 
-- En la terminal verás **4 tests** corriendo, uno por mercado: `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`.
-- Todos pasan en verde (suelen tardar ~30-40s la primera vez por el cold start de Render).
-- En UI mode, los 4 aparecen como hijos del mismo describe.
+- La terminal muestra **1 test verde** (`TC-001`) y **2 skipped** (los bloques de referencia `test.skip`).
+- La 1ª corrida puede tardar ~30-40s por el cold start de Render.
+- Los dos bloques `test.skip` **no se ejecutan** — aparecen como *skipped* en el reporte: son una chuleta, no un caso de prueba.
 
 ---
 
-## Paso 7 — Lectura guiada del `for...of` data-driven
+## Paso 4 — Lectura guiada del smoke aplicando la jerarquía
 
-Abre `ejemplo.spec.ts` e identifica:
+Abre `ejemplo.spec.ts` y lee el bloque de login fijándote en **por qué** cada línea usa el locator que usa:
 
-1. **El bucle `for (const market of markets)`** — un `test()` por cada elemento del array.
-2. El **título dinámico** del test: `` `TC-${market.code} — login + catalog in market ${market.code} @smoke` `` — cada test tiene un nombre único.
-3. La **validación condicional por mercado** (símbolo `$` en MX, `¥` en JP) — lógica de negocio data-driven.
-4. El **CSS selector legítimo** `[data-testid^="pizza-card-"]` — explica por qué baja al nivel 4 de la jerarquía: los testids son dinámicos.
-5. La **aserción de URL** `await expect(page).toHaveURL(/\/catalog/)` — el argumento es un **regex**, no un string.
-6. La **materialización del listado** con `const allCards = await pizzaCards.all()` y el **bucle interno** `for (const card of allCards)` que recorre las tarjetas con un `await` por vuelta.
+```ts
+await page.goto("/");
+await page.getByTestId("market-MX").click();                 // testid: bandera icon-only (nombre accesible = emoji)
+await page.getByTestId("username-desktop").fill(USERNAME);    // testid: input SIN <label> ni aria-label
+await page.getByTestId("password-desktop").fill(PASSWORD);    // testid: mismo caso
+await page.getByRole("button", { name: "Sign In" }).click();  // role: el botón SÍ expone su rol → nivel 1
+await expect(page).toHaveURL(/\/catalog/);
+```
 
-Varias de esas líneas se leen "de pasada" pero esconden una decisión de diseño. Si las cambias por la alternativa "obvia", el test se rompe o pierdes seguridad de tipos:
+El login de OmniPizza es el ejemplo canónico de "misma pantalla, dos niveles": los inputs y la bandera **obligan** a `getByTestId`, pero el botón "Sign In" **sí** coopera con `getByRole`. Elegir el nivel correcto por elemento es toda la lección de M02.
 
-> 🔍 **Detalle que parece obvio — `const markets = marketsJson as Market[]`**
-> **Qué es:** una *type assertion* — le dices a TypeScript "trata este JSON como `Market[]`". Es una promesa que haces tú; **no** es validación en runtime. Al ejecutar, nadie revisa que el JSON realmente cumpla el contrato.
-> **Por qué así (y no la alternativa obvia):** importar un `.json` te da un tipo inferido amplio (y a veces `any`, según la config). El `as Market[]` te devuelve autocompletado y chequeo de `market.code`, `market.currency`, etc. en compile-time, que es donde queremos atrapar los errores.
-> **Qué pasa si lo cambias:** si quitas el `as Market[]`, el tipo pasa a ser el inferido del JSON (o `any`) y **pierdes el autocompletado y la seguridad** de `market.code` / `market.currency`. (Ojo: como es assertion, no validación, un JSON con datos basura sí compilaría — el contrato real lo defiende el `.d.ts` vía `tsc`, no este cast.)
+Luego el bloque del catálogo:
 
-> 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, ...) ``**
-> **Qué es:** el título del test se construye con un *template string* que interpola `market.code` en cada vuelta del `for...of` sobre `markets`.
-> **Por qué así (y no la alternativa obvia):** cada iteración del bucle registra un `test()` distinto, y Playwright **exige títulos únicos** dentro del mismo describe — `${market.code}` garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, nombres distintos y legibles en el reporte. Además, el tag `@smoke` embebido en el título es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
-> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
+```ts
+const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+expect(await pizzaCards.count()).toBeGreaterThan(0);
+```
+
+Las cards tienen testids **dinámicos** (`pizza-card-123`, `pizza-card-456`…), así que un `getByTestId` con id fijo sería frágil. Bajar al nivel 4 (CSS con prefijo `^=`) es la herramienta correcta, no deuda técnica.
+
+Varias de esas líneas se leen "de pasada" pero esconden una decisión de diseño. Si las cambias por la alternativa "obvia", el test se rompe o pierdes robustez:
+
+> 🔍 **Detalle que parece obvio — `getByRole("button", { name: "Sign In" })` (y no `getByTestId`)**
+> **Qué es:** para el botón de login sí usamos `getByRole` (nivel 1), aunque para los inputs de arriba bajamos a `getByTestId` (nivel 3). No es incoherencia: es la jerarquía aplicada elemento por elemento.
+> **Por qué así (y no la alternativa obvia):** el botón expone un **rol accesible** (`button`) con un **nombre accesible** legible ("Sign In"), así que el nivel más alto de la jerarquía funciona. Los inputs no tienen `<label>` ni `aria-label`, así que `getByRole("textbox", { name: "Username" })` **no matchea nada** — su nombre accesible saldría del placeholder, no del `<div>` "Username" de al lado.
+> **Qué pasa si lo cambias:** si fuerzas `getByRole` en los inputs, el test falla por "no encontró el elemento". Si bajas el botón a `getByTestId("login-button-desktop")` funciona, pero desperdicias un locator role-first perfectamente bueno (y más resiliente al cambio de idioma/copy).
 
 > 🔍 **Detalle que parece obvio — `await expect(page).toHaveURL(/\/catalog/)`**
-> **Qué es:** el argumento entre `/.../` es una **expresión regular** (regex), **no** un string. Un regex hace *match parcial*: la aserción pasa si la URL **contiene/matchea** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
-> **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL del catálogo —querystring (`?locale=`), ids, o el locale dentro del path (`/mx/catalog`)—. Con regex toleras todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
-> **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **igualdad exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
+> **Qué es:** el argumento entre `/.../` es una **expresión regular** (regex), **no** un string, y eso es deliberado. Un regex hace *match parcial*: la aserción pasa si la URL **contiene** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
+> **Por qué así (y no la alternativa obvia):** OmniPizza puede añadir cosas a la URL —querystring (`?locale=`), el locale dentro del path (`/mx/catalog`) o un slash final— y el regex tolera todo eso. El `\/` escapa la barra `/` porque en un literal regex de JS la `/` es el **delimitador** que abre y cierra la expresión; sin escaparla, el motor creería que el regex terminó ahí.
+> **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **IGUALDAD exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
 
 > 🔍 **Detalle que parece obvio — `page.locator('[data-testid^="pizza-card-"]')`**
 > **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
-> **Por qué así (y no la alternativa obvia):** los testids de las pizzas son **dinámicos** (`pizza-card-123`, `pizza-card-456`...), así que no puedes usar `getByTestId("pizza-card-123")` con un id fijo: solo encontrarías una pizza concreta (frágil) o ninguna. Bajar al nivel 4 de la jerarquía (la tabla está en la guía del módulo) es **legítimo** justamente por eso. No es deuda técnica: es la herramienta correcta para testids variables.
+> **Por qué así (y no la alternativa obvia):** los testids completos son dinámicos (`pizza-card-123`, `pizza-card-456`…), así que un `getByTestId("pizza-card-123")` con id fijo sólo encontraría una pizza concreta (frágil) o ninguna. Bajar al nivel 4 de la jerarquía (la tabla está en la guía del módulo) es **legítimo** justamente por eso. En el login, en cambio, un CSS NO sería legítimo: ahí los testids son estables.
 > **Qué pasa si lo cambias:** si usas `=` en vez de `^=` (`[data-testid="pizza-card-"]`), exiges igualdad exacta y no matcheas **ninguna** tarjeta.
-
-> 🔍 **Detalle que parece obvio — `const allCards = await pizzaCards.all()`**
-> **Qué es:** `.all()` devuelve `Promise<Locator[]>` — **materializa** la lista: consulta el DOM *ahora* y te entrega un array fijo de locators. Por eso lleva `await`.
-> **Por qué así (y no la alternativa obvia):** comparado con `pizzaCards.first()`, que **no** necesita `await` porque devuelve un `Locator` perezoso (lazy) — un puntero que recién resuelve el DOM cuando lo usas en una acción o aserción. `.all()` rompe esa pereza a propósito: necesitas el array concreto para iterarlo y contar (`allCards.length`).
-> **Qué pasa si lo cambias:** si omites el `await`, `allCards` queda como una `Promise`, no como array; `allCards.length` da `undefined` y el `for...of` no itera nada (o falla). Si en cambio creías que `.first()` necesita `await` y lo agregas, no rompe pero es ruido — el locator es perezoso por diseño.
-
-> 🔍 **Detalle que parece obvio — `for (const card of allCards) { await expect(card)... }`**
-> **Qué es:** un bucle `for...of` que recorre el array de locators y hace una aserción `await` por cada tarjeta.
-> **Por qué así (y no la alternativa obvia):** `for...of` **serializa** los `await`: espera a que termine la aserción de una tarjeta antes de pasar a la siguiente. La alternativa "obvia" `allCards.forEach(async (card) => { await ... })` **no espera** las promesas — `forEach` ignora el valor de retorno del callback, así que los `await` de adentro se pierden y el test sigue de largo.
-> **Qué pasa si lo cambias:** con `forEach`, las aserciones se disparan en paralelo sin que el test las espere; un fallo puede ocurrir **después** de que el test ya terminó (unhandled rejection) y obtienes falsos verdes. `for...of` (o `Promise.all` si quieres paralelismo controlado) es lo correcto cuando hay `await` dentro.
-
-> 🔷 **TypeScript — `import type`**
-> `import type { Market }` trae **solo la forma** (el tipo), no código ejecutable: el compilador la borra del bundle final. La alternativa `import { Market }` (sin `type`) también compila, pero arrastra una dependencia de valor innecesaria y puede crear ciclos de import en proyectos grandes.
-> 📚 Lo viste en [TS · M06 — interfaces](/docs/typescript/m6-api-response). Aquí lo aplicas a `Market`, `User` y `Currency`: contratos que solo existen en compile-time.
-
-> 🔷 **TypeScript — arrays tipados (`Market[]` / `User[]`)**
-> `Type[]` significa "array cuyos elementos son `Type`". Qué hace el `as Market[]`, por qué es una *assertion* y no una validación, y qué pierdes si lo quitas, ya lo tienes en el detalle 🔍 de `const markets = marketsJson as Market[]`, arriba.
-> 📚 Lo viste en [TS · M02 — types](/docs/typescript/m2-arrays). Aquí lo aplicas al array que alimenta el bucle data-driven.
-
-> 🔷 **TypeScript — `for...of` para iterar**
-> `for (const x of array)` recorre los **valores** del array (no los índices, que sería `for...in`). En este módulo lo usas en dos niveles: para **registrar** un `test()` por mercado, y dentro del test para **recorrer** las tarjetas de pizza. (Por qué con `await` adentro se usa `for...of` y no `forEach` ya lo viste en el detalle 🔍 del bucle interno, arriba.)
-> 📚 Es construcción base de JavaScript/TypeScript (lo usaste desde [TS · M03 — functions](/docs/typescript/m3-login)). Aquí es el motor de la parametrización: un `for` reemplaza al inexistente `test.each()`.
-
-> 🔷 **TypeScript — ternario / guard clause (`if (!symbol) return;`)**
-> El *fast return* (o guard clause) sale temprano cuando no hay nada que hacer, en vez de anidar `if/else`. Aquí `const symbol = currencySymbol[market.currency]` es `string | undefined` (por el `Partial`), y TS te **obliga** a manejar el `undefined`: `if (!symbol) return;` cierra el caso y deja el código plano.
-> 📚 Lo viste en [TS · M03 — functions](/docs/typescript/m3-void-functions) (control de flujo y `return`). Aquí lo aplicas a la validación de currency por mercado.
 
 ---
 
-## Paso 8 — Catálogo de locators (lectura, no ejecución)
+## Paso 5 — Practica combinadores, filtros y scoping
 
-Al final de `ejemplo.spec.ts` hay dos bloques `test.skip` (uno para la pantalla de login y otro para el catálogo). **No se ejecutan**, son una **referencia visual** de cada nivel de la jerarquía con selectores reales — escanéalos, los vas a copiar para el reto.
+Con el catálogo abierto (en UI mode o en Codegen), practica las técnicas de la sección **Combinadores y filtros** de la guía y del **Bloque B** del `test.skip`: `.first()`, `.nth(2)`, `.filter({ hasText: "Pepperoni" })`, y el **scoping** `card.getByRole("button")`.
+
+Un `getByRole("heading", { level: 3 })` matchea **todas** las pizzas — un *locator de muchos*. Estrechar por texto o por contexto (scoping) es lo que mantiene `getByRole` vivo en listas repetidas, sin caer a un `nth-child` posicional. El objetivo: tomar "todas las pizzas" y llegar a "exactamente Pepperoni" usando sólo `role` + `.filter`, y llegar a su botón add-to-cart acotando por la card.
+
+---
+
+## Paso 6 — Catálogo de locators (lectura, no ejecución)
+
+Al final de `ejemplo.spec.ts` hay dos bloques `test.skip` (uno para la pantalla de login y otro para el catálogo). **No se ejecutan**, son una **referencia visual** de cada nivel de la jerarquía con selectores reales de OmniPizza (`getByRole({ name: "Sign In" })`, `getByPlaceholder("standard_user")`, `getByTestId("login-button-desktop")`, `getByAltText("Pepperoni")`, `[data-testid^="pizza-card-"]`) — escanéalos, los vas a copiar para el reto.
 
 En esa chuleta los locators se **encadenan** (`pizzaCards.first()`, `pizzaCards.nth(2)`, `pizzaCards.filter({ hasText: "Pepperoni" })`...):
 
@@ -98,90 +89,59 @@ En esa chuleta los locators se **encadenan** (`pizzaCards.first()`, `pizzaCards.
 ## Código completo — `ejemplo.spec.ts`
 
 ```ts
-// @file modulo-02-locators-data/ejemplo.spec.ts
+// @file modulo-02-locators/ejemplo.spec.ts
 // ============================================================
-// M02 — Locators jerárquicos + Data tipada (bucle for...of)
+// M02 — Locators jerárquicos (smoke de UN mercado)
 // ============================================================
-// Avance sobre M01: el smoke de login ahora corre contra los
-// 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado.
+// Avance sobre M01: el MISMO smoke de login + catálogo, pero
+// ahora aplicando la JERARQUÍA de locators a conciencia:
+//   · getByRole donde OmniPizza coopera (el botón "Sign In").
+//   · getByTestId donde NO coopera (inputs sin <label>, banderas
+//     icon-only cuyo nombre accesible es el emoji).
+//   · CSS con prefijo para las cards (sus testids son dinámicos).
 //
-// Aún no hay POM — sigue habiendo duplicación de pasos,
-// pero al menos ya no hay datos hardcoded.
+// Sigue siendo UN mercado hardcoded (MX). La parametrización por
+// los 4 mercados con datos tipados (data/ + types/ + for...of)
+// llega en M03 (data-driven).
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import type { Market, User, Currency } from "../types";
-import marketsJson from "../data/markets.json";
-import usersJson from "../data/users.json";
 
-// Casting tipado del JSON: TypeScript verifica que el JSON cumple el contrato.
-const markets = marketsJson as Market[];
-const users = usersJson as User[];
+// Credenciales leídas de .env (dotenv en playwright.config.ts).
+const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
+const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-// ────────────────────────────────────────────────────────
-// Guard clause: si el dataset no trae el usuario que el smoke
-// necesita, FALLAMOS RÁPIDO con un mensaje claro — en vez de
-// usar `!` y dejar que el test reviente más adelante con un
-// críptico "Cannot read property 'username' of undefined".
-// ────────────────────────────────────────────────────────
-const standardUser = users.find((u) => u.username === "standard_user");
-if (!standardUser) {
-  throw new Error(
-    'data/users.json does not contain a user with username "standard_user". ' +
-      "Check the data seed before running M02.",
-  );
-}
+test.describe("Smoke con jerarquía de locators (M02)", () => {
+  test("TC-001 — login + catálogo aplicando la jerarquía @smoke", async ({ page }) => {
+    // --- PASO 1: Login ---
+    await page.goto("/");
 
-// Mapa currency → símbolo que esperamos ver renderizado en la UI.
-// Si añades un mercado nuevo, agrega su símbolo aquí (o déjalo
-// fuera para que la validación se SALTE en ese mercado).
-const currencySymbol: Partial<Record<Currency, string>> = {
-  MXN: "$",
-  JPY: "¥",
-};
+    // Bandera de mercado: es un <button> cuyo nombre accesible es el
+    // emoji 🇲🇽 (no "México") → getByRole no ayuda; bajamos a testid.
+    await page.getByTestId("market-MX").click();
 
-test.describe("Smoke parameterized by market (M02)", () => {
-  // OJO: Playwright NO tiene `test.each()` (eso es de Jest/Vitest).
-  // Para parametrizar, un `for` recorre el array y REGISTRA un
-  // `test()` por dato → 4 TCs independientes (TC-MX, TC-US, ...),
-  // no un test que itera por dentro.
-  for (const market of markets) {
-    test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, async ({ page }) => {
-      // --- PASO 1: Login ---
-      // Jerarquía: primero por testid (OmniPizza los tiene), luego por CSS prefix.
-      await page.goto("/");
-      await page.getByTestId(`market-${market.code}`).click();
-      await page.getByTestId("username-desktop").fill(standardUser.username);
-      await page.getByTestId("password-desktop").fill(standardUser.password);
-      await page.getByTestId("login-button-desktop").click();
+    // Inputs sin <label> ni aria-label → getByRole/getByLabel FALLAN.
+    // El nivel correcto de la jerarquía aquí es getByTestId.
+    await page.getByTestId("username-desktop").fill(USERNAME);
+    await page.getByTestId("password-desktop").fill(PASSWORD);
 
-      // --- PASO 2: Validar que llegamos al catálogo ---
-      await expect(page).toHaveURL(/\/catalog/);
+    // El botón de login SÍ expone su rol accesible → aquí SÍ usamos
+    // getByRole (nivel 1). Ojo: su texto es "Sign In", NO "Login".
+    await page.getByRole("button", { name: "Sign In" }).click();
 
-      // --- PASO 3: Iterar el listado de pizzas (ciclo real) ---
-      // CSS selector con prefijo — legítimo porque los testids son dinámicos.
-      const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
-      await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
-      const allCards = await pizzaCards.all();
-      expect(allCards.length).toBeGreaterThan(0);
+    // --- PASO 2: Validar que llegamos al catálogo ---
+    // El argumento es un REGEX (match PARCIAL, robusto): pasa si la
+    // URL CONTIENE "/catalog" — tolera ?query, locale o slash final.
+    await expect(page).toHaveURL(/\/catalog/);
 
-      // Recorrer cada tarjeta (for...of sobre el array de locators)
-      for (const card of allCards) {
-        await expect(card).toBeVisible();
-      }
-
-      // --- PASO 4: Validación dinámica por mercado ---
-      // Reemplazamos la cadena `if / else if` por un LOOKUP MAP +
-      // GUARD CLAUSE (fast return): si el mercado no tiene símbolo
-      // definido, saltamos la aserción y seguimos. Cero ramificación,
-      // cero `else`, fácil de extender (basta añadir una entrada al
-      // mapa `currencySymbol`).
-      const symbol = currencySymbol[market.currency];
-      if (!symbol) return; // ← guard clause: nada que validar para esta currency
-
-      await expect(page.locator("body")).toContainText(symbol);
-    });
-  }
+    // --- PASO 3: Localizar las pizzas del catálogo ---
+    // Catálogo bien instrumentado, pero los testids de las cards son
+    // DINÁMICOS (pizza-card-123, pizza-card-456...) → CSS con prefijo
+    // `^=` ("empieza con"), nivel 4 legítimo. Ver la chuleta de abajo.
+    const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+    await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+    expect(await pizzaCards.count()).toBeGreaterThan(0);
+  });
 });
 
 // ============================================================

@@ -31,7 +31,7 @@ pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui
 //
 // Vas a escribir un tercer smoke que repite ~8 líneas de TC-001
 // y TC-002 (`ejemplo.spec.ts`). NO intentes refactorizar — el dolor
-// es el ejercicio. En M03 destruiremos esta duplicación con POM.
+// es el ejercicio. En M04 destruiremos esta duplicación con POM.
 // ============================================================
 //
 // 🧰 Pre-requisitos antes de empezar:
@@ -171,8 +171,8 @@ test.describe("Smoke Challenge M01", () => {
 //   3. Si tuvieras que añadir 10 smokes más (TC-004 … TC-013),
 //      ¿cuánto tiempo perderías repitiendo esas mismas ~8 líneas?
 //
-// Guarda la respuesta — en M03 (POM) la vamos a medir en concreto.
-// Pista de lo que viene: en M03 estas ~8 líneas se vuelven 1 sola:
+// Guarda la respuesta — en M04 (POM) la vamos a medir en concreto.
+// Pista de lo que viene: en M04 estas ~8 líneas se vuelven 1 sola:
 //     await loginPage.loginInMarket(standardUser, "MX");
 // ============================================================
 ```

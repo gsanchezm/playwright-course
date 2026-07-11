@@ -8,7 +8,7 @@
 // - Mercado hardcoded.
 // - No hay POM, ni fixtures, ni data-driven.
 //
-// En M02 parametrizaremos. En M03 refactorizaremos a POM.
+// En M03 parametrizaremos. En M04 refactorizaremos a POM.
 // ============================================================
 
 import { test, expect } from "@playwright/test";
@@ -20,7 +20,7 @@ const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 test.describe("Smoke OmniPizza — ugly version (M01)", () => {
   // Nota: OmniPizza vive en Render free tier y el primer request del día
   // tarda 30-40s (cold start). NO hacemos warmup explícito: los timeouts
-  // generosos del playwright.config.ts lo absorben. En M04 el backend se
+  // generosos del playwright.config.ts lo absorben. En M06 el backend se
   // despierta de forma controlada con un `auth.setup.ts` project.
 
   test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
@@ -77,5 +77,5 @@ test.describe("Smoke OmniPizza — ugly version (M01)", () => {
 //   - expect URL /catalog
 //
 // Son ~6 líneas por test × N tests futuros.
-// Esa es la duplicación que vas a matar en M03.
+// Esa es la duplicación que vas a matar en M04.
 // ============================================================

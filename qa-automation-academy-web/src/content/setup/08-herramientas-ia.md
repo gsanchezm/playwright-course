@@ -1,8 +1,8 @@
 # 08 — Herramientas de IA (opcional)
 
-> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 7 del curso de Playwright](../playwright-course/modulo-07-ia-mcp/): el **AI Test Harness**, donde generas un framework E2E completo con **Claude Code** + Playwright MCP a partir de prompts numerados.
+> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/): el **AI Test Harness**, donde generas un framework E2E completo con **Claude Code** + Playwright MCP a partir de prompts numerados.
 
-> Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Para el Módulo 7 el flujo principal es **Claude Code + Playwright MCP**; GitHub Copilot es un buen complemento dentro del editor.
+> Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Para el Módulo 9 el flujo principal es **Claude Code + Playwright MCP**; GitHub Copilot es un buen complemento dentro del editor.
 
 ---
 

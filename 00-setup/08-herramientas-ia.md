@@ -1,6 +1,6 @@
 # 08 — Herramientas de IA (opcional)
 
-> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 7 del curso de Playwright](../playwright-course/modulo-07-ia-mcp/) sobre IA en testing.
+> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/) sobre IA en testing.
 
 > Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Recomiendo configurar al menos GitHub Copilot.
 
@@ -10,11 +10,11 @@
 
 | Herramienta | Costo | Para qué | Necesaria para |
 |-------------|-------|----------|----------------|
-| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 7 |
-| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + soporte MCP | Módulo 7 |
-| **Playwright MCP** | Gratis | Permite a un LLM controlar Playwright | Módulo 7 |
+| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 9 |
+| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + soporte MCP | Módulo 9 |
+| **Playwright MCP** | Gratis | Permite a un LLM controlar Playwright | Módulo 9 |
 | **Cursor** | $20/mes (gratis básico) | Editor con IA integrada (alternativa a VS Code) | Cualquier módulo |
-| **ChatGPT / Claude.ai** | Gratis (con límites) | Chat web para prompts | Módulo 7 |
+| **ChatGPT / Claude.ai** | Gratis (con límites) | Chat web para prompts | Módulo 9 |
 
 ---
 

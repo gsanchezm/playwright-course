@@ -1,202 +1,157 @@
 # 🚩 Reto M06
 
-**Canary matutino programado + alerta automática**
+## Paso 6 — Resolver el reto (login negativo)
 
-## Objetivo
+Abre `reto.spec.ts`. El reto: probar que `locked_out_user` **no** autentica — el login se rechaza con el texto exacto `Invalid credentials` y la URL **sigue** en `/login` (no salta a `/catalog`). Cada TODO sigue el formato **Qué hacer / Pista / Cómo verificar**, y **no** están resueltos ahí a propósito.
 
-Crear un **segundo workflow** de GitHub Actions que corra automáticamente **cada mañana** un subset de smoke tests contra el deploy live de OmniPizza, y que **abra un issue automáticamente** si algo falla.
+El reto enseña dos cosas honestas a la vez:
 
-Esto es el patrón **canary in the coal mine**: detectar regresiones de producción antes de que un usuario las reporte.
+- **(a) Un usuario bloqueado no autentica**, así que **no hay badge que guardar**: esto es un **test de UI de autenticación fallida**, no un setup project.
+- **(b)** Este spec corre bajo `chromium`, que ya hereda el badge de `standard_user`. Para **ver** el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo **inverso** al `storageState` por project que configuraste en el Paso 3 de la guía.
+
+Dos detalles del DOM de OmniPizza que el reto pone a prueba: el error `Invalid credentials` se renderiza en un `<div>` inline **sin** `role="alert"`, así que `getByRole("alert")` **no** lo encuentra — assertas con `getByText("Invalid credentials")`. Y los inputs no tienen label accesible (su nombre = el placeholder), así que usas `getByTestId`, no `getByLabel`.
+
+> 🔍 **Detalle que parece obvio — `test.use({ storageState: undefined })`**
+> **Qué es:** dentro del `describe` del reto, esta línea **anula** el `storageState` que el project `chromium` inyecta — solo para ese bloque.
+> **Por qué así (y no la alternativa obvia):** el reto necesita **ver el login**. Pero `chromium` arranca con la sesión de `standard_user` (el badge), así que la app te mandaría directo a `/catalog` y el formulario ni se renderiza. `storageState: undefined` "deja el badge en recepción" y entras anónimo.
+> **Qué pasa si lo cambias:** si borras esa línea, el test arranca autenticado, no ve el formulario, y tus asserts de `Invalid credentials` nunca encuentran nada. (Detalle TS: esta línea compila porque `exactOptionalPropertyTypes` está en `false` en el `tsconfig.json`; Playwright añadió `| undefined` a mano a ese tipo justamente para permitir renunciar a la sesión.)
 
 ---
 
-## 🧰 Pre-requisitos
-
-- [ ] El workflow principal (`playwright.yml`) ya corre verde en tu PR.
-- [ ] Tienes los 4 secrets configurados (`BASE_URL`, `API_URL`, `TEST_USER_USERNAME`, `TEST_USER_PASSWORD`).
-- [ ] Conoces el flag `--grep @smoke` y sabes que sólo corre los tests etiquetados.
-- [ ] Tienes permisos de **write** sobre el repo (necesario para crear issues vía Actions).
-
----
-
-## Pasos
-
-### Paso 1 — Crear `.github/workflows/smoke-daily.yml`
-
-**Qué hacer:**
-
-Abre el archivo en VS Code (se crea al guardarlo):
+## ▶️ Cómo correr solo este reto
 
 ```bash
-code .github/workflows/smoke-daily.yml
+pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium
 ```
 
-Escríbelo con:
+⚠️ Este spec corre bajo `chromium`, que **hereda** el badge de `standard_user` (`.auth/user.json`). La línea `test.use({ storageState: undefined })` dentro del `describe` es lo que te deja **ver** el formulario de login; sin ella, el test arranca ya autenticado y el login ni se renderiza.
 
-- Trigger `schedule` con cron `'0 14 * * *'` (= 14:00 UTC = 8am hora CDMX).
-- Trigger `workflow_dispatch` para poder dispararlo manualmente desde la UI de GitHub.
-- Que corra **solo** `--grep "@smoke" --project=ui-chromium` (un browser, no los 3).
-- `timeout-minutes: 15` (menos que el workflow principal, porque es un subset).
-- Subir el HTML report **si falla** (`if: failure()`).
-
-**Pista — esqueleto mínimo:**
-
-```yaml
-# @file .github/workflows/smoke-daily.yml
-name: Smoke Daily
-
-on:
-  schedule:
-    - cron: "0 14 * * *"   # 14:00 UTC = 8am CDMX
-  workflow_dispatch:        # botón "Run workflow" en la UI
-
-permissions:
-  contents: read
-  issues: write             # ← necesario para el TODO 2
-
-jobs:
-  smoke:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: playwright-course
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-
-      - name: Smoke @smoke contra live
-        run: pnpm exec playwright test --grep "@smoke" --project=ui-chromium
-        env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          API_URL: ${{ secrets.API_URL }}
-          TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-
-      - name: Subir report si falló
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smoke-daily-report
-          path: playwright-course/playwright-report
-          retention-days: 7
-```
-
-**Cómo verificar:**
-
-```bash
-# Sintaxis del YAML
-gh workflow list
-
-# Dispárarlo manualmente para probar
-gh workflow run smoke-daily.yml
-gh run list --workflow=smoke-daily.yml --limit 1
-gh run watch
-```
+Criterio de éxito: el test pasa con `Invalid credentials` visible y la URL **sigue** en `/login` (no entró a `/catalog`).
 
 ---
 
-### Paso 2 — Crear un issue automático si falla
+## Código completo — `reto.spec.ts`
 
-**Qué hacer:**
+```ts
+// @file modulo-06-setup/tests/reto.spec.ts
+// ============================================================
+// 🚩 Reto M06 — Login negativo con persona bloqueada (locked_out_user)
+// ============================================================
+// OmniPizza NO tiene admin: todas sus personas son `customer` y se
+// distinguen por COMPORTAMIENTO de login, no por permisos.
+// `locked_out_user` está bloqueado → el login se RECHAZA con el texto
+// exacto "Invalid credentials" (un <div> inline SIN role=alert → se
+// asserta con page.getByText, NO getByRole("alert")).
+//
+// Como NO autentica, NO es un setup project con storageState: es un
+// test de UI de autenticación fallida. Por eso NO hay badge que guardar.
+//
+// 🧰 Pre-requisitos:
+//   ✔ pnpm test:setup pasa y existe .auth/user.json
+//   ✔ pnpm m6 corre en verde (ejemplo autenticado)
+//   ✔ Entiendes qué hace `dependencies` + `storageState` por project
+//
+// ▶ Cómo correr SOLO este reto:
+//   pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium
+//
+//   ⚠️ Este spec corre bajo `chromium`, que HEREDA el badge de
+//      standard_user (.auth/user.json). Para VER el formulario de login
+//      hay que RENUNCIAR a esa sesión con
+//      `test.use({ storageState: undefined })` — si no, el test arranca
+//      ya autenticado y el login ni siquiera se renderiza.
+// ============================================================
 
-Añade un step final al workflow que SOLO se ejecute si los anteriores fallaron. Usa la action [`actions/github-script@v7`](https://github.com/actions/github-script) para llamar a la API de issues.
+import { test, expect } from "@playwright/test";
 
-**Pista — añade este step al final del job:**
+// ============================================================
+// ⚠️ RENUNCIA AL BADGE HEREDADO.
+// El project `chromium` declara `storageState: ".auth/user.json"` — o sea,
+// arranca con la sesión de standard_user ya cargada. Si no la anulamos,
+// la app te lleva directo a /catalog y NUNCA verás el formulario de login
+// que queremos probar. `storageState: undefined` lo desactiva SOLO para
+// este describe — es el REVERSO del "storageState por project" que
+// configuraste en el playwright.config.ts.
+// ============================================================
+test.describe("Reto M06 — login negativo (locked_out_user)", () => {
+  test.use({ storageState: undefined });
 
-```yaml
-      - name: Abrir issue si falló
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const date = new Date().toISOString().split("T")[0];
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🚨 Smoke canary falló — ${date}`,
-              labels: ["canary", "regression"],
-              body: [
-                `El smoke matutino contra **OmniPizza live** falló.`,
-                ``,
-                `**Run:** ${runUrl}`,
-                `**Fecha:** ${date}`,
-                ``,
-                `### Pasos sugeridos`,
-                `1. Revisa el HTML report en los artefactos del run.`,
-                `2. Descarga la traza con \`gh run download ${context.runId}\`.`,
-                `3. Confirma si OmniPizza está realmente caído o si es un flake.`,
-                `4. Si es flake recurrente, considera moverlo a una suite quarantined.`,
-              ].join("\n"),
-            });
+  test.skip("TODO — login bloqueado muestra 'Invalid credentials'", async ({
+    page,
+  }) => {
+    // ────────────────────────────────────────────────────────
+    // TODO 1 — Abrir el login y llenar con locked_out_user
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Abre la app, selecciona el mercado (MX) para ver el formulario y
+    //   llena usuario/contraseña con la persona BLOQUEADA (locked_out_user
+    //   / pizza123).
+    //
+    // Pista (los inputs de OmniPizza NO tienen label accesible — su nombre
+    //        = el placeholder — así que getByRole/getByLabel FALLAN; usa
+    //        testid):
+    //   await page.goto("/");
+    //   await page.getByTestId("market-MX").click();
+    //   await page.getByTestId("username-desktop").fill("locked_out_user");
+    //   await page.getByTestId("password-desktop").fill("pizza123");
+    //
+    // Cómo verificar:
+    //   Con --headed ves los dos campos llenos antes de enviar.
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 2 — Enviar y asertar el rechazo
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Haz clic en "Sign In" (este botón SÍ tiene role) y verifica que el
+    //   login se rechaza con el texto EXACTO "Invalid credentials".
+    //
+    // ⚠️ El error se renderiza en un <div> inline SIN role=alert →
+    //    getByRole("alert") NO lo encuentra. Usa getByText:
+    //   await page.getByRole("button", { name: "Sign In" }).click();
+    //   await expect(page.getByText("Invalid credentials")).toBeVisible();
+    //
+    // Cómo verificar:
+    //   El test pasa y el mensaje aparece en rojo en el formulario.
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 3 — Confirmar que NO entró a la app
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Un login negativo no solo muestra el error: tampoco debe dejarte
+    //   pasar. Verifica que la URL SIGUE en /login (no saltó a /catalog).
+    //
+    // Pista:
+    //   await expect(page).toHaveURL(/\/login/);
+    //
+    // 💡 Nota conceptual: locked_out_user NUNCA autentica, así que no hay
+    //    storageState que guardar — por eso esto es un test de auth fallida,
+    //    NO un setup project. El patrón de setup SÍ escala a un 2º rol
+    //    AUTENTICADO: copia auth.setup.ts apuntando a una persona que SÍ
+    //    entra (problem_user / performance_glitch_user), guarda en
+    //    .auth/<persona>.json y declara su project con dependencies:["setup"].
+    expect(true).toBe(true);
+  });
+});
+
+// ============================================================
+// 📝 Reflexión final — responde mentalmente:
+// ============================================================
+//
+//   1. ¿Por qué locked_out_user NO puede ser un setup project con
+//      storageState? (Esperado: nunca autentica, así que no hay badge que
+//      guardar — es un caso de aserción de error de UI.)
+//
+//   2. ¿Por qué necesitas `test.use({ storageState: undefined })` aquí y
+//      NO en el ejemplo? (Esperado: el ejemplo QUIERE la sesión heredada;
+//      este reto necesita VER el login, así que renuncia al badge.)
+//
+//   3. Si necesitaras un 2º rol AUTENTICADO, ¿cuántos archivos tocarías y
+//      cómo evitarías duplicar auth.setup.ts? (Esperado: 2 — un
+//      `<persona>.setup.ts` + su project en playwright.config.ts;
+//      factoriza el login común en un helper `loginAndSave(user, path)`.)
+//
+// 👉 En M07 vas a probar la API DIRECTAMENTE (servicios tipados), en vez
+//    de manejar la sesión desde el navegador.
+// ============================================================
 ```
-
-**Cómo verificar:**
-
-1. Fuerza un fallo: dispara el workflow tras añadir `DEMO_FAIL=1` en el env del step de test, o pushea un cambio que rompa un smoke.
-2. Tras la corrida:
-   ```bash
-   gh issue list --label canary
-   ```
-   Debe aparecer **un issue nuevo** con el título `🚨 Smoke canary falló — YYYY-MM-DD`.
-
-> 💡 **Importante:** `permissions: issues: write` en el bloque `permissions:` (Paso 1) es **obligatorio**. Sin esa línea, la action falla con `403`. Por defecto los workflows tienen permisos read-only desde 2023.
-
----
-
-### Paso 3 — Añadir el badge al README principal
-
-**Qué hacer:**
-
-Edita `playwright-course/README.md` (o el del monorepo) y añade el badge **al inicio del archivo**, justo debajo del título:
-
-```markdown
-# Playwright Course
-
-![Smoke Daily](https://github.com/<owner>/<repo>/actions/workflows/smoke-daily.yml/badge.svg)
-```
-
-Reemplaza `<owner>` y `<repo>` con tu username + nombre real del repo.
-
-**Cómo verificar:**
-
-- En GitHub, abre el README en tu navegador: el badge debe renderizar con un estado (verde si pasó, rojo si falló, gris si nunca corrió).
-- Click sobre el badge te lleva a la página del workflow.
-
----
-
-## ✅ Entregables
-
-- [ ] `.github/workflows/smoke-daily.yml` versionado en `main`.
-- [ ] El workflow corrió manualmente al menos una vez (`gh run list --workflow=smoke-daily.yml`).
-- [ ] Generaste **un issue de prueba** forzando un fallo (puedes cerrarlo después con `gh issue close <num>`).
-- [ ] Badge visible en el README principal y renderizando el estado actual.
-
----
-
-## 📝 Preguntas de reflexión
-
-1. **¿Por qué el canary corre solo 1 browser en lugar de los 3?**
-   *(Pista: costo, ruido, y porque su trabajo es detectar regresiones de backend, no diferencias entre navegadores.)*
-
-2. **¿Qué pasaría si el smoke canary fallara porque Render está dormido?**
-   *(Pista: el cold start del backend free tier puede tardar 30-40s. ¿Cómo distinguirías un Render dormido de un bug real? Idea: warm-up step antes del test.)*
-
-3. **¿Cómo evitarías que el canary envíe una alerta falsa por un flake?**
-   *(Pista: `retries: 2` ya ayuda. También podrías exigir dos fallos consecutivos antes de abrir el issue, o agrupar issues por día.)*
-
-4. **¿Quién más debería ser notificado?**
-   *(Pista: además del issue, podrías añadir un step que use `slack-send` o `actions/notify-teams`. El issue ya es el patrón mínimo viable.)*
-
----
-
-> 📚 **Profundización opcional:**
-> - [Sintaxis de cron](https://crontab.guru/) — calculadora visual.
-> - [`actions/github-script`](https://github.com/actions/github-script) — todas las APIs disponibles.
-> - [Workflow permissions](https://docs.github.com/en/actions/security-guides/automatic-token-authentication) — entender por qué `permissions:` es necesario.

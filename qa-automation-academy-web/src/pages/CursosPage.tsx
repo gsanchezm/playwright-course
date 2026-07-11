@@ -43,8 +43,8 @@ export default function CursosPage() {
               <ContinueCard
                 course={continueCourse}
                 progress={64}
-                resumeHref="/docs/playwright/m3-guia"
-                resumeLabel="Módulo 3 · POM"
+                resumeHref="/docs/playwright/m4-guia"
+                resumeLabel="Módulo 4 · POM"
               />
             </div>
           )}

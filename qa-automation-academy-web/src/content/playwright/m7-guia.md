@@ -1,249 +1,336 @@
-# M07 · Guía del módulo: AI Test Harness con Claude Code
+# M07 · Guía del módulo: API Layer
 
-**Duración estimada:** 90-120 min
-**Pieza que suma al framework:** un **AI Test Harness** completo — un framework E2E de Playwright + TypeScript generado **desde cero por Claude Code** en una carpeta externa, con arquitectura vertical-slice, patrones de diseño, principios SOLID/DRY/KISS, ejecución **en paralelo** y una matriz **cross-browser + responsive** — para cualquier SUT indicando solo la URL de UI y la de API.
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
 
-> ⚠️ Este módulo es el **capstone** del curso y se hace *después* de M01–M06. Todo lo que aprendiste (locators, POM, fixtures, API layer, CI, debugging) es lo que ahora vas a **dirigir y verificar** en el código que la IA genera. Si no distingues un locator frágil de uno robusto, la IA te va a sepultar en slop sin que lo notes.
-
----
-
-## 🧭 Reencuadre: de "un test suelto" a "un framework generado"
-
-En M07 dejamos de pedirle a la IA "un test". El salto profesional es usar **Claude Code** como un ingeniero asistido para **crear, verificar, refactorizar y mantener** un framework E2E completo. La diferencia con el ingeniero novato es el **método**:
-
-| Ingeniero novato | Este módulo |
-|---|---|
-| *"Claude, hazme un framework de Playwright completo."* | Carpeta externa vacía → contrato persistente → prompts pequeños → una slice a la vez |
-| Código grande, frágil, imposible de revisar | Slices verticales verificadas una por una |
-| La IA decide la arquitectura | **Tú** fijas arquitectura (`AGENTS.md`), alcance (`TEST_PLAN.md`) y calidad |
-
-> 🎯 **Lema del módulo:** **la IA ejecuta el trabajo mecánico; tú controlas arquitectura, alcance, verificación y calidad.** El contrato (`AGENTS.md`) es lo que hace que cada prompt sea corto y no gaste tokens repitiendo reglas.
+**Duración estimada:** 50-60 min
+**Piezas que suma al framework:**
+- `services/BaseService.ts` — **clase abstracta** (primera aparición del término en el curso).
+- `services/AuthService.ts`, `OrderService.ts`, `PizzaService.ts`.
+- `tests/api/*.spec.ts` — suite API pura.
 
 ---
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-El harness vive en una **carpeta externa** (fuera del repo del curso, separado del SUT). Su forma es **vertical-slice**: cada feature es autocontenida.
+Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** (la suite que la consume). La novedad conceptual: por primera vez en el curso aparece una **clase abstracta**.
 
 ```
-omnipizza-ai-harness/                estado FINAL
-├── AGENTS.md              ← 🆕 contrato de arquitectura (lo lee la IA antes de cada slice)
-├── PROJECT_BRIEF.md       ← 🆕 misión + URLs del SUT
-├── TEST_PLAN.md           ← 🆕 matriz de casos UI/API descubierta con MCP
-├── package.json           ← 🆕 scripts: test:ui · test:cross · test:api · test:smoke ...
-├── playwright.config.ts   ← 🆕 fullyParallel + matriz cross-browser + responsive
-├── tsconfig.json
-└── src/
-    ├── core/              ← 🆕 infraestructura (NO negocio)
-    │   ├── env.ts             Singleton de config
-    │   ├── BasePage.ts        Template Method (POM) + helper tid() viewport-aware
-    │   ├── BaseService.ts     Template Method (API)
-    │   ├── reporter.ts        Observer
-    │   └── auth/LoginStrategy.ts   Strategy (login UI vs API)
-    ├── shared/
-    │   ├── types.ts           contratos de dominio
-    │   ├── fixtures.ts        Dependency Injection (test extendido)
-    │   └── data/*.json        datos tipados para casos data-driven
-    └── features/          ← 🆕 slices verticales (una carpeta por feature)
-        └── <slice>/
-            ├── <slice>.page.ts      ├── <slice>.flow.ts   ├── <slice>.service.ts
-            ├── <slice>.factory.ts   (solo si se necesita)
-            ├── <slice>.spec.ts      ← spec UI co-localizada
-            └── <slice>.api.spec.ts  ← spec API co-localizada
+playwright-course/
+├── .auth/                         ← (M06 — solo UI usa storageState)
+├── data/                          ← (M03 — compartido entre UI y API)
+├── fixtures/                      ← (M05 — solo UI)
+├── helpers/                       ← (M05 — uniqueEmail / uniqueOrderId)
+├── pages/                         ← (M04 — solo UI)
+├── services/                      ← 🆕 capa de servicios HTTP
+│   ├── BaseService.ts             ← 🆕 ABSTRACT — baseURL, api, dispose, url, basePath
+│   ├── AuthService.ts             ← 🆕 factory: create(baseURL)
+│   ├── OrderService.ts            ← 🆕 create(baseURL, token, country) — Bearer + X-Country
+│   ├── PizzaService.ts            ← 🆕 create(baseURL, token, country)
+│   └── index.ts                   ← 🆕 barrel export
+├── tests/
+│   ├── api/                       ← 🆕 suite API pura
+│   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo
+│   │   └── pizzas.spec.ts         ← 🆕 data-driven por mercado
+│   └── setup/                     ← (M06 — UI; api NO depende de esto)
+├── types/                         ← (M03 — los mismos contratos sirven a UI y API)
+├── modulo-07-api-layer/           ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 flujo: auth → list pizzas by market
+│   └── reto.spec.ts               ← 🆕 extender PizzaService con getByMarket + getById
+└── playwright.config.ts           ← ✏️ project `api` (sin storageState, sin setup)
 ```
 
-> 🎯 **Regla estructural no negociable:** **NO** hay carpetas de capa (`src/pages/`, `src/services/`, `src/flows/`, `src/tests/ui`, `src/tests/api`). Todo lo que una feature necesita vive **dentro** de `src/features/<slice>/`, con los specs **co-localizados**. Vertical slice, no capas horizontales.
+**Jerarquía de servicios** (el patrón abstracto + factory):
 
-La **referencia de forma esperada** vive en [`test-ia-harness`](https://github.com/gsanchezm/playwright-course/tree/main/playwright-course/modulo-07-ia-mcp/test-ia-harness). No es para copiarla: sirve para comparar si la salida de la IA tiene la forma correcta.
+```
+              BaseService (abstract)
+              ─────────────────────
+              · baseURL
+              · api: APIRequestContext
+              · abstract basePath(): string  ◄── cada hijo DEBE implementarlo
+              · url(path)
+              · dispose()
+                        ▲
+                        │ extends
+        ┌───────────────┼────────────────┐
+        │               │                │
+   AuthService     OrderService     PizzaService
+   /api/auth       /api/orders      /api/pizzas
+   static create   static create    static create
+   (factory)       (factory)        (factory)
+```
+
+**Pirámide de testing** (cómo M07 complementa lo anterior):
+
+```
+                /\
+               /  \   ◄── UI E2E (M04–M06) — pocos, caros, regresión visual
+              /────\
+             /      \
+            / API    \  ◄── M07 — muchos, rápidos, validan contratos
+           /──────────\
+          / unit (–)   \  ◄── fuera del alcance del curso
+         /──────────────\
+```
+
+**Qué NO existe todavía:**
+
+| Carpeta | Llega en | Para qué |
+|---|---|---|
+| `.github/workflows/` | M08 | CI/CD con matrix por browser + traces como artefactos |
+
+Nota: `types/` (de M03) alimenta TANTO a UI como a API — ese es el premio del tipado fuerte. Si OmniPizza cambia `interface Pizza`, los specs de UI y API rompen al mismo tiempo y los arreglas de un solo golpe.
 
 ---
 
 ## Analogía de apertura
 
-Pedirle a la IA "hazme todo el framework" es como contratar a un albañil y decirle *"constrúyeme una casa"* sin planos: te la entrega, pero cada pared está donde él quiso.
+Hasta ahora el framework "entra por la puerta principal" (UI). Pero los servidores aceptan llamadas directas al backend (API). Probar por API es **como abrir Postman dentro del test**: más rápido, más estable, y valida contratos sin pintar píxeles.
 
-Este módulo te da los **planos** primero: `AGENTS.md` es el contrato (dónde va cada patrón, cómo se nombran los exports, qué locators se permiten), `TEST_PLAN.md` es la lista de obra (qué casos UI/API existen), y **Playwright MCP** es el metro con el que la IA **mide la app real** antes de escribir un locator. Con planos + medición, cada slice sale igual a la anterior y tú solo apruebas.
+Aquí aparece por primera vez la **clase abstracta** — un **formato obligatorio de reporte de bug** corporativo. Cada servicio concreto (`AuthService`, `OrderService`, `PizzaService`) **debe** rellenar las secciones obligatorias (`basePath()`) antes de contar como servicio válido. TypeScript se niega a compilar un hijo incompleto — como el sistema de tickets rechaza un reporte sin severidad.
 
-> 🎯 **En breve:** el valor no es que la IA escriba tests, es que los escribe **contra un contrato que tú controlas** y **midiendo la app real** (MCP), no de memoria.
+---
+
+## ¿Por qué hasta ahora?
+
+En M04 `BasePage` era una **clase normal**. `abstract` no aportaba; con un solo hijo no hay patrón.
+
+Ahora en M07 tenemos **3 servicios** (`Auth`, `Order`, `Pizza`) que comparten `baseURL`, `api`, `dispose()`. Sin `abstract`:
+- El compilador no garantiza que cada hijo defina `basePath()`.
+- Alguien podría instanciar `BaseService` directo y romper invariantes.
+
+**Ahora sí vale la pena.** Ese es el sentido de "just-in-time": el concepto entra cuando el problema lo reclama.
 
 ---
 
 ## Conceptos JIT
 
-| Concepto | Analogía QA |
+| Concepto | Analogía |
 |---|---|
-| **Vertical slice** (`features/<slice>/`) | Cada feature es un expediente completo: su Page, su Service, su Flow y sus specs en la misma carpeta. |
-| **`AGENTS.md`** | El *manual de estilo* del equipo: la IA lo lee antes de cada slice para no reinventar reglas. |
-| **`TEST_PLAN.md`** | El *plan maestro de pruebas*: matriz de casos UI/API descubierta con evidencia, no inventada. |
-| **Playwright MCP** | Un *browser en vivo* que la IA maneja para leer roles/labels/testids reales antes de codificar. |
-| **`fullyParallel`** | Varias cajas registradoras abiertas: los tests corren a la vez, no en fila. |
-| **Matriz cross-browser** | Probar el mismo checkout en Chrome, Firefox y Safari — motores distintos, mismos requisitos. |
-| **Responsive (`<768px`)** | El viewport móvil activa la rama `-responsive` de los testids: valida que la UI chica también funciona. |
-| **Skill reutilizable** | Encapsular todo el protocolo para repetirlo en otro SUT con menos instrucciones. |
+| Pirámide de testing | Muchos tests rápidos en API, pocos (y caros) por UI |
+| `APIRequestContext` | Postman embebido en Playwright |
+| `abstract class` | Formato obligatorio de reporte de bug: las secciones obligatorias deben estar |
+| `abstract method` | Sección que CADA hijo debe rellenar — sin excepción |
+| `static async create(...)` | Factory — construye la instancia con todo conectado |
+| `extraHTTPHeaders: { Authorization }` | Bearer configurado una vez para toda la instancia |
+| `dispose()` | Limpieza: cierra el contexto HTTP al final del TC |
 
 ---
 
-## Setup paso a paso
+## Arquitectura
+
+```
+services/
+├── BaseService.ts        ← ABSTRACT — baseURL, api, dispose(), url(), basePath()
+├── AuthService.ts        ← factory: create(baseURL)
+├── OrderService.ts       ← factory: create(baseURL, token, country) — Bearer + X-Country-Code
+└── PizzaService.ts       ← factory: create(baseURL, token, country)
+
+tests/api/
+├── auth.spec.ts          ← login positivo + negativo
+└── pizzas.spec.ts        ← data-driven por mercado
+```
+
+---
+
+## Paso a paso
 
 ### Paso 0 — Pre-requisitos
 
 ```bash
-$ node --version        # ≥ 20
-$ pnpm --version        # ≥ 9  (o habilítalo con: corepack enable pnpm)
-$ claude --version      # Claude Code instalado y con sesión
-$ git --version
-$ gh --version          # opcional, solo para el commit + push final (prompt 08)
+# Estando en playwright-course/
+pnpm m6            # los fixtures y el setup project funcionan
+pnpm typecheck     # debe pasar
 ```
 
-Playwright MCP se descarga con `npx` a la primera invocación — no instalas nada antes.
+Este módulo NO usa `storageState` ni el setup project — el project `api` está aislado a propósito. Las cookies de UI no contaminan los tests de API. Abre `playwright.config.ts` y observa que el project `api` **no** tiene `dependencies: ['setup']` y **no** tiene `storageState`.
 
-### Paso 1 — Genera los scripts de setup (prompt 00)
+---
 
-Desde el repo del curso, pega [`prompts/00-create-setup-scripts.md`](https://github.com/gsanchezm/playwright-course/blob/main/playwright-course/modulo-07-ia-mcp/prompts/00-create-setup-scripts.md). La IA crea/refresca `scripts/setup-ai-harness.ps1` (Windows) y `.sh` (macOS/Linux). Usar IA para preparar tu propio ambiente ya es parte del ejercicio.
+### Paso 1 — Dependencias requeridas
 
-### Paso 2 — Crea la carpeta externa y entra a Claude Code
+**M07 no añade paquetes npm nuevos.** `APIRequestContext` ya viene en `@playwright/test`.
 
 ```bash
-$ ./playwright-course/modulo-07-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
-$ cd "$HOME/tmp/omnipizza-ai-harness"
-$ claude
+pnpm list @playwright/test dotenv typescript @types/node
+# Las 4 deben aparecer. Si no:
+#   pnpm install     (si package.json ya las lista)
+#   pnpm add -D @playwright/test dotenv typescript @types/node
 ```
 
-> 🪟 **Windows / PowerShell:** `.\playwright-course\modulo-07-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness`
+---
 
-El script escribe `PROJECT_BRIEF.md`, `CLAUDE.md`, `.mcp.json` (config de Playwright MCP), `.vscode/mcp.json`, copia los `prompts/` y hace `git init`. **No** crea `src/` ni `package.json`: eso lo genera la IA en el paso 4. Para otro SUT, cambia solo las URLs: `--ui-url`/`--api-url` (bash) o `-UiUrl`/`-ApiUrl` (PowerShell).
-
-### Paso 3 — Verifica ambiente + MCP (prompt 01)
-
-Pega `prompts/01-bootstrap-environment.md`. La IA confirma versiones reales y **prueba MCP navegando a una página real** (no de memoria). Verifícalo tú también:
+### Paso 2 — Crear `services/` y `tests/api/`
 
 ```bash
-$ claude mcp list
-playwright    npx @playwright/mcp@latest    ✓ connected
+mkdir services
+mkdir tests
+mkdir tests/api
 ```
 
-> ⚠️ Si la IA responde "hay N links" **sin invocar la tool del browser**, MCP no está conectado. Revisa `.mcp.json` antes de seguir.
+`tests/` probablemente ya existe desde M06 (ahí vive `tests/setup/`) — si ya existe, salta esa línea.
 
-### Paso 4 — Fundación + `AGENTS.md` (prompt 02)
+Crea los 7 archivos abriéndolos en VS Code (cada `code <ruta>` abre el archivo como nuevo; guárdalo con `Ctrl+S` para que exista en disco):
 
-Pega `prompts/02-master-architect.md`. Crea **solo la fundación** (sin features todavía): `AGENTS.md`, `package.json`, `playwright.config.ts`, `tsconfig.json`, `.env.example`, `src/core/`, `src/shared/`. Aquí es donde entra el harness **paralelo + cross-browser + responsive** 👇
+```bash
+code services/BaseService.ts
+code services/AuthService.ts
+code services/OrderService.ts
+code services/PizzaService.ts
+code services/index.ts
+code tests/api/auth.spec.ts
+code tests/api/pizzas.spec.ts
+```
 
-> **📐 Config — `playwright.config.ts` corre en paralelo y cross-browser**
->
+Los esqueletos mínimos de `BaseService.ts`, `AuthService.ts` y `index.ts` los tienes en **El spec paso a paso** (con su `// @file`). `PizzaService` y `OrderService` siguen el mismo molde — los completas con el ejemplo.
+
+---
+
+### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M05)
+
+> **📐 Config — cambios vs M04**
 > ```diff
->   export default defineConfig({
->     testDir: "./src/features",
-> +   fullyParallel: true,
-> +   forbidOnly: !!process.env.CI,
-> +   retries: process.env.CI ? 2 : 0,
-> +   workers: process.env.CI ? 2 : undefined,   // CI: 2 · local: ~50% de cores
->     reporter: [["list"], ["./src/core/reporter.ts"]],
->     use: { baseURL: process.env.BASE_URL, trace: "retain-on-failure" },
->     projects: [
-> -     { name: "ui-chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /.*\.api\.spec\.ts/ },
-> +     { name: "ui-chromium",      use: { ...devices["Desktop Chrome"] },  testIgnore: /.*\.api\.spec\.ts/ },
-> +     { name: "ui-firefox",       use: { ...devices["Desktop Firefox"] }, testIgnore: /.*\.api\.spec\.ts/ },
-> +     { name: "ui-webkit",        use: { ...devices["Desktop Safari"] },  testIgnore: /.*\.api\.spec\.ts/ },
-> +     { name: "ui-mobile-chrome", use: { ...devices["Pixel 5"] },         testIgnore: /.*\.api\.spec\.ts/ },
-> +     { name: "ui-mobile-safari", use: { ...devices["iPhone 13"] },       testIgnore: /.*\.api\.spec\.ts/ },
->       { name: "api", use: { baseURL: process.env.API_URL }, testMatch: /.*\.api\.spec\.ts/ },
->     ],
->   });
+>   projects: [
+>     { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
+> -   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/] },
+> +   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/] },
+>     // (mismo testIgnore ampliado para ui-firefox y ui-webkit)
+> +   { name: "api",
+> +     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+> +     testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/] },
+>   ]
 > ```
+> **Se mantiene:** projects `setup` + 3 browsers. **Entra:** project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API); y el `testIgnore` de los ui-* ahora excluye también los tests de API para que no se corran como UI.
 
-Tres piezas que debes entender de ese bloque:
+Hay que **añadir el project `api`**. NO depende del setup ni hereda storageState.
 
-| Pieza | Qué hace |
-|---|---|
-| `fullyParallel: true` | Cada archivo corre en su propio worker y, dentro del archivo, los tests también van en paralelo. |
-| Los **5 projects de UI** | Prueban los mismos `*.spec.ts` en Chromium, Firefox, WebKit y dos viewports móviles. Todos comparten `testIgnore` para que las specs de API **nunca** abran un browser. |
-| El project `api` | Corre **solo** los `*.api.spec.ts` (`testMatch`), sin navegador — las pruebas de API no necesitan uno. |
+Diff sobre el config de M04: dentro del array `projects`, agrega:
 
-> 🔍 **Detalle que parece obvio — los projects móviles (`Pixel 5`, `iPhone 13`)**
->
-> **Qué es:** dos projects con viewport <768px que corren la misma suite de UI.
-> **Por qué así (y no solo desktop):** el `BasePage.tid()` del harness resuelve testids con sufijo `-desktop` (≥768px) o `-responsive` (<768px). Los projects móviles ejercitan **la otra mitad** de los testids.
-> **Qué pasa si lo cambias:** si quitas los projects móviles, un locator que solo resuelve `-desktop` pasa en CI y **explota en producción móvil**. La matriz responsive es tu red de seguridad.
-
-### Paso 5 — Descubre la app y crea `TEST_PLAN.md` (prompt 03)
-
-Pega `prompts/03-test-plan.md`. La IA **navega la UI con MCP**, descubre endpoints (`/openapi.json`, `/docs`, `/health`, probes livianos) y escribe `TEST_PLAN.md` con la matriz de casos UI/API. Si el SUT tiene menú/sidebar/tabs, el plan exige un Page Object llamado `MenuPage`. Tu trabajo: revisar que el plan sea razonable **antes** de dejar que implemente.
-
-### Paso 6 — Genera slices (prompt 04, una por slice)
-
-Pega `prompts/04-slice-generator.md` una vez por slice del plan:
-
-```
-SLICE=<slice folder name from TEST_PLAN.md>
-SEED_SLICE=<empty para la primera; una slice ya hecha para las siguientes>
+```ts
+{
+  name: "api",
+  use: {
+    baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com",
+  },
+  testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+},
 ```
 
-La IA **navega con MCP para confirmar selectores reales**, luego genera `src/features/<slice>/` con specs co-localizados. Verifica cada slice:
+> 🔍 **Detalle que parece obvio — `{ name: "api", ... }` sin `storageState`, sin `dependencies`**
+> **Por qué así (y no la alternativa obvia):** los tests de API se autentican por su cuenta — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. No necesitan la sesión de navegador que el setup deja en `.auth/user.json`.
+> **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies: ["setup"]`, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume. El aislamiento es intencional.
 
-```bash
-$ pnpm typecheck
-$ pnpm exec playwright test src/features/<slice> --project=ui-chromium
-$ pnpm exec playwright test src/features/<slice> --project=api   # si hay *.api.spec.ts
+Y **excluye** la carpeta del módulo 5 de los `ui-*` (para que no la corran sin headers de API):
+
+```ts
+{
+  name: "ui-chromium",
+  // ...
+  testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+},
+// idem en ui-firefox y ui-webkit
 ```
 
-> 💡 `ui-chromium` es el loop rápido. Cuando la slice quede verde, corre `pnpm test:cross` para pasarla por toda la matriz (Firefox, WebKit y los dos móviles). Ahí saltan los problemas de motor o de viewport responsive.
+**Estado completo del config en M05:**
 
-### Paso 7 — Fixtures/DI y CI (prompts 05 y 06)
+```ts
+// playwright.config.ts — Estado en M05
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
 
-`prompts/05-fixtures-di.md` cablea `src/shared/fixtures.ts` (inyección de dependencias) sin meter lógica de feature en `shared/`. `prompts/06-ci-scripts.md` agrega scripts y un workflow de GitHub Actions con **dos jobs**:
+const STORAGE_STATE = ".auth/user.json";
 
-- **`test`** — corre en cada push/PR, rápido: instala solo Chromium y corre `typecheck` + `test:smoke` + `test:api` + `test:ui`.
-- **`cross-browser`** — opt-in (`workflow_dispatch` o nightly): instala Chromium/Firefox/WebKit y corre `pnpm test:cross`.
+export default defineConfig({
+  testDir: ".",
+  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  reporter: [["html", { open: "never" }], ["list"]],
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+  projects: [
+    { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
+    {
+      name: "ui-chromium",
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+    },
+    {
+      name: "ui-firefox",
+      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+    },
+    {
+      name: "ui-webkit",
+      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+    },
+    {
+      name: "api",  // 🆕 sin storageState, sin dependencies
+      use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+    },
+  ],
+});
+```
 
-> 🎯 **Por qué dos jobs:** los PRs quedan rápidos (chromium) y la matriz completa corre bajo demanda. Instalar 3 motores en cada push sería lento y caro sin agregar señal en el 99% de los cambios.
+Añade los scripts de M05 al `package.json`:
 
-### Paso 8 — Healer, commit y skill (prompts 07 → 10)
+```json
+"scripts": {
+  "m5": "playwright test modulo-07-api-layer --project=api",
+  "test:api": "playwright test --project=api"
+}
+```
 
-- `prompts/07-healer-review.md`: pégale los outputs reales de `typecheck`/`test:ui`/`test:api` y corrige lo mínimo.
-- `prompts/08-git-github-pr.md` (opcional): commit + `gh repo create` + push a `main`; ahí corre el CI por fin en GitHub.
-- `prompts/09-create-reusable-skill.md` y `10-use-skill-to-bootstrap-harness.md` (opcional): encapsulan el protocolo en una **skill** agnóstica de IA para repetirlo en otro SUT.
+Y verifica que `tsconfig.json` incluya `services/`:
+
+```json
+{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "services/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "tests/**/*.ts",
+    "modulo-*/**/*.ts"
+  ]
+}
+```
 
 ---
 
 ## ▶️ Cómo ejecutar este módulo
 
-- **Comando del módulo:** los prompts se pegan en Claude Code, en orden (`00 → 10`). El orden importa: cada prompt asume el contrato y el plan de los anteriores.
-- **Loop rápido de UI:** `pnpm test:ui` (solo Chromium).
-- **Matriz completa:** `pnpm test:cross` (Chromium + Firefox + WebKit + Pixel 5 + iPhone 13).
-- **Solo móvil / responsive:** `pnpm test:mobile`.
-- **Solo API:** `pnpm test:api`. **Smoke:** `pnpm test:smoke` (Chromium, rápido).
-- **Reporte:** `pnpm report`.
+- **Comando del módulo (project api):** `pnpm m7`
+- **Suite API completa:** `pnpm test:api`
+- **UI mode:** `pnpm test:ui`
+- **Debug:** `pnpm test:debug`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@regression"`) o por archivo (`pnpm exec playwright test modulo-07-api-layer/reto.spec.ts --project=api`)
+- **Ver el reporte:** `pnpm report`
+- **🪟 Windows / PowerShell:** las variables de entorno van con `$env:VAR="x"; pnpm m7` (no `VAR=x pnpm m7`). Ej.: `$env:API_URL="https://mi-backend"; pnpm m7`
 
-> 🪟 **Windows / PowerShell:** los scripts `pnpm ...` son idénticos; solo cambia el comando del setup script (`.ps1` con `-TargetDir`).
-
----
-
-## Señales de mala salida de IA (recházalas)
-
-1. **Carpetas de capa** (`src/pages`, `src/services`, `src/tests/ui`): estructura equivocada — todo va en `src/features/<slice>/`.
-2. Locators CSS profundos o **XPath**, o `waitForTimeout`.
-3. Slices que tocan archivos de otra feature sin necesidad.
-4. `core/` importando de `features/`.
-5. Tests con >2 assertions sueltas, o login UI repetido en cada spec sin razón.
-6. Locators inventados **sin haber navegado con MCP** primero.
-7. `TODO` en archivos del harness o código que no compila.
+> M05 corre contra el **backend** (`API_URL`), no el frontend (`BASE_URL`). El project `api` ya apunta a `process.env.API_URL ?? "https://omnipizza-backend.onrender.com"`.
 
 ---
 
 ## Outcome esperado
 
-- [ ] Tienes una **carpeta externa** con un harness generado por Claude Code, versionado con git.
-- [ ] `AGENTS.md` define patrones, nombres de export y reglas; `TEST_PLAN.md` tiene matriz UI/API basada en evidencia MCP.
-- [ ] La estructura es **vertical-slice**: `src/features/<slice>/` con specs co-localizados y **sin** carpetas de capa.
-- [ ] `playwright.config.ts` corre `fullyParallel` con matriz **cross-browser + responsive** (`ui-chromium/firefox/webkit` + `ui-mobile-chrome/ui-mobile-safari`) y un project `api` sin browser.
-- [ ] `pnpm typecheck` verde y al menos un spec UI + un spec API (o un bloqueo API documentado con evidencia).
-- [ ] Corriste `pnpm test:cross` y entiendes qué agrega cada motor/viewport.
-- [ ] Sabes qué hizo bien Claude Code y qué tuviste que corregir tú.
-
----
-
-> 📚 **Profundización opcional:**
-> - [Playwright — Test projects & parallelism](https://playwright.dev/docs/test-parallel) — `fullyParallel`, `workers`, projects.
-> - [Playwright — Emulation (devices)](https://playwright.dev/docs/emulation) — viewports móviles y `devices`.
-> - [Playwright MCP — README oficial](https://github.com/microsoft/playwright-mcp) — tools del browser para discovery.
-> - [Anthropic — Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) — patrones para agentes que generan/mantienen código.
+- [ ] Entiendes **por qué** `abstract` hasta ahora (y no en M03).
+- [ ] Sabes qué pasa si intentas `new BaseService(...)` (TS lo bloquea).
+- [ ] Puedes explicar el factory `static async create`.
+- [ ] Sabes cómo se inyecta el Bearer con `extraHTTPHeaders`.
+- [ ] Llamas `await service.dispose()` al final de cada uso.
+- [ ] Los mismos contratos (`User`, `Market`, `Pizza`) alimentan UI y API.
+- [ ] Completaste `getByMarket(market)` y `getById(id)` en `PizzaService`.

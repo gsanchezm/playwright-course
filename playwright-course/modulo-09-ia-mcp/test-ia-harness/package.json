@@ -1,0 +1,27 @@
+{
+  "name": "omnipizza-ai-harness",
+  "version": "1.0.0",
+  "description": "Referencia de AI Test Harness (Playwright + TypeScript) para el Modulo 09 sobre OmniPizza",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --project=ui-chromium",
+    "test:cross": "playwright test --project=ui-chromium --project=ui-firefox --project=ui-webkit --project=ui-mobile-chrome --project=ui-mobile-safari",
+    "test:firefox": "playwright test --project=ui-firefox",
+    "test:webkit": "playwright test --project=ui-webkit",
+    "test:mobile": "playwright test --project=ui-mobile-chrome --project=ui-mobile-safari",
+    "test:api": "playwright test --project=api",
+    "test:smoke": "playwright test --grep @smoke --project=ui-chromium",
+    "test:headed": "playwright test --project=ui-chromium --headed",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^20",
+    "typescript": "^5.7",
+    "dotenv": "^17"
+  }
+}

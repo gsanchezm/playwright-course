@@ -1,102 +1,225 @@
-# 🚩 Reto M07 · Genera un AI Test Harness
+# 🚩 Reto M07
 
-**Dirige a Claude Code para generar un framework E2E completo — vertical-slice, en paralelo y cross-browser — sin escribir código de producción a mano.**
+## Paso 9 — Resolver el reto
 
-## Objetivo
+Tienes que extender `PizzaService` con DOS métodos nuevos: `getByMarket(market)` y `getById(id)`. Y luego escribir un test que los use juntos.
 
-Generar un AI Test Harness verde para OmniPizza usando **solo prompts** + Playwright MCP. Tu trabajo es **dirigir, verificar y corregir**, no teclear el framework. Al final mides el límite real de tu stack de IA hoy.
-
-## 🧰 Pre-requisitos
-
-- [ ] Node ≥ 20, `pnpm` ≥ 9, **Claude Code** con sesión, git. `gh` es opcional (solo para el push final).
-- [ ] Un cliente con **Playwright MCP** conectado (`claude mcp list` muestra `✓ connected`).
-- [ ] OmniPizza despierto (Render free tier): UI `https://omnipizza-frontend.onrender.com`, API `https://omnipizza-backend.onrender.com`. La primera carga tarda 30-40s.
-
-> ⚠️ El harness debe vivir en una **carpeta externa vacía**, fuera del repo del curso y separado del SUT. No se permite editar a mano el código generado, salvo que documentes por qué Claude Code no pudo corregirlo tras 3 intentos.
+El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando dónde escribir cada método dentro de `services/PizzaService.ts`.
 
 ---
 
-## Pasos
+## Código completo — `reto.spec.ts`
 
-### Paso 1 — Setup y ambiente (prompts 00 → 01)
+```ts
+// @file modulo-07-api-layer/reto.spec.ts
+// ============================================================
+// 🚩 Reto M07 — Extender PizzaService con getByMarket y getById
+// ============================================================
+// Objetivo pedagógico: practicar el patrón "un método por endpoint"
+// dentro de una clase concreta que extiende BaseService (abstract).
+//
+// Vas a:
+//   1. Añadir dos métodos nuevos a `services/PizzaService.ts`.
+//   2. Validar que los tipos siguen siendo seguros (TS no compila
+//      si la respuesta no cumple `Pizza`).
+//   3. Escribir un test que use ambos métodos juntos.
+// ============================================================
+//
+// 🧰 Pre-requisitos:
+//   ✔ pnpm test:api corre en verde con el ejemplo del módulo.
+//   ✔ Lees `services/PizzaService.ts` y `services/BaseService.ts`.
+//   ✔ Tienes claro que cada uso termina con `await pizzas.dispose()`.
+//
+// ▶ Cómo correr SOLO este reto:
+//   pnpm exec playwright test modulo-07-api-layer/reto.spec.ts --project=api
+// ============================================================
 
-Pega `prompts/00-create-setup-scripts.md`, corre el script sobre una carpeta externa, entra con `claude` y pega `prompts/01-bootstrap-environment.md`.
+import { test, expect } from "@playwright/test";
+import { AuthService, PizzaService } from "../services";
+import type { User, Market } from "../types";
+import usersJson from "../data/users.json";
+import marketsJson from "../data/markets.json";
 
-✅ **Cómo verificar:** `claude mcp list` responde `✓ connected` y la IA confirma versiones reales navegando una página con MCP (no de memoria).
+const users = usersJson as User[];
+const markets = marketsJson as Market[];
+const standardUser = users.find((u) => u.username === "standard_user")!;
+const mxMarket = markets.find((m) => m.code === "MX")!;
+const API_URL =
+  process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-### Paso 2 — Fundación paralela + cross-browser (prompt 02)
+test.describe("Challenge M07 — extend PizzaService", () => {
+  test.skip("TODO — implement getByMarket and getById, then use both", async () => {
+    // ────────────────────────────────────────────────────────
+    // TODO 0 — Antes de escribir el test, MODIFICA el servicio
+    // ────────────────────────────────────────────────────────
+    // Abre `services/PizzaService.ts` y añade dos métodos públicos
+    // junto al `list()` que ya existe.
 
-Pega `prompts/02-master-architect.md`. Crea `AGENTS.md`, `package.json`, `playwright.config.ts`, `tsconfig.json`, `src/core/` y `src/shared/` — **sin features todavía**.
+    // ════════════════════════════════════════════════════════
+    // 📁 EN services/PizzaService.ts:
+    // ════════════════════════════════════════════════════════
+    //
+    // ──────── TODO A — getByMarket(market) ────────
+    //
+    //   Qué hacer:
+    //     Listar pizzas del mercado actual y FILTRAR las que tengan
+    //     `currency === market.currency`. (En OmniPizza basta con
+    //     reutilizar `this.list()` porque el header X-Country-Code
+    //     ya filtra del lado del backend — pero hacer el filtro
+    //     explícito en cliente sirve como cinturón.)
+    //
+    //   Pista (cópialo dentro de la clase PizzaService):
+    //
+    //     async getByMarket(market: Market): Promise<Pizza[]> {
+    //       const all = await this.list();
+    //       return all.filter((p) => p.currency === market.currency);
+    //     }
+    //
+    //   No olvides:
+    //     · `import type { Market, Pizza } from "../types";` (si falta)
+    //
+    //   Cómo verificar:
+    //     pnpm typecheck   → debe pasar
+    //
+    // ──────── TODO B — getById(id) ────────
+    //
+    //   Qué hacer:
+    //     Hacer un GET a `/api/pizzas/:id` y devolver el objeto.
+    //     Lanzar error si el response no es ok.
+    //
+    //   Pista (cópialo dentro de la clase PizzaService):
+    //
+    //     async getById(id: string | number): Promise<Pizza> {
+    //       const res = await this.api.get(this.url(`/${id}`));
+    //       if (!res.ok()) {
+    //         throw new Error(
+    //           `getById(${id}) failed (${res.status()}): ${await res.text()}`
+    //         );
+    //       }
+    //       return (await res.json()) as Pizza;
+    //     }
+    //
+    //   Cómo verificar:
+    //     pnpm typecheck   → debe pasar
+    //     Inspecciona el endpoint real de OmniPizza por si la ruta es
+    //     `/api/pizzas/:id` o algo distinto (ajústalo si no responde).
+    //
+    // ════════════════════════════════════════════════════════
+    // FIN de cambios en services/PizzaService.ts
+    // ════════════════════════════════════════════════════════
 
-✅ **Cómo verificar:** `pnpm install && pnpm typecheck` pasa, y `playwright.config.ts` corre `fullyParallel` con **6 projects**: `ui-chromium`, `ui-firefox`, `ui-webkit`, `ui-mobile-chrome` (Pixel 5), `ui-mobile-safari` (iPhone 13) y `api`. Compruébalo:
 
-```bash
-$ pnpm exec playwright test --list | grep -oE '\[(ui-[a-z-]+|api)\]' | sort -u
+    // ────────────────────────────────────────────────────────
+    // TODO 1 — Quitar el `test.skip` y empezar el flujo
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Borra el `test.skip(...)` de arriba y deja `test(...)`.
+    //   Después arranca con el login estándar:
+    //
+    // Pista:
+    const auth = await AuthService.create(API_URL);
+    const { access_token } = await auth.login(standardUser);
+    await auth.dispose();
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 2 — Crear PizzaService apuntando al mercado MX
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Factory async: el servicio queda con Bearer + X-Country-Code listos.
+    //
+    // Pista:
+    const pizzas = await PizzaService.create(
+      API_URL,
+      access_token,
+      mxMarket.code,
+    );
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 3 — Usar getByMarket(mxMarket) y validar el resultado
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   1) Llamar el método nuevo.
+    //   2) Asegurar que la lista no está vacía.
+    //   3) Asegurar que TODAS las pizzas tienen `currency === "MXN"`.
+    //
+    // Pista:
+    //   const list = await pizzas.getByMarket(mxMarket);
+    //   expect(list.length).toBeGreaterThan(0);
+    //   for (const p of list) {
+    //     expect(p.currency).toBe(mxMarket.currency);
+    //   }
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 4 — Usar getById con la primera pizza de la lista
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   1) Tomar el `id` de la primera pizza.
+    //   2) Pedir el detalle.
+    //   3) Validar que `detail.id === first.id`.
+    //
+    // Pista:
+    //   const first = list[0];
+    //   const detail = await pizzas.getById(first.id);
+    //   expect(detail.id).toBe(first.id);
+    //   expect(detail).toHaveProperty("name");
+    //
+    // Criterio de éxito:
+    //   El test pasa en VERDE. En la terminal verás:
+    //     ✓ Reto M07 — extender PizzaService
+
+
+    // ────────────────────────────────────────────────────────
+    // TODO 5 — SIEMPRE dispose al final
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Cerrar el contexto HTTP para no dejar conexiones abiertas.
+    //
+    // Pista (DEBE ir en un try/finally en producción, aquí basta):
+    await pizzas.dispose();
+
+    expect(true).toBe(true);
+  });
+});
+
+// ============================================================
+// 📝 Reflexión final — responde mentalmente:
+// ============================================================
+//
+//   1. Si `getById` devuelve un objeto SIN el campo `name`,
+//      ¿quién se queja primero, TypeScript o el `expect`?
+//      (Esperado: el `expect`, porque el cast `as Pizza` confía
+//      en el contrato. Por eso `expect(detail).toHaveProperty("name")`
+//      es una salvaguarda válida.)
+//
+//   2. ¿Qué pasa si te saltas `await pizzas.dispose()`?
+//      (Esperado: leaks de conexiones HTTP. En suites grandes,
+//      el runner empieza a fallar con "too many open sockets".)
+//
+//   3. Si OmniPizza añade `paymentMethod` a `Pizza`, ¿necesitas
+//      modificar este test? (Esperado: no, mientras los campos
+//      que validas sigan ahí.)
+//
+// 👉 En M08 llevamos todo esto a CI/CD: este mismo reto correrá
+//    automáticamente en GitHub Actions cada vez que abras un PR,
+//    sobre 3 browsers en paralelo, con traces descargables.
+// ============================================================
 ```
-
-### Paso 3 — Plan de pruebas con evidencia (prompt 03)
-
-Pega `prompts/03-test-plan.md`. La IA navega OmniPizza con MCP y escribe `TEST_PLAN.md` con matriz UI/API y slices propuestas.
-
-✅ **Cómo verificar:** `TEST_PLAN.md` existe, tiene casos `ui` y `api`, marca como *bloqueado* lo que no pudo confirmar, y exige `MenuPage` si detectó navegación compartida.
-
-### Paso 4 — Slices verticales (prompt 04)
-
-Genera cada slice del plan con `prompts/04-slice-generator.md` (una por vez). Verifica en el loop rápido:
-
-```bash
-$ pnpm exec playwright test src/features/<slice> --project=ui-chromium
-```
-
-✅ **Cómo verificar:** los archivos caen en `src/features/<slice>/` con specs **co-localizados**. Si aparece cualquier carpeta de capa (`src/pages`, `src/services`, `src/tests/ui`…), **rechaza la salida** y pide que la mueva a la slice. Si la IA generó locators sin navegar con MCP, recházala.
-
-### Paso 5 — DI, CI y matriz completa (prompts 05 → 06)
-
-Pega `prompts/05-fixtures-di.md` y `prompts/06-ci-scripts.md`. Luego corre la suite entera en paralelo y la matriz cross-browser:
-
-```bash
-$ pnpm test:api
-$ pnpm test:cross     # chromium + firefox + webkit + Pixel 5 + iPhone 13
-```
-
-✅ **Cómo verificar:** la suite corre en paralelo; el workflow tiene dos jobs (`test` chromium en push/PR + `cross-browser` opt-in). Si un test pasa en `ui-chromium` pero falla en `ui-mobile-*`, ese es un bug **responsive** real (testid `-responsive`), no del test — anótalo.
-
-### Paso 6 — Healer y cierre (prompt 07, y 08 opcional)
-
-Pega `prompts/07-healer-review.md` con los outputs reales. Opcional: `prompts/08-git-github-pr.md` para commit + repo + push a `main` y ver el CI en verde.
-
-✅ **Cómo verificar:** suite verde o diagnóstico claro tras máximo 3 iteraciones. Si publicaste, el job `test` del CI sale verde.
-
-### Paso 7 — Bonus: skill reutilizable (prompts 09 → 10)
-
-Pega `prompts/09-create-reusable-skill.md` y luego `10-use-skill-to-bootstrap-harness.md` con otro `UI_URL`/`API_URL`/`TARGET_DIR`.
-
-✅ **Cómo verificar:** existe `skills/ai-test-harness-builder/` y con la skill preparaste un **segundo** ambiente con menos instrucciones. Revisa que su `workflow.md` describa `src/features/<slice>/` y **no** carpetas de capa.
 
 ---
 
-## ✅ Entregables
+## Paso 10 — Versiona tu trabajo (Git JIT)
 
-- [ ] Carpeta externa con el harness generado y versionado.
-- [ ] Estructura **vertical-slice** (`src/features/<slice>/` co-localizado); **cero** carpetas de capa.
-- [ ] `playwright.config.ts` con `fullyParallel` + matriz cross-browser + responsive (6 projects) verificada con `--list`.
-- [ ] `pnpm typecheck` verde; ≥1 spec UI y ≥1 spec API (o bloqueo API documentado).
-- [ ] `pnpm test:cross` ejecutado, con nota de qué agregó cada motor/viewport.
-- [ ] Reflexión breve: qué hizo bien Claude Code, qué corregiste, cuántas iteraciones tomó.
+Agrega solo lo que toca este módulo y commitea con un mensaje convencional. La capa de servicios + su config + el módulo son una unidad coherente: un commit por capa deja un historial legible (y, en M08, fácil de revertir en CI).
 
-## Bonus
+```bash
+git add services tests/api playwright.config.ts modulo-07-api-layer
+git commit -m "feat(m07): API layer con BaseService abstracta"
+git log --oneline -1
+```
 
-- Repite el reto apuntando a **otro SUT** (cambia solo `--ui-url`/`--api-url`): mide si los prompts se mantienen genéricos.
-- Corre `prompts/12-multirepo-project-design.md` o `13-monorepo-project-design.md` si tienes el código fuente del SUT, para un `TEST_PLAN.md` más preciso.
+> 🪟 **Windows / PowerShell:** los comandos `git` son idénticos; no necesitas escapar nada aquí.
 
-## 📝 Preguntas de reflexión
-
-1. ¿Por qué el project `api` usa `testMatch` y los de UI `testIgnore`, en vez de una sola regla? *(Pista: las specs de API no deben abrir un browser.)*
-2. Si tuvieras que quitar un project para acelerar CI, ¿cuál y por qué? *(Pista: piensa en cobertura de motor vs. tiempo.)*
-3. ¿Qué gana `fullyParallel: true` y qué riesgo introduce si tus tests comparten estado? *(Pista: aislamiento entre workers.)*
-
----
-
-> 📚 **Profundización opcional:**
-> - Agrega un tercer viewport (tablet) al `playwright.config.ts` y observa si algún testid necesita una tercera rama en `tid()`.
-> - Escribe tu propio MCP server que exponga tu sistema interno (Jira, TestRail) para que la IA lea casos manuales y los convierta a slices.
+**Cómo verificas:** `git log --oneline -1` muestra el commit `feat(m07): ...` en la cima.

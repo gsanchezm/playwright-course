@@ -1,193 +1,179 @@
 # 🚩 Reto M02
 
-## Paso 9 — Resolver el reto
+## Paso 7 — Resolver el reto
 
-Abre `reto.spec.ts`. La meta es **añadir un 5º mercado (`CA`, Canadá, `CAD`) sin tocar el spec**. Vas a editar:
+Abre `reto.spec.ts`. La meta es **localizar 3 elementos del catálogo con el nivel correcto de la jerarquía**. Para cada elemento eliges el nivel **MÁS ALTO** que funcione (`role` → `testid` → CSS), no el primero que se te ocurra:
 
-1. `data/markets.json` → añadir el nuevo objeto.
-2. `types/omnipizza.d.ts` → ampliar el union (`CountryCode` y `Currency`).
-3. Completar los TODOs del reto para que la validación de currency sea data-driven (no hardcoded como en el ejemplo).
+1. **El buscador** → NIVEL 1 (`getByRole`, es un `textbox`). El catálogo está bien instrumentado: no bajes a testid ni a CSS aquí.
+2. **Una pizza concreta** → NIVEL 1 + filtro (`getByRole("heading", { level: 3 }).filter({ hasText })`) — de "muchos" a "uno" sin CSS.
+3. **El botón add-to-cart (icon-only)** → NIVEL 4 (CSS de prefijo) + **scoping** dentro de su card.
 
-Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
+Todos los selectores que necesitas están en la **chuleta viva** del `test.describe("Reference — locator hierarchy")` de `ejemplo.spec.ts` (los dos `test.skip`). Cópialos de ahí. Cada TODO trae **Qué hacer / Pista / Cómo verificar**.
 
 ---
 
 ## Código completo — `reto.spec.ts`
 
 ```ts
-// @file modulo-02-locators-data/reto.spec.ts
+// @file modulo-02-locators/reto.spec.ts
 // ============================================================
-// 🚩 Reto M02 — Añadir un 5º mercado sin tocar este spec
+// 🚩 Reto M02 — Localiza 3 elementos con el NIVEL correcto
 // ============================================================
-// Objetivo pedagógico: comprobar que la parametrización funciona.
-// Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
-// automáticamente, sin tocar ni una línea de este archivo.
+// Objetivo pedagógico: aplicar la JERARQUÍA de locators a
+// conciencia. Para cada elemento tienes que elegir el nivel
+// MÁS ALTO que funcione (role → testid → CSS), no el primero
+// que se te ocurra. El catálogo de OmniPizza está bien
+// instrumentado, así que casi todo vive en getByRole; sólo las
+// cards (testids dinámicos) te obligan a bajar a CSS.
 //
-// El "truco" es que `markets.json` está tipado por la interfaz
-// `Market` (en types/omnipizza.d.ts). Si rompes el contrato,
-// TypeScript te lo dice ANTES de correr.
+// Todos los selectores que necesitas están en la CHULETA viva
+// del `test.describe("Reference — locator hierarchy")` de
+// `ejemplo.spec.ts` (los dos `test.skip`). Cópialos de ahí.
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m2 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
-//   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
+//   ✔ pnpm m2 corre en verde el smoke de un mercado (ejemplo.spec.ts).
+//   ✔ Tienes a mano la chuleta de locators de `ejemplo.spec.ts`.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --headed --project=ui-anon
+//   pnpm exec playwright test modulo-02-locators/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import type { Market, User } from "../types";
-import marketsJson from "../data/markets.json";
-import usersJson from "../data/users.json";
 
-const markets = marketsJson as Market[];
-const users = usersJson as User[];
-const standardUser = users.find((u) => u.username === "standard_user")!;
+// Credenciales leídas de .env (dotenv en playwright.config.ts).
+const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
+const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-test.describe("Challenge M02 — extended parameterization", () => {
-  // ────────────────────────────────────────────────────────
-  // TODO 0 — Antes de venir aquí, edita estos DOS archivos:
-  // ────────────────────────────────────────────────────────
-  //
-  //   A) data/markets.json — añade al final del array:
-  //        {
-  //          "code": "CA",
-  //          "fullName": "Canada",
-  //          "currency": "CAD"
-  //        }
-  //
-  //   B) types/omnipizza.d.ts — amplía los union types:
-  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
-  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
-  //
-  //   Verifica:
-  //     pnpm typecheck            ← debe pasar en verde
-  //     pnpm exec playwright test modulo-02-locators-data/reto.spec.ts --list
-  //                               ← debe listar 5 tests (uno por mercado)
-  //
-  //   💡 Si typecheck se queja con "Type '\"CA\"' is not assignable to
-  //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
-
-  for (const market of markets) {
-    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
-      page,
-    }) => {
-      // ────────────────────────────────────────────────────────
-      // TODO 1 — Login con standard_user en este mercado
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Replicar el bloque de login que ya viste en `ejemplo.spec.ts`:
-      //     goto, click market, fill username, fill password,
-      //     click login-button.
-      //
-      // Pista:
-      //   await page.goto("/");
-      //   await page.getByTestId(`market-${market.code}`).click();
-      //   await page.getByTestId("username-desktop").fill(standardUser.username);
-      //   await page.getByTestId("password-desktop").fill(standardUser.password);
-      //   await page.getByTestId("login-button-desktop").click();
-      //
-      // Cómo verificar (UI mode):
-      //   Para el caso `Reto-CA`, te aterriza en `/catalog` igual que
-      //   con MX/US/CH/JP (OmniPizza no diferencia visualmente CA;
-      //   lo importante es que la parametrización funciona).
+test.describe("Challenge M02 — locator hierarchy in the catalog", () => {
+  test("Challenge — locate 3 catalog elements with the right level @locators", async ({
+    page,
+  }) => {
+    // ────────────────────────────────────────────────────────
+    // TODO 1 — Login en el mercado MX (para llegar al catálogo)
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Replicar el bloque de login de `ejemplo.spec.ts`: goto,
+    //   click en la bandera MX, fill de username/password, click
+    //   en "Sign In", y aserción de que la URL contiene "/catalog".
+    //
+    // Pista (fíjate en el NIVEL de cada locator):
+    //   await page.goto("/");
+    //   await page.getByTestId("market-MX").click();                 // testid: bandera icon-only
+    //   await page.getByTestId("username-desktop").fill(USERNAME);   // testid: input sin label
+    //   await page.getByTestId("password-desktop").fill(PASSWORD);   // testid: input sin label
+    //   await page.getByRole("button", { name: "Sign In" }).click(); // role: el botón SÍ coopera
+    //   await expect(page).toHaveURL(/\/catalog/);
+    //
+    // Cómo verificar (UI mode):
+    //   Aterrizas en el grid de pizzas de /catalog.
 
 
-      // ────────────────────────────────────────────────────────
-      // TODO 2 — Validar que llegaste al catálogo
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Aserción de URL: debe contener "/catalog".
-      //
-      // Pista:
-      //   await expect(page).toHaveURL(/\/catalog/);
+    // ────────────────────────────────────────────────────────
+    // TODO 2 — Elemento 1 (NIVEL 1: getByRole) → el buscador
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Localizar la caja de búsqueda del catálogo por su ROL
+    //   (es un textbox) y aseverar que está visible. El catálogo
+    //   está bien instrumentado: NO bajes a testid ni a CSS aquí.
+    //
+    // Pista:
+    //   const searchBox = page.getByRole("textbox", { name: "Busca tu pizza favorita..." });
+    //   await expect(searchBox).toBeVisible();
+    //
+    // Cómo verificar:
+    //   La aserción pasa; en UI mode el buscador queda resaltado.
 
 
-      // ────────────────────────────────────────────────────────
-      // TODO 3 — Contar las pizzas del catálogo en este mercado
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   1) Crear un locator que matchee `[data-testid^="pizza-card-"]`.
-      //   2) Esperar a que la primera sea visible (timeout 30s por
-      //      el cold start de Render).
-      //   3) Obtener el array con `.all()` y validar que `.length > 0`.
-      //
-      // Pista:
-      //   const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
-      //   await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
-      //   const all = await pizzaCards.all();
-      //   expect(all.length).toBeGreaterThan(0);
-      //
-      // Cómo verificar (UI mode):
-      //   Verás un grid de pizzas con varias tarjetas — cuenta visualmente
-      //   que coincide con lo que reporta `all.length` en el log.
+    // ────────────────────────────────────────────────────────
+    // TODO 3 — Elemento 2 (NIVEL 1 + filtro): UNA pizza concreta
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   1) Localizar TODOS los headings de pizza por rol
+    //      (getByRole "heading", level: 3) → es un "locator de muchos".
+    //   2) Aseverar que hay más de 0 (usa .count()).
+    //   3) ESTRECHAR a una sola pizza con .filter({ hasText: ... })
+    //      (elige un nombre que exista en el catálogo, p.ej. "Pepperoni")
+    //      y aseverar que esa está visible.
+    //
+    // Pista:
+    //   const headings = page.getByRole("heading", { level: 3 });
+    //   expect(await headings.count()).toBeGreaterThan(0);
+    //   const pepperoni = headings.filter({ hasText: "Pepperoni" });
+    //   await expect(pepperoni).toBeVisible();
+    //
+    // Cómo verificar:
+    //   Del "muchos" (todas las pizzas) pasaste a "exactamente esta"
+    //   SIN bajar a un CSS frágil: sólo role + filtro.
 
 
-      // ────────────────────────────────────────────────────────
-      // TODO 4 — Validación DATA-DRIVEN de la currency
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Mapear cada `market.currency` a su símbolo y aseverar que
-      //   el body de la página lo contiene. Esto reemplaza el
-      //   `if (market.code === "MX")` del ejemplo (que era hardcoded).
-      //
-      // Pista:
-      //   const symbol = {
-      //     MXN: "$",
-      //     USD: "$",
-      //     CHF: "Fr",
-      //     JPY: "¥",
-      //     CAD: "$",     // ← tu nuevo mercado
-      //   }[market.currency];
-      //   await expect(page.locator("body")).toContainText(symbol);
-      //
-      // Cómo verificar:
-      //   El test pasa para los 5 mercados. Si el símbolo no aparece,
-      //   revisa qué muestra OmniPizza para esa currency (puede usar
-      //   un código distinto como "CA$").
+    // ────────────────────────────────────────────────────────
+    // TODO 4 — Elemento 3 (NIVEL 4: CSS) + scoping
+    // ────────────────────────────────────────────────────────
+    // Qué hacer:
+    //   Las cards tienen testids DINÁMICOS (pizza-card-123, ...),
+    //   así que el nivel correcto es CSS con prefijo `^=`.
+    //   1) Localizar las cards con [data-testid^="pizza-card-"].
+    //   2) Aseverar que hay más de 0.
+    //   3) SCOPING: acotar a una card por su texto (.filter) y,
+    //      DENTRO de ese scope, localizar su botón (add-to-cart
+    //      icon-only) con card.getByRole("button"); aseverar visible.
+    //
+    // Pista:
+    //   const cards = page.locator('[data-testid^="pizza-card-"]');
+    //   expect(await cards.count()).toBeGreaterThan(0);
+    //   const card = cards.filter({ hasText: "Pepperoni" });
+    //   await expect(card.getByRole("button").first()).toBeVisible();
+    //
+    // Cómo verificar:
+    //   El botón icon-only queda inequívoco NO por un selector más
+    //   feo, sino por CONTEXTO (buscarlo dentro de su card).
 
 
-      expect(market).toBeDefined(); // placeholder — quítalo cuando termines
-    });
-  }
+    expect(true).toBe(true); // placeholder — quítalo cuando termines los TODOs
+  });
 });
 
 // ============================================================
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. ¿Cuántos archivos tocaste para añadir un 5º mercado?
-//      (Esperado: 2 — markets.json y omnipizza.d.ts.
-//       Si tocaste el spec, perdiste el premio del data-driven.)
+//   1. De los 3 elementos, ¿cuántos resolviste con getByRole y
+//      cuántos te obligaron a bajar de nivel? ¿Por qué?
+//      (Esperado: el buscador y la pizza con role; las cards con
+//       CSS porque sus testids son dinámicos.)
 //
-//   2. ¿Qué pasaría si OmniPizza añadiera 50 mercados nuevos?
-//      ¿Cuántas líneas de spec tendrías que escribir? (Esperado: 0.)
+//   2. En el TODO 3 pasaste de "muchos" a "uno" con .filter en vez
+//      de un CSS posicional (nth-child). ¿Qué se rompería si en su
+//      lugar usaras `.nth(2)` y el catálogo reordena las pizzas?
 //
-//   3. Si quitas `as Market[]` del cast, ¿qué hace TypeScript?
-//      Pruébalo en tu editor: el tipo se vuelve `any` y pierdes
-//      el autocompletado de `market.code`. Por eso el cast importa.
+//   3. En el TODO 4, ¿por qué card.getByRole("button") es más
+//      robusto que un getByRole("button") global de la página?
+//      (Pista: scoping = desambiguar por contexto, no por un
+//       selector más frágil.)
 //
-// 👉 En M03 vas a refactorizar este bloque de login a una clase
-//    POM: 5 líneas se convertirán en 1.
+// 👉 En M03 vas a reutilizar este mismo catálogo, pero
+//    parametrizando el smoke por los 4 mercados con datos tipados
+//    (data/ + types/ + for...of). Los locators no cambian; cambia
+//    de dónde salen los DATOS.
 // ============================================================
 ```
 
 ---
 
-## Paso 10 — Versiona tu trabajo (Git JIT)
+## Paso 8 — Versiona tu trabajo (Git JIT)
 
 Cuando el reto quede en verde, agrega **solo lo que cambió en este módulo** y commitéalo con un mensaje convencional:
 
 ```bash
-git add types data modulo-02-locators-data
-git commit -m "feat(m02): data-driven con JSON tipado"
+git add modulo-02-locators
+git commit -m "feat(m02): jerarquía de locators + chuleta de referencia"
 ```
 
-M02 introduce dos carpetas reusables (`types/`, `data/`) más el spec del módulo. Versionarlas en un commit atómico deja un punto de retorno limpio **antes** de que M03 empiece a refactorizar hacia POM. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan en M03/M04, cuando el flujo los pida.)
+M02 introduce la disciplina de locators y la chuleta viva del módulo. Versionarla en un commit atómico deja un punto de retorno limpio **antes** de que M03 empiece a parametrizar con datos tipados. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan cuando el flujo los pida.)
 
 **Cómo verificas:**
 

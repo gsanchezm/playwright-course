@@ -14,7 +14,7 @@ armado y listo para clonar y correr aislado — sin arrastrar el resto del curso
 
 - `playwright.config.ts` — estado mínimo M01: `testDir: "."` + `testMatch: modulo-*`,
   `import "dotenv/config"`, timeouts generosos (cold start de Render), `trace:
-  retain-on-failure`, y **un solo** project **`ui-anon`** (anónimo: M01-M03 son
+  retain-on-failure`, y **un solo** project **`ui-anon`** (anónimo: M01-M05 son
   ejercicios de login por UI, sin sesión heredada).
 - `tsconfig.json` — `strict`, tipos de `node` + `@playwright/test`, `resolveJsonModule`.
 - `.env.example` — plantilla de variables (cópiala a `.env`, gitignored).
@@ -22,9 +22,9 @@ armado y listo para clonar y correr aislado — sin arrastrar el resto del curso
   duplicación deliberada**.
 - `tests/reto.spec.ts` — TC-003 (filtrar por categoría "popular").
 
-**Todavía NO existe** (llega en módulos siguientes): `data/`+`types/` (M02), `pages/`
-(M03), `fixtures/`+`helpers/`+`tests/setup/` (M04), `services/` (M05), CI real en
-`.github/workflows/` (M06).
+**Todavía NO existe** (llega en módulos siguientes): `data/`+`types/` (M03), `pages/`
+(M04), `fixtures/`+`helpers/` (M05), `tests/setup/` (M06), `services/` (M07), CI real en
+`.github/workflows/` (M08).
 
 ## Cómo correr
 

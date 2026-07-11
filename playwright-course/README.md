@@ -2,7 +2,9 @@
 
 Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pasaron por el curso de [TypeScript](../typescript-qa-course/). **Git/GitHub está integrado aquí** — este curso es autónomo: no necesitas hacer otro curso antes.
 
-**Filosofía v3 — arquitectura incremental:** cada módulo **añade una capa** al framework. Los conceptos de TS / Playwright / Git entran *just-in-time* cuando se necesitan, no como bloques teóricos sueltos. Al terminar M06 tienes un framework E2E + API producción-grade y un flujo Git/GitHub real (commits, branches, PRs, CI).
+**Filosofía v3 — arquitectura incremental:** cada módulo **añade una capa** al framework. Los conceptos de TS / Playwright / Git entran *just-in-time* cuando se necesitan, no como bloques teóricos sueltos. Al terminar M08 tienes un framework E2E + API producción-grade y un flujo Git/GitHub real (commits, branches, PRs, CI).
+
+> 🧱 **Modelo por módulo (v3.1).** Ya **no hay un monorepo raíz**: cada módulo trae su propia carpeta **[`proyecto/`](./modulo-01-smoke-feo/proyecto/)** — un proyecto Playwright **autocontenido y ejecutable** (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`). El README de cada módulo enseña; su `proyecto/` es el estado "ya resuelto" para clonar, correr y comparar.
 
 | Aspecto | Valor |
 |---|---|
@@ -12,64 +14,61 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | Stack | React + Vite (front), FastAPI (back) |
 | Auth | JWT con usuarios deterministas |
 | Mercados | MX / US / CH / JP |
-| Duración | 5.5 – 7 horas, 7 módulos (M00 + 6) |
+| Duración | 7 – 9 horas, 10 módulos (M00 + 9) |
 
-> ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M04) hace el warmup automático.
+> ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M06) absorbe ese cold start con un timeout generoso.
 
 ---
 
-## Los 7 módulos (+ M07 opcional)
+## Los 10 módulos (+ M09 opcional)
 
 | # | Módulo | Pieza que añade al framework |
 |---|---------|-------------|
 | 0 | [Git esencial](./modulo-00-git-esencial/) | Config + `.gitignore` + ciclo `add`/`commit` + `log` (versión condensada) |
-| 1 | [Smoke feo](./modulo-01-smoke-feo/) | `ejemplo.spec.ts` plano + `.env` + `dotenv` |
-| 2 | [Locators + Data tipada](./modulo-02-locators-data/) | `types/*` + `data/*.json` + `test.each()` |
-| 3 | [POM incremental](./modulo-03-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout · *Git break:* feature branches + conflictos |
-| 4 | [Setup project + Fixtures](./modulo-04-setup-fixtures/) | `tests/setup/auth.setup.ts` + `fixtures/` + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR + deshacer cambios |
-| 5 | [API Layer](./modulo-05-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
-| 6 | [CI/CD + Trace Viewer](./modulo-06-ci-debugging/) | `.github/workflows/playwright.yml` con matrix por browser |
-| 7 | [IA + Playwright MCP](./modulo-07-ia-mcp/) *(opcional)* | Cliente LLM + Playwright MCP — copiloto que genera/depura/mantiene tests (no agrega código al framework) |
+| 1 | [Primer smoke](./modulo-01-smoke-feo/) | `ejemplo.spec.ts` plano + `.env` + `dotenv` |
+| 2 | [Locators](./modulo-02-locators/) | Jerarquía `getByRole`→`getByTestId`→CSS · filtros/combinadores · scoping · Codegen |
+| 3 | [Data-driven](./modulo-03-data-driven/) | `types/*` + `data/*.json` + `for...of` parametrizado por mercado (Playwright no tiene `test.each()`) |
+| 4 | [POM incremental](./modulo-04-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout · *Git break:* feature branches + conflictos |
+| 5 | [Fixtures](./modulo-05-fixtures/) | `fixtures/omnipizza.ts` (`test.extend`) + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR |
+| 6 | [Setup & auth](./modulo-06-setup/) | `tests/setup/auth.setup.ts` (login por UI → `storageState`) + `dependencies: ['setup']` · *Git break:* deshacer cambios |
+| 7 | [API Layer](./modulo-07-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
+| 8 | [CI/CD + Trace Viewer](./modulo-08-ci-debugging/) | `.github/workflows/playwright.yml` con **matrix cross-browser** (firefox/webkit viven aquí) |
+| 9 | [IA + Playwright MCP](./modulo-09-ia-mcp/) *(opcional)* | Cliente LLM + Playwright MCP — copiloto que genera/depura/mantiene tests (no agrega código al framework) |
 
 ### Mapa de Git embebido
 
 | Tema | Dónde se enseña |
 |---|---|
 | Identidad, 3 estados, init/add/commit, `.gitignore`, log básico | [M00](./modulo-00-git-esencial/) |
-| Feature branches, merge fast-forward / 3-way, conflictos | [M03 Git break](./modulo-03-pom/#-git-break--refactoriza-en-una-rama-no-en-main) |
-| Push, PR, code review, deshacer cambios (`restore`/`revert`/`reflog`) | [M04 Git break](./modulo-04-setup-fixtures/#-git-break--sube-tu-trabajo-a-github-y-abre-un-pr) |
-| GitHub Actions matrix CI, `secrets.*`, artefactos, traces | [M06](./modulo-06-ci-debugging/) |
+| Feature branches, merge fast-forward / 3-way, conflictos | [M04 Git break](./modulo-04-pom/) (refactor a POM) |
+| Push, PR, code review | [M05 Git break](./modulo-05-fixtures/) (revisar fixtures) |
+| Deshacer cambios (`restore`/`revert`/`reflog`) | [M06 Git break](./modulo-06-setup/) (`auth.setup.ts` frágil) |
+| GitHub Actions matrix CI, `secrets.*`, artefactos, traces | [M08](./modulo-08-ci-debugging/) |
 | Workflows de equipo, rebase interactivo, tags, aliases, branch protection | [`git-github-course/`](../git-github-course/) (referencia profunda, opcional) |
 
-### Apéndices opcionales (fuera de las 4-6 h)
+### Apéndices opcionales
 
-- **A1 — Codegen:** `pnpm codegen` para prototipar specs rápido.
-- **A2 — [IA + Playwright MCP](./modulo-07-ia-mcp/)** (opcional, 45-60 min): configura un cliente LLM (Claude / Copilot / Gemini / ChatGPT) con Playwright MCP y Playwright Agents.
+- **A1 — Codegen:** `pnpm exec playwright codegen` para prototipar specs rápido (se enseña en M02).
+- **A2 — [IA + Playwright MCP](./modulo-09-ia-mcp/)** (opcional, 45-60 min): configura un cliente LLM (Claude / Copilot / Gemini / ChatGPT) con Playwright MCP y Playwright Agents.
 
 ---
 
-## Framework final
+## Arquitectura del framework (capa por capa)
+
+Cada módulo añade una pieza. No hay un `playwright.config.ts` raíz único: **cada `proyecto/` la trae ya integrada** en su propia config, y el estado más completo vive en el `proyecto/` de los módulos finales.
 
 ```
-playwright-course/
-├── playwright.config.ts              # projects: ui-anon (M01-M03), setup, ui-chromium/firefox/webkit, api
-├── .env.example                      # plantilla versionada
-├── .env                              # secretos locales (gitignored)
-├── .auth/                            # storageState por rol (gitignored)
-├── types/                            # User, Market, Pizza, Order, …
-├── data/                             # users.json, markets.json
-├── helpers/                          # unique-data.ts (data isolation)
-├── pages/                            # BasePage (normal) + LoginPage + CatalogPage + CheckoutPage
-├── services/                         # BaseService (abstract) + Auth/Order/PizzaService
-├── fixtures/                         # omnipizza.ts — custom fixtures
-├── tests/
-│   ├── setup/auth.setup.ts           # login vía API, persiste storageState
-│   ├── smoke/                        # @smoke
-│   ├── regression/                   # @regression
-│   └── api/                          # API pura (project "api", sin storageState de UI)
-├── .github/workflows/
-│   └── playwright.yml                # matrix: 3 browsers × 2 shards + api
-└── modulo-0X-*/                      # 6 módulos con README + ejemplo + reto
+Capa                         Nace en   Pieza
+──────────────────────────   ───────   ─────────────────────────────────────
+Smoke + .env/dotenv          M01       tests/ejemplo.spec.ts, .env
+Locators jerárquicos         M02       (técnica; sin archivos nuevos)
+Data tipada                  M03       types/*, data/*.json  (for...of por mercado)
+Page Object Model            M04       pages/BasePage.ts + Login/Catalog/Checkout
+Fixtures + isolation         M05       fixtures/omnipizza.ts, helpers/unique-data.ts, page.route()
+Setup project + storageState M06       tests/setup/auth.setup.ts, .auth/ (gitignored)
+API layer                    M07       services/BaseService.ts + Auth/Order/PizzaService, tests/api/
+CI + cross-browser           M08       .github/workflows/playwright.yml (matrix firefox/webkit)
+AI Test Harness (opcional)   M09       cliente LLM + Playwright MCP
 ```
 
 ---
@@ -79,55 +78,32 @@ playwright-course/
 - Node.js **v24 LTS** (v20+ mínimo).
 - **pnpm** 10+ (`npm install -g pnpm`).
 - VS Code con la extensión oficial **Playwright Test for VSCode**.
-- GitHub CLI (`gh`) para el módulo M06.
-- Recomendado: haber completado [TypeScript para QA](../typescript-qa-course/). Git/GitHub se enseña embebido aquí (M00 fundamentos; crear y conectar el repo a GitHub en M03; PRs y push de trabajo en M04); el [curso completo de Git/GitHub](../git-github-course/) es referencia profunda opcional.
+- GitHub CLI (`gh`) para el módulo M08.
+- Recomendado: haber completado [TypeScript para QA](../typescript-qa-course/). Git/GitHub se enseña embebido aquí (M00 fundamentos; crear y conectar el repo a GitHub en M04; PRs y push de trabajo en M05); el [curso completo de Git/GitHub](../git-github-course/) es referencia profunda opcional.
 
-## Setup inicial
+## Cómo correr un módulo
+
+Cada módulo es independiente: entra a **su** `proyecto/` y córrelo aislado.
 
 ```bash
-cd playwright-course
+# Ejemplo con el Módulo 1
+cd modulo-01-smoke-feo/proyecto
 pnpm install
-pnpm exec playwright install           # descarga chromium/firefox/webkit
-
-# Variables de entorno
+pnpm exec playwright install           # descarga chromium (y firefox/webkit en M08)
 cp .env.example .env                   # .env NO se commitea
-```
 
-## Cómo correr
+pnpm test                              # corre el módulo
+pnpm mN                                # atajo del módulo (m1, m2, … según la carpeta)
 
-```bash
-# Toda la suite (incluye setup project como dependencia)
-pnpm test
-
-# Un módulo específico
-# M00 — Git esencial: sólo Markdown, sin script (lee modulo-00-git-esencial/README.md)
-pnpm m1   # M01 — Smoke feo
-pnpm m2   # M02 — Locators + Data
-pnpm m3   # M03 — POM
-pnpm m4   # M04 — Setup + Fixtures
-pnpm m5   # M05 — API Layer
-pnpm m6   # M06 — CI/CD + Trace Viewer
-
-# Por project
-pnpm test:setup                        # sólo tests/setup/
-pnpm test:chromium                     # sólo ui-chromium
-pnpm test:api                          # sólo tests/api/
-
-# Modos de ejecución
+# Modos de ejecución (dentro del proyecto/)
 pnpm test:ui                           # UI mode (recomendado para aprender)
 pnpm test:headed                       # con browser visible
 pnpm test:debug                        # Inspector paso a paso
-
-# Tags
-pnpm test:smoke                        # --grep @smoke
-pnpm test:regression                   # --grep @regression
-
-# Reportes
-pnpm report                            # HTML report del último run
-
-# Type-check
 pnpm typecheck                         # tsc --noEmit
+pnpm report                            # HTML report del último run
 ```
+
+> 🪟 **Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm test` (no `VAR=x pnpm test`, que es sintaxis bash).
 
 ---
 
@@ -150,4 +126,4 @@ pnpm typecheck                         # tsc --noEmit
 - **Paralelismo:** `fullyParallel: true` con data isolation (`uniqueEmail`/`uniqueOrderId`).
 - **Deploy:** OmniPizza live en Render (backend con cold start ~30-40s).
 
-➡️ Empieza por el [Módulo 1 — Smoke feo](./modulo-01-smoke-feo/).
+➡️ Empieza por el [Módulo 1 — Primer smoke](./modulo-01-smoke-feo/).

@@ -1,51 +1,46 @@
 # 🚩 Reto M03
 
-## Paso 9 — Resolver el reto
+## Paso 8 — Resolver el reto
 
-Abre `reto.spec.ts`. Tu trabajo es completar un flujo E2E **login → catálogo → addToCart → checkout → confirmación** usando los Page Objects ya construidos.
+Abre `reto.spec.ts`. La meta es **añadir un 5º mercado (`CA`, Canadá, `CAD`) sin tocar el spec**. Vas a editar solo **dos** archivos:
 
-`CheckoutPage` ya tiene métodos listos (revísalos primero):
+1. `data/markets.json` → añadir el nuevo objeto.
+2. `types/omnipizza.d.ts` → ampliar el union (`CountryCode` y `Currency`).
 
-- `checkoutWith(market)` — atajo: fill + placeOrder.
-- `fillWithMarket(market)` — sólo rellena el form.
-- `placeOrder()` — submit.
-- `expectLoaded()` / `expectConfirmation()` / `expectTotalContains(symbol)`.
+Y luego completar los TODOs del reto para que la validación de currency sea data-driven (no hardcoded como en el ejemplo). Es la prueba de fuego del data-driven: si la parametrización está bien hecha, un mercado nuevo aparece como un test extra **sin escribir ni una línea de spec**.
 
-Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
+Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 
 ---
 
 ## Código completo — `reto.spec.ts`
 
 ```ts
-// @file modulo-03-pom/reto.spec.ts
+// @file modulo-03-data-driven/reto.spec.ts
 // ============================================================
-// 🚩 Reto M03 — Flujo E2E completo con POM
+// 🚩 Reto M03 — Añadir un 5º mercado sin tocar este spec
 // ============================================================
-// Objetivo pedagógico: sentir cuánto cambia el ESTILO de escribir
-// un E2E cuando todas las pantallas tienen su Page Object.
+// Objetivo pedagógico: comprobar que la parametrización funciona.
+// Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
+// automáticamente, sin tocar ni una línea de este archivo.
 //
-// Vas a implementar: login → catálogo → addToCart → checkout →
-// confirmación. Parametrizado por mercado. SIN locators inline.
-//
-// Regla de oro del POM:
-//   "Si necesitas un locator que no existe en su Page, NO lo escribas
-//    inline en el spec. Añádelo al Page como `private get`."
+// El "truco" es que `markets.json` está tipado por la interfaz
+// `Market` (en types/omnipizza.d.ts). Si rompes el contrato,
+// TypeScript te lo dice ANTES de correr.
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m3 corre en verde (POM básico funciona).
-//   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
+//   ✔ pnpm m3 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
+//   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-03-pom/reto.spec.ts --headed --project=ui-anon
+//   pnpm exec playwright test modulo-03-data-driven/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
@@ -54,107 +49,107 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("Challenge M03 — E2E checkout with POM", () => {
+test.describe("Challenge M03 — extended parameterization", () => {
+  // ────────────────────────────────────────────────────────
+  // TODO 0 — Antes de venir aquí, edita estos DOS archivos:
+  // ────────────────────────────────────────────────────────
+  //
+  //   A) data/markets.json — añade al final del array:
+  //        {
+  //          "code": "CA",
+  //          "fullName": "Canada",
+  //          "currency": "CAD"
+  //        }
+  //
+  //   B) types/omnipizza.d.ts — amplía los union types:
+  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
+  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+  //
+  //   Verifica:
+  //     pnpm typecheck            ← debe pasar en verde
+  //     pnpm exec playwright test modulo-03-data-driven/reto.spec.ts --list
+  //                               ← debe listar 5 tests (uno por mercado)
+  //
+  //   💡 Si typecheck se queja con "Type '\"CA\"' is not assignable to
+  //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
+
   for (const market of markets) {
-    test(`Challenge-${market.code} — complete checkout in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
       page,
     }) => {
-      // Instanciamos los 3 Page Objects con el mismo `page`.
-      // El POM no comparte estado entre ellos — solo la pestaña.
-      const loginPage = new LoginPage(page);
-      const catalogPage = new CatalogPage(page);
-      const checkoutPage = new CheckoutPage(page);
-
       // ────────────────────────────────────────────────────────
       // TODO 1 — Login con standard_user en este mercado
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Una sola llamada al método de alto nivel `loginInMarket`.
-      //   No hagas goto/click/fill por separado: el POM ya empaqueta
-      //   esos 5 pasos en uno solo.
+      //   Replicar el bloque de login que ya viste en `ejemplo.spec.ts`:
+      //     goto, click market, fill username, fill password,
+      //     click login-button.
       //
       // Pista:
-      //   await loginPage.loginInMarket(standardUser, market.code);
+      //   await page.goto("/");
+      //   await page.getByTestId(`market-${market.code}`).click();
+      //   await page.getByTestId("username-desktop").fill(standardUser.username);
+      //   await page.getByTestId("password-desktop").fill(standardUser.password);
+      //   await page.getByTestId("login-button-desktop").click();
       //
       // Cómo verificar (UI mode):
-      //   El navegador termina en `/catalog`.
+      //   Para el caso `Challenge-CA`, te aterriza en `/catalog` igual que
+      //   con MX/US/CH/JP (OmniPizza no diferencia visualmente CA;
+      //   lo importante es que la parametrización funciona).
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 2 — Esperar catálogo y añadir la primera pizza
+      // TODO 2 — Validar que llegaste al catálogo
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   1) Esperar a que el catálogo esté listo.
-      //   2) Hacer click en "Add to cart" de la PRIMERA pizza.
-      //   3) (Opcional) validar que el contador del carrito subió a 1.
+      //   Aserción de URL: debe contener "/catalog".
       //
-      // Pistas:
-      //   await catalogPage.waitForCatalog();
-      //   await catalogPage.addFirstPizza();
-      //   await catalogPage.expectCartCount(1);   // opcional pero útil
+      // Pista:
+      //   await expect(page).toHaveURL(/\/catalog/);
+
+
+      // ────────────────────────────────────────────────────────
+      // TODO 3 — Contar las pizzas del catálogo en este mercado
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   1) Crear un locator que matchee `[data-testid^="pizza-card-"]`.
+      //   2) Esperar a que la primera sea visible (timeout 30s por
+      //      el cold start de Render).
+      //   3) Obtener el array con `.all()` y validar que `.length > 0`.
+      //
+      // Pista:
+      //   const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+      //   await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+      //   const all = await pizzaCards.all();
+      //   expect(all.length).toBeGreaterThan(0);
       //
       // Cómo verificar (UI mode):
-      //   El badge del carrito cambia a "1" tras el click.
+      //   Verás un grid de pizzas con varias tarjetas — cuenta visualmente
+      //   que coincide con lo que reporta `all.length` en el log.
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 3 — Navegar a la pantalla de checkout
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Click en el enlace/ícono de "checkout" en la nav. El
-      //   testid suele ser `nav-checkout-desktop` (verifica en UI mode
-      //   si es distinto).
-      //
-      // Pista:
-      //   await page.getByTestId("nav-checkout-desktop").click();
-      //   await checkoutPage.expectLoaded();
-      //
-      // 💡 Nota de POM: si terminas usando `nav-checkout-desktop`
-      // en varios tests, AÑADE un método público a `LoginPage` o
-      // crea un `NavBar` page. Por ahora, déjalo en el spec.
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 4 — Rellenar el formulario con datos del mercado
+      // TODO 4 — Validación DATA-DRIVEN de la currency
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   `fillWithMarket` rellena nombre, teléfono, dirección y zip
-      //   con datos coherentes para el `market.code`.
+      //   Mapear cada `market.currency` a su símbolo y aseverar que
+      //   el body de la página lo contiene. Esto reemplaza el
+      //   `if (market.code === "MX")` del ejemplo (que era hardcoded).
       //
       // Pista:
-      //   await checkoutPage.fillWithMarket(market);
+      //   const symbol = {
+      //     MXN: "$",
+      //     USD: "$",
+      //     CHF: "Fr",
+      //     JPY: "￥",     // ← full-width (U+FFE5), no el half-width ¥
+      //     CAD: "$",     // ← tu nuevo mercado
+      //   }[market.currency];
+      //   await expect(page.locator("body")).toContainText(symbol);
       //
-      // Cómo verificar (UI mode):
-      //   Los 4 inputs del form aparecen rellenados con strings
-      //   distintos según el mercado.
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 5 — Confirmar la orden
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Click en el botón "Place order".
-      //
-      // Pista:
-      //   await checkoutPage.placeOrder();
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 6 — Verificar la pantalla de confirmación
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Aserción de UI: el badge/texto de confirmación aparece.
-      //
-      // Pista:
-      //   await checkoutPage.expectConfirmation();
-      //
-      // Criterio de éxito:
-      //   El test termina en VERDE para los 4 mercados.
-      //   En la terminal verás:
-      //     ✓ Challenge-MX — complete checkout in Mexico
-      //     ✓ Challenge-US — complete checkout in United States
-      //     ✓ Challenge-CH — complete checkout in Switzerland
-      //     ✓ Challenge-JP — complete checkout in Japan
+      // Cómo verificar:
+      //   El test pasa para los 5 mercados. Si el símbolo no aparece,
+      //   revisa qué muestra OmniPizza para esa currency (puede usar
+      //   un código distinto como "CA$").
 
 
       expect(market).toBeDefined(); // placeholder — quítalo cuando termines
@@ -166,19 +161,38 @@ test.describe("Challenge M03 — E2E checkout with POM", () => {
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. ¿Cuántas líneas de Playwright (page.* / locator.*) terminaste
-//      escribiendo INLINE en el spec? (Esperado: ~1 — la del
-//      `nav-checkout-desktop`. El resto vive en los Pages.)
+//   1. ¿Cuántos archivos tocaste para añadir un 5º mercado?
+//      (Esperado: 2 — markets.json y omnipizza.d.ts.
+//       Si tocaste el spec, perdiste el premio del data-driven.)
 //
-//   2. Si OmniPizza renombra el botón "Place order" a "Confirm",
-//      ¿cuántos archivos modificas? (Esperado: 1 — `CheckoutPage.ts`.)
+//   2. ¿Qué pasaría si OmniPizza añadiera 50 mercados nuevos?
+//      ¿Cuántas líneas de spec tendrías que escribir? (Esperado: 0.)
 //
-//   3. Si tu colega añade un mercado nuevo a `markets.json`,
-//      ¿este reto se rompe? (Esperado: NO — se ejecuta una vez más
-//      sin que toques este archivo.)
+//   3. Si quitas `as Market[]` del cast, ¿qué hace TypeScript?
+//      Pruébalo en tu editor: el tipo se vuelve `any` y pierdes
+//      el autocompletado de `market.code`. Por eso el cast importa.
 //
-// 👉 En M04 vas a eliminar incluso la línea de login: un
-//    `auth.setup.ts` se ejecutará UNA sola vez y todos los TCs
-//    arrancarán ya autenticados.
+// 👉 En M04 vas a refactorizar este bloque de login a una clase
+//    POM: 5 líneas se convertirán en 1.
 // ============================================================
+```
+
+---
+
+## Paso 9 — Versiona tu trabajo (Git JIT)
+
+Cuando el reto quede en verde, agrega **solo lo que cambió en este módulo** y commitéalo con un mensaje convencional:
+
+```bash
+git add types data modulo-03-data-driven
+git commit -m "feat(m03): data-driven con JSON tipado"
+```
+
+M03 introduce dos carpetas reusables (`types/`, `data/`) más el spec del módulo. Versionarlas en un commit atómico deja un punto de retorno limpio **antes** de que M04 empiece a refactorizar hacia POM. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan en M04/M05, cuando el flujo los pida.)
+
+**Cómo verificas:**
+
+```bash
+git log --oneline -1        # muestra el commit feat(m03) recién creado
+git status                  # working tree limpio para lo que tocaste
 ```

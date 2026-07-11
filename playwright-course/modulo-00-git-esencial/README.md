@@ -30,17 +30,17 @@ proyecto-suelto/                    playwright-course/
 | `git config --global` (identidad) | Siempre — todos los commits firmados |
 | `git init` + `status`/`add`/`commit` | M01 en adelante: versionas cada cambio |
 | `.gitignore` mínimo (`.env`, `node_modules/`) | M01 lo consolida (el installer trae el suyo + añades `.env`/`.auth/`) |
-| `git log --oneline` | M03 y M04 para revisar historia antes de mergear |
+| `git log --oneline` | M04 y M06 para revisar historia antes de mergear |
 
 **Lo que llega *just-in-time* después** (no se trata en M00):
 
 | Habilidad | Llega en | Por qué |
 |---|---|---|
-| Branches (`switch -c`, merge) | M03 | El refactor a POM toca varios archivos a la vez |
-| Resolución de conflictos | M03 | Dos personas editan `LoginPage.ts` |
-| Push, remotos, PRs | M04 | Necesitas que un compañero revise tus fixtures |
-| Deshacer cambios (`restore`, `reset`, `revert`) | M04 | `auth.setup.ts` puede romper todo |
-| Secrets en GitHub (`gh secret`) | M06 | CI necesita credenciales sin filtrarlas al repo |
+| Branches (`switch -c`, merge) | M04 | El refactor a POM toca varios archivos a la vez |
+| Resolución de conflictos | M04 | Dos personas editan `LoginPage.ts` |
+| Push, remotos, PRs | M05 | Necesitas que un compañero revise tus fixtures |
+| Deshacer cambios (`restore`, `reset`, `revert`) | M06 | `auth.setup.ts` puede romper todo |
+| Secrets en GitHub (`gh secret`) | M08 | CI necesita credenciales sin filtrarlas al repo |
 
 > 💡 **Para el facilitador:** este módulo es **el único que no toca el árbol del framework** — su producto es la disciplina del alumno. Mide el éxito al ver `git log --oneline` con commits limpios y semánticos al final del curso.
 
@@ -69,7 +69,7 @@ Antes de empezar, fija estos 6 términos. Vas a leerlos en cada bloque del módu
 | **Hash** | ID único de 40 caracteres (`a1b2c3d…`) por commit | Número de ticket en Jira: irrepetible, sirve para señalar exactamente "este" |
 | **Branch (rama)** | Línea de trabajo paralela sobre el mismo repo | Ambiente de QA aislado: pruebas algo sin tocar el ambiente principal |
 
-> 💡 Branches se trabajan a fondo en M03/M04 — por ahora basta con saber que existen.
+> 💡 Branches se trabajan a fondo en M04–M06 — por ahora basta con saber que existen.
 
 ---
 
@@ -81,7 +81,7 @@ Antes de empezar, fija estos 6 términos. Vas a leerlos en cada bloque del módu
 4. **`.gitignore` específico de Playwright** — qué nunca debe entrar al repo.
 5. **`git log` básico** — leer la historia de la suite.
 
-Branches, push, Pull Requests y deshacer cambios entran *just-in-time* en M03 y M04, cuando el problema los pide.
+Branches, push, Pull Requests y deshacer cambios entran *just-in-time* en M04, M05 y M06, cuando el problema los pide.
 
 ---
 

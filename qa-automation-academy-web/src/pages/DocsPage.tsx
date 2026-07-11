@@ -70,10 +70,12 @@ const fluentInterfaceContent = buildSlugMap(fluentInterfaceModules);
 const LEGACY_REDIRECTS: Record<string, string> = {
   "playwright/m1-detalles": "/docs/playwright/m1-guia",
   "playwright/m2-detalles": "/docs/playwright/m2-guia",
-  "playwright/m3-detalles": "/docs/playwright/m3-guia",
-  "playwright/m4-detalles": "/docs/playwright/m4-guia",
-  "playwright/m5-detalles": "/docs/playwright/m5-guia",
-  "playwright/m6-detalles": "/docs/playwright/m6-guia",
+  // 8→10 renumber: old POM(3)→4, old Setup+Fixtures(4) split→5 Fixtures / 6 Setup
+  // (detalles lands on Fixtures), old API(5)→7, old CI(6)→8.
+  "playwright/m3-detalles": "/docs/playwright/m4-guia",
+  "playwright/m4-detalles": "/docs/playwright/m5-guia",
+  "playwright/m5-detalles": "/docs/playwright/m7-guia",
+  "playwright/m6-detalles": "/docs/playwright/m8-guia",
 };
 
 function getContent(section: string, slug: string): string | null {

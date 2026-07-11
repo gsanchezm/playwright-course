@@ -1,243 +1,306 @@
 # El spec paso a paso
 
-Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: las clases de la capa de servicios, correr la suite API, leer el flujo `auth → list pizzas by market` y comparar API vs UI. Al final tienes el código completo de `ejemplo.spec.ts`.
+Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: correr los specs que ya reciben los Page Objects inyectados por fixtures, leer la distinción test fixture vs worker fixture, y revisar la demostración de `page.route()` (mocking de red). Al final tienes el código completo de los tres archivos nuevos: `helpers/unique-data.ts`, `fixtures/omnipizza.ts` y `ejemplo.spec.ts`.
 
 ---
 
-## Esqueletos de la capa de servicios
-
-Estos son los archivos que creaste en el **Paso 2** de la guía. Cada uno con su propia ruta.
-
-```ts
-// @file services/BaseService.ts
-import type { APIRequestContext } from "@playwright/test";
-
-export abstract class BaseService {
-  protected constructor(
-    protected readonly api: APIRequestContext,
-    protected readonly baseURL: string,
-  ) {}
-
-  // Cada hijo DEBE definirlo o TS no compila.
-  protected abstract basePath(): string;
-
-  protected url(path = ""): string {
-    return `${this.baseURL}${this.basePath()}${path}`;
-  }
-
-  async dispose(): Promise<void> {
-    await this.api.dispose();
-  }
-}
-```
-
-> 🔷 **TypeScript — `abstract class` + métodos abstractos**
-> Una clase `abstract` **no se puede instanciar** (`new BaseService(...)` no compila) y puede declarar métodos sin cuerpo (`abstract basePath(): string`) que cada hija **está obligada** a implementar. Es la diferencia clave con una clase normal: una normal con un método "vacío" compila aunque la hija se olvide de él; `abstract` lo convierte en error de compilación.
-> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page) (y el contrato que impone se ve a fondo en [TS · M06 — Interfaces](/docs/typescript/m6-web-actions)). Aquí lo aplicas a `BaseService`, que fuerza a `AuthService`/`OrderService`/`PizzaService` a declarar su `basePath()`.
-
-```ts
-// @file services/AuthService.ts
-import { request, type APIRequestContext } from "@playwright/test";
-import { BaseService } from "./BaseService";
-import type { LoginResponse, User } from "../types";
-
-export class AuthService extends BaseService {
-  protected basePath(): string {
-    return "/api/auth";
-  }
-
-  // Factory — crea una instancia con un APIRequestContext listo.
-  static async create(baseURL: string): Promise<AuthService> {
-    const api = await request.newContext({ baseURL });
-    return new AuthService(api, baseURL);
-  }
-
-  // Login con usuario/contraseña. Devuelve el token o lanza.
-  async login(user: User): Promise<LoginResponse> {
-    const res = await this.api.post(this.url("/login"), {
-      data: { username: user.username, password: user.password },
-    });
-    if (!res.ok()) {
-      const body = await res.text();
-      throw new Error(`Login failed (${res.status()}): ${body}`);
-    }
-    return (await res.json()) as LoginResponse;
-  }
-}
-
-// Utilidad — crea un APIRequestContext ya autenticado con Bearer.
-export async function createAuthedContext(
-  baseURL: string,
-  token: string,
-  extraHeaders: Record<string, string> = {},
-): Promise<APIRequestContext> {
-  return request.newContext({
-    baseURL,
-    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extraHeaders },
-  });
-}
-```
-
-> 🔍 **Detalle que parece obvio — `const api = await request.newContext({ baseURL })`**
-> **Qué es:** el servicio importa `request` de `@playwright/test` y crea su propio contexto HTTP; el tipo de ese contexto es `APIRequestContext`.
-> **Por qué así (y no la alternativa obvia):** `request.newContext()` levanta un cliente HTTP **sin navegador**. La alternativa `page.request` existe, pero exige una `page` (y por tanto un browser arrancado), que aquí no se necesita para nada.
-> **Qué pasa si lo cambias:** si usaras `page.request`, tendrías que pedir el fixture `page` y pagar el costo de abrir un navegador por test. Quedarte con `request.newContext()` es la razón del efecto que verás en el Paso 6: los tests del project `api` corren en <1s y sin abrir navegador — son llamadas HTTP puras.
-
-> 🔍 **Detalle que parece obvio — `if (!res.ok()) throw new Error(... ${res.status()} ...)`**
-> **Qué es:** cada método (`login` aquí, y luego `list`, `createOrder`, `listMine`) chequea `res.ok()` y, si falla, lanza incluyendo `res.status()` y el body.
-> **Por qué así (y no la alternativa obvia):** `res.ok()` es `true` para cualquier 2xx; chequearlo explícito convierte un 4xx/5xx en un error claro **antes** de intentar `res.json()`. La alternativa "asumir 200 y parsear directo" produciría un crash opaco al deserializar un body de error.
-> **Qué pasa si lo cambias:** sin el guard, un login con password inválido devolvería un body de error y `res.json()` lo parsearía como si fuera el token — el test fallaría más tarde y con un mensaje confuso. Justamente `auth.spec.ts` valida `rejects.toThrow(/Login failed/)` apoyado en este patrón.
-
-> 🔍 **Detalle que parece obvio — `this.api.post(this.url("/login"), { data: { ... } })`**
-> **Qué es:** los POST mandan el body con la opción `data` (objeto JS), no `form`.
-> **Por qué así (y no la alternativa obvia):** `data` con un objeto serializa a **JSON** y fija `Content-Type: application/json`, que es lo que espera el backend de OmniPizza. `form` enviaría `application/x-www-form-urlencoded`, otro formato de body.
-> **Qué pasa si lo cambias:** si cambias `data` por `form`, el backend recibe campos urlencoded en vez de JSON; lo más probable es un 4xx (body no parseable como JSON) y, gracias al guard de `res.ok()` de arriba, un `Error` con el status real.
-
-> 🔷 **TypeScript — factory con `static`**
-> Un método `static` pertenece a la **clase**, no a la instancia: se llama como `AuthService.create(...)`, sin haber creado nada todavía. Lo usamos porque la construcción es **asíncrona** (`await request.newContext(...)`) y un `constructor` en TS/JS **no puede ser `async`**. El factory `static async create()` envuelve ese `await` y devuelve la instancia ya armada.
-> 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page). Aquí lo aplicas para construir cada servicio con su `APIRequestContext` (y, en las hijas con auth, sus headers) ya conectado.
-
-> 🔷 **TypeScript — genéricos `Promise<T>`**
-> `Promise<LoginResponse>` es un **genérico**: `Promise` es el contenedor y `<LoginResponse>` el tipo que resuelve dentro. Al hacer `await auth.login(user)` TypeScript ya sabe que tienes un `LoginResponse` (con su `access_token`), no un `any`. Cambia el `<LoginResponse>` del retorno de `login()` por `<any>` y verás que el tipo del genérico deja de propagarse: quien hace `await` pierde el autocompletado de `access_token`.
-> 📚 Lo viste en [TS · M03 — Funciones](/docs/typescript/m3-login) (`async`/`await` y el tipo de retorno `Promise<T>`). Aquí lo aplicas a cada método de servicio para que el `await` devuelva el contrato correcto y no `any`.
-
-```ts
-// @file services/index.ts
-export { BaseService } from "./BaseService";
-export { AuthService, createAuthedContext } from "./AuthService";
-export { OrderService } from "./OrderService";
-export { PizzaService } from "./PizzaService";
-```
-
-`PizzaService` y `OrderService` siguen el mismo molde — los completas con el ejemplo.
-
----
-
-## Paso 4 — Lectura guiada de `services/BaseService.ts`
-
-Abre el archivo y fíjate punto por punto:
-
-1. **`export abstract class BaseService`** — la palabra **`abstract` aparece por primera vez en el curso**.
-2. **`protected constructor(...)`** — protegido, no público. Eso significa que **no puedes hacer `new BaseService(...)` desde fuera**. Solo las hijas pueden llamarlo (vía `super(...)`).
-3. **`protected abstract basePath(): string`** — método sin implementación. Cada hijo DEBE proveerlo o TS no compila. Si le quitaras `abstract`, el compilador dejaría de exigir que cada hija lo defina — y `url()` podría construir rutas contra un `basePath` inexistente.
-4. **`url(path)`** — helper compartido por todas las hijas: junta `baseURL + basePath() + path`.
-5. **`dispose()`** — cierra el `APIRequestContext`. Si no lo llamas, hay leaks.
-
-> 💡 **Pruébalo en vivo:** abre un editor y escribe `const x = new BaseService(...)`. TypeScript debe quejarse con **"Cannot create an instance of an abstract class"**. Eso es el valor de `abstract` en una sola línea. (No guardes el archivo — es solo para demostrarlo).
-
----
-
-## Paso 5 — Lectura guiada de `AuthService.ts` y `PizzaService.ts`
-
-Cosas en las que fijarte:
-
-- **`static async create(...)`** — el factory. Reemplaza al `new ServiceX(...)` directo porque necesita **construcción async** (Playwright crea el `APIRequestContext` con `await playwright.request.newContext(...)`).
-- **`createAuthedContext(baseURL, token, extraHeaders)`** — helper que inyecta `Authorization: Bearer <token>` y `X-Country-Code` en TODAS las requests del contexto.
-- Cada servicio **implementa `basePath()`** — TS no compila sin eso.
-- Tras usar, **siempre `await service.dispose()`** — tenlo presente.
-
----
-
-## Paso 6 — Correr la suite API
+## Paso 4 — Ejecutar el ejemplo
 
 ```bash
-# Solo el project api (sin UI projects ni setup)
-pnpm test:api
+# Headless
+pnpm m5
 
-# O directamente
-pnpm exec playwright test --project=api
+# UI mode (recomendado para ver el fixture en acción)
+pnpm test:ui
 ```
 
-**Qué debería pasar:**
+**Qué esperar:**
 
-- Verás los tests de `tests/api/*.spec.ts` + el `ejemplo.spec.ts` de este módulo.
-- Los tests **no abren navegador** — son llamadas HTTP puras. Por eso son rápidos.
-- En la primera corrida del día puede tardar 30-40s (cold start de Render).
-
----
-
-## Paso 7 — Lectura guiada del flujo del `ejemplo.spec.ts`
-
-Identifica el patrón:
-
-1. **Auth**: `AuthService.create(API_URL)` → `auth.login(user)` → guardas el `access_token` → `auth.dispose()`.
-2. **Reutilización del token**: el mismo token se usa en cada `PizzaService.create(...)`.
-3. **Iteración por mercado**: el bucle `for (const market of markets)` crea un `PizzaService` por mercado, lista pizzas, valida currency, dispose.
-
-**Patrón clave que memorizar:** *"un servicio por endpoint family, factory async, dispose siempre"*.
-
-> 🔷 **TypeScript — union types para errores (`Order | ApiError`)**
-> Un **union type** dice "esto es A **o** B". Míralo en negativo: sin el guard de `res.ok()` + `throw` temprano, la firma honesta de `createOrder()` (en `OrderService`) sería `Promise<Order | ApiError>` — y **cada** llamada tendría que **estrechar** (narrow) el union antes de tocar un campo de `Order`. El `throw` temprano saca el camino de error de la firma y te deja devolver un `Promise<Order>` limpio; `ApiError` (en `types/omnipizza.d.ts`) describe la forma del body de error que el backend devuelve.
-> 📚 Lo viste en [TS · M04 — Tipos de objetos](/docs/typescript/m4-union-types) (uniones y forma de objetos). Aquí el guard de `res.ok()` es lo que te ahorra cargar ese union en cada firma de la capa.
+- El test `los fixtures entregan LoginPage/CatalogPage ya listos` pasa: usa `loginPage.loginInMarket(...)` y `catalogPage.expectLoaded()` **sin construir un solo Page Object a mano**.
+- El test `defaultMarket es un worker fixture` confirma `defaultMarket.code === "MX"` sin navegar (el dato no depende de una pestaña).
+- Los tests de `page.route()` mockean `/api/pizzas` (500 y estado vacío) y validan que la UI reacciona.
 
 ---
 
-## Paso 8 — Comparativa con UI (5 min)
+## Paso 5 — Lectura guiada de `fixtures/omnipizza.ts` (test vs worker)
 
-Compara:
+Abre `fixtures/omnipizza.ts` y señala la diferencia que es el corazón del módulo:
 
-| Aspecto | Test UI (M03) | Test API (M05) |
-|---|---|---|
-| Duración por TC | ~10-15s | <1s |
-| Determinismo | Medio (DOM, animaciones) | Alto (HTTP) |
-| Cubre regresión visual | Sí | No |
-| Cubre lógica de negocio | Indirecto | Directo |
+- `loginPage`, `catalogPage`, `checkoutPage`, `standardUser` son **test fixtures**: Playwright los crea **por TC** y los inyecta al callback del test.
+- `defaultMarket` es **worker fixture** (`scope: "worker"`): se crea **una vez por proceso paralelo**, no por test. Es un dato inmutable (el mercado por defecto), no un objeto ligado a la pestaña.
+- En el test ya **no escribes `new LoginPage(page)`** — el fixture te lo entrega listo. El spec se lee como user story, no como plomería.
 
-**Mensaje:** la API es la base de la pirámide. **No reemplaza** los E2E de UI; los **acompaña**.
+**Cómo verificarlo:** en un spec, al teclear `async ({ ` el editor sugiere `loginPage`, `catalogPage`, `standardUser` (test) y `defaultMarket` (worker), todos ya tipados por los genéricos `PageFixtures`/`WorkerFixtures`.
+
+> **Nota:** en M05 el `page` **NO viene autenticado** — el test hace su login por UI usando `loginPage`. El badge heredado (`storageState` por project) llega en M06; aquí los fixtures solo inyectan Page Objects + datos (usuario estándar, mercado por defecto).
+
+---
+
+## Paso 6 — Demostración de `page.route()` (network mocking)
+
+Abre el bloque `page.route() — network mocking` en `ejemplo.spec.ts`. Es un **Postman Mock Server embebido**: intercepta un request y devuelve la respuesta que tú quieras. Úsalo cuando:
+
+1. Quieres probar un **caso de error** (5xx, 404) sin romper el backend.
+2. Quieres probar **UI vacía** sin sembrar data.
+3. Quieres **determinismo absoluto** en tests de red.
+
+Los dos mecanismos que verás:
+
+- `route.fulfill({...})` devuelve una respuesta totalmente inventada (status, headers, body). El backend ni se entera.
+- `route.continue()` deja pasar el request al backend real (útil para introducir latencia, no para cambiar la respuesta) — lo usas en el reto.
+
+> 🔍 **Detalle que parece obvio — registrar el mock ANTES del login, no justo antes de `/catalog`**
+> **Qué es:** en el ejemplo el `page.route("**/api/pizzas*", ...)` va **arriba del todo del test**, antes del `loginPage.loginInMarket(...)` que navega.
+> **Por qué así (y no la alternativa obvia):** `page.route` no es "para esta navegación" — queda **vivo durante toda la vida de la pestaña**. Si esperaras a registrarlo justo antes de `/catalog`, en un flujo real el login puede disparar el fetch de pizzas antes de que llegues a esa línea.
+> **Qué pasa si lo cambias:** registrarlo **después** de que `/api/pizzas` ya se pidió = llegas tarde; el request real pasó y tu mock nunca corre. Registrarlo primero garantiza que lo intercepte pase lo que pase.
+
+**¿Qué pasa si registras 2 mocks distintos al mismo URL?** Gana el **último** registrado.
+
+> **Los locators de error/vacío son un patrón, no un test que deba pasar perfecto.** Los testids `catalog-error` / `catalog-empty` pueden no existir en OmniPizza tal cual — por eso el assert real del ejemplo es un `body` visible tentativo. Lo que aprendes es el **patrón** de mocking; ajusta el testid al DOM real cuando tengas el catálogo instrumentado.
+
+---
+
+## Paso 7 — Data isolation con `workerInfo`
+
+Al final de `ejemplo.spec.ts` hay un test que usa `uniqueEmail(testInfo)`. Con `fullyParallel: true` varios workers corren a la vez; si todos siembran el mismo email/orden, colisionan. `uniqueEmail(info)` usa `workerIndex` para que el dato de **cada worker** sea propio, y `Date.now()` lo hace único entre corridas. Fíjate en que el segundo argumento (`"locked"`) cambia el prefijo sin sobrecargar la función — el parámetro por defecto en acción.
+
+---
+
+## Código completo — `helpers/unique-data.ts`
+
+```ts
+// @file modulo-05-fixtures/helpers/unique-data.ts
+// ============================================================
+// helpers/unique-data.ts — Data isolation para tests en paralelo
+// ============================================================
+// Analogía QA: cada tester paralelo lleva su propio libro de
+// pedidos. Nunca comparten folios con los demás workers.
+//
+// Sin esto, `fullyParallel: true` + datos compartidos = colisiones
+// (órdenes duplicadas, emails repetidos) que `retries` enmascara
+// pero no arregla.
+// ============================================================
+
+import type { TestInfo } from "@playwright/test";
+
+/**
+ * Email único por worker + timestamp.
+ * Ej: `customer+w0-1714000000000@omnipizza.test`
+ */
+export function uniqueEmail(info: TestInfo, prefix = "customer"): string {
+  return `${prefix}+w${info.workerIndex}-${Date.now()}@omnipizza.test`;
+}
+
+/**
+ * Identificador único de orden — útil para referencias externas.
+ * Ej: `ORD-w0-1714000000000-4821`
+ */
+export function uniqueOrderId(info: TestInfo): string {
+  const random = Math.floor(Math.random() * 10_000);
+  return `ORD-w${info.workerIndex}-${Date.now()}-${random}`;
+}
+
+/**
+ * Prefijo determinista por worker — útil cuando no queremos timestamp
+ * (ej. seeds reproducibles en tests deterministas de lectura).
+ */
+export function workerPrefix(info: TestInfo): string {
+  return `w${info.workerIndex}`;
+}
+```
+
+---
+
+## Código completo — `fixtures/omnipizza.ts`
+
+```ts
+// @file modulo-05-fixtures/fixtures/omnipizza.ts
+// ============================================================
+// fixtures/omnipizza.ts — Custom fixtures del framework (M05)
+// ============================================================
+// Analogía QA: el fixture es el ambiente de prueba YA preparado.
+// El TC recibe los Page Objects listos (loginPage, catalogPage…)
+// sin escribir `new LoginPage(page)`, y ejecuta sus pasos.
+//
+// Nota importante: en M05 el `page` NO viene autenticado — el test
+// hace su login por UI usando `loginPage`. El badge heredado
+// (`storageState` por project) llega en M06; aquí los fixtures solo
+// inyectan Page Objects + datos (usuario estándar, mercado por defecto).
+// ============================================================
+
+import { test as base, expect } from "@playwright/test";
+import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import type { Market, User } from "../types";
+import marketsJson from "../data/markets.json";
+import usersJson from "../data/users.json";
+
+const markets = marketsJson as Market[];
+const users = usersJson as User[];
+
+type PageFixtures = {
+  loginPage: LoginPage;
+  catalogPage: CatalogPage;
+  checkoutPage: CheckoutPage;
+  standardUser: User;
+};
+
+type WorkerFixtures = {
+  // Worker-scoped: se crea 1 vez por worker.
+  defaultMarket: Market;
+};
+
+export const test = base.extend<PageFixtures, WorkerFixtures>({
+  // --- Worker fixture ---
+  // eslint-disable-next-line no-empty-pattern
+  defaultMarket: [async ({}, use) => {
+    const mx = markets.find((m) => m.code === "MX");
+    if (!mx) throw new Error("MX market not found in data/markets.json");
+    await use(mx);
+  }, { scope: "worker" }],
+
+  // --- Test fixtures ---
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  catalogPage: async ({ page }, use) => {
+    await use(new CatalogPage(page));
+  },
+  checkoutPage: async ({ page }, use) => {
+    await use(new CheckoutPage(page));
+  },
+  // eslint-disable-next-line no-empty-pattern
+  standardUser: async ({}, use) => {
+    const u = users.find((u) => u.username === "standard_user");
+    if (!u) throw new Error("standard_user not found in data/users.json");
+    await use(u);
+  },
+});
+
+export { expect };
+export type { Market, User };
+```
 
 ---
 
 ## Código completo — `ejemplo.spec.ts`
 
 ```ts
-// @file modulo-05-api-layer/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/ejemplo.spec.ts
 // ============================================================
-// M05 — API Layer con BaseService abstracta
+// M05 — Fixtures custom (inyección de Page Objects)
 // ============================================================
-// Este ejemplo demuestra:
-//   1. Clase abstracta con método abstracto obligatorio.
-//   2. Factory pattern con auth inyectada.
-//   3. Data-driven vía datos tipados compartidos con UI.
-//   4. Data isolation con uniqueOrderId (prepara para OrderService).
+// Este spec corre en el project `chromium` SIN sesión heredada.
+// El login se hace por UI dentro del test — el badge/storageState
+// que evita ese login llega en M06 (Setup).
+//
+// El fixture `loginPage`/`catalogPage` inyecta Page Objects ya
+// ligados a la pestaña del TC: en el test NUNCA escribes
+// `new LoginPage(page)`, el fixture te lo entrega listo.
 // ============================================================
 
-import { test, expect } from "@playwright/test";
-import { AuthService, PizzaService } from "../services";
-import type { User, Market } from "../types";
-import usersJson from "../data/users.json";
-import marketsJson from "../data/markets.json";
-import { uniqueOrderId } from "../helpers/unique-data";
+import { test, expect } from "../fixtures/omnipizza";
 
-const users = usersJson as User[];
-const markets = marketsJson as Market[];
-const standardUser = users.find((u) => u.username === "standard_user")!;
-const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
+test.describe("Fixtures inyectan Page Objects (M05)", () => {
+  test("los fixtures entregan LoginPage/CatalogPage ya listos @smoke", async ({
+    loginPage,
+    catalogPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    // Sin `new LoginPage(page)`: el fixture ya inyectó los Page Objects.
+    // Sin sesión heredada: hacemos el login por UI (igual que en M01,
+    // pero encapsulado en el POM). En M06 este login desaparece.
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
-test.describe("M05 — service layer demonstration @api", () => {
-  test("full flow: auth → list pizzas by market", async () => {
-    // 1. Login via AuthService (clase concreta que extiende BaseService)
-    const auth = await AuthService.create(API_URL);
-    const { access_token } = await auth.login(standardUser);
-    await auth.dispose();
-
-    // 2. Iterar mercados reutilizando el token
-    for (const market of markets) {
-      const pizzas = await PizzaService.create(API_URL, access_token, market.code);
-      const list = await pizzas.list();
-      await pizzas.dispose();
-
-      expect(list.length).toBeGreaterThan(0);
-      expect(list[0]).toHaveProperty("id");
-      expect(list[0]).toHaveProperty("name");
-      expect(list[0].currency).toBe(market.currency);
-    }
+    await catalogPage.expectLoaded();
+    await catalogPage.expectHasPizzas();
   });
 
-  test("uniqueOrderId generates unique order ids per worker", async ({}, testInfo) => {
-    const id1 = uniqueOrderId(testInfo);
-    const id2 = uniqueOrderId(testInfo);
-    expect(id1).not.toBe(id2);
-    expect(id1).toMatch(/^ORD-w\d+-\d+-\d+$/);
+  test("defaultMarket es un worker fixture: se crea 1 vez por worker", async ({
+    defaultMarket,
+  }) => {
+    // defaultMarket tiene scope `worker`: no depende de una pestaña ni de
+    // una sesión, por eso se puede afirmar su valor sin navegar.
+    expect(defaultMarket.code).toBe("MX");
   });
+});
+
+// ============================================================
+// Demostración de `page.route()` — mocking de red
+// ============================================================
+// Analogía: Postman Mock Server embebido en Playwright.
+// Intercepta un request, devuelve la respuesta que tú quieras.
+//
+// Úsalo cuando:
+//   - Quieres probar un caso de error (5xx, 404) sin romper el backend.
+//   - Quieres probar UI vacía sin sembrar data.
+//   - Quieres determinismo absoluto en tests de red.
+//
+// ⚠️ El mock se registra ANTES de navegar. Como sigue vivo durante todo
+//    el ciclo de la pestaña, lo registramos primero y LUEGO hacemos el
+//    login por UI: cuando el catálogo pida /api/pizzas, el mock responde.
+// ============================================================
+
+test.describe("page.route() — network mocking (M05)", () => {
+  test("UI reacciona cuando la API responde 500", async ({
+    page,
+    loginPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    // 1. Registrar el mock ANTES de cualquier navegación.
+    await page.route("**/api/pizzas*", (route) => {
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Internal server error (mocked)" }),
+      });
+    });
+
+    // 2. Ejecutar el flujo (login por UI → aterriza en /catalog, que pide
+    //    /api/pizzas y recibe el 500 mockeado).
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
+
+    // 3. Verificar que la UI reacciona al error.
+    //    Este assert es tentativo — ajústalo al DOM real de OmniPizza.
+    await expect(page.locator("body")).toBeVisible();
+    // Idealmente: await expect(page.getByTestId('catalog-error')).toBeVisible();
+  });
+
+  test("UI muestra estado vacío cuando no hay pizzas", async ({
+    page,
+    loginPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await page.route("**/api/pizzas*", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ pizzas: [] }),
+      });
+    });
+
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
+    // Idealmente: await expect(page.getByTestId('catalog-empty')).toBeVisible();
+    await expect(page.locator("body")).toBeVisible();
+  });
+});
+
+// ============================================================
+// Data isolation con workerInfo
+// ============================================================
+// Con `fullyParallel: true` varios workers corren a la vez. Si todos
+// siembran el mismo email/orden, colisionan. `uniqueEmail(info)` usa
+// `workerIndex` para que el dato de cada worker sea propio.
+
+import { uniqueEmail } from "../helpers/unique-data";
+
+test("uniqueEmail genera identificadores por worker", async ({}, testInfo) => {
+  const email1 = uniqueEmail(testInfo);
+  const email2 = uniqueEmail(testInfo, "locked");
+  expect(email1).toContain(`w${testInfo.workerIndex}`);
+  expect(email1).not.toBe(email2);
+  expect(email2).toContain("locked+");
 });
 ```

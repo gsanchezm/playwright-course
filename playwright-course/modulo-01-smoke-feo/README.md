@@ -19,7 +19,7 @@ playwright-course/
 ├── package.json               ← scripts (pnpm m1…m6) + dotenv como dep
 ├── playwright.config.ts       ← 🆕 lo genera el installer; lo reconcilias al estado M01
 ├── tsconfig.json              ← 🆕 lo creas tú (el installer NO lo genera)
-├── .github/workflows/         ← lo deja el installer; LATENTE hasta M06
+├── .github/workflows/         ← lo deja el installer; LATENTE hasta M08
 │   └── playwright.yml
 └── modulo-01-smoke-feo/       ← 🆕 ESTE MÓDULO
     ├── README.md
@@ -31,15 +31,15 @@ playwright-course/
 
 | Carpeta | Llega en | Para qué |
 |---|---|---|
-| `data/`, `types/` | M02 | Datos tipados (mercados, usuarios) |
-| `pages/` | M03 | Page Object Model |
-| `tests/setup/`, `fixtures/`, `helpers/`, `.auth/` | M04 | Setup project + custom fixtures |
-| `services/`, `tests/api/` | M05 | Capa de servicios para API testing |
-| `.github/workflows/` (uso real) | M06 | CI/CD en GitHub Actions |
+| `data/`, `types/` | M03 | Datos tipados (mercados, usuarios) |
+| `pages/` | M04 | Page Object Model |
+| `tests/setup/`, `fixtures/`, `helpers/`, `.auth/` | M05-M06 | Setup project + custom fixtures |
+| `services/`, `tests/api/` | M07 | Capa de servicios para API testing |
+| `.github/workflows/` (uso real) | M08 | CI/CD en GitHub Actions |
 
 > 💡 **Para el facilitador:** muestra esta tabla al inicio. Los alumnos suelen preguntar *"¿y dónde van los Page Objects?"* — esta tabla les da la respuesta: **todavía no existen, y por eso vas a sentir el dolor**.
 >
-> 🔍 **Ojo con el `playwright.yml` y el `tests/`:** el installer ya deja un workflow de GitHub Actions y una carpeta `tests/` con un `example.spec.ts`. **No los usamos en M01**: el workflow queda **latente** (lo activamos de verdad en M06) y `tests/` lo borramos porque nuestro `testMatch` solo recoge `modulo-*/`. En el Paso 4 verás por qué.
+> 🔍 **Ojo con el `playwright.yml` y el `tests/`:** el installer ya deja un workflow de GitHub Actions y una carpeta `tests/` con un `example.spec.ts`. **No los usamos en M01**: el workflow queda **latente** (lo activamos de verdad en M08) y `tests/` lo borramos porque nuestro `testMatch` solo recoge `modulo-*/`. En el Paso 4 verás por qué.
 
 ---
 
@@ -115,7 +115,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   |---|---|---|
   | **TypeScript or JavaScript?** | `TypeScript` | Todo el curso es TS tipado |
   | **Where to put your tests?** | `tests` (default) | Lo aceptas; en el Paso 4 cambiamos el `testMatch` |
-  | **Add a GitHub Actions workflow?** | `true` | Lo deja **latente**; lo activamos de verdad en M06 |
+  | **Add a GitHub Actions workflow?** | `true` | Lo deja **latente**; lo activamos de verdad en M08 |
   | **Install Playwright browsers?** | `true` | Descarga Chromium/Firefox/WebKit (~300 MB) |
 - **Por qué:** un solo comando instala `@playwright/test`, descarga los navegadores, genera `playwright.config.ts`, `tests/example.spec.ts`, un `.gitignore` propio y el workflow de GitHub Actions — todo de una pieza y según la **versión más reciente** de Playwright (no fijes una versión a mano; el installer trae la última).
 - **Cómo verifico:**
@@ -179,7 +179,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   DEFAULT_COUNTRY=MX
   ```
 
-> ⚠️ **Importante para el facilitador:** abre `.gitignore` con los alumnos y muéstrales la línea `.env`. Repite en voz alta: **"el `.env` real NUNCA se commitea, solo el `.env.example`"**. Este es el momento de hablar de secrets, leaks de tokens en GitHub y por qué CI usa `secrets.*` (lo veremos en M06).
+> ⚠️ **Importante para el facilitador:** abre `.gitignore` con los alumnos y muéstrales la línea `.env`. Repite en voz alta: **"el `.env` real NUNCA se commitea, solo el `.env.example`"**. Este es el momento de hablar de secrets, leaks de tokens en GitHub y por qué CI usa `secrets.*` (lo veremos en M08).
 
 **2.2 — Comprobar que `dotenv` carga las variables**
 - **Qué hago** (opcional, 30 segundos):
@@ -200,7 +200,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   ```bash
   cat .gitignore
   ```
-- **Por qué:** el `.gitignore` del installer ya cubre los reportes y el `node_modules/`, y trae `/playwright/.auth/` (lo usaremos en M04). Lo que **falta** son las dos líneas críticas de secretos: `.env` y `.auth/`. Reconocer qué ya está te evita duplicar líneas.
+- **Por qué:** el `.gitignore` del installer ya cubre los reportes y el `node_modules/`, y trae `/playwright/.auth/` (lo usaremos en M06). Lo que **falta** son las dos líneas críticas de secretos: `.env` y `.auth/`. Reconocer qué ya está te evita duplicar líneas.
 - **Cómo verifico:** ves las entradas de Playwright, pero **no** ves `.env` en la lista.
 
 **3.2 — Añadir las líneas de secretos (`.env` + `.auth/`)**
@@ -211,7 +211,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   .env.local
   .auth/
   ```
-- **Por qué:** las entradas `.env` y `.auth/` son **críticas**. Si las olvidas, terminas pusheando secrets al repo. En M00 ya viste el **concepto** de `.gitignore` con un mínimo; aquí lo **consolidas** mergeando el del installer con esas dos líneas. (`.auth/` aún no existe, pero lo dejas listo: en M04 guardará el `storageState` de sesión.)
+- **Por qué:** las entradas `.env` y `.auth/` son **críticas**. Si las olvidas, terminas pusheando secrets al repo. En M00 ya viste el **concepto** de `.gitignore` con un mínimo; aquí lo **consolidas** mergeando el del installer con esas dos líneas. (`.auth/` aún no existe, pero lo dejas listo: en M06 guardará el `storageState` de sesión.)
 - **Cómo verifico:**
   ```bash
   git check-ignore .env          # imprime ".env" → está siendo ignorado
@@ -224,9 +224,9 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 ### Paso 4 — Reconciliar `playwright.config.ts` (el recorte principal)
 
 > **📐 El config NO nace en blanco: lo genera el installer**
-> El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M04** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
+> El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M06** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
 >
-> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project, `storageState`, multi-browser (M04), project `api` (M05), ni la matrix de CI real (M06).
+> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project, `storageState` (M06), multi-browser (M08), project `api` (M07), ni la matrix de CI real (M08).
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
@@ -238,12 +238,12 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
   | Lo que genera el installer | Lo dejamos en M01 como | Por qué |
   |---|---|---|
   | `testDir: "./tests"` | `testDir: "."` + `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | El curso vive en `modulo-*/`, no en `tests/` |
-  | `projects: [chromium, firefox, webkit]` | **solo** `ui-anon` (anónimo) | Multi-browser distrae en M01; **firefox/webkit + el `ui-chromium` autenticado nacen en M04** |
+  | `projects: [chromium, firefox, webkit]` | **solo** `ui-anon` (anónimo) | Multi-browser distrae en M01; **firefox/webkit nacen en M08 (CI) y el `ui-chromium` autenticado en M06** |
   | bloque `dotenv` **comentado** | **descomentado** → `import "dotenv/config"` | El installer dejó el hook; solo lo enciendes (ya instalaste `dotenv` en 1.3) |
   | `trace: "on-first-retry"` | `trace: "retain-on-failure"` | En M01 no hay `retries`; con `on-first-retry` nunca verías el trace al fallar |
   | (sin timeouts custom) | `timeout` + `expect.timeout` + `actionTimeout`/`navigationTimeout` generosos | Render free tier despierta en 30-40s; sin esto el 1er run sería flaky |
   | `reporter: "html"` | `reporter: [["html",…], ["list"]]` | `list` te da feedback en la terminal **mientras** corre |
-  | `fullyParallel`/`forbidOnly`/`retries`/`workers` (CI) | se quedan **latentes** | La matrix real de CI llega en **M06**; en M01 no estorban |
+  | `fullyParallel`/`forbidOnly`/`retries`/`workers` (CI) | se quedan **latentes** | La matrix real de CI llega en **M08**; en M01 no estorban |
 
 - **Por qué:** este recorte es la habilidad real. El scaffold sirve para arrancar; el framework de tu equipo es siempre una versión **moldeada** del scaffold. Hacer el diff explícito te enseña qué hace cada flag.
 - **Cómo verifico:** después de editar, abro `playwright.config.ts` y confirmo que ya **no** aparecen `firefox` ni `webkit`; `pnpm exec tsc --noEmit` queda limpio.
@@ -257,8 +257,8 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
 // "master test plan" del framework. Partimos del config que generó
 // `pnpm create playwright` y lo recortamos a lo mínimo de M01. En
 // módulos siguientes vamos a agregar de nuevo: projects multi-browser
-// (M04), setup project con dependencies (M04), project api (M05),
-// retries+workers+CI flags reales (M06).
+// (M08), setup project con dependencies (M06), project api (M07),
+// retries+workers+CI flags reales (M08).
 
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";   // ← descomentado: carga .env en process.env
@@ -287,9 +287,9 @@ export default defineConfig({
   // --- Projects (en M01 solo uno y ANÓNIMO; el installer traía chromium+firefox+webkit) ---
   projects: [
     {
-      // Anónimo a propósito: M01-M03 son ejercicios de login por UI, sin
+      // Anónimo a propósito: M01-M05 son ejercicios de login por UI, sin
       // sesión heredada. El project autenticado (ui-chromium + storageState
-      // + setup) nace en M04, no antes.
+      // + setup) nace en M06, no antes.
       name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
     },
@@ -308,7 +308,7 @@ export default defineConfig({
 
 **4.3 — Borrar el `tests/example.spec.ts` del installer**
 - **Qué hago:** borro la carpeta `tests/` completa desde el **explorador de VS Code** (click derecho sobre `tests/` → *Delete*). Si prefieres la terminal, no hay comando neutral: bash `rm -rf tests` · 🪟 PowerShell `Remove-Item -Recurse -Force tests`.
-- **Por qué:** el installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — pero deja basura en el árbol. Lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M06.)
+- **Por qué:** el installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — pero deja basura en el árbol. Lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M08.)
 - **Cómo verifico:** `tests/` ya no aparece en `ls`.
 
 **4.4 — Leer el config línea por línea**
@@ -321,15 +321,15 @@ export default defineConfig({
 | `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de carpetas `modulo-*`; por eso el `tests/example.spec.ts` del installer nunca correría (lo borraste en 4.3) |
 | `timeout: 60_000` | Presupuesto TOTAL de cada `test()` — todas sus acciones y aserciones juntas; si se agota: `TimeoutError` y el test falla. Default: 30s | Doblado a 60s para absorber el cold start de Render (30-40s el primer request del día) |
 | `expect: { timeout: 10_000 }` | Tope de CADA aserción `expect()` individual; las aserciones web-first reintentan en bucle hasta cumplirse o agotarlo. Default: 5s | 10s da margen a renders lentos sin permitir que UNA aserción se coma el presupuesto del test entero |
-| `reporter: [["html", { open: "never" }], ["list"]]` | Lista de reporters que corren a la vez. `html` genera `playwright-report/` (`open: "never"` = no abre el navegador al terminar; lo abres tú con `pnpm report`); `list` imprime cada test en la terminal según corre | `html` = artefacto compartible (en M06 será el artifact de CI); `list` = feedback inmediato mientras corre |
-| `use: { ... }` | Bloque de opciones compartidas que heredan TODOS los projects y tests; cada project puede sobreescribir campos | Con un solo project parece innecesario — pero es lo que permitirá añadir firefox/webkit en M04 sin duplicar config |
+| `reporter: [["html", { open: "never" }], ["list"]]` | Lista de reporters que corren a la vez. `html` genera `playwright-report/` (`open: "never"` = no abre el navegador al terminar; lo abres tú con `pnpm report`); `list` imprime cada test en la terminal según corre | `html` = artefacto compartible (en M08 será el artifact de CI); `list` = feedback inmediato mientras corre |
+| `use: { ... }` | Bloque de opciones compartidas que heredan TODOS los projects y tests; cada project puede sobreescribir campos | Con un solo project parece innecesario — pero es lo que permitirá añadir firefox/webkit en M08 sin duplicar config |
 | `baseURL` | Host base contra el que se resuelven las URLs relativas: `page.goto("/")` y `toHaveURL` se calculan contra él | Viene de `process.env.BASE_URL` (tu `.env`) con fallback `??`; un único lugar para cambiar de entorno |
 | `trace: "retain-on-failure"` | Graba la "caja negra" (timeline, snapshot del DOM por acción, network, consola) de cada test y la conserva SOLO si falla (si pasa, la borra). Valores: `off` / `on` / `on-first-retry` / `retain-on-failure` | El scaffold traía `on-first-retry`, que solo graba al reintentar — inútil sin `retries` en M01: jamás verías un trace. Así tienes el trace desde el primer fallo |
 | `screenshot: "only-on-failure"` | Captura automática del estado final de la página solo cuando el test falla; se adjunta al HTML report | Evidencia visual gratis del momento del fallo, sin ensuciar los runs verdes |
 | `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
 | `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
-| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M04 vuelven firefox/webkit y se monta el setup project |
-| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | `anon` porque M01-M03 corren **sin sesión** (su lección ES el login); el `ui-chromium` autenticado nace en M04. El prefijo `ui-` (vs `api` de M05) es la convención del curso |
+| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M08 vuelven firefox/webkit y en M06 se monta el setup project |
+| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | `anon` porque M01-M05 corren **sin sesión** (su lección ES el login); el `ui-chromium` autenticado nace en M06. El prefijo `ui-` (vs `api` de M07) es la convención del curso |
 | `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
 ---
@@ -404,13 +404,13 @@ EOF
   | `exactOptionalPropertyTypes: false` | **NO** forma parte de `strict`; en `true` prohíbe asignar `undefined` explícito a una propiedad opcional (`prop?: T`) | **Debe** quedar en `false` en este curso (ver recuadro ⚠️ abajo) |
   | `esModuleInterop: true` | Permite `import` default sobre paquetes CommonJS | Sin esto algunos imports de librerías npm obligan a sintaxis rara |
   | `skipLibCheck: true` | No type-checkea los `.d.ts` de `node_modules` | Compila más rápido y no te bloquean errores de tipos de terceros que no puedes arreglar |
-  | `forceConsistentCasingInFileNames: true` | Error si un import difiere en mayúsculas/minúsculas del archivo real | Windows/macOS lo perdonan, el CI en Linux (M06) no; mata el "funciona en mi máquina" |
-  | `resolveJsonModule: true` | Permite importar `.json` con tipos | Necesario para `import marketsJson from "../data/markets.json"` en M02 |
+  | `forceConsistentCasingInFileNames: true` | Error si un import difiere en mayúsculas/minúsculas del archivo real | Windows/macOS lo perdonan, el CI en Linux (M08) no; mata el "funciona en mi máquina" |
+  | `resolveJsonModule: true` | Permite importar `.json` con tipos | Necesario para `import marketsJson from "../data/markets.json"` en M03 |
   | `types: ["node", "@playwright/test"]` | Qué declaraciones globales se cargan | Sin `node`, `process.env` no tiene tipo; sin `@playwright/test`, `test`/`expect` tampoco |
   | `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todos los `modulo-*/`: espejo del `testMatch` del Paso 4 |
 
   > ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
-  > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M06 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M04, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
+  > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M08 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M06, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
 
 - **Cómo verifico:**
   ```bash
@@ -491,7 +491,7 @@ Ahora sí, **el código del módulo**.
   test.describe("Smoke OmniPizza — ugly version (M01)", () => {
     // Nota: OmniPizza vive en Render free tier y el primer request del
     // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
-    // timeouts generosos del playwright.config.ts lo absorben. En M04 el
+    // timeouts generosos del playwright.config.ts lo absorben. En M06 el
     // backend se despierta de forma controlada con un `auth.setup.ts`.
 
     test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
@@ -589,7 +589,7 @@ Ahora sí, **el código del módulo**.
   # (o el atajo del curso: pnpm report)
   ```
   Se abre en el navegador en `http://localhost:9323`. Click en un test → verás sus **pasos**, y si falló, su **trace**, **screenshot** y **video**.
-- **Por qué:** el config genera el reporter `html` (lo dejaste en el Paso 4). El HTML report es el **artefacto compartible** del resultado: en CI (M06) lo subiremos como artifact para que el equipo lo revise sin re-correr nada. El **Trace Viewer** (dentro del report, al fallar) es la "caja negra" del test: timeline, DOM snapshot por acción, network y consola.
+- **Por qué:** el config genera el reporter `html` (lo dejaste en el Paso 4). El HTML report es el **artefacto compartible** del resultado: en CI (M08) lo subiremos como artifact para que el equipo lo revise sin re-correr nada. El **Trace Viewer** (dentro del report, al fallar) es la "caja negra" del test: timeline, DOM snapshot por acción, network y consola.
 - **Cómo verifico:** se abre el navegador con la lista de tests; al hacer click en `TC-001` ves sus pasos expandibles. (Si dice *"No report found"*, corre primero `pnpm m1`.)
 
 > 💡 **Para el facilitador:** abre el **Trace Viewer** desde el HTML report (en un test que falle a propósito, p.ej. cambiando un `getByTestId` a un id inexistente) y muestra el timeline + los snapshots del DOM. Los alumnos suelen quedar enganchados con el Trace Viewer — es el mayor "wow" del módulo.
@@ -619,10 +619,10 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
    - `click()` en `login-button-desktop` — repetido.
    - `expect(page).toHaveURL(/\/catalog/)` — repetido.
 2. **Locators inline** — el string `"market-MX"` está hardcoded; no hay un "objeto LoginPage" que lo encapsule.
-3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M04 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
+3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M06 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
 4. **Las credenciales** se leen con `process.env.TEST_USER_USERNAME ?? "standard_user"` — el fallback existe por seguridad, pero **la fuente real es `.env`**.
 
-**Pregunta al grupo:** *"si añadieran un tercer smoke, ¿cuántas líneas duplicarían?"* — la respuesta esperada es **~8**. Esa es la deuda que M02 y M03 van a pagar.
+**Pregunta al grupo:** *"si añadieran un tercer smoke, ¿cuántas líneas duplicarían?"* — la respuesta esperada es **~8**. Esa es la deuda que M03 y M04 van a pagar.
 
 ---
 
@@ -633,10 +633,10 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
   ```bash
   pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-anon
   ```
-- **Por qué:** este tercer smoke vuelve a duplicar ~8 líneas de login. Medir cuántas copiaste pone número a la deuda técnica que M03 va a saldar con el Page Object Model.
+- **Por qué:** este tercer smoke vuelve a duplicar ~8 líneas de login. Medir cuántas copiaste pone número a la deuda técnica que M04 va a saldar con el Page Object Model.
 - **Cómo verifico:** el test pasa en verde **y** al final del archivo puedes responder las 3 preguntas del comentario final.
 
-> 💡 **Para el facilitador:** al cerrar el reto, abre `ejemplo.spec.ts` y `reto.spec.ts` lado a lado y pide al grupo contar las líneas idénticas entre TC-001 / TC-002 / TC-003. Anota el número en el pizarrón — lo vamos a destruir en M03.
+> 💡 **Para el facilitador:** al cerrar el reto, abre `ejemplo.spec.ts` y `reto.spec.ts` lado a lado y pide al grupo contar las líneas idénticas entre TC-001 / TC-002 / TC-003. Anota el número en el pizarrón — lo vamos a destruir en M04.
 
 ---
 
@@ -687,10 +687,14 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 
 ## ▶️ Cómo ejecutar este módulo
 
+> Ejecuta desde el proyecto de referencia autocontenido: **`cd proyecto`** (su `package.json` define estos scripts). Antes de la 1ª corrida: `pnpm install` → `pnpm install:browsers` → `cp .env.example .env`.
+
 - **Comando del módulo:** `pnpm m1`
+- **Todos los tests:** `pnpm test`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts`)
+- **Type-check:** `pnpm typecheck`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts`)
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m1` (no `VAR=x pnpm m1`, que es sintaxis de bash y falla en PowerShell)
 
@@ -698,4 +702,4 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 
 ## ¿Qué viene en M02?
 
-En el próximo módulo vas a **parametrizar** este smoke para que un mismo test corra contra los 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado — primer paso para matar la duplicación.
+En el próximo módulo vas a dominar los **locators**: la **jerarquía** de Playwright (`getByRole` → `getByLabel`/`getByText` → `getByTestId`), cómo **filtrar y acotar** el elemento exacto (`.filter()`, `.nth()`, `.first()`, `.and()`/`.or()`, scoping dentro de un contenedor) sin acoplarte a un DOM frágil, y cómo generarlos rápido con **Codegen**. Es el fin de los selectores inline que copiaste en este smoke — y la base para la parametrización data-driven que llega en M03.

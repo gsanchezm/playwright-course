@@ -129,7 +129,7 @@ pnpm exec playwright show-report
 # (o el atajo del curso: pnpm report)
 ```
 
-Se abre en el navegador en `http://localhost:9323`. El config genera el reporter `html` (lo dejaste en el Paso 4); es el **artefacto compartible** del resultado: en CI (M06) lo subiremos como artifact para que el equipo lo revise sin re-correr nada. Click en un test → verás sus **pasos** expandibles, y si falló, su **trace** (el **Trace Viewer**: timeline, snapshot del DOM por acción, network y consola), **screenshot** y **video**. Si dice *"No report found"*, corre primero `pnpm m1`.
+Se abre en el navegador en `http://localhost:9323`. El config genera el reporter `html` (lo dejaste en el Paso 4); es el **artefacto compartible** del resultado: en CI (M08) lo subiremos como artifact para que el equipo lo revise sin re-correr nada. Click en un test → verás sus **pasos** expandibles, y si falló, su **trace** (el **Trace Viewer**: timeline, snapshot del DOM por acción, network y consola), **screenshot** y **video**. Si dice *"No report found"*, corre primero `pnpm m1`.
 
 ---
 
@@ -144,10 +144,10 @@ Abre `ejemplo.spec.ts` y **señala con el dedo**:
    - `click()` en `login-button-desktop` — repetido.
    - `expect(page).toHaveURL(/\/catalog/)` — repetido.
 2. **Locators inline** — el string `"market-MX"` está hardcoded; no hay un "objeto LoginPage" que lo encapsule.
-3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M04 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
+3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M06 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
 4. **Las credenciales** se leen con `process.env.TEST_USER_USERNAME ?? "standard_user"` — el fallback existe por seguridad, pero **la fuente real es `.env`**.
 
-**Pregúntate:** *"si añadiera un tercer smoke, ¿cuántas líneas duplicaría?"* — la respuesta es **~8**. Esa es la deuda que M02 y M03 van a pagar.
+**Pregúntate:** *"si añadiera un tercer smoke, ¿cuántas líneas duplicaría?"* — la respuesta es **~8**. Esa es la deuda que M03 y M04 van a pagar.
 
 ---
 
@@ -165,7 +165,7 @@ Abre `ejemplo.spec.ts` y **señala con el dedo**:
 // - Mercado hardcoded.
 // - No hay POM, ni fixtures, ni data-driven.
 //
-// En M02 parametrizaremos. En M03 refactorizaremos a POM.
+// En M03 parametrizaremos. En M04 refactorizaremos a POM.
 // ============================================================
 
 import { test, expect } from "@playwright/test";
@@ -177,7 +177,7 @@ const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 test.describe("Smoke OmniPizza — ugly version (M01)", () => {
   // Nota: OmniPizza vive en Render free tier y el primer request del
   // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
-  // timeouts generosos del playwright.config.ts lo absorben. En M04 el
+  // timeouts generosos del playwright.config.ts lo absorben. En M06 el
   // backend se despierta de forma controlada con un `auth.setup.ts`.
 
   test("TC-001 — successful login with valid user @smoke", async ({ page }) => {
@@ -234,7 +234,7 @@ test.describe("Smoke OmniPizza — ugly version (M01)", () => {
 //   - expect URL /catalog
 //
 // Son ~6 líneas por test × N tests futuros.
-// Esa es la duplicación que vas a matar en M03.
+// Esa es la duplicación que vas a matar en M04.
 // ============================================================
 ```
 

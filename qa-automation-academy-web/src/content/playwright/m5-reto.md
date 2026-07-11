@@ -1,186 +1,133 @@
 # 🚩 Reto M05
 
-## Paso 9 — Resolver el reto
+## Paso 8 — Resolver el reto
 
-Tienes que extender `PizzaService` con DOS métodos nuevos: `getByMarket(market)` y `getById(id)`. Y luego escribir un test que los use juntos.
+Abre `reto.spec.ts`. Tu trabajo es **mockear `/api/pizzas` con latencia simulada** y validar que la UI muestra un skeleton/loader mientras el backend "tarda".
 
-El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando dónde escribir cada método dentro de `services/PizzaService.ts`.
+El flujo del reto:
+
+1. Interceptar `GET /api/pizzas*` con `page.route()` y, **antes** de dejar pasar el request al backend real, esperar 3 segundos con `setTimeout` + `route.continue()`. Eso simula un backend lento **de forma determinista** (3s exactos, no el tiempo real variable).
+2. Hacer login por UI con el fixture `loginPage` para aterrizar en `/catalog` — el mock se dispara al cargar el catálogo.
+3. Validar que durante esos ~3s aparece un indicador de carga (skeleton/loader).
+4. Validar que **después** de los 3s aparecen las pizzas reales (el mock dejó pasar el request, así que el backend responde tarde pero responde).
+
+Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**. No están resueltos aquí a propósito.
+
+**El detalle clave que refuerza este reto:** el mock se registra **ANTES** del login (que navega). `page.route` persiste durante toda la vida de la pestaña; si lo registras después de que `/api/pizzas` ya se pidió, llegas tarde.
+
+> 💡 **Si OmniPizza no muestra un skeleton, este reto te enseña algo: abre un bug.** Una carga larga **sin** feedback visual es un defecto de UX clásico — esa es la conversación QA↔UX. El reto no es solo "haz que pase el test", es reconocer cuándo el test revela un hueco de producto.
+
+Este reto **no** toca sesión ni `storageState` (eso llega en M06). Corre en el project `chromium` anónimo: el catálogo se alcanza haciendo login por UI.
+
+---
+
+## ▶️ Cómo correr solo este reto
+
+```bash
+pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium
+```
+
+Criterio de éxito: el test pasa y su duración total es **≥ 3s** (por la latencia mockeada).
 
 ---
 
 ## Código completo — `reto.spec.ts`
 
 ```ts
-// @file modulo-05-api-layer/reto.spec.ts
+// @file modulo-05-fixtures/tests/reto.spec.ts
 // ============================================================
-// 🚩 Reto M05 — Extender PizzaService con getByMarket y getById
+// 🚩 Reto M05 — Mock con latencia simulada (page.route + delay)
 // ============================================================
-// Objetivo pedagógico: practicar el patrón "un método por endpoint"
-// dentro de una clase concreta que extiende BaseService (abstract).
+// Objetivo: interceptar /api/pizzas, meterle una demora artificial
+// con `setTimeout` + `route.continue()`, y validar que la UI muestra
+// un skeleton/loader mientras el backend "tarda".
 //
-// Vas a:
-//   1. Añadir dos métodos nuevos a `services/PizzaService.ts`.
-//   2. Validar que los tipos siguen siendo seguros (TS no compila
-//      si la respuesta no cumple `Pizza`).
-//   3. Escribir un test que use ambos métodos juntos.
-// ============================================================
+// Este reto NO toca sesión ni storageState (eso llega en M06). Corre
+// en el project `chromium` anónimo: el catálogo se alcanza haciendo
+// login por UI con el fixture `loginPage`.
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm test:api corre en verde con el ejemplo del módulo.
-//   ✔ Lees `services/PizzaService.ts` y `services/BaseService.ts`.
-//   ✔ Tienes claro que cada uso termina con `await pizzas.dispose()`.
+//   ✔ pnpm m5 corre en verde
+//   ✔ Conoces fixtures/omnipizza.ts (loginPage/catalogPage inyectados)
+//   ✔ Entiendes que el mock se registra ANTES de navegar
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-05-api-layer/reto.spec.ts --project=api
+//   pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium
 // ============================================================
 
-import { test, expect } from "@playwright/test";
-import { AuthService, PizzaService } from "../services";
-import type { User, Market } from "../types";
-import usersJson from "../data/users.json";
-import marketsJson from "../data/markets.json";
+import { test, expect } from "../fixtures/omnipizza";
 
-const users = usersJson as User[];
-const markets = marketsJson as Market[];
-const standardUser = users.find((u) => u.username === "standard_user")!;
-const mxMarket = markets.find((m) => m.code === "MX")!;
-const API_URL =
-  process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
-
-test.describe("Challenge M05 — extend PizzaService", () => {
-  test.skip("TODO — implement getByMarket and getById, then use both", async () => {
+// ============================================================
+// Mock con latencia y validar el skeleton/loader
+// ============================================================
+test.describe("Reto M05 — mock con latencia @regression", () => {
+  test("un backend lento muestra el skeleton/loader antes de las pizzas", async ({
+    page,
+    loginPage,
+    standardUser,
+    defaultMarket,
+  }) => {
     // ────────────────────────────────────────────────────────
-    // TODO 0 — Antes de escribir el test, MODIFICA el servicio
-    // ────────────────────────────────────────────────────────
-    // Abre `services/PizzaService.ts` y añade dos métodos públicos
-    // junto al `list()` que ya existe.
-
-    // ════════════════════════════════════════════════════════
-    // 📁 EN services/PizzaService.ts:
-    // ════════════════════════════════════════════════════════
-    //
-    // ──────── TODO A — getByMarket(market) ────────
-    //
-    //   Qué hacer:
-    //     Listar pizzas del mercado actual y FILTRAR las que tengan
-    //     `currency === market.currency`. (En OmniPizza basta con
-    //     reutilizar `this.list()` porque el header X-Country-Code
-    //     ya filtra del lado del backend — pero hacer el filtro
-    //     explícito en cliente sirve como cinturón.)
-    //
-    //   Pista (cópialo dentro de la clase PizzaService):
-    //
-    //     async getByMarket(market: Market): Promise<Pizza[]> {
-    //       const all = await this.list();
-    //       return all.filter((p) => p.currency === market.currency);
-    //     }
-    //
-    //   No olvides:
-    //     · `import type { Market, Pizza } from "../types";` (si falta)
-    //
-    //   Cómo verificar:
-    //     pnpm typecheck   → debe pasar
-    //
-    // ──────── TODO B — getById(id) ────────
-    //
-    //   Qué hacer:
-    //     Hacer un GET a `/api/pizzas/:id` y devolver el objeto.
-    //     Lanzar error si el response no es ok.
-    //
-    //   Pista (cópialo dentro de la clase PizzaService):
-    //
-    //     async getById(id: string | number): Promise<Pizza> {
-    //       const res = await this.api.get(this.url(`/${id}`));
-    //       if (!res.ok()) {
-    //         throw new Error(
-    //           `getById(${id}) failed (${res.status()}): ${await res.text()}`
-    //         );
-    //       }
-    //       return (await res.json()) as Pizza;
-    //     }
-    //
-    //   Cómo verificar:
-    //     pnpm typecheck   → debe pasar
-    //     Inspecciona el endpoint real de OmniPizza por si la ruta es
-    //     `/api/pizzas/:id` o algo distinto (ajústalo si no responde).
-    //
-    // ════════════════════════════════════════════════════════
-    // FIN de cambios en services/PizzaService.ts
-    // ════════════════════════════════════════════════════════
-
-
-    // ────────────────────────────────────────────────────────
-    // TODO 1 — Quitar el `test.skip` y empezar el flujo
+    // TODO 1 — Registrar el mock con delay artificial
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Borra el `test.skip(...)` de arriba y deja `test(...)`.
-    //   Después arranca con el login estándar:
+    //   Interceptar GET /api/pizzas* y, antes de dejar pasar el request
+    //   al backend real, esperar 3 segundos. Eso simula un backend lento.
     //
-    // Pista:
-    const auth = await AuthService.create(API_URL);
-    const { access_token } = await auth.login(standardUser);
-    await auth.dispose();
-
+    // ⚠️ El mock debe registrarse ANTES del login (que navega a /catalog):
+    //    page.route sigue vivo durante todo el ciclo de la pestaña.
+    //
+    // Pista (ya viene rellenado abajo; léelo, no lo borres):
+    await page.route("**/api/pizzas*", async (route) => {
+      await new Promise((r) => setTimeout(r, 3_000));
+      await route.continue();
+    });
 
     // ────────────────────────────────────────────────────────
-    // TODO 2 — Crear PizzaService apuntando al mercado MX
+    // TODO 2 — Login por UI para llegar al catálogo
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Factory async: el servicio queda con Bearer + X-Country-Code listos.
+    //   Usa el fixture loginPage para autenticarte por UI y aterrizar en
+    //   /catalog. El mock se disparará al cargar el catálogo y tendrás
+    //   ~3s de "loading" hasta que el backend real responda.
     //
     // Pista:
-    const pizzas = await PizzaService.create(
-      API_URL,
-      access_token,
-      mxMarket.code,
-    );
+    //   await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
 
     // ────────────────────────────────────────────────────────
-    // TODO 3 — Usar getByMarket(mxMarket) y validar el resultado
+    // TODO 3 — Validar que el skeleton/loader aparece
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   1) Llamar el método nuevo.
-    //   2) Asegurar que la lista no está vacía.
-    //   3) Asegurar que TODAS las pizzas tienen `currency === "MXN"`.
+    //   ANTES de que las pizzas reales aparezcan (en los primeros
+    //   ~3 segundos), debe ser visible un indicador de carga. Su
+    //   testid puede ser `catalog-loading`, `skeleton-card`, etc.
     //
-    // Pista:
-    //   const list = await pizzas.getByMarket(mxMarket);
-    //   expect(list.length).toBeGreaterThan(0);
-    //   for (const p of list) {
-    //     expect(p.currency).toBe(mxMarket.currency);
-    //   }
+    // Pista (ajusta el testid al DOM real de OmniPizza):
+    //   await expect(page.getByTestId("catalog-loading")).toBeVisible();
+    //
+    // 💡 Si OmniPizza no muestra un skeleton, este reto te enseña algo:
+    //    abre un bug. Las cargas largas SIN feedback visual son un
+    //    defecto de UX clásico — esa es la conversación QA↔UX.
 
 
     // ────────────────────────────────────────────────────────
-    // TODO 4 — Usar getById con la primera pizza de la lista
+    // TODO 4 — Validar que tras los 3s, las pizzas aparecen
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   1) Tomar el `id` de la primera pizza.
-    //   2) Pedir el detalle.
-    //   3) Validar que `detail.id === first.id`.
+    //   Esperar a que aparezcan tarjetas reales de pizza (el mock dejó
+    //   pasar el request, así que el backend responde tarde pero responde).
     //
     // Pista:
-    //   const first = list[0];
-    //   const detail = await pizzas.getById(first.id);
-    //   expect(detail.id).toBe(first.id);
-    //   expect(detail).toHaveProperty("name");
+    //   const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
+    //   await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
     //
     // Criterio de éxito:
-    //   El test pasa en VERDE. En la terminal verás:
-    //     ✓ Reto M05 — extender PizzaService
+    //   El test pasa. La duración total será ≥ 3s.
 
 
-    // ────────────────────────────────────────────────────────
-    // TODO 5 — SIEMPRE dispose al final
-    // ────────────────────────────────────────────────────────
-    // Qué hacer:
-    //   Cerrar el contexto HTTP para no dejar conexiones abiertas.
-    //
-    // Pista (DEBE ir en un try/finally en producción, aquí basta):
-    await pizzas.dispose();
-
-    expect(true).toBe(true);
+    // Placeholder para que el TS compile aunque no hayas terminado.
+    await expect(page.locator("body")).toBeVisible();
   });
 });
 
@@ -188,38 +135,21 @@ test.describe("Challenge M05 — extend PizzaService", () => {
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. Si `getById` devuelve un objeto SIN el campo `name`,
-//      ¿quién se queja primero, TypeScript o el `expect`?
-//      (Esperado: el `expect`, porque el cast `as Pizza` confía
-//      en el contrato. Por eso `expect(detail).toHaveProperty("name")`
-//      es una salvaguarda válida.)
+//   1. Si el mock NO existiera (latencia real del backend), ¿el test
+//      sería determinista? (Esperado: NO — el tiempo real varía. Por eso
+//      mockeamos la demora: 3s exactos, reproducibles.)
 //
-//   2. ¿Qué pasa si te saltas `await pizzas.dispose()`?
-//      (Esperado: leaks de conexiones HTTP. En suites grandes,
-//      el runner empieza a fallar con "too many open sockets".)
+//   2. ¿Por qué registramos el mock ANTES del login y no justo antes de
+//      llegar a /catalog? (Esperado: page.route persiste durante toda la
+//      pestaña; si lo registras después de que /api/pizzas ya se pidió,
+//      llegas tarde. Registrarlo primero garantiza que lo intercepte.)
 //
-//   3. Si OmniPizza añade `paymentMethod` a `Pizza`, ¿necesitas
-//      modificar este test? (Esperado: no, mientras los campos
-//      que validas sigan ahí.)
+//   3. ¿Qué otro caso de red mockearías con page.route además de latencia?
+//      (Esperado: errores 5xx/404, respuestas vacías, respuestas con
+//      esquema inesperado — todos deterministas sin tocar el backend.)
 //
-// 👉 En M06 llevamos todo esto a CI/CD: este mismo reto correrá
-//    automáticamente en GitHub Actions cada vez que abras un PR,
-//    sobre 3 browsers en paralelo, con traces descargables.
+// 👉 En M06 vas a ver la otra cara: en vez de hacer login por UI en cada
+//    test, un `auth.setup.ts` lo hace UNA vez, guarda el badge
+//    (storageState) y todos los tests arrancan ya autenticados.
 // ============================================================
 ```
-
----
-
-## Paso 10 — Versiona tu trabajo (Git JIT)
-
-Agrega solo lo que toca este módulo y commitea con un mensaje convencional. La capa de servicios + su config + el módulo son una unidad coherente: un commit por capa deja un historial legible (y, en M06, fácil de revertir en CI).
-
-```bash
-git add services tests/api playwright.config.ts modulo-05-api-layer
-git commit -m "feat(m05): API layer con BaseService abstracta"
-git log --oneline -1
-```
-
-> 🪟 **Windows / PowerShell:** los comandos `git` son idénticos; no necesitas escapar nada aquí.
-
-**Cómo verificas:** `git log --oneline -1` muestra el commit `feat(m05): ...` en la cima.
