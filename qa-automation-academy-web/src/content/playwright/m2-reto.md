@@ -172,7 +172,7 @@ test.describe("Challenge M02 — locator hierarchy in the catalog", () => {
 Cuando el reto quede en verde, agrega **solo lo que cambió en este módulo** y commitéalo con un mensaje convencional:
 
 ```bash
-git add modulo-02-locators
+git add .
 git commit -m "feat(m02): jerarquía de locators + chuleta de referencia"
 ```
 

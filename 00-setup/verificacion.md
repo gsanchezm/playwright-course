@@ -108,12 +108,12 @@ Debe mostrar tu commit con tu nombre como autor.
 
 **Probar:**
 ```bash
-$ cd playwright-course
+$ cd playwright-course/modulo-01-smoke-feo/proyecto
 $ pnpm install
 $ pnpm exec playwright install
 $ pnpm m1
 ```
-Debe correr 6 tests verdes (2 tests × 3 navegadores).
+Debe correr los smoke del Módulo 1 en verde (proyecto `ui-anon`, un solo navegador).
 
 ---
 

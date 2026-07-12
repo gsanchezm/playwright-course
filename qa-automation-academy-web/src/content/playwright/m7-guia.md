@@ -138,8 +138,9 @@ tests/api/
 ### Paso 0 — Pre-requisitos
 
 ```bash
-# Estando en playwright-course/
-pnpm m6            # los fixtures y el setup project funcionan
+# Desde proyecto/
+cd proyecto
+pnpm install
 pnpm typecheck     # debe pasar
 ```
 

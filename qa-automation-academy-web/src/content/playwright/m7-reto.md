@@ -215,7 +215,7 @@ test.describe("Challenge M07 — extend PizzaService", () => {
 Agrega solo lo que toca este módulo y commitea con un mensaje convencional. La capa de servicios + su config + el módulo son una unidad coherente: un commit por capa deja un historial legible (y, en M08, fácil de revertir en CI).
 
 ```bash
-git add services tests/api playwright.config.ts modulo-07-api-layer
+git add services tests playwright.config.ts
 git commit -m "feat(m07): API layer con BaseService abstracta"
 git log --oneline -1
 ```

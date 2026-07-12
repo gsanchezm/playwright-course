@@ -185,7 +185,7 @@ test.describe("Challenge M03 — extended parameterization", () => {
 Cuando el reto quede en verde, agrega **solo lo que cambió en este módulo** y commitéalo con un mensaje convencional:
 
 ```bash
-git add types data modulo-03-data-driven
+git add .
 git commit -m "feat(m03): data-driven con JSON tipado"
 ```
 

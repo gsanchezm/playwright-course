@@ -157,7 +157,8 @@ pnpm exec playwright show-trace path/to/trace.zip
 Antes de tocar CI:
 
 ```bash
-# Estando en playwright-course/
+# Desde proyecto/ (de este módulo)
+cd proyecto
 pnpm m7            # API layer corre en verde
 pnpm typecheck     # sin errores
 

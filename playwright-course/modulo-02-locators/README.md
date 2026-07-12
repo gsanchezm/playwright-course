@@ -393,7 +393,7 @@ El `ejemplo.spec.ts` es el **mismo** smoke de M01 (login + catálogo, un mercado
 **8.1 — Commitea el incremento de M02**
 - **Qué hago:** agrego lo que cambió en este módulo y lo commiteo con un mensaje convencional.
   ```bash
-  git add modulo-02-locators
+  git add .
   git commit -m "feat(m02): jerarquía de locators + chuleta de referencia"
   ```
 - **Por qué:** M02 introduce la disciplina de locators y la chuleta viva del módulo. Versionarla en un commit atómico deja un punto de retorno limpio **antes** de que M03 empiece a parametrizar con datos tipados. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan cuando el flujo los pida.)

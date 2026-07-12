@@ -183,10 +183,10 @@ test.describe("Smoke Challenge M01", () => {
 
 Ya tienes el módulo verde: es el momento natural de guardar un punto de control en Git. (En este curso **Git es just-in-time**: aparece cuando el flujo lo pide, no como bloque inicial.)
 
-**11.1 — Preparar los archivos para el commit.** Desde la raíz del proyecto, agrega al staging lo que generó el installer y lo que creaste tú en este módulo:
+**11.1 — Preparar los archivos para el commit.** Desde el `proyecto/` de este módulo, agrega al staging (con rutas relativas a `proyecto/`) lo que generó el installer y lo que creaste tú en este módulo:
 
 ```bash
-git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github modulo-01-smoke-feo
+git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github tests
 ```
 
 Las listas explícitas evitan arrastrar basura. Aquí entran tanto lo que dejó `pnpm create playwright` (`playwright.config.ts` ya reconciliado, `package.json`, `pnpm-lock.yaml`, el `.github/workflows/playwright.yml` **latente**) como tus archivos (`.env.example`, `tsconfig.json`, el módulo). Fíjate que **`.env` NO está en la lista** — es secreto y ya lo excluye `.gitignore` (Paso 3). Sí versionas `.env.example` (la plantilla pública).

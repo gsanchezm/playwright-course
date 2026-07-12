@@ -564,7 +564,7 @@ Mide en el pizarrón:
 - **Cómo verifico:** `git log --oneline -1` muestra el commit `feat(m07): ...` en la cima.
 
 ```bash
-git add services tests/api playwright.config.ts modulo-07-api-layer
+git add services tests playwright.config.ts
 git commit -m "feat(m07): API layer con BaseService abstracta"
 git log --oneline -1
 ```

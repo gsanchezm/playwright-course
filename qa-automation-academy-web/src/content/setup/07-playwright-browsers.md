@@ -20,10 +20,10 @@ Playwright tiene 2 partes:
 
 ## 1. Instalar la librería (parte automática)
 
-Desde la carpeta `playwright-course/`:
+Cada módulo del curso de Playwright es un proyecto **autocontenido** (con su propio `package.json`). Para verificar el setup, entra al `proyecto/` del Módulo 1 desde la raíz del repo:
 
 ```bash
-$ cd playwright-course
+$ cd playwright-course/modulo-01-smoke-feo/proyecto
 $ pnpm install
 ```
 

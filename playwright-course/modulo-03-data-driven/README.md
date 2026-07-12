@@ -612,7 +612,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 **9.1 — Commitea el incremento de M03**
 - **Qué hago:** agrego solo lo que cambió en este módulo y lo commiteo con un mensaje convencional.
   ```bash
-  git add modulo-03-data-driven
+  git add .
   git commit -m "feat(m03): data-driven con JSON tipado"
   ```
 - **Por qué:** M03 introduce dos carpetas reusables (`types/`, `data/`) más el spec del módulo. Versionarlas en un commit atómico deja un punto de retorno limpio **antes** de que M04 empiece a refactorizar hacia POM. (Aquí Git es JIT: commit al cerrar; las ramas y el push llegan en M04/M05, cuando el flujo los pida.)

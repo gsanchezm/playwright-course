@@ -9,21 +9,23 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Este es el **punto de partida del framework**. El proyecto se llama **`playwright-course`** (lo creaste en M00 con `git init`). En M01 lo llenas con el **installer oficial** (`pnpm create playwright`) y luego lo **moldeas** a la arquitectura incremental del curso:
+Este es el **punto de partida del framework**. Trabajas **dentro del `proyecto/` de este módulo** (`modulo-01-smoke-feo/proyecto/`): un proyecto Playwright **autocontenido** que vive en el repo Git que creaste en M00. Aquí lo llenas con el **installer oficial** (`pnpm create playwright`) y luego lo **moldeas** a la arquitectura incremental del curso — así se construyó el `proyecto/` que ya viene resuelto en esta carpeta:
 
 ```
-playwright-course/
-├── .env                       ← 🆕 creas tú desde .env.example (gitignored)
-├── .env.example               ← 🆕 plantilla versionada de variables
-├── .gitignore                 ← lo trae el installer; le añades .env y .auth/
-├── package.json               ← scripts (pnpm m1, test, report…) + dotenv como dep
-├── playwright.config.ts       ← 🆕 lo genera el installer; lo reconcilias al estado M01
-├── tsconfig.json              ← 🆕 lo creas tú (el installer NO lo genera)
-├── .github/workflows/         ← lo deja el installer; LATENTE hasta M08
-│   └── playwright.yml
-└── tests/                     ← 🆕 tus specs de este módulo (la carpeta la deja el installer)
-    ├── ejemplo.spec.ts        ← 🆕 TC-001 login, TC-002 catálogo (con duplicación)
-    └── reto.spec.ts           ← 🆕 TC-003 filtrar por categoría "popular"
+playwright-course/                  ← el repo Git que creaste en M00 (workspace, NO un proyecto Playwright)
+└── modulo-01-smoke-feo/            ← 🆕 ESTE MÓDULO
+    └── proyecto/                   ← proyecto Playwright autocontenido — lo construyes con el installer
+        ├── .env                    ← 🆕 creas tú desde .env.example (gitignored)
+        ├── .env.example            ← 🆕 plantilla versionada de variables
+        ├── .gitignore              ← lo trae el installer; le añades .env y .auth/
+        ├── package.json            ← scripts (pnpm m1, test, report…) + dotenv como dep
+        ├── playwright.config.ts    ← 🆕 lo genera el installer; lo reconcilias al estado M01
+        ├── tsconfig.json           ← 🆕 lo creas tú (el installer NO lo genera)
+        ├── .github/workflows/      ← lo deja el installer; LATENTE hasta M08
+        │   └── playwright.yml
+        └── tests/                  ← 🆕 tus specs de este módulo (la carpeta la deja el installer)
+            ├── ejemplo.spec.ts     ← 🆕 TC-001 login, TC-002 catálogo (con duplicación)
+            └── reto.spec.ts        ← 🆕 TC-003 filtrar por categoría "popular"
 ```
 
 **Qué NO existe todavía** (lo agregaremos en módulos siguientes):
@@ -82,21 +84,21 @@ Vas a escribir tu primer caso de prueba automatizado **como lo haría un tester 
 > **Qué hago** (el comando o la línea exacta) · **Por qué** (la razón / el riesgo que evita) · **Cómo verifico** (algo ejecutable u observable que confirma que quedó bien).
 > Verás también recuadros **🔷 TypeScript** la primera vez que aparece un concepto del lenguaje, con un enlace al curso de TypeScript donde lo viste a fondo.
 
-### Paso 0 — Pre-requisitos
+### Paso 0 — Pre-requisitos y entrar al proyecto de M01
 
-Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git --version`):
-
-- **Node.js 24.x** (`node -v` → `v24.x.x`)
-- **pnpm 10+** (`pnpm -v` → `10.x.x` o superior)
-- **Git** instalado (`git --version`)
-- Estar **dentro del proyecto** que creaste en M00 (`playwright-course`, ya con `git init` y tu primer commit):
+**0.1 — Confirma prerequisitos y sitúate en el `proyecto/` de este módulo**
+- **Qué hago:** reviso las versiones y entro al `proyecto/` de M01 — es **aquí**, dentro de la carpeta del módulo, donde vas a construir todo con el installer. A diferencia de M02-M06 (donde el `package.json` ya viene y arrancas con `pnpm install`), en M01 el `package.json` lo **genera el installer** en el Paso 1.
   ```bash
-  cd playwright-course
-  pwd   # debe terminar en /playwright-course
-  git log --oneline -1   # ves el primer commit que hiciste en M00
+  node -v                # v24.x.x
+  pnpm -v                # 10.x.x o superior
+  git --version          # Git instalado
+  cd modulo-01-smoke-feo/proyecto
+  git log --oneline -1   # ves el primer commit que hiciste en M00 (el repo Git ya existe)
   ```
+- **Por qué:** el repo Git lo creaste en M00 (`git init` + primer commit); **no** hay un proyecto Playwright compartido en la raíz del curso. Cada módulo trabaja dentro de su propio `proyecto/`, y el de M01 es el que llenas con el installer. El `proyecto/` que ves ya resuelto es la **referencia** para comparar (córrela aparte con `pnpm install` → `cp .env.example .env` → `pnpm test`); los pasos de abajo son cómo se armó.
+- **Cómo verifico:** `pwd` termina en `modulo-01-smoke-feo/proyecto` y `git log --oneline -1` muestra tu commit de M00.
 
-> 💡 **Para el facilitador:** si alguien no tiene Node/pnpm, mándalo al módulo [`00-setup/`](../../00-setup/) del monorepo antes de continuar. No hagas troubleshooting de setup aquí.
+> 💡 **Para el facilitador:** si alguien no tiene Node/pnpm, mándalo al módulo [`00-setup/`](../../00-setup/) del monorepo antes de continuar. No hagas troubleshooting de setup aquí. Recalca el modelo: **no hay proyecto raíz compartido** — cada módulo vive en su propio `proyecto/`, y M01 es donde ese `proyecto/` nace con el installer.
 
 ---
 
@@ -105,7 +107,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 > **Lección clave de este módulo:** no instalamos Playwright "a mano". Usamos el **installer oficial** (`pnpm create playwright`, [doc oficial](https://playwright.dev/docs/intro)) y luego **moldeamos** lo que genera a la arquitectura incremental del curso. El installer te da un *starter genérico* (3 navegadores, `testDir: "./tests"`, CI flags…). Tu trabajo en los Pasos 3-4 es **reconciliarlo** al estado mínimo de M01. Aprender a leer y recortar un scaffold es una habilidad real de QA.
 
 **1.1 — Lanzar el installer oficial**
-- **Qué hago:** desde la raíz `playwright-course/` (tu proyecto de M00), corro:
+- **Qué hago:** desde el `proyecto/` de este módulo (donde te dejó el Paso 0), corro:
   ```bash
   pnpm create playwright
   ```
@@ -159,10 +161,10 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 
 ### Paso 2 — Crear tu archivo `.env`
 
-> **Archivo que se crea en este paso:** `.env` (en la raíz `playwright-course/`, **gitignored**). El `.env.example` ya existe versionado.
+> **Archivo que se crea en este paso:** `.env` (en el `proyecto/` de este módulo, **gitignored**). El `.env.example` ya existe versionado.
 
 **2.1 — Copiar la plantilla**
-- **Qué hago:** desde la raíz `playwright-course/`, `cp .env.example .env`
+- **Qué hago:** desde el `proyecto/` de este módulo, `cp .env.example .env`
 - **Por qué:** el `.env` real **no está en el repo** (lo excluye `.gitignore`), pero sí versionamos `.env.example` como plantilla. Copiarla te da un `.env` con los valores correctos sin exponer secrets en Git.
 - **Cómo verifico:**
   ```bash
@@ -192,7 +194,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 
 ### Paso 3 — Reconciliar el `.gitignore` (1ª pieza del recorte)
 
-> **Archivo que se edita en este paso:** `.gitignore` (raíz). **No lo creas desde cero**: el installer ya generó uno (con `/playwright/.cache/`, `/playwright/.auth/`, `/test-results/`, `/playwright-report/`, `/blob-report/`). El problema: **NO ignora `.env`**. Lo arreglas **antes** de crear `.env`, para que tus credenciales nunca entren al staging por accidente.
+> **Archivo que se edita en este paso:** `.gitignore` (en la raíz de `proyecto/`). **No lo creas desde cero**: el installer ya generó uno (con `/playwright/.cache/`, `/playwright/.auth/`, `/test-results/`, `/playwright-report/`, `/blob-report/`). El problema: **NO ignora `.env`**. Lo arreglas **antes** de crear `.env`, para que tus credenciales nunca entren al staging por accidente.
 
 **3.1 — Ver lo que el installer dejó ignorado**
 - **Qué hago:**
@@ -229,7 +231,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
-> **Archivo que se edita en este paso:** `playwright.config.ts` (raíz) — el que generó el installer.
+> **Archivo que se edita en este paso:** `playwright.config.ts` (en `proyecto/`) — el que generó el installer.
 
 **4.1 — Entender el diff: de lo generado al estado M01**
 - **Qué hago:** comparo lo que trae el installer contra lo que necesita M01. Esta es la tabla de reconciliación (la lección del módulo):
@@ -316,7 +318,7 @@ export default defineConfig({
 |---|---|---|
 | `import { defineConfig, devices }` | `defineConfig` envuelve el objeto para darte autocompletado y type-check del config; `devices` es el catálogo oficial de perfiles de dispositivo (viewport, userAgent, touch, scale) | Habilita el spread `...devices["Desktop Chrome"]` del project |
 | `import "dotenv/config"` | Import por side-effect: ejecuta `dotenv` y vuelca tu `.env` en `process.env`; no trae símbolos | Va arriba del todo para poblar `process.env` ANTES de que se lea `BASE_URL`; estaba comentado en el scaffold |
-| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz; los specs viven en `tests/` y el `testMatch` filtra ese patrón (el installer ponía `"./tests"`) |
+| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz del `proyecto/`; los specs viven en `tests/` y el `testMatch` filtra ese patrón (el installer ponía `"./tests"`) |
 | `testMatch: [/tests\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de `tests/`; el demo `example.spec.ts` del installer también entraría — por eso lo borraste en 4.3, para no arrastrar un test de ejemplo |
 | `timeout: 60_000` | Presupuesto TOTAL de cada `test()` — todas sus acciones y aserciones juntas; si se agota: `TimeoutError` y el test falla. Default: 30s | Doblado a 60s para absorber el cold start de Render (30-40s el primer request del día) |
 | `expect: { timeout: 10_000 }` | Tope de CADA aserción `expect()` individual; las aserciones web-first reintentan en bucle hasta cumplirse o agotarlo. Default: 5s | 10s da margen a renders lentos sin permitir que UNA aserción se coma el presupuesto del test entero |
@@ -335,12 +337,12 @@ export default defineConfig({
 
 ### Paso 5 — Crear `tsconfig.json`
 
-> **Archivo que se crea en este paso:** `tsconfig.json` (raíz). **Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso.
+> **Archivo que se crea en este paso:** `tsconfig.json` (en `proyecto/`). **Este sí lo creas desde cero**: el installer de Playwright **no** genera un `tsconfig.json` (asume el default de TS). Lo añadimos nosotros para fijar `strict`, los tipos de Node y el `include` del curso.
 
 > **📐 Generar → moldear, otra vez (la filosofía del Paso 4).** El comando oficial para **generar** un `tsconfig.json` desde consola es `pnpm exec tsc --init` (el CLI `tsc` que instalaste en 1.3): genera un archivo con **decenas de opciones comentadas** — otro scaffold genérico, como el config del installer. Aquí aplicamos la misma filosofía del curso, pero ya conocemos el destino: en vez de quedarnos con ese default gigante y recortarlo línea por línea, escribimos directo el **estado curado** del curso.
 
 **5.1 — Escribir el `tsconfig.json`**
-- **Qué hago:** TypeScript necesita saber cómo compilar tus specs; creo el archivo en la raíz con el contenido de abajo. La vía más simple es el **editor**: crea `tsconfig.json` en VS Code (`code tsconfig.json`) y pega el JSON. O desde la terminal:
+- **Qué hago:** TypeScript necesita saber cómo compilar tus specs; creo el archivo en `proyecto/` con el contenido de abajo. La vía más simple es el **editor**: crea `tsconfig.json` en VS Code (`code tsconfig.json`) y pega el JSON. O desde la terminal:
 
   🐧 **bash:**
 
@@ -644,7 +646,7 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
 Ya tienes el módulo verde: es el momento natural de guardar un punto de control en Git. (En este curso **Git es just-in-time**: aparece cuando el flujo lo pide, no como bloque inicial.)
 
 **11.1 — Preparar los archivos para el commit**
-- **Qué hago:** desde la raíz `playwright-course/`, agrego al staging lo que generó el installer y lo que creaste tú en este módulo:
+- **Qué hago:** desde el `proyecto/` de este módulo, agrego al staging (con rutas relativas a `proyecto/`) lo que generó el installer y lo que creaste tú en este módulo:
   ```bash
   git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github tests
   ```
