@@ -10,8 +10,11 @@
 // como módulo .ts normal (no .d.ts) para importar desde las slices.
 // ============================================================
 
-export type CountryCode = "MX" | "US" | "CH" | "JP";
-export type Currency = "MXN" | "USD" | "CHF" | "JPY";
+// "SA" (Arabia Saudita) — market nuevo: la app corre en RTL/árabe y su
+// moneda es SAR. El backend exige el campo de dirección `district`
+// (paralelo a MX→colonia, US→zip_code, CH→plz, JP→prefectura).
+export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA";
+export type Currency = "MXN" | "USD" | "CHF" | "JPY" | "SAR";
 // OmniPizza sólo expone usuarios "customer". Las personas
 // (standard / locked_out / problem / performance_glitch / error)
 // se distinguen por COMPORTAMIENTO de login, no por privilegios.
@@ -33,6 +36,7 @@ export interface Market {
   phone: string;
   address: string;
   colonia?: string;
+  district?: string;
   zipCode: string;
   taxRate?: number;
 }
@@ -61,7 +65,7 @@ export interface PizzasResponse {
 // de OmniPizza). El nombre/dirección/teléfono van planos (no anidados en
 // `customer`) y los items usan `pizza_id` (no `pizzaId`). Además del bloque
 // común, el backend exige el CAMPO DE DIRECCIÓN según `country_code` (MX:
-// `colonia`, US: `zip_code`, CH: `plz`, JP: `prefectura`); la propina
+// `colonia`, US: `zip_code`, CH: `plz`, JP: `prefectura`, SA: `district`); la propina
 // (`propina`/`tip`/`trinkgeld`/`chip`) es OPCIONAL. Por eso los campos por
 // mercado se modelan como opcionales aquí.
 export interface OrderPayload {
@@ -79,6 +83,7 @@ export interface OrderPayload {
   plz?: string;
   trinkgeld?: number;
   prefectura?: string;
+  district?: string;
   chip?: number;
 }
 

@@ -39,5 +39,16 @@
     "address": "1-1 Chiyoda, Chiyoda-ku",
     "zipCode": "100-0001",
     "taxRate": 0.1
+  },
+  {
+    "code": "SA",
+    "currency": "SAR",
+    "fullName": "Abdullah Al-Rashid",
+    "country": "Saudi Arabia",
+    "phone": "+966 55 123 4567",
+    "address": "King Fahd Road 4521",
+    "district": "Al-Olaya",
+    "zipCode": "12244",
+    "taxRate": 0.15
   }
 ]

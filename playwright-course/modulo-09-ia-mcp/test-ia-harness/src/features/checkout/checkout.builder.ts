@@ -82,6 +82,11 @@ export class OrderBuilder {
         payload.prefectura = this.marketAddressValue;
         if (this.tip !== undefined) payload.chip = this.tip;
         break;
+      case "SA":
+        payload.district = this.marketAddressValue;
+        // El backend de SA no expone (aún) una llave de propina dedicada;
+        // como la propina es opcional, la omitimos para SA.
+        break;
     }
     return payload;
   }
@@ -102,6 +107,8 @@ export class OrderBuilder {
         return market.zipCode;
       case "JP":
         return market.address;
+      case "SA":
+        return market.district ?? "";
     }
   }
 }
