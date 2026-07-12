@@ -1,9 +1,11 @@
 // ============================================================
-// 🚩 Reto M03 — Añadir un 5º mercado sin tocar este spec
+// 🚩 Reto M03 — Añadir OTRO mercado sin tocar este spec
 // ============================================================
 // Objetivo pedagógico: comprobar que la parametrización funciona.
-// Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
-// automáticamente, sin tocar ni una línea de este archivo.
+// Tu dataset YA trae 5 mercados: MX/US/CH/JP + SA (Arabia Saudita,
+// el market nuevo de la plataforma). Vas a añadir un 6º, Canadá
+// (CA / CAD), y el test extra se ejecutará automáticamente, sin
+// tocar ni una línea de este archivo.
 //
 // El "truco" es que `markets.json` está tipado por la interfaz
 // `Market` (en types/omnipizza.d.ts). Si rompes el contrato,
@@ -11,7 +13,7 @@
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m3 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
+//   ✔ pnpm m3 corre en verde con los 5 mercados actuales (MX/US/CH/JP/SA).
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
@@ -43,14 +45,15 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //          "currency": "CAD"
   //        }
   //
-  //   B) types/omnipizza.d.ts — amplía los union types:
-  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
-  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+  //   B) types/omnipizza.d.ts — amplía los union types (SA ya está;
+  //      tú sumas CA):
+  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA" | "CA";
+  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "SAR" | "CAD";
   //
   //   Verifica:
   //     pnpm typecheck            ← debe pasar en verde
   //     pnpm exec playwright test modulo-03-data-driven/reto.spec.ts --list
-  //                               ← debe listar 5 tests (uno por mercado)
+  //                               ← debe listar 6 tests (uno por mercado)
   //
   //   💡 Si typecheck se queja con "Type '\"CA\"' is not assignable to
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
