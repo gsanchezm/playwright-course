@@ -28,6 +28,10 @@ import type {
 } from "../pages";
 import type { Market, User } from "../types";
 import type { Page } from "@playwright/test";
+import marketsJson from "../data/markets.json";
+
+// Mercado US para el flujo de checkout (usa `zip-code`, no `district`).
+const usMarket = (marketsJson as Market[]).find((m) => m.code === "US")!;
 
 // Helper de setup: login por UI + agrega una pizza + abre el checkout
 // ya poblado (el checkout vacío muestra `start-order-btn`, no el form).
@@ -295,5 +299,52 @@ test.describe("Mercado Arabia Saudita / RTL (M05)", () => {
     // Los precios llevan el símbolo del riyal saudí (ر.س.).
     const price = await catalogPage.getFirstPizzaPrice();
     expect(price).toContain("ر.س");
+  });
+});
+
+// ============================================================
+// 8) Popups de confirmación de orden — modal + pantalla de éxito
+// ============================================================
+// El checkout tiene DOS popups encadenados (esto cierra el flujo E2E
+// enviando una orden de PRUEBA con tarjeta falsa):
+//   1. `place-order` NO envía: abre un MODAL `confirm-order-modal`
+//      que SÍ expone role="dialog" (lo afirmamos por rol Y por testid).
+//   2. `confirm-order-yes` confirma → la app navega a /order-success
+//      (pantalla completa, no modal) con un id de orden generado.
+// ============================================================
+test.describe("Popups de confirmación de orden (M05)", () => {
+  test("place-order → modal de confirmación → /order-success @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+  }) => {
+    // Mercado US para tener el campo `zip-code` (SA usaría `district`).
+    await loginPage.loginInMarket(standardUser, "US");
+    await catalogPage.expectLoaded();
+    await catalogPage.addFirstPizza();
+
+    await page.goto("/checkout");
+    await checkoutPage.expectLoaded();
+
+    // Datos de PRUEBA: dirección del mercado + tarjeta falsa.
+    await checkoutPage.fillWithMarket(usMarket);
+    await checkoutPage.selectPaymentMethod("card");
+    await checkoutPage.fillCard({
+      holder: "TEST USER",
+      number: "4111 1111 1111 1111",
+      expMonth: "05",
+      expYear: "28",
+      cvv: "123",
+    });
+
+    // Paso 1 — place-order abre el popup de confirmación (role="dialog").
+    await checkoutPage.placeOrder();
+    await checkoutPage.expectConfirmOrderModal();
+
+    // Paso 2 — confirmar lleva a la pantalla de éxito con id de orden.
+    await checkoutPage.confirmOrder();
+    await checkoutPage.expectOrderSuccess();
   });
 });

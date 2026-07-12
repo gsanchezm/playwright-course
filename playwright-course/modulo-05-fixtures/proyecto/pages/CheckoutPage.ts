@@ -33,8 +33,8 @@ export class CheckoutPage extends BasePage {
   private txtZip: string = "zip-code";
   private btnPlaceOrder: string = "place-order-btn";
   private lblOrderTotal: string = "order-total";
-  // ⚠️ sin verificar: pantalla post-orden (no se capturó sin enviar el form)
-  private lblOrderConfirmation: string = "order-confirmation";
+  // Pantalla post-orden verificada en vivo 2026-07-12: /order-success.
+  private lblOrderConfirmation: string = "screen-order-success";
 
   // --- Locators privados ---
   private get fullNameInput(): Locator {
@@ -225,5 +225,66 @@ export class CheckoutPage extends BasePage {
   /** El tooltip custom NO existe en el DOM hasta el hover (está oculto). */
   async expectTipTooltipHidden(): Promise<void> {
     await expect(this.tipTooltip).toBeHidden();
+  }
+
+  // ==========================================================
+  // 🆕 Confirmación de orden — popup (role="dialog") + éxito
+  // ==========================================================
+  // El flujo tiene DOS pasos (verificado en vivo 2026-07-12):
+  //   1. place-order-btn NO envía: abre un MODAL de confirmación
+  //      `confirm-order-modal` que SÍ expone role="dialog" (a
+  //      diferencia del customizer) → "Confirm your order".
+  //   2. `confirm-order-yes` confirma y la app navega a
+  //      /order-success (pantalla COMPLETA, no modal) con un
+  //      `order-id` generado.
+  // ==========================================================
+
+  private modalConfirmOrder: string = "confirm-order-modal";
+  private btnConfirmOrderYes: string = "confirm-order-yes";
+  private btnConfirmOrderCancel: string = "confirm-order-cancel";
+  private screenOrderSuccess: string = "screen-order-success";
+  private lblOrderId: string = "order-id";
+
+  private get confirmOrderModal(): Locator {
+    return this.page.getByTestId(this.modalConfirmOrder);
+  }
+  private get confirmOrderYesButton(): Locator {
+    return this.page.getByTestId(this.btnConfirmOrderYes);
+  }
+  private get confirmOrderCancelButton(): Locator {
+    return this.page.getByTestId(this.btnConfirmOrderCancel);
+  }
+  private get orderSuccessScreen(): Locator {
+    return this.page.getByTestId(this.screenOrderSuccess);
+  }
+  private get orderId(): Locator {
+    return this.page.getByTestId(this.lblOrderId);
+  }
+
+  /** 2º paso: confirma la orden dentro del modal (confirm-order-yes). */
+  async confirmOrder(): Promise<void> {
+    await this.confirmOrderYesButton.click();
+  }
+
+  /** Cancela en el modal de confirmación (cierra sin ordenar). */
+  async cancelOrderConfirmation(): Promise<void> {
+    await this.confirmOrderCancelButton.click();
+  }
+
+  /**
+   * El popup de confirmación SÍ es un role="dialog" — se puede afirmar
+   * tanto por testid como por rol (contraste con el customizer, que no
+   * expone dialog).
+   */
+  async expectConfirmOrderModal(): Promise<void> {
+    await expect(this.confirmOrderModal).toBeVisible();
+    await expect(this.page.getByRole("dialog")).toBeVisible();
+  }
+
+  /** Tras confirmar: pantalla /order-success con un id de orden generado. */
+  async expectOrderSuccess(): Promise<void> {
+    await this.waitForUrl(/\/order-success/);
+    await expect(this.orderSuccessScreen).toBeVisible();
+    await expect(this.orderId).toContainText("ORDER-");
   }
 }
