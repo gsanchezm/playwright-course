@@ -1,6 +1,6 @@
 # M03 · Guía del módulo: Data-driven testing
 
-> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del resto del curso). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía construyen ese mismo proyecto pieza por pieza; `proyecto/` es el "ya resuelto".
 
 **Duración estimada:** 45-60 min
 **Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M02 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 4 mercados.
@@ -13,20 +13,23 @@ Aparecen **dos carpetas nuevas**: `data/` (los datasets) y `types/` (los contrat
 
 ```
 playwright-course/
-├── data/                          ← 🆕 datasets de prueba
-│   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
-│   └── users.json                 ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
-├── types/                         ← 🆕 contratos del dominio
-│   ├── index.ts                   ← 🆕 barrel: re-exporta lo de omnipizza
-│   └── omnipizza.d.ts             ← 🆕 User, Market, Pizza, Currency, CountryCode
-├── modulo-01-smoke-feo/           ← (sin cambios)
 ├── modulo-02-locators/            ← (sin cambios)
 ├── modulo-03-data-driven/         ← 🆕 ESTE MÓDULO
-│   ├── ejemplo.spec.ts            ← 🆕 for...of por mercado + lookup map
-│   └── reto.spec.ts               ← 🆕 añadir 5º mercado (CA) sin tocar el spec
-├── .env, .env.example, .gitignore
-├── package.json, tsconfig.json
-└── playwright.config.ts
+│   ├── README.md
+│   └── proyecto/                  ← proyecto autocontenido y ejecutable
+│       ├── data/                  ← 🆕 datasets de prueba
+│       │   ├── markets.json       ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
+│       │   └── users.json         ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
+│       ├── types/                 ← 🆕 contratos del dominio
+│       │   ├── index.ts           ← 🆕 barrel: re-exporta lo de omnipizza
+│       │   └── omnipizza.d.ts     ← 🆕 User, Market, Pizza, Currency, CountryCode
+│       ├── playwright.config.ts   ← igual que M02 (un solo project ui-anon)
+│       ├── tsconfig.json          ← include AMPLIADO para ver types/
+│       ├── .env.example, .gitignore
+│       └── tests/
+│           ├── ejemplo.spec.ts    ← 🆕 for...of por mercado + lookup map
+│           └── reto.spec.ts       ← 🆕 añadir 5º mercado (CA) sin tocar el spec
+└── …
 ```
 
 **Flujo del dato** (cómo viaja del JSON al test):
@@ -275,13 +278,20 @@ pnpm m3                               # sin TEST_ENV → usa el default "qa"
 
 ### Paso 0 — Pre-requisitos
 
-Antes de empezar verifica que **M01 y M02 quedaron funcionales**:
+Entra al **proyecto autocontenido de este módulo** y prepara el entorno:
 
 ```bash
-# Estando en playwright-course/
-pnpm m2            # debe pasar el smoke de un mercado en verde
+cd proyecto
+pnpm install
+pnpm install:browsers
+cp .env.example .env
+```
+
+Verifica que la base quede lista antes de seguir:
+
+```bash
+pnpm typecheck     # termina en verde (los tipos cuadran)
 ls .env            # debe existir (dotenv lo necesita)
-ls node_modules    # debe existir (pnpm install corrió)
 ```
 
 M03 **no** vuelve a montar dotenv ni el primer login contra OmniPizza; asume esa base (M01) y la disciplina de locators (M02). El incremental de M03 es el **dato tipado**.
@@ -419,23 +429,23 @@ Abre tu `tsconfig.json` y verifica que la sección `include` contemple `types/`:
     "playwright.config.ts",
     "types/**/*.ts",
     "types/**/*.d.ts",
-    "modulo-*/**/*.ts"
+    "tests/**/*.ts"
   ]
 }
 ```
 
-Si te faltan las entradas de `types/`, **añádelas** — sin ellas, los imports `import type { Market } from "../types"` van a fallar. (En M02 el `include` sólo tenía `playwright.config.ts` + `modulo-*`.)
+Si te faltan las entradas de `types/`, **añádelas** — sin ellas, los imports `import type { Market } from "../types"` van a fallar. (En M02 el `include` sólo tenía `playwright.config.ts` + `tests/`.)
 
 Tu `playwright.config.ts` debe seguir viéndose como al final de M02:
 
 ```ts
-// playwright.config.ts — Estado en M03 (igual que M01/M02)
+// playwright.config.ts — Estado en M03 (igual que M02)
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["html", { open: "never" }], ["list"]],
@@ -452,13 +462,11 @@ export default defineConfig({
 });
 ```
 
-Y añade el script `m3` a `package.json`:
+El `package.json` de este proyecto trae el atajo `m3` (equivale a `pnpm test`, ya que el único project es `ui-anon`):
 
 ```json
 "scripts": {
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon",
-  "m2": "playwright test modulo-02-locators --project=ui-anon",
-  "m3": "playwright test modulo-03-data-driven --project=ui-anon"
+  "m3": "playwright test --project=ui-anon"
 }
 ```
 
@@ -494,7 +502,7 @@ Cosas a observar:
 - **Comando del módulo:** `pnpm m3`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-03-data-driven/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts`)
 - **Verificar tipos:** `pnpm typecheck`
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** para variables de entorno usa `$env:VAR="x"; pnpm m3` (no `VAR=x pnpm m3`, sintaxis bash que falla en PowerShell)

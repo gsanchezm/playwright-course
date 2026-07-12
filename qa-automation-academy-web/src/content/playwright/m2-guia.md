@@ -1,6 +1,6 @@
 # M02 · Guía del módulo: Locators
 
-> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del resto del curso). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
 
 **Duración estimada:** 45-60 min
 **Pieza que suma al framework:** la **disciplina de la jerarquía de locators** aplicada al smoke de M01 — `getByRole` donde la app coopera, `getByTestId`/CSS donde no — más una **chuleta viva** (`test.skip`) con los selectores REALES de OmniPizza verificados contra el DOM. El smoke sigue siendo de **un** mercado; parametrizarlo por los 4 mercados llega en M03.
@@ -15,11 +15,16 @@ M02 **no añade carpetas nuevas**: añade **criterio**. El mismo smoke de M01 ah
 playwright-course/
 ├── modulo-01-smoke-feo/           ← (sin cambios)
 ├── modulo-02-locators/            ← 🆕 ESTE MÓDULO
-│   ├── ejemplo.spec.ts            ← 🆕 smoke de 1 mercado (MX) + chuleta de locators (2 test.skip)
-│   └── reto.spec.ts               ← 🆕 localizar 3 elementos del catálogo con el nivel correcto
-├── .env, .env.example, .gitignore
-├── package.json, tsconfig.json
-└── playwright.config.ts
+│   ├── README.md
+│   └── proyecto/                  ← proyecto autocontenido y ejecutable
+│       ├── package.json           ← scripts (pnpm test, pnpm m2, typecheck…)
+│       ├── playwright.config.ts   ← idéntico a M01 (un solo project ui-anon)
+│       ├── tsconfig.json          ← include mínimo (aún SIN types/)
+│       ├── .env.example, .gitignore
+│       └── tests/
+│           ├── ejemplo.spec.ts    ← 🆕 smoke de 1 mercado (MX) + chuleta de locators (2 test.skip)
+│           └── reto.spec.ts       ← 🆕 localizar 3 elementos del catálogo con el nivel correcto
+└── …
 ```
 
 **Qué NO existe todavía:**
@@ -186,16 +191,16 @@ Se abre un navegador + la ventana **Playwright Inspector**. A medida que actúas
 
 ### Paso 0 — Pre-requisitos
 
-Antes de empezar verifica que **M01 quedó funcional**:
+Entra al proyecto autocontenido de este módulo y prepara el entorno (todos los comandos se corren **desde `proyecto/`**):
 
 ```bash
-# Estando en playwright-course/
-pnpm m1            # debe pasar TC-001 y TC-002 en verde
-ls .env            # debe existir (dotenv lo necesita)
-ls node_modules    # debe existir (pnpm install corrió)
+cd proyecto
+pnpm install
+pnpm install:browsers
+cp .env.example .env
 ```
 
-Si M01 no corre, vuelve al módulo anterior — no avances sin esa base. M02 **no** vuelve a montar dotenv ni el primer login contra OmniPizza; asume esa base de M01. El incremental de este módulo es **criterio de locators**, no herramientas.
+Verifica que `pnpm typecheck` termina en verde y que `.env` existe. M02 **no** vuelve a montar dotenv ni el primer login contra OmniPizza; asume esa base conceptual de M01. El incremental de este módulo es **criterio de locators**, no herramientas.
 
 ---
 
@@ -224,13 +229,13 @@ Si te falta alguno, vuelve al **Paso 1 de M01** (o ejecuta `pnpm install` si `pa
 
 **M02 no requiere cambios al config** — sigue el mismo de M01.
 
-Tu `tsconfig.json` sigue con el `include` de M01 (sin `types/` todavía):
+El `tsconfig.json` de este proyecto usa un `include` **mínimo** (sin `types/` todavía — eso nace en M03):
 
 ```json
 {
   "include": [
     "playwright.config.ts",
-    "modulo-*/**/*.ts"
+    "tests/**/*.ts"
   ]
 }
 ```
@@ -244,7 +249,7 @@ import "dotenv/config";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["html", { open: "never" }], ["list"]],
@@ -261,16 +266,15 @@ export default defineConfig({
 });
 ```
 
-Y añade el script `m2` a `package.json`:
+El proyecto ya define el atajo `m2` en `package.json`:
 
 ```json
 "scripts": {
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon",
-  "m2": "playwright test modulo-02-locators --project=ui-anon"
+  "m2": "playwright test --project=ui-anon"
 }
 ```
 
-`pnpm m2` es azúcar sintáctica: equivale a `pnpm exec playwright test modulo-02-locators --project=ui-anon`. Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI); el project autenticado con `storageState` nace en **M06**.
+`pnpm m2` es azúcar sintáctica dentro del proyecto: equivale a `pnpm exec playwright test --project=ui-anon` (y `pnpm test` corre exactamente lo mismo, porque el único project es `ui-anon`). Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI); el project autenticado con `storageState` nace en **M06**.
 
 ---
 
@@ -279,7 +283,7 @@ Y añade el script `m2` a `package.json`:
 - **Comando del módulo:** `pnpm m2`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-02-locators/reto.spec.ts`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts`)
 - **Descubrir locators:** `pnpm exec playwright codegen https://omnipizza-frontend.onrender.com`
 - **Verificar tipos:** `pnpm typecheck`
 - **Ver el reporte:** `pnpm report`

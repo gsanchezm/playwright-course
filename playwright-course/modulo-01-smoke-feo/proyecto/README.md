@@ -12,7 +12,7 @@ armado y listo para clonar y correr aislado — sin arrastrar el resto del curso
 
 ## Qué incluye el estado M01
 
-- `playwright.config.ts` — estado mínimo M01: `testDir: "."` + `testMatch: modulo-*`,
+- `playwright.config.ts` — estado mínimo M01: `testDir: "."` + `testMatch: tests/*.spec.ts`,
   `import "dotenv/config"`, timeouts generosos (cold start de Render), `trace:
   retain-on-failure`, y **un solo** project **`ui-anon`** (anónimo: M01-M05 son
   ejercicios de login por UI, sin sesión heredada).

@@ -5,7 +5,7 @@
 
 ---
 
-> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del monorepo del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
+> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del resto del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
 
 ## 🏗️ Arquitectura al terminar este módulo
 
@@ -13,22 +13,25 @@ Aparece la carpeta **`pages/`** con el Page Object Model. Las clases `extends Ba
 
 ```
 playwright-course/
-├── data/                          ← (M03)
-├── pages/                         ← 🆕 Page Object Model
-│   ├── BasePage.ts                ← 🆕 clase normal, helpers compartidos
-│   ├── LoginPage.ts               ← 🆕 extends BasePage, maneja "/"
-│   ├── CatalogPage.ts             ← 🆕 extends BasePage, maneja /catalog
-│   ├── CheckoutPage.ts            ← 🆕 extends BasePage, maneja /checkout
-│   └── index.ts                   ← 🆕 barrel export
-├── types/                         ← (M03)
-├── modulo-01-smoke-feo/           ← (sin cambios — el "antes")
-├── modulo-02-locators/            ← (sin cambios — locators)
-├── modulo-03-data-driven/         ← (sin cambios — data-driven)
+├── modulo-03-data-driven/         ← (sin cambios)
 ├── modulo-04-pom/                 ← 🆕 ESTE MÓDULO
 │   ├── README.md
-│   ├── ejemplo.spec.ts            ← 🆕 specs limpios usando los Page Objects
-│   └── reto.spec.ts               ← 🆕 E2E checkout completo con CheckoutPage
-└── ...
+│   └── proyecto/                  ← proyecto autocontenido y ejecutable
+│       ├── data/                  ← (M03) datasets tipados
+│       ├── types/                 ← (M03) contratos del dominio
+│       ├── pages/                 ← 🆕 Page Object Model
+│       │   ├── BasePage.ts        ← 🆕 clase normal, helpers compartidos
+│       │   ├── LoginPage.ts       ← 🆕 extends BasePage, maneja "/"
+│       │   ├── CatalogPage.ts     ← 🆕 extends BasePage, maneja /catalog
+│       │   ├── CheckoutPage.ts    ← 🆕 extends BasePage, maneja /checkout
+│       │   └── index.ts           ← 🆕 barrel export
+│       ├── playwright.config.ts   ← igual que M03 (un solo project ui-anon)
+│       ├── tsconfig.json          ← include AMPLIADO para ver pages/
+│       ├── .env.example, .gitignore
+│       └── tests/
+│           ├── ejemplo.spec.ts    ← 🆕 specs limpios usando los Page Objects
+│           └── reto.spec.ts       ← 🆕 E2E checkout completo con CheckoutPage
+└── …
 ```
 
 **Jerarquía de clases** (cómo se relacionan los Pages):
@@ -77,7 +80,7 @@ data/markets.json ──► const markets = marketsJson as Market[]
 
 **Antes de tocar ninguna clase**, haz este ejercicio:
 
-1. Abre `modulo-03-data-driven/ejemplo.spec.ts`.
+1. Abre `modulo-03-data-driven/proyecto/tests/ejemplo.spec.ts`.
 2. Marca con resaltador (o copia a un archivo aparte) **cada línea que se repite** entre el bucle de mercados: login, selección de mercado, validación de URL.
 3. **Cuenta las líneas duplicadas.** Anota el número.
 4. Completa: *"Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más."*
@@ -197,7 +200,7 @@ pages/
 ### Paso 2 — Reactivar el dolor (el ritual)
 
 **2.1 — Marca y cuenta la duplicación de M03**
-- **Qué hago:** ejecuto el **Ritual de apertura** de arriba: abro `modulo-03-data-driven/ejemplo.spec.ts` y marco con resaltador cada línea repetida entre mercados (login, selección de mercado, validación de URL). Cuento las líneas duplicadas y anoto el número.
+- **Qué hago:** ejecuto el **Ritual de apertura** de arriba: abro `modulo-03-data-driven/proyecto/tests/ejemplo.spec.ts` y marco con resaltador cada línea repetida entre mercados (login, selección de mercado, validación de URL). Cuento las líneas duplicadas y anoto el número.
 - **Por qué:** el POM se justifica **por contraste**. Si no sientes primero la duplicación, vas a leer el POM como "abstracción innecesaria" y lo abandonarás en tu trabajo real. Este es el spine pedagógico del curso: smoke feo → dolor → refactor.
 - **Cómo verifico:** tienes un número anotado y completaste la frase *"Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más."*
 
@@ -381,7 +384,7 @@ pages/
 **7.1 — Confirma que `tsconfig.json` incluye `pages/`**
 - **Qué hago:** abro `tsconfig.json` y verifico que `"pages/**/*.ts"` esté en `include`.
 - **Por qué:** si TS no compila `pages/`, los errores de tipo en tus clases pasan inadvertidos y `pnpm typecheck` te da un falso verde.
-- **Cómo verifico:** el `include` contiene `"pages/**/*.ts"` (ya está en el `tsconfig.json` del repo, junto con `types/`, `helpers/`, `services/`, `fixtures/`, `tests/` y `modulo-*`).
+- **Cómo verifico:** el `include` contiene `"pages/**/*.ts"` (ya está en el `tsconfig.json` de este `proyecto/`, junto con `playwright.config.ts`, `types/` y `tests/`).
 
 **7.2 — Confirma el script `m4` en `package.json`**
 - **Qué hago:** verifico que exista `"m4": "playwright test --project=ui-anon"`.
@@ -404,7 +407,7 @@ import "dotenv/config";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["html", { open: "never" }], ["list"]],

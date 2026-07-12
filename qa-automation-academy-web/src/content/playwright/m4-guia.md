@@ -13,22 +13,25 @@ Aparece la carpeta **`pages/`** con el Page Object Model. Las clases `extends Ba
 
 ```
 playwright-course/
-├── data/                          ← (M03)
-├── pages/                         ← 🆕 Page Object Model
-│   ├── BasePage.ts                ← 🆕 clase normal, helpers compartidos
-│   ├── LoginPage.ts               ← 🆕 extends BasePage, maneja "/"
-│   ├── CatalogPage.ts             ← 🆕 extends BasePage, maneja /catalog
-│   ├── CheckoutPage.ts            ← 🆕 extends BasePage, maneja /checkout
-│   └── index.ts                   ← 🆕 barrel export
-├── types/                         ← (M03)
-├── modulo-01-smoke-feo/           ← (sin cambios — el "antes")
-├── modulo-02-locators/            ← (sin cambios)
-├── modulo-03-data-driven/         ← (sin cambios — el "menos antes")
+├── modulo-03-data-driven/         ← (sin cambios)
 ├── modulo-04-pom/                 ← 🆕 ESTE MÓDULO
 │   ├── README.md
-│   ├── ejemplo.spec.ts            ← 🆕 specs limpios usando los Page Objects
-│   └── reto.spec.ts               ← 🆕 E2E checkout completo con CheckoutPage
-└── ...
+│   └── proyecto/                  ← proyecto autocontenido y ejecutable
+│       ├── data/                  ← (M03) datasets tipados
+│       ├── types/                 ← (M03) contratos del dominio
+│       ├── pages/                 ← 🆕 Page Object Model
+│       │   ├── BasePage.ts        ← 🆕 clase normal, helpers compartidos
+│       │   ├── LoginPage.ts       ← 🆕 extends BasePage, maneja "/"
+│       │   ├── CatalogPage.ts     ← 🆕 extends BasePage, maneja /catalog
+│       │   ├── CheckoutPage.ts    ← 🆕 extends BasePage, maneja /checkout
+│       │   └── index.ts           ← 🆕 barrel export
+│       ├── playwright.config.ts   ← igual que M03 (un solo project ui-anon)
+│       ├── tsconfig.json          ← include AMPLIADO para ver pages/
+│       ├── .env.example, .gitignore
+│       └── tests/
+│           ├── ejemplo.spec.ts    ← 🆕 specs limpios usando los Page Objects
+│           └── reto.spec.ts       ← 🆕 E2E checkout completo con CheckoutPage
+└── …
 ```
 
 **Jerarquía de clases** (cómo se relacionan los Pages):
@@ -75,7 +78,7 @@ data/markets.json ──► const markets = marketsJson as Market[]
 
 **Antes de tocar ninguna clase**, haz este ejercicio:
 
-1. Abre `modulo-03-data-driven/ejemplo.spec.ts`.
+1. Abre `modulo-03-data-driven/proyecto/tests/ejemplo.spec.ts`.
 2. Marca con resaltador (o copia a un archivo aparte) **cada línea que se repite** entre el bucle de mercados: login, selección de mercado, validación de URL.
 3. **Cuenta las líneas duplicadas.** Anota el número.
 4. Completa: *"Si añado un tercer flujo (checkout), voy a duplicar ____ líneas más."*
@@ -122,15 +125,18 @@ pages/
 
 ### Paso 0 — Pre-requisitos
 
+Entra al `proyecto/` autocontenido de este módulo y prepara el entorno:
+
 ```bash
-# Estando en playwright-course/
-pnpm m3            # debe pasar los 4 mercados en verde
+cd proyecto
+pnpm install
+cp .env.example .env
 pnpm typecheck     # debe pasar limpio
-ls types/          # existe (viene de M03)
-ls data/           # existe (viene de M03)
+ls types/          # existe (data tipada, viene de M03)
+ls data/           # existe (markets/users, viene de M03)
 ```
 
-Si M03 no corre, vuelve al módulo anterior. Este módulo asume que la data tipada y los locators jerárquicos ya están internalizados.
+Este módulo refactoriza a POM el spec data-driven de M03. Si `pnpm typecheck` no pasa limpio, el refactor parte de una base rota y no sabrás si un fallo es del POM o heredado.
 
 ---
 
@@ -303,7 +309,7 @@ Solo asegúrate de que `tsconfig.json` incluya `pages/`:
     "types/**/*.ts",
     "types/**/*.d.ts",
     "pages/**/*.ts",
-    "modulo-*/**/*.ts"
+    "tests/**/*.ts"
   ]
 }
 ```
@@ -312,7 +318,7 @@ Añade `m4` a `package.json`:
 
 ```json
 "scripts": {
-  "m4": "playwright test modulo-04-pom --project=ui-anon"
+  "m4": "playwright test --project=ui-anon"
 }
 ```
 
@@ -325,7 +331,7 @@ import "dotenv/config";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["html", { open: "never" }], ["list"]],
@@ -406,7 +412,7 @@ Cosas a observar:
 - **Comando del módulo:** `pnpm m4`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test modulo-04-pom/reto.spec.ts --headed --project=ui-anon`)
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts --headed --project=ui-anon`)
 - **Verificar tipos (herencia POM):** `pnpm typecheck` — ojo: la herencia introduce errores sutiles
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m4` (no `VAR=x pnpm m4`, sintaxis bash que falla en PowerShell)

@@ -1,11 +1,11 @@
 # Módulo 01 — Setup + primer smoke "feo"
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** `modulo-01-smoke-feo/ejemplo.spec.ts` plano, sin POM, sin fixtures, sin data-driven. **Todo el dolor es deliberado.**
+**Pieza que suma al framework:** `tests/ejemplo.spec.ts` plano, sin POM, sin fixtures, sin data-driven. **Todo el dolor es deliberado.**
 
 ---
 
-> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del monorepo del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
+> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del resto del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
 
 ## 🏗️ Arquitectura al terminar este módulo
 
@@ -16,13 +16,12 @@ playwright-course/
 ├── .env                       ← 🆕 creas tú desde .env.example (gitignored)
 ├── .env.example               ← 🆕 plantilla versionada de variables
 ├── .gitignore                 ← lo trae el installer; le añades .env y .auth/
-├── package.json               ← scripts (pnpm m1…m6) + dotenv como dep
+├── package.json               ← scripts (pnpm m1, test, report…) + dotenv como dep
 ├── playwright.config.ts       ← 🆕 lo genera el installer; lo reconcilias al estado M01
 ├── tsconfig.json              ← 🆕 lo creas tú (el installer NO lo genera)
 ├── .github/workflows/         ← lo deja el installer; LATENTE hasta M08
 │   └── playwright.yml
-└── modulo-01-smoke-feo/       ← 🆕 ESTE MÓDULO
-    ├── README.md
+└── tests/                     ← 🆕 tus specs de este módulo (la carpeta la deja el installer)
     ├── ejemplo.spec.ts        ← 🆕 TC-001 login, TC-002 catálogo (con duplicación)
     └── reto.spec.ts           ← 🆕 TC-003 filtrar por categoría "popular"
 ```
@@ -39,7 +38,7 @@ playwright-course/
 
 > 💡 **Para el facilitador:** muestra esta tabla al inicio. Los alumnos suelen preguntar *"¿y dónde van los Page Objects?"* — esta tabla les da la respuesta: **todavía no existen, y por eso vas a sentir el dolor**.
 >
-> 🔍 **Ojo con el `playwright.yml` y el `tests/`:** el installer ya deja un workflow de GitHub Actions y una carpeta `tests/` con un `example.spec.ts`. **No los usamos en M01**: el workflow queda **latente** (lo activamos de verdad en M08) y `tests/` lo borramos porque nuestro `testMatch` solo recoge `modulo-*/`. En el Paso 4 verás por qué.
+> 🔍 **Ojo con el `playwright.yml` y el `tests/`:** el installer ya deja un workflow de GitHub Actions y una carpeta `tests/` con un `example.spec.ts` de demo. El workflow queda **latente** (lo activamos de verdad en M08). La carpeta `tests/` **sí la usamos** — ahí viven tus specs — pero borras el `example.spec.ts` de demo (correría bajo nuestro `testMatch`). En el Paso 4 verás por qué.
 
 ---
 
@@ -114,7 +113,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   | Prompt | Qué elegir | Por qué |
   |---|---|---|
   | **TypeScript or JavaScript?** | `TypeScript` | Todo el curso es TS tipado |
-  | **Where to put your tests?** | `tests` (default) | Lo aceptas; en el Paso 4 cambiamos el `testMatch` |
+  | **Where to put your tests?** | `tests` (default) | Lo aceptas; en el Paso 4 lo formalizamos con un `testMatch` explícito |
   | **Add a GitHub Actions workflow?** | `true` | Lo deja **latente**; lo activamos de verdad en M08 |
   | **Install Playwright browsers?** | `true` | Descarga Chromium/Firefox/WebKit (~300 MB) |
 - **Por qué:** un solo comando instala `@playwright/test`, descarga los navegadores, genera `playwright.config.ts`, `tests/example.spec.ts`, un `.gitignore` propio y el workflow de GitHub Actions — todo de una pieza y según la **versión más reciente** de Playwright (no fijes una versión a mano; el installer trae la última).
@@ -136,7 +135,7 @@ Antes de empezar, asegúrate de tener (revisa con `node -v` / `pnpm -v` / `git -
   cat playwright.config.ts     # fíjate: testDir "./tests", 3 projects, un bloque dotenv COMENTADO
   cat .gitignore               # trae /playwright/.auth/  … pero NO trae .env
   ```
-- **Por qué:** antes de reconciliar hay que **ver el punto de partida**. Tres cosas que vas a tocar en los Pasos 3-4: (1) el `.gitignore` del installer **no** ignora `.env`; (2) el config trae un bloque `dotenv` **comentado** — el installer ya te dejó el hook, solo hay que encenderlo; (3) `testDir` apunta a `./tests`, pero el curso vive en `modulo-*/`.
+- **Por qué:** antes de reconciliar hay que **ver el punto de partida**. Tres cosas que vas a tocar en los Pasos 3-4: (1) el `.gitignore` del installer **no** ignora `.env`; (2) el config trae un bloque `dotenv` **comentado** — el installer ya te dejó el hook, solo hay que encenderlo; (3) `testDir` apunta a `./tests`; en el Paso 4 lo formalizas (`testDir: "."` + `testMatch` explícito a `tests/`), sin sacar los specs de `tests/`.
 - **Cómo verifico:** ves en `playwright.config.ts` un comentario tipo `// import dotenv from 'dotenv'` / `// dotenv.config(...)` (comentado) y `projects` con `chromium`, `firefox` y `webkit`.
 
 **1.3 — Añadir las dependencias que el installer NO trae: `dotenv` y `typescript`**
@@ -237,7 +236,7 @@ Este es **el "master test plan"** del framework: define dónde están los tests,
 
   | Lo que genera el installer | Lo dejamos en M01 como | Por qué |
   |---|---|---|
-  | `testDir: "./tests"` | `testDir: "."` + `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | El curso vive en `modulo-*/`, no en `tests/` |
+  | `testDir: "./tests"` | `testDir: "."` + `testMatch: [/tests\/.*\.spec\.ts/]` | Deja el patrón de descubrimiento explícito; los specs viven en `tests/` |
   | `projects: [chromium, firefox, webkit]` | **solo** `ui-anon` (anónimo) | Multi-browser distrae en M01; **firefox/webkit nacen en M08 (CI) y el `ui-chromium` autenticado en M06** |
   | bloque `dotenv` **comentado** | **descomentado** → `import "dotenv/config"` | El installer dejó el hook; solo lo enciendes (ya instalaste `dotenv` en 1.3) |
   | `trace: "on-first-retry"` | `trace: "retain-on-failure"` | En M01 no hay `retries`; con `on-first-retry` nunca verías el trace al fallar |
@@ -266,7 +265,7 @@ import "dotenv/config";   // ← descomentado: carga .env en process.env
 export default defineConfig({
   // --- Dónde buscar los tests (el installer ponía "./tests") ---
   testDir: ".",
-  testMatch: [/modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
 
   // --- Timeouts (generosos por el cold start de Render free tier) ---
   timeout: 60_000,
@@ -307,9 +306,9 @@ export default defineConfig({
 > 🔍 **La trampa de esa red de seguridad — qué pasa si quitas `import "dotenv/config"`** (el import por side-effect que vive arriba del todo del config, justamente para poblar `process.env` antes de que se lea `BASE_URL`): el test **no truena**. Tanto el config (`process.env.BASE_URL ?? "https://..."`) como el spec (`process.env.TEST_USER_USERNAME ?? "standard_user"`) tienen un fallback `??` que apunta a los valores reales de OmniPizza, así que `process.env` queda sin cargar pero el test sigue verde **usando los defaults hardcodeados** — ocultándote que tu `.env` nunca se cargó. El día que un valor real difiera de su fallback, fallarás sin entender por qué.
 
 **4.3 — Borrar el `tests/example.spec.ts` del installer**
-- **Qué hago:** borro la carpeta `tests/` completa desde el **explorador de VS Code** (click derecho sobre `tests/` → *Delete*). Si prefieres la terminal, no hay comando neutral: bash `rm -rf tests` · 🪟 PowerShell `Remove-Item -Recurse -Force tests`.
-- **Por qué:** el installer dejó una carpeta `tests/` con un `example.spec.ts` de demo. Tu `testMatch` solo recoge `modulo-*/`, así que ese archivo **nunca correría** — pero deja basura en el árbol. Lo quitas para que el proyecto refleje **solo** la arquitectura del curso. (El workflow `.github/workflows/playwright.yml` lo **conservas**: queda latente hasta M08.)
-- **Cómo verifico:** `tests/` ya no aparece en `ls`.
+- **Qué hago:** borro **solo** el archivo `tests/example.spec.ts` desde el **explorador de VS Code** (click derecho sobre el archivo → *Delete*). Si prefieres la terminal, no hay comando neutral: bash `rm tests/example.spec.ts` · 🪟 PowerShell `Remove-Item tests/example.spec.ts`.
+- **Por qué:** el installer dejó en `tests/` un `example.spec.ts` de demo (apunta a `playwright.dev`, no a OmniPizza). Como tus specs también viven en `tests/`, ese demo **sí entra** en el `testMatch` y correría — lo borras para no arrastrar un test de ejemplo. **La carpeta `tests/` la conservas**: ahí van tus specs. (El workflow `.github/workflows/playwright.yml` lo **conservas** también: queda latente hasta M08.)
+- **Cómo verifico:** `tests/example.spec.ts` ya no existe; la carpeta `tests/` sigue ahí (es donde pondrás tus specs).
 
 **4.4 — Leer el config línea por línea**
 
@@ -317,8 +316,8 @@ export default defineConfig({
 |---|---|---|
 | `import { defineConfig, devices }` | `defineConfig` envuelve el objeto para darte autocompletado y type-check del config; `devices` es el catálogo oficial de perfiles de dispositivo (viewport, userAgent, touch, scale) | Habilita el spread `...devices["Desktop Chrome"]` del project |
 | `import "dotenv/config"` | Import por side-effect: ejecuta `dotenv` y vuelca tu `.env` en `process.env`; no trae símbolos | Va arriba del todo para poblar `process.env` ANTES de que se lea `BASE_URL`; estaba comentado en el scaffold |
-| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz, porque los specs del curso viven en `modulo-*/`, no en `tests/` (el installer ponía `"./tests"`) |
-| `testMatch: [/modulo-.*\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de carpetas `modulo-*`; por eso el `tests/example.spec.ts` del installer nunca correría (lo borraste en 4.3) |
+| `testDir: "."` | Carpeta base desde donde Playwright empieza a buscar tests | La raíz; los specs viven en `tests/` y el `testMatch` filtra ese patrón (el installer ponía `"./tests"`) |
+| `testMatch: [/tests\/.*\.spec\.ts/]` | Regex que filtra, dentro de `testDir`, qué archivos cuentan como tests | Solo `*.spec.ts` dentro de `tests/`; el demo `example.spec.ts` del installer también entraría — por eso lo borraste en 4.3, para no arrastrar un test de ejemplo |
 | `timeout: 60_000` | Presupuesto TOTAL de cada `test()` — todas sus acciones y aserciones juntas; si se agota: `TimeoutError` y el test falla. Default: 30s | Doblado a 60s para absorber el cold start de Render (30-40s el primer request del día) |
 | `expect: { timeout: 10_000 }` | Tope de CADA aserción `expect()` individual; las aserciones web-first reintentan en bucle hasta cumplirse o agotarlo. Default: 5s | 10s da margen a renders lentos sin permitir que UNA aserción se coma el presupuesto del test entero |
 | `reporter: [["html", { open: "never" }], ["list"]]` | Lista de reporters que corren a la vez. `html` genera `playwright-report/` (`open: "never"` = no abre el navegador al terminar; lo abres tú con `pnpm report`); `list` imprime cada test en la terminal según corre | `html` = artefacto compartible (en M08 será el artifact de CI); `list` = feedback inmediato mientras corre |
@@ -362,7 +361,7 @@ test -f tsconfig.json && echo "Ya existe" || cat > tsconfig.json <<'EOF'
   },
   "include": [
     "playwright.config.ts",
-    "modulo-*/**/*.ts"
+    "tests/**/*.ts"
   ]
 }
 EOF
@@ -387,7 +386,7 @@ EOF
   },
   "include": [
     "playwright.config.ts",
-    "modulo-*/**/*.ts"
+    "tests/**/*.ts"
   ]
 }
 '@ | Set-Content -Encoding utf8 tsconfig.json
@@ -407,7 +406,7 @@ EOF
   | `forceConsistentCasingInFileNames: true` | Error si un import difiere en mayúsculas/minúsculas del archivo real | Windows/macOS lo perdonan, el CI en Linux (M08) no; mata el "funciona en mi máquina" |
   | `resolveJsonModule: true` | Permite importar `.json` con tipos | Necesario para `import marketsJson from "../data/markets.json"` en M03 |
   | `types: ["node", "@playwright/test"]` | Qué declaraciones globales se cargan | Sin `node`, `process.env` no tiene tipo; sin `@playwright/test`, `test`/`expect` tampoco |
-  | `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todos los `modulo-*/`: espejo del `testMatch` del Paso 4 |
+  | `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todo `tests/`: espejo del `testMatch` del Paso 4 |
 
   > ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
   > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M08 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M06, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
@@ -430,7 +429,7 @@ EOF
   # Ver scripts actuales: busca la sección "scripts"
   cat package.json
   ```
-- **Por qué:** `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon`. Un atajo memorable evita teclear el comando largo en cada corrida.
+- **Por qué:** `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test --project=ui-anon`. Un atajo memorable evita teclear el comando largo en cada corrida.
 - **Cómo verifico:** `cat package.json` — confirma que aparece la entrada `"m1"`. (Aún no puedes ejecutarlo: el spec file no existe hasta el Paso 7.)
 
 Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`:
@@ -443,11 +442,12 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
   "test:debug": "playwright test --debug",
   "typecheck": "tsc --noEmit",
   "report": "playwright show-report",
-  "m1": "playwright test modulo-01-smoke-feo --project=ui-anon"
+  "install:browsers": "playwright install",
+  "m1": "playwright test --project=ui-anon"
 }
 ```
 
-> 💡 **Para el facilitador:** explica que `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon`. Los alumnos pueden inspeccionar cualquier script con `cat package.json`.
+> 💡 **Para el facilitador:** explica que `pnpm m1` es **azúcar sintáctica** — equivale a `pnpm exec playwright test --project=ui-anon`. Los alumnos pueden inspeccionar cualquier script con `cat package.json`.
 
 ---
 
@@ -455,19 +455,18 @@ Si no existen, añade los siguientes a la sección `"scripts"` de `package.json`
 
 Ahora sí, **el código del módulo**.
 
-> **Archivo que se crea en este paso:** `modulo-01-smoke-feo/ejemplo.spec.ts`.
+> **Archivo que se crea en este paso:** `tests/ejemplo.spec.ts`.
 
-**7.1 — Crear la carpeta y el archivo vacío**
+**7.1 — Crear el archivo del spec**
 - **Qué hago:**
   ```bash
-  # 1. Crea la carpeta del módulo (si no existe)
-  mkdir modulo-01-smoke-feo
+  # 1. La carpeta tests/ ya existe (la dejó el installer; borraste su example.spec.ts en el Paso 4)
 
   # 2. Crea y abre el archivo del spec en VS Code (se crea al guardar)
-  code modulo-01-smoke-feo/ejemplo.spec.ts
+  code tests/ejemplo.spec.ts
   ```
-- **Por qué:** el `testMatch` del config (`/modulo-.*\/.*\.spec\.ts/`) solo recoge archivos `*.spec.ts` dentro de `modulo-*`. La ubicación y el nombre importan para que Playwright lo descubra.
-- **Cómo verifico:** tras guardar, `ls modulo-01-smoke-feo/` muestra `ejemplo.spec.ts`.
+- **Por qué:** el `testMatch` del config (`/tests\/.*\.spec\.ts/`) solo recoge archivos `*.spec.ts` dentro de `tests/`. La ubicación y el nombre importan para que Playwright lo descubra.
+- **Cómo verifico:** tras guardar, `ls tests/` muestra `ejemplo.spec.ts`.
 
 **7.2 — Escribir el encabezado y las credenciales**
 - **Qué hago:** abre el archivo en VS Code y escribe (a mano, no copy-paste a ciegas — escribirlo fija la sintaxis):
@@ -564,7 +563,7 @@ Ahora sí, **el código del módulo**.
   pnpm test:ui
 
   # B) Modo headed — abre el navegador real, sin UI mode
-  pnpm exec playwright test modulo-01-smoke-feo --headed --project=ui-anon
+  pnpm exec playwright test --headed --project=ui-anon
 
   # C) Headless — la forma rápida (sin ventana)
   pnpm m1
@@ -575,7 +574,7 @@ Ahora sí, **el código del módulo**.
 **8.2 — Depurar paso a paso con `--debug` (Playwright Inspector)**
 - **Qué hago:** corro el smoke en modo depuración:
   ```bash
-  pnpm exec playwright test modulo-01-smoke-feo --project=ui-anon --debug
+  pnpm exec playwright test --project=ui-anon --debug
   # (o el atajo del curso: pnpm test:debug)
   ```
   Se abre el **Playwright Inspector** (una ventana aparte) junto al navegador. Usa el botón **▶ (Resume)** para avanzar entre acciones y **⤼ (Step over)** para ejecutar **una sola** línea a la vez.
@@ -631,7 +630,7 @@ Abre `ejemplo.spec.ts` lado a lado con el alumno y haz que **señalen con el ded
 **10.1 — Completar TC-003 en `reto.spec.ts`**
 - **Qué hago:** abro `reto.spec.ts` y escribo TC-003 **copiando deliberadamente** las mismas líneas que ya viste duplicadas. Cada TODO trae **qué hacer**, **pista** (el método de Playwright) y **cómo verificar**. No intento ser elegante — el dolor es el ejercicio. Al terminar:
   ```bash
-  pnpm exec playwright test modulo-01-smoke-feo/reto.spec.ts --headed --project=ui-anon
+  pnpm exec playwright test tests/reto.spec.ts --headed --project=ui-anon
   ```
 - **Por qué:** este tercer smoke vuelve a duplicar ~8 líneas de login. Medir cuántas copiaste pone número a la deuda técnica que M04 va a saldar con el Page Object Model.
 - **Cómo verifico:** el test pasa en verde **y** al final del archivo puedes responder las 3 preguntas del comentario final.
@@ -647,7 +646,7 @@ Ya tienes el módulo verde: es el momento natural de guardar un punto de control
 **11.1 — Preparar los archivos para el commit**
 - **Qué hago:** desde la raíz `playwright-course/`, agrego al staging lo que generó el installer y lo que creaste tú en este módulo:
   ```bash
-  git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github modulo-01-smoke-feo
+  git add .env.example .gitignore playwright.config.ts tsconfig.json package.json pnpm-lock.yaml .github tests
   ```
 - **Por qué:** listas explícitas evitan arrastrar basura. Aquí entran tanto lo que dejó `pnpm create playwright` (`playwright.config.ts` ya reconciliado, `package.json`, `pnpm-lock.yaml`, el `.github/workflows/playwright.yml` **latente**) como tus archivos (`.env.example`, `tsconfig.json`, el módulo). Fíjate que **`.env` NO está en la lista** — es secreto y ya lo excluye `.gitignore` (Paso 3). Sí versionas `.env.example` (la plantilla pública).
 - **Cómo verifico:**
