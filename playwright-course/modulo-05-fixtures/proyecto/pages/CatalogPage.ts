@@ -15,6 +15,7 @@ export class CatalogPage extends BasePage {
   private btnConfirmAddToCart: string = "confirm-add-to-cart";
   private btnCategory: string = "category-";
   private lblCartCount: string = "nav-cart-count";
+  private lblPizzaPrice: string = "pizza-price-";
 
   // --- Locators privados ---
   private get pizzaCards(): Locator {
@@ -46,8 +47,31 @@ export class CatalogPage extends BasePage {
 
   async addFirstPizza(): Promise<void> {
     await this.addToCartButtons.first().click();
-    // agregar al carrito abre un paso de confirmación
+    // Agregar al carrito abre el modal "Customize Pizza". Elegir un
+    // tamaño es REQUIRED: sin él, `confirm-add-to-cart` sigue
+    // deshabilitado. Elegimos "medium" por defecto y confirmamos.
+    await this.page.getByTestId("size-medium").click();
     await this.page.getByTestId(this.btnConfirmAddToCart).click();
+  }
+
+  /**
+   * Abre el modal "Customize Pizza" de la primera pizza SIN confirmar.
+   * Útil para demostrar la interacción con el popup (PizzaCustomizerModal).
+   */
+  async openCustomizerForFirst(): Promise<void> {
+    await this.addToCartButtons.first().click();
+  }
+
+  /**
+   * Precio de la primera pizza tal como lo pinta el market activo.
+   * En SA vuelve en numerales árabes + `ر.س.`; útil para asserts de
+   * moneda/RTL. testid `pizza-price-pNN` (sin sufijo de viewport).
+   */
+  async getFirstPizzaPrice(): Promise<string> {
+    const price = this.page
+      .locator(`[data-testid^="${this.lblPizzaPrice}"]`)
+      .first();
+    return (await price.innerText()).trim();
   }
 
   async getPizzaCount(): Promise<number> {

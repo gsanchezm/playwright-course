@@ -8,6 +8,19 @@ import { expect, type Locator } from "@playwright/test";
 import { BasePage } from "./BasePage";
 import type { Market } from "../types";
 
+// Métodos de pago que expone el checkout (botones con role="radio").
+export type PaymentMethod = "card" | "cash" | "paypal";
+
+// Datos de una tarjeta de crédito de PRUEBA (nunca reales).
+// expMonth "01".."12", expYear "24".."39" (los <option> de los selects).
+export interface CardData {
+  holder: string;
+  number: string;
+  expMonth: string;
+  expYear: string;
+  cvv: string;
+}
+
 export class CheckoutPage extends BasePage {
   readonly path = "/checkout";
 
@@ -83,5 +96,134 @@ export class CheckoutPage extends BasePage {
 
   async expectTotalContains(currencySymbol: string): Promise<void> {
     await expect(this.orderTotal).toContainText(currencySymbol);
+  }
+
+  // ==========================================================
+  // 🆕 Widgets nuevos del checkout (M05 — demo de interacción)
+  // ==========================================================
+  // Agregado 2026-07-12: método de pago (radio group), tarjeta con
+  // dropdowns nativos de expiración, y los dos sabores de tooltip.
+  // ==========================================================
+
+  private btnPaymentMethod: string = "payment-method-";
+  private txtCardHolder: string = "card-holder";
+  private txtCardNumber: string = "card-number";
+  private selCardExpiryMonth: string = "card-expiry-month";
+  private selCardExpiryYear: string = "card-expiry-year";
+  private txtCardCvv: string = "card-cvv";
+  private btnTipInfo: string = "tip-info";
+  private lblTipTooltip: string = "tip-tooltip";
+
+  // --- Locators privados (widgets nuevos) ---
+  private paymentMethodButton(method: PaymentMethod): Locator {
+    // Botones con role="radio": payment-method-card/cash/paypal.
+    return this.page.getByTestId(`${this.btnPaymentMethod}${method}`);
+  }
+
+  private get cardHolderInput(): Locator {
+    return this.page.getByTestId(this.txtCardHolder);
+  }
+
+  private get cardNumberInput(): Locator {
+    return this.page.getByTestId(this.txtCardNumber);
+  }
+
+  private get cardExpiryMonthSelect(): Locator {
+    return this.page.getByTestId(this.selCardExpiryMonth);
+  }
+
+  private get cardExpiryYearSelect(): Locator {
+    return this.page.getByTestId(this.selCardExpiryYear);
+  }
+
+  private get cardCvvInput(): Locator {
+    return this.page.getByTestId(this.txtCardCvv);
+  }
+
+  private get tipInfoButton(): Locator {
+    return this.page.getByTestId(this.btnTipInfo);
+  }
+
+  private get tipTooltip(): Locator {
+    return this.page.getByTestId(this.lblTipTooltip);
+  }
+
+  // --- Acciones (widgets nuevos) ---
+
+  /**
+   * Elige el método de pago. Son botones con role="radio" (no <input
+   * radio> nativos), por eso los accionamos con .click() y verificamos
+   * el estado con aria-checked (ver expectPaymentSelected()).
+   */
+  async selectPaymentMethod(method: PaymentMethod): Promise<void> {
+    await this.paymentMethodButton(method).click();
+  }
+
+  /**
+   * Llena la tarjeta de PRUEBA. El plato fuerte pedagógico: la
+   * expiración son dos <select> NATIVOS → se accionan con
+   * .selectOption(value), NO clickeando/escribiendo. Los <option>
+   * usan value "MM"/"01".."12" y "YY"/"24".."39".
+   */
+  async fillCard(card: CardData): Promise<void> {
+    await this.cardHolderInput.fill(card.holder);
+    await this.cardNumberInput.fill(card.number);
+    // <select> nativo → selectOption por value:
+    await this.cardExpiryMonthSelect.selectOption(card.expMonth);
+    await this.cardExpiryYearSelect.selectOption(card.expYear);
+    await this.cardCvvInput.fill(card.cvv);
+  }
+
+  /** Hover sobre el ícono ℹ️ de la propina (dispara el tooltip custom). */
+  async hoverTipInfo(): Promise<void> {
+    await this.tipInfoButton.hover();
+  }
+
+  /**
+   * Lee el tooltip NATIVO del teléfono (atributo `title`).
+   * Los title del navegador NO son hover-asertables por Playwright:
+   * no aparecen en el DOM al hacer hover, así que se leen del atributo.
+   */
+  async getPhoneTitle(): Promise<string | null> {
+    return this.tid("phone").getAttribute("title");
+  }
+
+  // --- Assertions (widgets nuevos) ---
+
+  async expectCardFieldsVisible(): Promise<void> {
+    await expect(this.cardNumberInput).toBeVisible();
+    await expect(this.cardExpiryMonthSelect).toBeVisible();
+  }
+
+  /**
+   * Con un método != card, los campos de tarjeta se QUITAN del DOM
+   * (no sólo se ocultan). `toBeHidden()` cubre ambos casos: un
+   * elemento ausente cuenta como oculto.
+   */
+  async expectCardFieldsHidden(): Promise<void> {
+    await expect(this.cardNumberInput).toBeHidden();
+  }
+
+  async expectPaymentSelected(method: PaymentMethod): Promise<void> {
+    // El botón activo del radio group marca aria-checked="true".
+    await expect(this.paymentMethodButton(method)).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  }
+
+  async expectExpiry(month: string, year: string): Promise<void> {
+    await expect(this.cardExpiryMonthSelect).toHaveValue(month);
+    await expect(this.cardExpiryYearSelect).toHaveValue(year);
+  }
+
+  /** Tooltip CUSTOM: tras el hover, el [role="tooltip"] se hace visible. */
+  async expectTipTooltipVisible(): Promise<void> {
+    await expect(this.tipTooltip).toBeVisible();
+  }
+
+  /** El tooltip custom NO existe en el DOM hasta el hover (está oculto). */
+  async expectTipTooltipHidden(): Promise<void> {
+    await expect(this.tipTooltip).toBeHidden();
   }
 }

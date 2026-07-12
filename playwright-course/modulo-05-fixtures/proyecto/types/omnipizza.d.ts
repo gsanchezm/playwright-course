@@ -8,7 +8,11 @@
 // diseño, no en producción).
 // ============================================================
 
-export type CountryCode = "MX" | "US" | "CH" | "JP";
+// "SA" (Arabia Saudita) es el market nuevo: app en RTL/árabe, moneda SAR.
+// Aquí sólo se añade el CÓDIGO para habilitar el demo RTL de M05; el resto
+// del ripple (Currency "SAR", entrada en markets.json, campo `district` del
+// OrderPayload) es una pista de datos aparte, propagada por todos los módulos.
+export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA";
 export type Currency = "MXN" | "USD" | "CHF" | "JPY";
 // OmniPizza sólo expone usuarios "customer". Las personas
 // (standard / locked_out / problem / performance_glitch / error)

@@ -12,7 +12,14 @@
 // ============================================================
 
 import { test as base, expect } from "@playwright/test";
-import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import {
+  LoginPage,
+  CatalogPage,
+  CheckoutPage,
+  MenuPage,
+  ProfilePage,
+  PizzaCustomizerModal,
+} from "../pages";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
@@ -24,6 +31,9 @@ type PageFixtures = {
   loginPage: LoginPage;
   catalogPage: CatalogPage;
   checkoutPage: CheckoutPage;
+  menuPage: MenuPage;
+  profilePage: ProfilePage;
+  pizzaCustomizer: PizzaCustomizerModal;
   standardUser: User;
 };
 
@@ -50,6 +60,15 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   },
   checkoutPage: async ({ page }, use) => {
     await use(new CheckoutPage(page));
+  },
+  menuPage: async ({ page }, use) => {
+    await use(new MenuPage(page));
+  },
+  profilePage: async ({ page }, use) => {
+    await use(new ProfilePage(page));
+  },
+  pizzaCustomizer: async ({ page }, use) => {
+    await use(new PizzaCustomizerModal(page));
   },
   // eslint-disable-next-line no-empty-pattern
   standardUser: async ({}, use) => {
