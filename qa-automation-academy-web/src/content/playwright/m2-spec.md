@@ -101,7 +101,7 @@ En esa chuleta los locators se **encadenan** (`pizzaCards.first()`, `pizzaCards.
 //   · CSS con prefijo para las cards (sus testids son dinámicos).
 //
 // Sigue siendo UN mercado hardcoded (MX). La parametrización por
-// los 4 mercados con datos tipados (data/ + types/ + for...of)
+// los 5 mercados con datos tipados (data/ + types/ + for...of)
 // llega en M03 (data-driven).
 // ============================================================
 

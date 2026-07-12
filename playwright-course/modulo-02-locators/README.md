@@ -1,7 +1,7 @@
 # Módulo 02 — Locators
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** la **disciplina de la jerarquía de locators** aplicada al smoke de M01 — `getByRole` donde la app coopera, `getByTestId`/CSS donde no — más una **chuleta viva** (`test.skip`) con los selectores REALES de OmniPizza verificados contra el DOM. El smoke sigue siendo de **un** mercado; parametrizarlo por los 4 mercados llega en M03.
+**Pieza que suma al framework:** la **disciplina de la jerarquía de locators** aplicada al smoke de M01 — `getByRole` donde la app coopera, `getByTestId`/CSS donde no — más una **chuleta viva** (`test.skip`) con los selectores REALES de OmniPizza verificados contra el DOM. El smoke sigue siendo de **un** mercado; parametrizarlo por los 5 mercados llega en M03.
 
 ---
 
@@ -440,4 +440,4 @@ cp .env.example .env
 
 ## ¿Qué viene en M03?
 
-En el próximo módulo vas a **parametrizar** este smoke para que un mismo test corra contra los 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo **JSON tipado** (`data/` + `types/`) con un bucle `for...of` que registra un `test()` por mercado — el patrón **data-driven**. Los locators no cambian; cambia de dónde salen los **datos**.
+En el próximo módulo vas a **parametrizar** este smoke para que un mismo test corra contra los 5 mercados de OmniPizza (MX/US/CH/JP/SA) consumiendo **JSON tipado** (`data/` + `types/`) con un bucle `for...of` que registra un `test()` por mercado — el patrón **data-driven**. Los locators no cambian; cambia de dónde salen los **datos**.

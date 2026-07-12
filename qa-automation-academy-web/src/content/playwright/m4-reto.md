@@ -130,31 +130,47 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 5 — Confirmar la orden
+      // TODO 5 — Enviar la orden (abre el modal de confirmación)
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Click en el botón "Place order".
+      //   Click en el botón "Place order". OJO: el checkout es de 2
+      //   pasos — "Place order" ya NO envía directo, abre un modal de
+      //   confirmación (`confirm-order-modal`, role="dialog").
       //
       // Pista:
       //   await checkoutPage.placeOrder();
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 6 — Verificar la pantalla de confirmación
+      // TODO 6 — Confirmar en el modal (paso 2 de 2)
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Aserción de UI: el badge/texto de confirmación aparece.
+      //   En el modal `confirm-order-modal`, click en "Yes" para
+      //   confirmar. Sólo entonces la orden se envía y navegas a
+      //   `/order-success`.
+      //
+      // Pista:
+      //   await page.getByTestId("confirm-order-yes").click();
+
+
+      // ────────────────────────────────────────────────────────
+      // TODO 7 — Verificar la pantalla de confirmación
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   Aserción de UI: llegaste a `/order-success` — la pantalla
+      //   `screen-order-success` aparece con su `order-id`.
       //
       // Pista:
       //   await checkoutPage.expectConfirmation();
       //
       // Criterio de éxito:
-      //   El test termina en VERDE para los 4 mercados.
+      //   El test termina en VERDE para los 5 mercados.
       //   En la terminal verás:
       //     ✓ Challenge-MX — complete checkout in México
       //     ✓ Challenge-US — complete checkout in United States
       //     ✓ Challenge-CH — complete checkout in Switzerland
       //     ✓ Challenge-JP — complete checkout in Japan
+      //     ✓ Challenge-SA — complete checkout in Saudi Arabia
 
 
       expect(market).toBeDefined(); // placeholder — quítalo cuando termines

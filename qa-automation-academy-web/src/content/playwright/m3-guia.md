@@ -3,7 +3,7 @@
 > 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del resto del curso). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía construyen ese mismo proyecto pieza por pieza; `proyecto/` es el "ya resuelto".
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M02 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 4 mercados.
+**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M02 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 5 mercados.
 
 ---
 
@@ -18,7 +18,7 @@ playwright-course/
 │   ├── README.md
 │   └── proyecto/                  ← proyecto autocontenido y ejecutable
 │       ├── data/                  ← 🆕 datasets de prueba
-│       │   ├── markets.json       ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
+│       │   ├── markets.json       ← 🆕 MX / US / CH / JP / SA (code, fullName, country, currency)
 │       │   └── users.json         ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 │       ├── types/                 ← 🆕 contratos del dominio
 │       │   ├── index.ts           ← 🆕 barrel: re-exporta lo de omnipizza
@@ -28,7 +28,7 @@ playwright-course/
 │       ├── .env.example, .gitignore
 │       └── tests/
 │           ├── ejemplo.spec.ts    ← 🆕 for...of por mercado + lookup map
-│           └── reto.spec.ts       ← 🆕 añadir 5º mercado (CA) sin tocar el spec
+│           └── reto.spec.ts       ← 🆕 añadir 6º mercado (CA) sin tocar el spec
 └── …
 ```
 
@@ -77,7 +77,7 @@ Un tester manual siempre trae consigo una **hoja de datos de prueba** (usuarios,
 |---|---|
 | `interface User` | Contrato Swagger: un User DEBE tener username, password, role |
 | union / literal types (`"MX" \| "US"`) | Lista cerrada de valores legales (como un enum de negocio) |
-| `for (const market of markets) { test(...) }` | Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones (un `test()` registrado por vuelta) |
+| `for (const market of markets) { test(...) }` | Matriz de regresión: 1 TC × 5 mercados = 5 ejecuciones (un `test()` registrado por vuelta) |
 | `import type { User }` | Sólo traigo la forma, no el código |
 | `locator.all()` | Obtener el array de locators — como pedir todas las filas de una tabla |
 | `Record<K, V>` | Matriz de datos esperados: TODAS las celdas obligatorias |
@@ -129,7 +129,7 @@ const symbols: {
 
 **Para qué sirve:** el compilador exige que las llaves sean **exactamente** los valores del union. Si escribes `MNX` (typo) o se te olvida `USD`, TypeScript falla.
 
-**Analogía QA:** es la **matriz de datos esperados** del test plan. Las dimensiones (las 5 currencies del negocio) están cerradas; `Record` te obliga a llenar **cada celda**.
+**Analogía QA:** es la **matriz de datos esperados** del test plan. Las dimensiones (las 5 currencies de este ejemplo) están cerradas; `Record` te obliga a llenar **cada celda**.
 
 ### 2. `Partial<T>` — "haz que todas las propiedades de `T` sean opcionales"
 
@@ -331,8 +331,8 @@ code data/users.json
 
 ```ts
 // Union types acotados — el corazón del tipado fuerte de este curso.
-export type CountryCode = "MX" | "US" | "CH" | "JP";
-export type Currency = "MXN" | "USD" | "CHF" | "JPY";
+export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA";
+export type Currency = "MXN" | "USD" | "CHF" | "JPY" | "SAR";
 
 // OmniPizza sólo expone usuarios "customer". Las 5 personas
 // (standard / locked_out / problem / performance_glitch / error)
@@ -367,7 +367,7 @@ export interface Pizza {
 > 📚 Lo viste en [TS · M06 — interfaces](/docs/typescript/m6-api-response). Aquí lo aplicas a `User`, `Market` y `Pizza`: el contrato que valida `data/*.json`.
 
 > 🔷 **TypeScript — union / literal types (`"MX" | "US" | …`)**
-> Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP"` significa "solo estos 4 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
+> Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP" | "SA"` significa "solo estos 5 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
 > 📚 Lo viste en [TS · M04 — objects & types](/docs/typescript/m4-union-types). Aquí lo aplicas a `code` y `currency`: si añades un mercado con un código fuera del union, TS lo rechaza antes de correr.
 
 📄 `types/index.ts` (barrel — re-exporta para imports cortos):
@@ -383,7 +383,8 @@ export * from "./omnipizza";
   { "code": "MX", "fullName": "Juan Pérez",  "country": "México",        "currency": "MXN" },
   { "code": "US", "fullName": "John Smith",  "country": "United States", "currency": "USD" },
   { "code": "CH", "fullName": "Hans Müller", "country": "Switzerland",   "currency": "CHF" },
-  { "code": "JP", "fullName": "Yuki Tanaka", "country": "Japan",         "currency": "JPY" }
+  { "code": "JP", "fullName": "Yuki Tanaka", "country": "Japan",         "currency": "JPY" },
+  { "code": "SA", "fullName": "Abdullah Al-Rashid", "country": "Saudi Arabia", "currency": "SAR" }
 ]
 ```
 
@@ -491,7 +492,7 @@ cat data/users.json
 
 Cosas a observar:
 
-- `markets.json` tiene **4 entradas**: MX, US, CH, JP. Cada una con `code`, `fullName`, `country`, `currency`.
+- `markets.json` tiene **5 entradas**: MX, US, CH, JP, SA. Cada una con `code`, `fullName`, `country`, `currency`.
 - `users.json` lista las **5 personas** de OmniPizza (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`. Vamos a usar `standard_user`.
 - Los valores de `code` y `currency` están restringidos por **union types** en `types/omnipizza.d.ts` (`"MX" | "US" | "CH" | "JP"`). Si añades `"CA"` sin ampliar el union, TS rechaza el cambio — exactamente el mecanismo que protege el reto.
 
@@ -516,6 +517,6 @@ Cosas a observar:
 - [ ] Entiendes el patrón **data-driven**: un `for...of` que **registra** un `test()` por dato (no `test.each()`, que Playwright no tiene).
 - [ ] Puedes leer `markets.json` y explicar cómo el test lo consume tipado (`as Market[]`).
 - [ ] Entiendes `Partial<Record<Currency, string>>` y por qué justifica la **guard clause** (`if (!symbol) return;`).
-- [ ] Sabes añadir un 5º mercado **sin tocar el spec** (sólo JSON + union types).
+- [ ] Sabes añadir otro mercado **sin tocar el spec** (sólo JSON + union types).
 - [ ] `pnpm typecheck` queda en verde tras ampliar los union types.
 - [ ] Reconoces por qué `toHaveURL` usa regex (match parcial robusto) y no un string.

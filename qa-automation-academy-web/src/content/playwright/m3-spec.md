@@ -1,13 +1,13 @@
 # El spec paso a paso
 
-Esta página cubre la parte de **lectura y ejecución del ejemplo** de M03: correr el smoke parametrizado por los 4 mercados y leer el bucle `for...of` data-driven pieza por pieza. Al final tienes el código completo de `ejemplo.spec.ts`.
+Esta página cubre la parte de **lectura y ejecución del ejemplo** de M03: correr el smoke parametrizado por los 5 mercados y leer el bucle `for...of` data-driven pieza por pieza. Al final tienes el código completo de `ejemplo.spec.ts`.
 
 ---
 
 ## Paso 6 — Ejecutar el ejemplo
 
 ```bash
-# Headless — el smoke parametrizado, 4 mercados de un solo TC
+# Headless — el smoke parametrizado, 5 mercados de un solo TC
 pnpm m3
 
 # UI mode — RECOMENDADO la primera vez
@@ -16,11 +16,11 @@ pnpm test:ui
 
 **Qué debería pasar:**
 
-- En la terminal verás **4 tests** corriendo, uno por mercado: `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`.
+- En la terminal verás **5 tests** corriendo, uno por mercado: `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, `TC-SA`.
 - Todos pasan en verde (suelen tardar ~30-40s la primera vez por el cold start de Render).
-- En UI mode, los 4 aparecen como hijos del mismo describe.
+- En UI mode, los 5 aparecen como hijos del mismo describe.
 
-Ver con tus ojos que **un solo `test()` se registró 4 veces** (uno por mercado) cierra el concepto data-driven. No son 4 tests copy/pasteados: es un `for` que llamó a `test()` cuatro veces. **Playwright NO tiene `test.each()`** — esos 4 casos los registró un `for` de JavaScript.
+Ver con tus ojos que **un solo `test()` se registró 5 veces** (uno por mercado) cierra el concepto data-driven. No son 5 tests copy/pasteados: es un `for` que llamó a `test()` cinco veces. **Playwright NO tiene `test.each()`** — esos 5 casos los registró un `for` de JavaScript.
 
 ---
 
@@ -41,9 +41,9 @@ Varias de esas líneas se leen "de pasada" pero esconden una decisión de diseñ
 > **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **IGUALDAD exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
 
 > 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, ...) ``**
-> **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`: nombres distintos y legibles en el reporte. Playwright **exige títulos únicos** dentro del mismo describe.
+> **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, `TC-SA`: nombres distintos y legibles en el reporte. Playwright **exige títulos únicos** dentro del mismo describe.
 > **Por qué así (y no la alternativa obvia):** además, el tag `@smoke` va **embebido en el título** a propósito: es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
-> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
+> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 5, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
 
 > 🔍 **Detalle que parece obvio — `page.locator('[data-testid^="pizza-card-"]')`**
 > **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
@@ -83,7 +83,7 @@ Varias de esas líneas se leen "de pasada" pero esconden una decisión de diseñ
 // M03 — Data-driven testing (bucle for...of por mercado)
 // ============================================================
 // Avance sobre M02: el smoke de login ahora corre contra los
-// 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado
+// 5 mercados de OmniPizza (MX/US/CH/JP/SA) consumiendo JSON tipado
 // (data/ + types/). Un `for...of` REGISTRA un test() por mercado.
 //
 // La jerarquía de locators ya la practicaste en M02; aquí el foco
@@ -122,12 +122,16 @@ const currencySymbol: Partial<Record<Currency, string>> = {
   // La app japonesa renderiza el yen FULL-WIDTH ￥ (U+FFE5) vía
   // Intl.NumberFormat('ja-JP'), NO el half-width ¥ (U+00A5).
   JPY: "￥",
+  // Arabia Saudita (RTL): el riyal se renderiza como "ر.س" — símbolo
+  // inequívoco, así que sí lo validamos (a diferencia de USD/CHF que
+  // dejamos fuera por ambigüedad del "$"/símbolo suizo).
+  SAR: "ر.س",
 };
 
 test.describe("Smoke parameterized by market (M03)", () => {
   // OJO: Playwright NO tiene `test.each()` (eso es de Jest/Vitest).
   // Para parametrizar, un `for` recorre el array y REGISTRA un
-  // `test()` por dato → 4 TCs independientes (TC-MX, TC-US, ...),
+  // `test()` por dato → 5 TCs independientes (TC-MX, TC-US, ...),
   // no un test que itera por dentro.
   for (const market of markets) {
     test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, async ({ page }) => {

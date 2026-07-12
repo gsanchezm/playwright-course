@@ -2,7 +2,7 @@
 
 ## Paso 8 — Resolver el reto
 
-Abre `reto.spec.ts`. La meta es **añadir un 5º mercado (`CA`, Canadá, `CAD`) sin tocar el spec**. Vas a editar solo **dos** archivos:
+Abre `reto.spec.ts`. Tu dataset ya trae 5 mercados (MX/US/CH/JP + SA, Arabia Saudita). La meta es **añadir un 6º mercado (`CA`, Canadá, `CAD`) sin tocar el spec**. Vas a editar solo **dos** archivos:
 
 1. `data/markets.json` → añadir el nuevo objeto.
 2. `types/omnipizza.d.ts` → ampliar el union (`CountryCode` y `Currency`).
@@ -18,11 +18,13 @@ Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 ```ts
 // @file modulo-03-data-driven/reto.spec.ts
 // ============================================================
-// 🚩 Reto M03 — Añadir un 5º mercado sin tocar este spec
+// 🚩 Reto M03 — Añadir OTRO mercado sin tocar este spec
 // ============================================================
 // Objetivo pedagógico: comprobar que la parametrización funciona.
-// Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
-// automáticamente, sin tocar ni una línea de este archivo.
+// Tu dataset YA trae 5 mercados: MX/US/CH/JP + SA (Arabia Saudita,
+// el market nuevo de la plataforma). Vas a añadir un 6º, Canadá
+// (CA / CAD), y el test extra se ejecutará automáticamente, sin
+// tocar ni una línea de este archivo.
 //
 // El "truco" es que `markets.json` está tipado por la interfaz
 // `Market` (en types/omnipizza.d.ts). Si rompes el contrato,
@@ -30,7 +32,7 @@ Cada TODO indica **Qué hacer / Pista / Cómo verificar**.
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m3 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
+//   ✔ pnpm m3 corre en verde con los 5 mercados actuales (MX/US/CH/JP/SA).
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
@@ -62,14 +64,15 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //          "currency": "CAD"
   //        }
   //
-  //   B) types/omnipizza.d.ts — amplía los union types:
-  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
-  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+  //   B) types/omnipizza.d.ts — amplía los union types (SA ya está;
+  //      tú sumas CA):
+  //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA" | "CA";
+  //        export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "SAR" | "CAD";
   //
   //   Verifica:
   //     pnpm typecheck            ← debe pasar en verde
   //     pnpm exec playwright test modulo-03-data-driven/reto.spec.ts --list
-  //                               ← debe listar 5 tests (uno por mercado)
+  //                               ← debe listar 6 tests (uno por mercado)
   //
   //   💡 Si typecheck se queja con "Type '\"CA\"' is not assignable to
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
@@ -143,12 +146,13 @@ test.describe("Challenge M03 — extended parameterization", () => {
       //     USD: "$",
       //     CHF: "Fr",
       //     JPY: "￥",     // ← full-width (U+FFE5), no el half-width ¥
+      //     SAR: "ر.س",   // ← Arabia Saudita (ya en el base)
       //     CAD: "$",     // ← tu nuevo mercado
       //   }[market.currency];
       //   await expect(page.locator("body")).toContainText(symbol);
       //
       // Cómo verificar:
-      //   El test pasa para los 5 mercados. Si el símbolo no aparece,
+      //   El test pasa para los 6 mercados. Si el símbolo no aparece,
       //   revisa qué muestra OmniPizza para esa currency (puede usar
       //   un código distinto como "CA$").
 
@@ -162,7 +166,7 @@ test.describe("Challenge M03 — extended parameterization", () => {
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. ¿Cuántos archivos tocaste para añadir un 5º mercado?
+//   1. ¿Cuántos archivos tocaste para añadir otro mercado?
 //      (Esperado: 2 — markets.json y omnipizza.d.ts.
 //       Si tocaste el spec, perdiste el premio del data-driven.)
 //

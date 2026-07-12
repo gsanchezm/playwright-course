@@ -3,7 +3,7 @@
 > 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del resto del curso). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** la **disciplina de la jerarquía de locators** aplicada al smoke de M01 — `getByRole` donde la app coopera, `getByTestId`/CSS donde no — más una **chuleta viva** (`test.skip`) con los selectores REALES de OmniPizza verificados contra el DOM. El smoke sigue siendo de **un** mercado; parametrizarlo por los 4 mercados llega en M03.
+**Pieza que suma al framework:** la **disciplina de la jerarquía de locators** aplicada al smoke de M01 — `getByRole` donde la app coopera, `getByTestId`/CSS donde no — más una **chuleta viva** (`test.skip`) con los selectores REALES de OmniPizza verificados contra el DOM. El smoke sigue siendo de **un** mercado; parametrizarlo por los 5 mercados llega en M03.
 
 ---
 

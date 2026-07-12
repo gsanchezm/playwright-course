@@ -7,6 +7,7 @@
 - `fixtures/omnipizza.ts` — custom fixtures con `test.extend`: inyectan Page Objects + usuario/mercado.
 - `helpers/unique-data.ts` — identificadores únicos por worker para paralelismo seguro.
 - Demostración de `page.route()` para mocking de red (error, estado vacío, latencia).
+- `pages/ProfilePage.ts` + `pages/PizzaCustomizerModal.ts` + `pages/CheckoutPage.ts` ampliado (radio de pago, `<select>` de tarjeta, tooltips, confirmación de orden en 2 pasos) y `tests/interacciones-nuevas.spec.ts` — interacciones con [widgets nuevos](/docs/playwright/m5-interacciones) (8 tests).
 
 ---
 
@@ -22,9 +23,13 @@ modulo-05-fixtures/
 ├── helpers/                       ← 🆕
 │   └── unique-data.ts             ← 🆕 uniqueEmail, uniqueOrderId (data isolation)
 ├── pages/                         ← (M04) Page Object Model
+│   ├── ProfilePage.ts             ← 🆕 date picker nativo (<input type=date>)
+│   ├── PizzaCustomizerModal.ts    ← 🆕 modal "Customize Pizza"
+│   └── CheckoutPage.ts            ← ampliado: radio pago, <select> tarjeta, tooltips, confirmación de orden
 ├── types/                         ← (M03)
 ├── tests/
 │   ├── ejemplo.spec.ts            ← 🆕 fixtures inyectan POM + page.route() (mocking)
+│   ├── interacciones-nuevas.spec.ts  ← 🆕 widgets nuevos (date picker, modal Customize, checkout 2 pasos, tooltips) — 8 tests
 │   └── reto.spec.ts               ← 🆕 mock con latencia simulada
 ├── playwright.config.ts           ← un solo project `chromium` (sin setup, sin storageState)
 ├── package.json · tsconfig.json · .env.example

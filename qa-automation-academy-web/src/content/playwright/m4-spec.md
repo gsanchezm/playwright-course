@@ -16,7 +16,7 @@ pnpm test:ui
 
 **Qué esperar:**
 
-- Los **mismos 4 tests** que en M03 (uno por mercado) corren en verde.
+- Los **mismos 5 tests** que en M03 (uno por mercado) corren en verde.
 - En el spec verás `loginPage.loginInMarket(user, 'MX')` en lugar del bloque de 5 líneas.
 - Hay un segundo `describe` ("using granular actions") que muestra que el POM **no obliga** a usar siempre el método de alto nivel — puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
 
@@ -27,7 +27,7 @@ pnpm test:ui
 Abre M03 y M04 simultáneamente y responde:
 
 1. ¿Qué pasa si el campo `username-desktop` cambia de testid?
-   - En M03: **modificas 4 tests**.
+   - En M03: **modificas 5 tests**.
    - En M04: **modificas 1 línea** en `LoginPage.ts`.
 2. Si añadieras un nuevo flujo "logout" desde el catálogo, ¿dónde viviría?
    - Respuesta: como método público en `CatalogPage` (o un nuevo `LogoutPage` si fuera más grande).
@@ -92,8 +92,8 @@ test.describe("POM — using granular actions", () => {
 
 // ============================================================
 // Comparativa para el alumno:
-//   - M03: ~18 líneas por test × 4 mercados = ~72 líneas
-//   - M04: ~3 líneas por test × 4 mercados = ~12 líneas
+//   - M03: ~18 líneas por test × 5 mercados = ~90 líneas
+//   - M04: ~3 líneas por test × 5 mercados = ~15 líneas
 //   - Reducción: ~83%
 // ============================================================
 ```

@@ -343,7 +343,7 @@ pages/
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `CatalogPage` exporta también el tipo `Category` para los filtros.
 
 **5.2 — Construye `CheckoutPage` (checkout `/checkout`)**
-- **Qué hago:** creo `pages/CheckoutPage.ts` en VS Code (`code pages/CheckoutPage.ts`), `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, `order-confirmation`, y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
+- **Qué hago:** creo `pages/CheckoutPage.ts` en VS Code (`code pages/CheckoutPage.ts`), `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, el flujo de confirmación en 2 pasos (`confirm-order-modal` → `confirm-order-yes` → `screen-order-success` con `order-id`), y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
 - **Por qué:** `CheckoutPage` es la pantalla que usarás en el **reto**. Sus métodos ya están listos para que el reto se enfoque en **orquestar** el flujo E2E, no en escribir locators. `fillWithMarket(market)` rellena los 4 campos con datos coherentes por mercado.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; los métodos públicos aparecen al autocompletar `checkoutPage.` en el spec.
 
@@ -375,7 +375,7 @@ pages/
 - **Cómo verifico:** `git log --oneline -2` muestra ambos commits en orden.
 
 > 🌿 **Git JIT — convención de mensajes de commit**
-> El prefijo `refactor(m04):` es la convención del curso (igual que `feat(mXX):`). "Refactor" comunica que **cambias estructura sin cambiar comportamiento**: los mismos 4 tests deben seguir pasando tras el commit.
+> El prefijo `refactor(m04):` es la convención del curso (igual que `feat(mXX):`). "Refactor" comunica que **cambias estructura sin cambiar comportamiento**: los mismos 5 tests deben seguir pasando tras el commit.
 
 ---
 
@@ -457,17 +457,17 @@ export default defineConfig({
   });
   ```
 - **Por qué:** el spec ahora se lee como **user story**, no como instrucción técnica: `loginInMarket(user, code)` reemplaza el bloque de ~5 líneas inline de M03. Nota que el bucle es un `for...of` sobre `markets` con un `test()` adentro — **no** existe ningún `test.each()` en Playwright; esto es un `for` clásico.
-- **Cómo verifico:** `pnpm m4` corre los **mismos 4 tests** que M03 (uno por mercado) en verde.
+- **Cómo verifico:** `pnpm m4` corre los **mismos 5 tests** que M03 (uno por mercado) en verde.
 
 **8.2 — Ejecuta el ejemplo en UI mode**
 - **Qué hago:** corro `pnpm m4` (headless) y `pnpm test:ui` (recomendado la primera vez).
 - **Por qué:** UI mode te deja ver el flujo limpio paso a paso y confirmar que el comportamiento no cambió — solo la estructura.
-- **Cómo verifico:** el HTML report / la lista muestran 4 verdes (más el segundo `describe` "using granular actions"). Ese segundo bloque demuestra que el POM **no obliga** a usar siempre el método de alto nivel: puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
+- **Cómo verifico:** el HTML report / la lista muestran 5 verdes (más el segundo `describe` "using granular actions"). Ese segundo bloque demuestra que el POM **no obliga** a usar siempre el método de alto nivel: puedes encadenar `goto / selectMarket / loginAs` cuando un TC necesite control fino.
 
 **8.3 — Comparativa antes/después**
 - **Qué hago:** abro M03 y M04 lado a lado y respondo: (1) si `username` cambia de testid, ¿cuántos archivos toco? (2) ¿dónde viviría un "logout"? (3) ¿por qué los locators son `private`?
-- **Por qué:** el delta de líneas (~18/test en M03 → ~3/test en M04) y "1 línea vs 4 tests" ante un cambio de testid **son** el argumento del módulo.
-- **Cómo verifico:** puedes contestar: (1) **1 línea** en `LoginPage.ts` vs 4 tests; (2) método público en `CatalogPage` (o un `LogoutPage` si crece); (3) para que el test no dependa del DOM interno — encapsulación.
+- **Por qué:** el delta de líneas (~18/test en M03 → ~3/test en M04) y "1 línea vs 5 tests" ante un cambio de testid **son** el argumento del módulo.
+- **Cómo verifico:** puedes contestar: (1) **1 línea** en `LoginPage.ts` vs 5 tests; (2) método público en `CatalogPage` (o un `LogoutPage` si crece); (3) para que el test no dependa del DOM interno — encapsulación.
 
 ---
 
@@ -480,7 +480,7 @@ export default defineConfig({
   - `checkoutWith(market)` — atajo: fill + placeOrder.
   - `expectLoaded()` / `expectConfirmation()` / `expectTotalContains(symbol)`.
 - **Por qué:** el reto te hace **orquestar** Pages sin escribir locators inline (la única línea inline esperada es la del `nav-checkout-desktop`). Es donde compruebas que internalizaste la "regla de oro": si necesitas un locator que no existe, lo añades al Page, no al spec.
-- **Cómo verifico:** los 4 tests del reto terminan en verde (`Reto-MX`, `Reto-US`, `Reto-CH`, `Reto-JP`). Cada `TODO` del reto trae su propio formato **Qué hacer / Pista / Cómo verificar** — resuélvelos tú; el README no los resuelve por ti.
+- **Cómo verifico:** los 5 tests del reto terminan en verde (`Reto-MX`, `Reto-US`, `Reto-CH`, `Reto-JP`, `Reto-SA` — Saudi Arabia). Cada `TODO` del reto trae su propio formato **Qué hacer / Pista / Cómo verificar** — resuélvelos tú; el README no los resuelve por ti.
 
 **9.2 — Commitea el refactor del spec en `feature/m04-pom`**
 - **Qué hago:** desde la rama `feature/m04-pom`, commiteo los dos specs refactorizados (el ejemplo del Paso 8.1 y el reto del 9.1):

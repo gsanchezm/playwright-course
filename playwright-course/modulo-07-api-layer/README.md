@@ -309,7 +309,7 @@ export async function createAuthedContext(
 - **Por qué:** `Pizza` y `Order` necesitan **token y mercado**, a diferencia de `Auth` (que aún no tiene token). El header `X-Country-Code` hace que el backend filtre por mercado. `PizzaService` es la base del **reto** (le añadirás métodos después).
 - **Cómo verifico:** `pnpm exec tsc --noEmit` verde con las 3 hijas implementadas.
 
-> 🔎 **Pruébalo en Swagger (sin código):** `GET /api/pizzas` (⚠️ **requiere auth** — primero pega el token con **Authorize**) → añade el header `X-Country-Code: MX` → **Execute** → verás el catálogo con precios por mercado. Es lo que devuelve `PizzaService.list()`. Cambia el header a `US`/`CH`/`JP` y observa cómo cambia la `currency`. [Abrir Swagger](https://omnipizza-backend.onrender.com/api/docs)
+> 🔎 **Pruébalo en Swagger (sin código):** `GET /api/pizzas` (⚠️ **requiere auth** — primero pega el token con **Authorize**) → añade el header `X-Country-Code: MX` → **Execute** → verás el catálogo con precios por mercado. Es lo que devuelve `PizzaService.list()`. Cambia el header a `US`/`CH`/`JP`/`SA` y observa cómo cambia la `currency`. [Abrir Swagger](https://omnipizza-backend.onrender.com/api/docs)
 
 ```ts
 import { BaseService } from "./BaseService";
@@ -584,12 +584,12 @@ Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hac
 | Endpoint | Método | ¿Requiere auth? | Headers relevantes | Lo envuelve |
 |---|---|---|---|---|
 | `/api/auth/login` | POST | No | — | `AuthService.login()` |
-| `/api/pizzas` | GET | **Sí** (Bearer) | `X-Country-Code` (MX/US/CH/JP), `X-Language` (opc.) | `PizzaService.list()` |
+| `/api/pizzas` | GET | **Sí** (Bearer) | `X-Country-Code` (MX/US/CH/JP/SA), `X-Language` (opc.) | `PizzaService.list()` |
 | `/api/checkout` | POST | **Sí** (Bearer) | `Authorization: Bearer`, `X-Country-Code` | `OrderService.createOrder()` |
 | `/api/orders` | GET | **Sí** (Bearer) | `Authorization: Bearer` | `OrderService.listMine()` |
 | `/api/orders/{order_id}` | GET | **Sí** (Bearer) | `Authorization: Bearer` | (detalle de una orden) |
 
-> **Headers transversales:** `Authorization: Bearer <token>` autentica cualquier endpoint protegido. `X-Country-Code` (uno de **MX / US / CH / JP**) elige el mercado y por tanto precios/moneda. `X-Language` (**en / es / de / fr / ja**, opcional) traduce los textos de la respuesta.
+> **Headers transversales:** `Authorization: Bearer <token>` autentica cualquier endpoint protegido. `X-Country-Code` (uno de **MX / US / CH / JP / SA**) elige el mercado y por tanto precios/moneda. `X-Language` (**en / es / de / fr / ja**, opcional) traduce los textos de la respuesta.
 
 > 💡 **Crear vs. leer órdenes:** la orden **se crea con `POST /api/checkout`**, mientras que `/api/orders` es solo lectura (historial y detalle). Por eso `OrderService.createOrder()` postea a `/api/checkout` y `listMine()` hace `GET` sobre `/api/orders` (ver la nota del Paso 2.4 para el porqué del diseño).
 
@@ -611,7 +611,7 @@ Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hac
 
 > ⚠️ **Pega SOLO el token, sin la palabra `Bearer`.** El esquema HTTP Bearer de Swagger ya antepone `Bearer ` por ti. Si pegas `Bearer eyJ...` se duplica el prefijo (`Bearer Bearer ...`) y obtendrás **401**.
 
-**4 — Ejecuta un endpoint protegido (`GET /api/pizzas`).** Expande **`GET /api/pizzas`** (⚠️ requiere auth — por eso el paso 3 va primero) → **"Try it out"** → en el campo del header **`X-Country-Code`** escribe **`MX`** → **Execute**. Verás el catálogo de pizzas con **precios en la moneda del mercado**. Cambia `X-Country-Code` a `US` / `CH` / `JP` y vuelve a **Execute**: los precios y la `currency` cambian. (Esto es exactamente lo que itera `ejemplo.spec.ts` con su `for (const market of markets)`.)
+**4 — Ejecuta un endpoint protegido (`GET /api/pizzas`).** Expande **`GET /api/pizzas`** (⚠️ requiere auth — por eso el paso 3 va primero) → **"Try it out"** → en el campo del header **`X-Country-Code`** escribe **`MX`** → **Execute**. Verás el catálogo de pizzas con **precios en la moneda del mercado**. Cambia `X-Country-Code` a `US` / `CH` / `JP` / `SA` y vuelve a **Execute**: los precios y la `currency` cambian. (Esto es exactamente lo que itera `ejemplo.spec.ts` con su `for (const market of markets)`.)
 
 **5 — Crea una orden y míralas (`POST /api/checkout` → `GET /api/orders`).** Expande **`POST /api/checkout`** (el que **crea** la orden) → **"Try it out"** → pega un body válido. Un body mínimo para **MX** (toma un `pizza_id` real del catálogo del paso 4):
 
@@ -629,7 +629,7 @@ Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hac
 
 → **Execute**. La respuesta (2xx) confirma la orden creada con su `order_id`.
 
-> ⚠️ Si recibes **422**, al body le falta un campo **requerido**: revisa que `pizza_id` exista (cópialo del paso 4) y que esté el **campo de dirección del mercado** — el único obligatorio por mercado: en **MX** `colonia`, en **US** `zip_code` (5 dígitos), en **CH** `plz`, en **JP** `prefectura`. La **propina es opcional** y NO causa 422 si la omites (`propina` en MX, `tip` en US, `trinkgeld` en CH, `chip` en JP).
+> ⚠️ Si recibes **422**, al body le falta un campo **requerido**: revisa que `pizza_id` exista (cópialo del paso 4) y que esté el **campo de dirección del mercado** — el único obligatorio por mercado: en **MX** `colonia`, en **US** `zip_code` (5 dígitos), en **CH** `plz`, en **JP** `prefectura`, en **SA** `district`. La **propina es opcional** y NO causa 422 si la omites (`propina` en MX, `tip` en US, `trinkgeld` en CH, `chip` en JP).
 
 Después, expande **`GET /api/orders`** → **Execute** → verás el **historial** con la orden que acabas de crear. Y **`GET /api/orders/{order_id}`** → pega el `order_id` de arriba → **Execute** → verás el **detalle** de esa orden.
 

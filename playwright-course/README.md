@@ -13,7 +13,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | Swagger | https://omnipizza-backend.onrender.com/api/docs |
 | Stack | React + Vite (front), FastAPI (back) |
 | Auth | JWT con usuarios deterministas |
-| Mercados | MX / US / CH / JP |
+| Mercados | MX / US / CH / JP / SA |
 | Duración | 7 – 9 horas, 10 módulos (M00 + 9) |
 
 > ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M06) absorbe ese cold start con un timeout generoso.

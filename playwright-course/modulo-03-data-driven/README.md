@@ -1,7 +1,7 @@
 # Módulo 03 — Data-driven testing
 
 **Duración estimada:** 45-60 min
-**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M02 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 4 mercados.
+**Pieza que suma al framework:** `types/omnipizza.d.ts` + `data/users.json` + `data/markets.json`. El smoke de M02 se parametriza con un **bucle `for...of` que registra un `test()` por mercado** contra los 5 mercados.
 
 ---
 
@@ -18,7 +18,7 @@ playwright-course/
 │   ├── README.md
 │   └── proyecto/                  ← proyecto autocontenido y ejecutable
 │       ├── data/                  ← 🆕 datasets de prueba
-│       │   ├── markets.json       ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
+│       │   ├── markets.json       ← 🆕 MX / US / CH / JP / SA (code, fullName, country, currency)
 │       │   └── users.json         ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 │       ├── types/                 ← 🆕 contratos del dominio
 │       │   ├── index.ts           ← 🆕 barrel: re-exporta lo de omnipizza
@@ -28,7 +28,7 @@ playwright-course/
 │       ├── .env.example, .gitignore
 │       └── tests/
 │           ├── ejemplo.spec.ts    ← 🆕 for...of por mercado + lookup map
-│           └── reto.spec.ts       ← 🆕 añadir 5º mercado (CA) sin tocar el spec
+│           └── reto.spec.ts       ← 🆕 añadir 6º mercado (CA) sin tocar el spec
 └── …
 ```
 
@@ -79,7 +79,7 @@ Un tester manual siempre trae consigo una **hoja de datos de prueba** (usuarios,
 |---|---|
 | `interface User` | Contrato Swagger: un User DEBE tener username, password, role |
 | union / literal types (`"MX" \| "US"`) | Lista cerrada de valores legales (como un enum de negocio) |
-| `for (const market of markets) { test(...) }` | Matriz de regresión: 1 TC × 4 mercados = 4 ejecuciones (un `test()` registrado por vuelta) |
+| `for (const market of markets) { test(...) }` | Matriz de regresión: 1 TC × 5 mercados = 5 ejecuciones (un `test()` registrado por vuelta) |
 | `import type { User }` | Sólo traigo la forma, no el código |
 | `locator.all()` | Obtener el array de locators — como pedir todas las filas de una tabla |
 | `Record<K, V>` | Matriz de datos esperados: TODAS las celdas obligatorias |
@@ -129,7 +129,7 @@ const symbols: {
 
 **Para qué sirve:** el compilador exige que las llaves sean **exactamente** los valores del union. Si escribes `MNX` (typo) o se te olvida `USD`, TypeScript falla.
 
-**Analogía QA:** es la **matriz de datos esperados** del test plan. Las dimensiones (las 5 currencies del negocio) están cerradas; `Record` te obliga a llenar **cada celda**.
+**Analogía QA:** es la **matriz de datos esperados** del test plan. Las dimensiones (las 5 currencies de este ejemplo) están cerradas; `Record` te obliga a llenar **cada celda**.
 
 ### 2. `Partial<T>` — "haz que todas las propiedades de `T` sean opcionales"
 
@@ -331,8 +331,8 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 - **Qué hago:** defino los union types y las `interface` del dominio.
   ```ts
   // Union types acotados — el corazón del tipado fuerte de este curso.
-  export type CountryCode = "MX" | "US" | "CH" | "JP";
-  export type Currency = "MXN" | "USD" | "CHF" | "JPY";
+  export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA";
+  export type Currency = "MXN" | "USD" | "CHF" | "JPY" | "SAR";
 
   // OmniPizza sólo expone usuarios "customer". Las 5 personas
   // (standard / locked_out / problem / performance_glitch / error)
@@ -369,7 +369,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 > 📚 Lo viste en [TS · M06 — interfaces](../../typescript-qa-course/modulo-06-interfaces/). Aquí lo aplicas a `User`, `Market` y `Pizza`: el contrato que valida `data/*.json`.
 
 > 🔷 **TypeScript — union / literal types (`"MX" | "US" | …`)**
-> Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP"` significa "solo estos 4 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
+> Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP" | "SA"` significa "solo estos 5 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
 > 📚 Lo viste en [TS · M04 — objects & types](../../typescript-qa-course/modulo-04-objects-types/). Aquí lo aplicas a `code` y `currency`: si añades un mercado con un código fuera del union, TS lo rechaza antes de correr.
 
 **2.3 — Crea el barrel (`types/index.ts`)**
@@ -381,14 +381,15 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 - **Cómo verifico:** desde un spec, `import type { Market } from "../types"` autocompleta `Market`.
 
 **2.4 — Rellena los datasets (`data/markets.json`, `data/users.json`)**
-- **Qué hago:** escribo los 4 mercados y los usuarios.
+- **Qué hago:** escribo los 5 mercados y los usuarios.
   ```json
   // data/markets.json — fullName es la PERSONA representante del mercado; country es el país
   [
     { "code": "MX", "fullName": "Juan Pérez",  "country": "México",        "currency": "MXN" },
     { "code": "US", "fullName": "John Doe",    "country": "United States", "currency": "USD" },
     { "code": "CH", "fullName": "Hans Müller", "country": "Switzerland",   "currency": "CHF" },
-    { "code": "JP", "fullName": "Taro Yamada", "country": "Japan",         "currency": "JPY" }
+    { "code": "JP", "fullName": "Taro Yamada", "country": "Japan",         "currency": "JPY" },
+    { "code": "SA", "fullName": "Abdullah Al-Rashid", "country": "Saudi Arabia", "currency": "SAR" }
   ]
   ```
   ```json
@@ -402,7 +403,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   ]
   ```
 - **Por qué:** el dato vive **fuera del código**. Mañana QA puede agregar un mercado tocando solo el JSON; el spec ni se entera. **No hay rol admin en OmniPizza:** las 5 personas comparten `role: "customer"` y se diferencian por **comportamiento de login** (estilo SauceDemo), no por privilegios. Las credenciales (`standard_user` / `pizza123`) son las verificadas; el smoke de M03 usa `standard_user` (el único que llega limpio a `/catalog`).
-- **Cómo verifico:** `cat data/markets.json` muestra 4 entradas; el JSON es válido (sin comas colgantes ni comillas faltantes).
+- **Cómo verifico:** `cat data/markets.json` muestra 5 entradas; el JSON es válido (sin comas colgantes ni comillas faltantes).
 
 **2.5 — Verifica el tipado ANTES de seguir**
 - **Qué hago:** corro el chequeo de tipos del proyecto.
@@ -501,7 +502,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   cat data/users.json
   ```
 - **Por qué:** entender que los valores de `code` y `currency` **no son libres**: están acotados por el union (`"MX" | "US" | "CH" | "JP"`). Si añades `"CA"` sin ampliar el union, TS rechaza el cambio — exactamente el mecanismo que protege el reto.
-- **Cómo verifico:** `markets.json` tiene 4 entradas (MX/US/CH/JP) con `code`/`fullName`/`country`/`currency`; `users.json` lista las 5 personas (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`.
+- **Cómo verifico:** `markets.json` tiene 5 entradas (MX/US/CH/JP/SA) con `code`/`fullName`/`country`/`currency`; `users.json` lista las 5 personas (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`.
 
 ---
 
@@ -510,13 +511,13 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 **6.1 — Corre el smoke parametrizado**
 - **Qué hago:** ejecuto el módulo, idealmente en UI mode la primera vez.
   ```bash
-  pnpm test        # headless — 4 mercados de un solo TC
+  pnpm test        # headless — 5 mercados de un solo TC
   pnpm test:ui     # UI mode — RECOMENDADO la 1ª vez
   ```
-- **Por qué:** ver con tus ojos que **un solo `test()` se registró 4 veces** (uno por mercado) cierra el concepto data-driven. No son 4 tests copy/pasteados: es un `for` que llamó a `test()` cuatro veces.
-- **Cómo verifico:** la terminal muestra **4 tests** verdes — `TC-MX`, `TC-US`, `TC-CH`, `TC-JP` (suelen tardar ~30-40s la 1ª vez por el cold start de Render). En UI mode los 4 cuelgan del mismo describe.
+- **Por qué:** ver con tus ojos que **un solo `test()` se registró 5 veces** (uno por mercado) cierra el concepto data-driven. No son 5 tests copy/pasteados: es un `for` que llamó a `test()` cinco veces.
+- **Cómo verifico:** la terminal muestra **5 tests** verdes — `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, `TC-SA` (suelen tardar ~30-40s la 1ª vez por el cold start de Render). En UI mode los 5 cuelgan del mismo describe.
 
-> 💡 **Para el facilitador:** tras la primera corrida abre `pnpm exec playwright show-report` y muestra los 4 títulos distintos generados por el mismo `test()`. Recalca: **Playwright NO tiene `test.each()`** — esos 4 casos los registró un `for` de JavaScript.
+> 💡 **Para el facilitador:** tras la primera corrida abre `pnpm exec playwright show-report` y muestra los 5 títulos distintos generados por el mismo `test()`. Recalca: **Playwright NO tiene `test.each()`** — esos 5 casos los registró un `for` de JavaScript.
 
 ---
 
@@ -540,7 +541,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   }
   ```
 - **Por qué:** el `for...of` recorre el array y **registra** un `test()` por elemento (no un test que itera por dentro). El título lleva `${market.code}` porque Playwright exige títulos únicos dentro del mismo describe. El CSS `[data-testid^="pizza-card-"]` baja al nivel 4 de la jerarquía a propósito: los testids son dinámicos.
-- **Cómo verifico:** puedo explicar en voz alta por qué hay 4 tests y no 1; por qué el título cambia en cada vuelta; y por qué `toHaveURL` usa regex y no string.
+- **Cómo verifico:** puedo explicar en voz alta por qué hay 5 tests y no 1; por qué el título cambia en cada vuelta; y por qué `toHaveURL` usa regex y no string.
 
 > 🔍 **Detalle que parece obvio — `await expect(page).toHaveURL(/\/catalog/)`**
 > **Qué es:** (en el bloque de navegación al catálogo) el argumento entre `/.../` es una **expresión regular** (regex), **no** un string, y eso es deliberado. Un regex hace *match parcial*: la aserción pasa si la URL **contiene/matchea** `/catalog` en cualquier parte. Un string, en cambio, exige que la URL sea **exactamente** ese valor.
@@ -548,9 +549,9 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 > **Qué pasa si lo cambias:** si pones el string `"/catalog"`, Playwright lo **resuelve contra `baseURL` con `new URL("/catalog", baseURL)`** y compara por **IGUALDAD exacta** de la URL resultante. Como la URL real es algo como `https://.../catalog?...` (o `/mx/catalog`), nunca será literalmente `https://.../catalog` y el test **truena** con un timeout de aserción. Por eso aquí el regex (parcial, robusto) gana al string (igualdad, frágil).
 
 > 🔍 **Detalle que parece obvio — `` test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, ...) ``**
-> **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`: nombres distintos y legibles en el reporte (la regla de títulos únicos ya la viste en el "Por qué").
+> **Qué es:** el título del test es un *template string* que interpola `market.code` en cada vuelta del `for...of` — eso garantiza `TC-MX`, `TC-US`, `TC-CH`, `TC-JP`, `TC-SA`: nombres distintos y legibles en el reporte (la regla de títulos únicos ya la viste en el "Por qué").
 > **Por qué así (y no la alternativa obvia):** además, el tag `@smoke` va **embebido en el título** a propósito: es lo que permite filtrar con `--grep @smoke` (el atajo `pnpm test:smoke`).
-> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 4, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
+> **Qué pasa si lo cambias:** si pones un título fijo (`"TC catálogo"`) para los 5, tendrás títulos duplicados — confusos en el reporte y difíciles de aislar con `--grep` o `-g "TC-MX"`. Si quitas `@smoke`, el caso deja de aparecer en `pnpm test:smoke`.
 
 > 🔍 **Detalle que parece obvio — `page.locator('[data-testid^="pizza-card-"]')`**
 > **Qué es:** un CSS selector con el operador de atributo `^=`, que significa **"el atributo empieza con"**. Aquí matchea cualquier elemento cuyo `data-testid` arranque con `pizza-card-`.
@@ -584,23 +585,23 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 
 ### Paso 8 — Resolver el reto (TODOs propios — no se resuelve aquí)
 
-**8.1 — Añade el 5º mercado SIN tocar el spec**
-- **Qué hago:** abro `reto.spec.ts` y, **sin editar el spec**, toco solo dos archivos: añado Canadá al JSON y amplío los union types.
+**8.1 — Añade el 6º mercado (Canadá) SIN tocar el spec**
+- **Qué hago:** abro `reto.spec.ts` y, **sin editar el spec**, toco solo dos archivos: añado Canadá al JSON y amplío los union types (SA ya es el 5º mercado del base; tú sumas CA como 6º).
   ```json
   // data/markets.json — añadir al final del array
   // (fullName = PERSONA representante del mercado; country = país)
   { "code": "CA", "fullName": "Emily Tremblay", "country": "Canada", "currency": "CAD" }
   ```
   ```ts
-  // types/omnipizza.d.ts — ampliar ambos union
-  export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
-  export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "CAD";
+  // types/omnipizza.d.ts — ampliar ambos union (SA ya está; sumas CA)
+  export type CountryCode = "MX" | "US" | "CH" | "JP" | "SA" | "CA";
+  export type Currency    = "MXN" | "USD" | "CHF" | "JPY" | "SAR" | "CAD";
   ```
 - **Por qué:** es la prueba de fuego del data-driven: si la parametrización está bien hecha, un mercado nuevo aparece como un test extra **sin escribir ni una línea de spec**. Los TODOs (`TODO 1..4`) del reto siguen siendo tuyos — el README **no** los resuelve.
 - **Cómo verifico:**
   ```bash
   pnpm typecheck                                        # verde tras ampliar los union
-  pnpm exec playwright test tests/reto.spec.ts --list   # debe listar 5 tests
+  pnpm exec playwright test tests/reto.spec.ts --list   # debe listar 6 tests
   ```
 
 > 💡 **Para el facilitador:** si `typecheck` se queja con `Type '"CA"' is not assignable to type 'CountryCode'`, es señal de que aún no ampliaron el `.d.ts`. Ese error es la lección: el union type es la red de seguridad.
@@ -651,6 +652,6 @@ cp .env.example .env
 - [ ] Entiendes el patrón **data-driven**: un `for...of` que **registra** un `test()` por dato (no `test.each()`, que Playwright no tiene).
 - [ ] Puedes leer `markets.json` y explicar cómo el test lo consume tipado (`as Market[]`).
 - [ ] Entiendes `Partial<Record<Currency, string>>` y por qué justifica la **guard clause** (`if (!symbol) return;`).
-- [ ] Sabes añadir un 5º mercado **sin tocar el spec** (sólo JSON + union types).
+- [ ] Sabes añadir otro mercado **sin tocar el spec** (sólo JSON + union types).
 - [ ] `pnpm typecheck` queda en verde tras ampliar los union types.
 - [ ] Reconoces por qué `toHaveURL` usa regex (match parcial robusto) y no un string.

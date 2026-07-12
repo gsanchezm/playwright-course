@@ -132,12 +132,13 @@ test.describe("Challenge M03 — extended parameterization", () => {
       //     USD: "$",
       //     CHF: "Fr",
       //     JPY: "¥",
+      //     SAR: "ر.س",   // ← Arabia Saudita (ya en el base)
       //     CAD: "$",     // ← tu nuevo mercado
       //   }[market.currency];
       //   await expect(page.locator("body")).toContainText(symbol);
       //
       // Cómo verificar:
-      //   El test pasa para los 5 mercados. Si el símbolo no aparece,
+      //   El test pasa para los 6 mercados. Si el símbolo no aparece,
       //   revisa qué muestra OmniPizza para esa currency (puede usar
       //   un código distinto como "CA$").
 
@@ -151,7 +152,7 @@ test.describe("Challenge M03 — extended parameterization", () => {
 // 📝 Reflexión final — responde mentalmente:
 // ============================================================
 //
-//   1. ¿Cuántos archivos tocaste para añadir un 5º mercado?
+//   1. ¿Cuántos archivos tocaste para añadir otro mercado?
 //      (Esperado: 2 — markets.json y omnipizza.d.ts.
 //       Si tocaste el spec, perdiste el premio del data-driven.)
 //

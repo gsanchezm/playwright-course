@@ -2,7 +2,7 @@
 // M03 — Data-driven testing (bucle for...of por mercado)
 // ============================================================
 // Avance sobre M02: el smoke de login ahora corre contra los
-// 4 mercados de OmniPizza (MX/US/CH/JP) consumiendo JSON tipado
+// 5 mercados de OmniPizza (MX/US/CH/JP/SA) consumiendo JSON tipado
 // (data/ + types/). Un `for...of` REGISTRA un test() por mercado.
 //
 // La jerarquía de locators ya la practicaste en M02; aquí el foco
@@ -50,7 +50,7 @@ const currencySymbol: Partial<Record<Currency, string>> = {
 test.describe("Smoke parameterized by market (M03)", () => {
   // OJO: Playwright NO tiene `test.each()` (eso es de Jest/Vitest).
   // Para parametrizar, un `for` recorre el array y REGISTRA un
-  // `test()` por dato → 4 TCs independientes (TC-MX, TC-US, ...),
+  // `test()` por dato → 5 TCs independientes (TC-MX, TC-US, ...),
   // no un test que itera por dentro.
   for (const market of markets) {
     test(`TC-${market.code} — login + catalog in market ${market.code} @smoke`, async ({ page }) => {
