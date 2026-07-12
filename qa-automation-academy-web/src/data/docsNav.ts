@@ -155,6 +155,7 @@ export const docsNav: DocSection[] = [
       { slug: "m4-reto", label: "🚩 Reto M4", group: "Módulo 4 · POM" },
       { slug: "m5-guia", label: "5.1 Guía del módulo", group: "Módulo 5 · Fixtures" },
       { slug: "m5-spec", label: "5.2 El spec paso a paso", group: "Módulo 5 · Fixtures" },
+      { slug: "m5-interacciones", label: "5.3 Widgets nuevos", group: "Módulo 5 · Fixtures" },
       { slug: "m5-reto", label: "🚩 Reto M5", group: "Módulo 5 · Fixtures" },
       { slug: "m6-guia", label: "6.1 Guía del módulo", group: "Módulo 6 · Setup" },
       { slug: "m6-reto", label: "🚩 Reto M6", group: "Módulo 6 · Setup" },
