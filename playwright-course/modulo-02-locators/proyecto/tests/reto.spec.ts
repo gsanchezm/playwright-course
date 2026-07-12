@@ -115,7 +115,10 @@ test.describe("Challenge M02 — locator hierarchy in the catalog", () => {
     //   feo, sino por CONTEXTO (buscarlo dentro de su card).
 
 
-    expect(true).toBe(true); // placeholder — quítalo cuando termines los TODOs
+    // ⛔ El reto arranca en ROJO a propósito: esta línea FALLA hasta que
+    //    completes los TODOs de arriba y la BORRES. Así el verde sólo
+    //    llega cuando de verdad localizaste los 3 elementos.
+    expect(false, "Reto sin resolver: completa los TODOs y borra esta línea.").toBe(true);
   });
 });
 

@@ -365,24 +365,22 @@ export { PizzaService } from "./PizzaService";
 
 ### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M07)
 
-> **📐 Config — cambios vs M06**
-> ```diff
+> **📐 Config — el project `api` (snapshot enfocado en API)**
+> ```ts
+>   testDir: ".",
+>   testMatch: [/tests\/.*\.spec\.ts/],   // todos los specs viven bajo tests/
 >   projects: [
->     { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
-> -   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/] },
-> +   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/] },
->     // (mismo testIgnore ampliado para ui-firefox y ui-webkit)
-> +   { name: "api",
-> +     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-> +     testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/] },
+>     { name: "api",
+>       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+>       testMatch: [/tests\/.*\.spec\.ts/] },   // sin storageState, sin dependencies
 >   ]
 > ```
-> **Se mantiene:** projects `setup` + 3 browsers. **Entra:** project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API); y el `testIgnore` de los ui-* ahora excluye también los tests de API para que no se corran como UI.
+> **Enfoque del snapshot:** este `proyecto/` trae **solo** el project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API). Corre contra `API_URL` (backend), no `BASE_URL`. En el mono-repo del curso este project convive con los projects UI (setup + 3 browsers) de M04–M06; aquí, enfocado en la lección de API, es el único.
 
-**3.1 — Añadir el project `api` (sin `storageState`, sin `dependencies`)**
-- **Qué hago:** dentro del array `projects` agrego un cuarto project `api` que solo fija `baseURL` (el backend) y su `testMatch`.
+**3.1 — Definir el project `api` (sin `storageState`, sin `dependencies`)**
+- **Qué hago:** dentro del array `projects` defino el project `api` que solo fija `baseURL` (el backend) y su `testMatch`.
 - **Por qué:** los tests de API se autentican solos — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. NO deben heredar las cookies de UI (la sesión de navegador que el setup deja en `.auth/user.json`) ni esperar al setup project — el aislamiento es intencional.
-- **Cómo verifico:** `pnpm exec playwright test --list --project=api` lista los specs de `tests/api/` y de `modulo-07-api-layer/`.
+- **Cómo verifico:** `pnpm exec playwright test --list --project=api` lista los specs de `tests/` (incluidos los de `tests/api/`).
 
 ```ts
 {
@@ -390,73 +388,56 @@ export { PizzaService } from "./PizzaService";
   use: {
     baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com",
   },
-  testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
 },
 ```
 
 > 🔍 **Detalle que parece obvio — `{ name: "api", ... }` sin `storageState`, sin `dependencies`**
 > **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies: ["setup"]`, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume.
 
-**3.2 — Excluir la carpeta del módulo y `tests/api/` de los `ui-*`**
-- **Qué hago:** amplío el `testIgnore` de `ui-chromium`, `ui-firefox` y `ui-webkit` para que ignoren `tests/api/` y `modulo-07-api-layer/`.
-- **Por qué:** sin esto, los projects de UI intentarían correr los tests de API **sin headers de API** (y arrancando un navegador inútil). Un mismo archivo pertenece o no a un project según las reglas de match/ignore.
-- **Cómo verifico:** `pnpm exec playwright test --list --project=ui-chromium` ya **no** muestra los specs de API.
-
-```ts
-{
-  name: "ui-chromium",
-  // ...
-  testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-},
-// idem en ui-firefox y ui-webkit
-```
+**3.2 — Por qué el project `api` no necesita `testIgnore`**
+- **Qué hago:** confirmo que el project `api` delimita su suite **solo** con `testMatch` (`/tests\/.*\.spec\.ts/`), sin `testIgnore`.
+- **Por qué:** este snapshot enfocado trae **un solo** project (`api`), así que no hay projects de UI que puedan capturar por error los specs de API. (En el mono-repo del curso, donde conviven los projects UI de M04–M06, esos `ui-*` sí llevan un `testIgnore` que excluye `tests/api/` para no correr la suite de API sin headers ni arrancar un navegador inútil — la regla general: un mismo archivo pertenece o no a un project según las reglas de match/ignore.)
+- **Cómo verifico:** `pnpm exec playwright test --list --project=api` muestra los specs de `tests/` (incluidos `tests/api/auth.spec.ts` y `tests/api/pizzas.spec.ts`).
 
 **Estado completo del config en M07:**
 
 ```ts
-// playwright.config.ts — Estado en M07
-import { defineConfig, devices } from "@playwright/test";
-import "dotenv/config";
+// playwright.config.ts — Estado en M07 (enfoque API)
+// ---------------------------------------------------------------------
+// M07 introduce la capa de servicios (services/) para probar la API SIN
+// navegador. El project `api` no usa storageState ni setup: cada servicio
+// crea su propio contexto autenticado vía AuthService. Corre contra
+// API_URL (backend), no BASE_URL (frontend).
+//
+// (En el mono-repo del curso conviven además los projects UI de M04-M06;
+// este snapshot está enfocado en la lección de API, así que solo trae
+// el project `api`.)
 
-const STORAGE_STATE = ".auth/user.json";
+import { defineConfig } from "@playwright/test";
+import "dotenv/config";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
+
   timeout: 60_000,
   expect: { timeout: 10_000 },
+
   reporter: [["html", { open: "never" }], ["list"]],
+
   use: {
-    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
     trace: "retain-on-failure",
-    screenshot: "only-on-failure",
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
   },
+
   projects: [
-    { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
     {
-      name: "ui-chromium",
-      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "ui-firefox",
-      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "ui-webkit",
-      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "api",  // 🆕 sin storageState, sin dependencies
+      // Sin storageState, sin dependencies: la API no pasa por la UI.
+      name: "api",
       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+      testMatch: [/tests\/.*\.spec\.ts/],
     },
   ],
 });
@@ -485,22 +466,19 @@ export default defineConfig({
     "playwright.config.ts",
     "types/**/*.ts",
     "types/**/*.d.ts",
-    "pages/**/*.ts",
-    "services/**/*.ts",
-    "fixtures/**/*.ts",
     "helpers/**/*.ts",
-    "tests/**/*.ts",
-    "modulo-*/**/*.ts"
+    "services/**/*.ts",
+    "tests/**/*.ts"
   ]
 }
 ```
 
-> 💡 **Para el facilitador:** después de añadir el project `api`, muestra **dos comandos lado a lado**:
+> 💡 **Para el facilitador:** en el mono-repo del curso (con los projects UI de M04–M06) puedes mostrar **dos comandos lado a lado** para ver que un mismo archivo pertenece o no a un project según match/ignore:
 > ```bash
 > pnpm exec playwright test --project=ui-chromium tests/api/auth.spec.ts   # se salta (testIgnore)
 > pnpm exec playwright test --project=api                                  # los corre todos
 > ```
-> Eso demuestra en vivo que **el mismo archivo puede pertenecer o no a un project según las reglas de match/ignore**.
+> En este `proyecto/` enfocado solo existe el project `api`, así que `pnpm test:api` los corre todos.
 
 ---
 

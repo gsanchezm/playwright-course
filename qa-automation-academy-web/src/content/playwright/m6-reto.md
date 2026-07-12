@@ -130,7 +130,7 @@ test.describe("Reto M06 — login negativo (locked_out_user)", () => {
     //    AUTENTICADO: copia auth.setup.ts apuntando a una persona que SÍ
     //    entra (problem_user / performance_glitch_user), guarda en
     //    .auth/<persona>.json y declara su project con dependencies:["setup"].
-    expect(true).toBe(true);
+    expect(false, "Reto sin resolver: quita test.skip, completa los TODOs y borra esta línea.").toBe(true);
   });
 });
 

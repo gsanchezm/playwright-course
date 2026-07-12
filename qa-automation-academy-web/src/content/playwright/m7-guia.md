@@ -186,25 +186,23 @@ Los esqueletos mínimos de `BaseService.ts`, `AuthService.ts` y `index.ts` los t
 
 ---
 
-### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M05)
+### Paso 3 — Ajustes a `playwright.config.ts` (estado al terminar M07)
 
-> **📐 Config — cambios vs M04**
-> ```diff
+> **📐 Config — el project `api` (snapshot enfocado en API)**
+> ```ts
+>   testDir: ".",
+>   testMatch: [/tests\/.*\.spec\.ts/],   // todos los specs viven bajo tests/
 >   projects: [
->     { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
-> -   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/] },
-> +   { name: "ui-chromium", ..., testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/] },
->     // (mismo testIgnore ampliado para ui-firefox y ui-webkit)
-> +   { name: "api",
-> +     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-> +     testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/] },
+>     { name: "api",
+>       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+>       testMatch: [/tests\/.*\.spec\.ts/] },   // sin storageState, sin dependencies
 >   ]
 > ```
-> **Se mantiene:** projects `setup` + 3 browsers. **Entra:** project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API); y el `testIgnore` de los ui-* ahora excluye también los tests de API para que no se corran como UI.
+> **Enfoque del snapshot:** este `proyecto/` trae **solo** el project `api` — **sin `storageState` y sin `dependencies`** (aislado a propósito: las cookies de UI no deben contaminar los tests de API). Corre contra `API_URL` (backend), no `BASE_URL`. En el mono-repo del curso este project convive con los projects UI (setup + 3 browsers) de M04–M06; aquí, enfocado en la lección de API, es el único.
 
-Hay que **añadir el project `api`**. NO depende del setup ni hereda storageState.
+Hay que **definir el project `api`**. NO depende del setup ni hereda storageState.
 
-Diff sobre el config de M04: dentro del array `projects`, agrega:
+Dentro del array `projects`:
 
 ```ts
 {
@@ -212,7 +210,7 @@ Diff sobre el config de M04: dentro del array `projects`, agrega:
   use: {
     baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com",
   },
-  testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
 },
 ```
 
@@ -220,73 +218,56 @@ Diff sobre el config de M04: dentro del array `projects`, agrega:
 > **Por qué así (y no la alternativa obvia):** los tests de API se autentican por su cuenta — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. No necesitan la sesión de navegador que el setup deja en `.auth/user.json`.
 > **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies: ["setup"]`, cada corrida de API esperaría al login de UI por navegador — más lento y acoplado a algo que la API no consume. El aislamiento es intencional.
 
-Y **excluye** la carpeta del módulo 5 de los `ui-*` (para que no la corran sin headers de API):
+En este snapshot enfocado hay **un solo** project (`api`), así que no hay projects de UI que excluir — el `testMatch` del project `api` (`/tests\/.*\.spec\.ts/`) ya delimita la suite. (En el mono-repo del curso, los projects UI de M04–M06 llevan un `testIgnore` que excluye `tests/api/` para no correr la suite de API sin headers.)
+
+**Estado completo del config en M07:**
 
 ```ts
-{
-  name: "ui-chromium",
-  // ...
-  testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-},
-// idem en ui-firefox y ui-webkit
-```
+// playwright.config.ts — Estado en M07 (enfoque API)
+// ---------------------------------------------------------------------
+// M07 introduce la capa de servicios (services/) para probar la API SIN
+// navegador. El project `api` no usa storageState ni setup: cada servicio
+// crea su propio contexto autenticado vía AuthService. Corre contra
+// API_URL (backend), no BASE_URL (frontend).
+//
+// (En el mono-repo del curso conviven además los projects UI de M04-M06;
+// este snapshot está enfocado en la lección de API, así que solo trae
+// el project `api`.)
 
-**Estado completo del config en M05:**
-
-```ts
-// playwright.config.ts — Estado en M05
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 import "dotenv/config";
-
-const STORAGE_STATE = ".auth/user.json";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: [/tests\/.*\.(spec|setup)\.ts/, /modulo-.*\/.*\.spec\.ts/],
+  testMatch: [/tests\/.*\.spec\.ts/],
+
   timeout: 60_000,
   expect: { timeout: 10_000 },
+
   reporter: [["html", { open: "never" }], ["list"]],
+
   use: {
-    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
     trace: "retain-on-failure",
-    screenshot: "only-on-failure",
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
   },
+
   projects: [
-    { name: "setup", testMatch: /tests\/setup\/.*\.setup\.ts/ },
     {
-      name: "ui-chromium",
-      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "ui-firefox",
-      use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "ui-webkit",
-      use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
-      dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
-    },
-    {
-      name: "api",  // 🆕 sin storageState, sin dependencies
+      // Sin storageState, sin dependencies: la API no pasa por la UI.
+      name: "api",
       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+      testMatch: [/tests\/.*\.spec\.ts/],
     },
   ],
 });
 ```
 
-Añade los scripts de M05 al `package.json`:
+Añade los scripts de M07 al `package.json`:
 
 ```json
 "scripts": {
-  "m5": "playwright test modulo-07-api-layer --project=api",
+  "m7": "playwright test --project=api",
   "test:api": "playwright test --project=api"
 }
 ```
@@ -299,12 +280,9 @@ Y verifica que `tsconfig.json` incluya `services/`:
     "playwright.config.ts",
     "types/**/*.ts",
     "types/**/*.d.ts",
-    "pages/**/*.ts",
-    "services/**/*.ts",
-    "fixtures/**/*.ts",
     "helpers/**/*.ts",
-    "tests/**/*.ts",
-    "modulo-*/**/*.ts"
+    "services/**/*.ts",
+    "tests/**/*.ts"
   ]
 }
 ```
@@ -315,13 +293,12 @@ Y verifica que `tsconfig.json` incluya `services/`:
 
 - **Comando del módulo (project api):** `pnpm m7`
 - **Suite API completa:** `pnpm test:api`
-- **UI mode:** `pnpm test:ui`
-- **Debug:** `pnpm test:debug`
-- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@regression"`) o por archivo (`pnpm exec playwright test modulo-07-api-layer/reto.spec.ts --project=api`)
+- **Verificar tipos:** `pnpm typecheck`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@regression"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts --project=api`)
 - **Ver el reporte:** `pnpm report`
 - **🪟 Windows / PowerShell:** las variables de entorno van con `$env:VAR="x"; pnpm m7` (no `VAR=x pnpm m7`). Ej.: `$env:API_URL="https://mi-backend"; pnpm m7`
 
-> M05 corre contra el **backend** (`API_URL`), no el frontend (`BASE_URL`). El project `api` ya apunta a `process.env.API_URL ?? "https://omnipizza-backend.onrender.com"`.
+> M07 corre contra el **backend** (`API_URL`), no el frontend (`BASE_URL`). El project `api` ya apunta a `process.env.API_URL ?? "https://omnipizza-backend.onrender.com"`.
 
 ---
 
