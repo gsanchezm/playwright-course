@@ -14,7 +14,7 @@ Aparecen **dos carpetas nuevas**: `data/` (los datasets) y `types/` (los contrat
 ```
 playwright-course/
 ├── data/                          ← 🆕 datasets de prueba
-│   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, currency)
+│   ├── markets.json               ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
 │   └── users.json                 ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 ├── types/                         ← 🆕 contratos del dominio
 │   ├── index.ts                   ← 🆕 barrel: re-exporta lo de omnipizza
@@ -333,6 +333,7 @@ export type Role = "customer";
 export interface Market {
   code: CountryCode;
   fullName: string;
+  country: string;
   currency: Currency;
 }
 
@@ -369,10 +370,10 @@ export * from "./omnipizza";
 
 ```json
 [
-  { "code": "MX", "fullName": "Mexico",        "currency": "MXN" },
-  { "code": "US", "fullName": "United States", "currency": "USD" },
-  { "code": "CH", "fullName": "Switzerland",   "currency": "CHF" },
-  { "code": "JP", "fullName": "Japan",         "currency": "JPY" }
+  { "code": "MX", "fullName": "Juan Pérez",  "country": "México",        "currency": "MXN" },
+  { "code": "US", "fullName": "John Smith",  "country": "United States", "currency": "USD" },
+  { "code": "CH", "fullName": "Hans Müller", "country": "Switzerland",   "currency": "CHF" },
+  { "code": "JP", "fullName": "Yuki Tanaka", "country": "Japan",         "currency": "JPY" }
 ]
 ```
 
@@ -482,7 +483,7 @@ cat data/users.json
 
 Cosas a observar:
 
-- `markets.json` tiene **4 entradas**: MX, US, CH, JP. Cada una con `code`, `fullName`, `currency`.
+- `markets.json` tiene **4 entradas**: MX, US, CH, JP. Cada una con `code`, `fullName`, `country`, `currency`.
 - `users.json` lista las **5 personas** de OmniPizza (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`. Vamos a usar `standard_user`.
 - Los valores de `code` y `currency` están restringidos por **union types** en `types/omnipizza.d.ts` (`"MX" | "US" | "CH" | "JP"`). Si añades `"CA"` sin ampliar el union, TS rechaza el cambio — exactamente el mecanismo que protege el reto.
 

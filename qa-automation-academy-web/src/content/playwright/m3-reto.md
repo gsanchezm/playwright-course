@@ -57,7 +57,8 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //   A) data/markets.json — añade al final del array:
   //        {
   //          "code": "CA",
-  //          "fullName": "Canada",
+  //          "fullName": "Marie Tremblay",
+  //          "country": "Canada",
   //          "currency": "CAD"
   //        }
   //
@@ -74,7 +75,7 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
 
   for (const market of markets) {
-    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — catalog loads in ${market.country}`, async ({
       page,
     }) => {
       // ────────────────────────────────────────────────────────

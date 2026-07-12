@@ -18,7 +18,7 @@ playwright-course/
 │   ├── README.md
 │   └── proyecto/                  ← proyecto autocontenido y ejecutable
 │       ├── data/                  ← 🆕 datasets de prueba
-│       │   ├── markets.json       ← 🆕 MX / US / CH / JP (code, fullName, currency)
+│       │   ├── markets.json       ← 🆕 MX / US / CH / JP (code, fullName, country, currency)
 │       │   └── users.json         ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 │       ├── types/                 ← 🆕 contratos del dominio
 │       │   ├── index.ts           ← 🆕 barrel: re-exporta lo de omnipizza
@@ -343,6 +343,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   export interface Market {
     code: CountryCode;
     fullName: string;
+    country: string;
     currency: Currency;
   }
 
@@ -382,12 +383,12 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 **2.4 — Rellena los datasets (`data/markets.json`, `data/users.json`)**
 - **Qué hago:** escribo los 4 mercados y los usuarios.
   ```json
-  // data/markets.json
+  // data/markets.json — fullName es la PERSONA representante del mercado; country es el país
   [
-    { "code": "MX", "fullName": "Mexico",        "currency": "MXN" },
-    { "code": "US", "fullName": "United States", "currency": "USD" },
-    { "code": "CH", "fullName": "Switzerland",   "currency": "CHF" },
-    { "code": "JP", "fullName": "Japan",         "currency": "JPY" }
+    { "code": "MX", "fullName": "Juan Pérez",  "country": "México",        "currency": "MXN" },
+    { "code": "US", "fullName": "John Doe",    "country": "United States", "currency": "USD" },
+    { "code": "CH", "fullName": "Hans Müller", "country": "Switzerland",   "currency": "CHF" },
+    { "code": "JP", "fullName": "Taro Yamada", "country": "Japan",         "currency": "JPY" }
   ]
   ```
   ```json
@@ -500,7 +501,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   cat data/users.json
   ```
 - **Por qué:** entender que los valores de `code` y `currency` **no son libres**: están acotados por el union (`"MX" | "US" | "CH" | "JP"`). Si añades `"CA"` sin ampliar el union, TS rechaza el cambio — exactamente el mecanismo que protege el reto.
-- **Cómo verifico:** `markets.json` tiene 4 entradas (MX/US/CH/JP) con `code`/`fullName`/`currency`; `users.json` lista las 5 personas (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`.
+- **Cómo verifico:** `markets.json` tiene 4 entradas (MX/US/CH/JP) con `code`/`fullName`/`country`/`currency`; `users.json` lista las 5 personas (`standard_user`, `locked_out_user`, `problem_user`, `performance_glitch_user`, `error_user`), todas con `role: "customer"`.
 
 ---
 
@@ -587,7 +588,8 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 - **Qué hago:** abro `reto.spec.ts` y, **sin editar el spec**, toco solo dos archivos: añado Canadá al JSON y amplío los union types.
   ```json
   // data/markets.json — añadir al final del array
-  { "code": "CA", "fullName": "Canada", "currency": "CAD" }
+  // (fullName = PERSONA representante del mercado; country = país)
+  { "code": "CA", "fullName": "Emily Tremblay", "country": "Canada", "currency": "CAD" }
   ```
   ```ts
   // types/omnipizza.d.ts — ampliar ambos union

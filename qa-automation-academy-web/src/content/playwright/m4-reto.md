@@ -56,7 +56,7 @@ const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("Challenge M04 — E2E checkout with POM", () => {
   for (const market of markets) {
-    test(`Challenge-${market.code} — complete checkout in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — complete checkout in ${market.country}`, async ({
       page,
     }) => {
       // Instanciamos los 3 Page Objects con el mismo `page`.
@@ -151,7 +151,7 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
       // Criterio de éxito:
       //   El test termina en VERDE para los 4 mercados.
       //   En la terminal verás:
-      //     ✓ Challenge-MX — complete checkout in Mexico
+      //     ✓ Challenge-MX — complete checkout in México
       //     ✓ Challenge-US — complete checkout in United States
       //     ✓ Challenge-CH — complete checkout in Switzerland
       //     ✓ Challenge-JP — complete checkout in Japan

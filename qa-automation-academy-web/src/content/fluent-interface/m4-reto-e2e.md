@@ -46,7 +46,7 @@ const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("Reto M4 — E2E fluido: login → catálogo → checkout", () => {
   for (const market of markets) {
-    test(`Reto-${market.code} — checkout completo en ${market.fullName}`, async ({ page }) => {
+    test(`Reto-${market.code} — checkout completo en ${market.country}`, async ({ page }) => {
       const loginPage = new LoginPage(page);
       const checkoutPage = new CheckoutPage(page);
 

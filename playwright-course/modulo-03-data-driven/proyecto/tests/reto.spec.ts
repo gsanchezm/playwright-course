@@ -38,9 +38,15 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //   A) data/markets.json — añade al final del array:
   //        {
   //          "code": "CA",
-  //          "fullName": "Canada",
-  //          "currency": "CAD"
+  //          "currency": "CAD",
+  //          "fullName": "Emily Tremblay",
+  //          "country": "Canada",
+  //          "phone": "+1 416 555 0199",
+  //          "address": "100 Queen St W",
+  //          "zipCode": "M5H 2N2",
+  //          "taxRate": 0.13
   //        }
+  //      (fullName es la PERSONA representante del mercado; country es el país.)
   //
   //   B) types/omnipizza.d.ts — amplía los union types:
   //        export type CountryCode = "MX" | "US" | "CH" | "JP" | "CA";
@@ -55,7 +61,7 @@ test.describe("Challenge M03 — extended parameterization", () => {
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
 
   for (const market of markets) {
-    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — catalog loads in ${market.country}`, async ({
       page,
     }) => {
       // ────────────────────────────────────────────────────────

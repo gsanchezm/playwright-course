@@ -442,7 +442,7 @@ export default defineConfig({
 
   test.describe("POM — login + catalog per market (M04)", () => {
     for (const market of markets) {
-      test(`TC-${market.code} — clean flow in ${market.fullName} @smoke`, async ({ page }) => {
+      test(`TC-${market.code} — clean flow in ${market.country} @smoke`, async ({ page }) => {
         const loginPage = new LoginPage(page);
         const catalogPage = new CatalogPage(page);
 

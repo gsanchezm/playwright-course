@@ -35,7 +35,7 @@ const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("Challenge M04 — E2E checkout with POM", () => {
   for (const market of markets) {
-    test(`Challenge-${market.code} — complete checkout in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — complete checkout in ${market.country}`, async ({
       page,
     }) => {
       // Instanciamos los 3 Page Objects con el mismo `page`.

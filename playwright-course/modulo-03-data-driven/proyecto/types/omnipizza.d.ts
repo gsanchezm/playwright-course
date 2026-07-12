@@ -27,6 +27,7 @@ export interface Market {
   code: CountryCode;
   currency: Currency;
   fullName: string;
+  country: string;
   phone: string;
   address: string;
   colonia?: string;

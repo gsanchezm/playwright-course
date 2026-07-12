@@ -30,7 +30,7 @@ const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("Fluent — login + catálogo por mercado", () => {
   for (const market of markets) {
-    test(`TC-${market.code} — flow limpio en ${market.fullName} @smoke`, async ({ page }) => {
+    test(`TC-${market.code} — flow limpio en ${market.country} @smoke`, async ({ page }) => {
       // Fluent: loginInMarket CRUZA a /catalog y DEVUELVE el CatalogPage
       // (encadenable, hereda la cola). El `await` ejecuta el login y luego
       // las assertions encadenadas en una sola expresión.

@@ -63,7 +63,7 @@ const standardUser = users.find((u) => u.username === "standard_user")!;
 
 test.describe("POM — login + catalog per market (M04)", () => {
   for (const market of markets) {
-    test(`TC-${market.code} — clean flow in ${market.fullName} @smoke`, async ({ page }) => {
+    test(`TC-${market.code} — clean flow in ${market.country} @smoke`, async ({ page }) => {
       // El spec ahora se lee como user story, no como instrucción técnica.
       const loginPage = new LoginPage(page);
       const catalogPage = new CatalogPage(page);
