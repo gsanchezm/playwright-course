@@ -1,5 +1,5 @@
 // ============================================================
-// 🚩 Reto M03 — Flujo E2E completo con POM
+// 🚩 Reto M04 — Flujo E2E completo con POM
 // ============================================================
 // Objetivo pedagógico: sentir cuánto cambia el ESTILO de escribir
 // un E2E cuando todas las pantallas tienen su Page Object.
@@ -13,7 +13,7 @@
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m3 corre en verde (POM básico funciona).
+//   ✔ pnpm m4 corre en verde (POM básico funciona).
 //   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
 //
 // ▶ Cómo correr SOLO este reto:
@@ -33,9 +33,9 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("Challenge M03 — E2E checkout with POM", () => {
+test.describe("Challenge M04 — E2E checkout with POM", () => {
   for (const market of markets) {
-    test(`Challenge-${market.code} — complete checkout in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — complete checkout in ${market.country}`, async ({
       page,
     }) => {
       // Instanciamos los 3 Page Objects con el mismo `page`.
@@ -156,7 +156,7 @@ test.describe("Challenge M03 — E2E checkout with POM", () => {
 //      ¿este reto se rompe? (Esperado: NO — se ejecuta una vez más
 //      sin que toques este archivo.)
 //
-// 👉 En M04 vas a eliminar incluso la línea de login: un
+// 👉 En M06 vas a eliminar incluso la línea de login: un
 //    `auth.setup.ts` se ejecutará UNA sola vez y todos los TCs
 //    arrancarán ya autenticados.
 // ============================================================

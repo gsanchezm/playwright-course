@@ -1,5 +1,5 @@
 // ============================================================
-// M04 — Fixtures custom + storageState heredado
+// M05 — Fixtures custom + storageState heredado
 // ============================================================
 // NOTA: este spec corre en project `ui-chromium` que declara
 // `dependencies: ['setup']`. Antes de ejecutarlo, Playwright
@@ -12,7 +12,7 @@
 
 import { test, expect } from "../fixtures/omnipizza";
 
-test.describe("Fixtures + storageState (M04)", () => {
+test.describe("Fixtures + storageState (M05)", () => {
   test("lands directly on the catalog thanks to the setup project @smoke", async ({ page, catalogPage }) => {
     // ⚠️ No hay llamada a login. El storageState ya trajo la sesión.
     await page.goto("/catalog");
@@ -40,7 +40,7 @@ test.describe("Fixtures + storageState (M04)", () => {
 //   - Quieres determinismo absoluto en tests de red.
 // ============================================================
 
-test.describe("page.route() — network mocking (M04)", () => {
+test.describe("page.route() — network mocking (M05)", () => {
   test("UI shows an error when the API responds 500", async ({ page, catalogPage }) => {
     // 1. Registrar el mock ANTES del navigate
     await page.route("**/api/pizzas*", (route) => {
@@ -77,7 +77,7 @@ test.describe("page.route() — network mocking (M04)", () => {
 });
 
 // ============================================================
-// Data isolation con workerInfo — prepara el terreno para M05
+// Data isolation con workerInfo — prepara el terreno para M07
 // ============================================================
 
 import { uniqueEmail } from "../helpers/unique-data";

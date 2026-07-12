@@ -1,5 +1,5 @@
 // ============================================================
-// 🚩 Reto M05 — Extender PizzaService con getByMarket y getById
+// 🚩 Reto M07 — Extender PizzaService con getByMarket y getById
 // ============================================================
 // Objetivo pedagógico: practicar el patrón "un método por endpoint"
 // dentro de una clase concreta que extiende BaseService (abstract).
@@ -33,7 +33,7 @@ const mxMarket = markets.find((m) => m.code === "MX")!;
 const API_URL =
   process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-test.describe("Challenge M05 — extend PizzaService", () => {
+test.describe("Challenge M07 — extend PizzaService", () => {
   test.skip("TODO — implement getByMarket and getById, then use both", async () => {
     // ────────────────────────────────────────────────────────
     // TODO 0 — Antes de escribir el test, MODIFICA el servicio
@@ -154,7 +154,7 @@ test.describe("Challenge M05 — extend PizzaService", () => {
     //
     // Criterio de éxito:
     //   El test pasa en VERDE. En la terminal verás:
-    //     ✓ Reto M05 — extender PizzaService
+    //     ✓ Reto M07 — extender PizzaService
 
 
     // ────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ test.describe("Challenge M05 — extend PizzaService", () => {
 //      modificar este test? (Esperado: no, mientras los campos
 //      que validas sigan ahí.)
 //
-// 👉 En M06 llevamos todo esto a CI/CD: este mismo reto correrá
+// 👉 En M08 llevamos todo esto a CI/CD: este mismo reto correrá
 //    automáticamente en GitHub Actions cada vez que abras un PR,
 //    sobre 3 browsers en paralelo, con traces descargables.
 // ============================================================

@@ -42,7 +42,7 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 │   ├── ejemplo.spec.ts             ← 🆕 smoke canary, regression, demo trace
 │   └── reto.md                     ← 🆕 segundo workflow con cron + issues automáticos
 ├── package.json
-├── playwright.config.ts            ← (proyectos: setup, ui-{chromium,firefox,webkit}, api, anonymous)
+├── playwright.config.ts            ← (proyectos: setup, ui-{chromium,firefox,webkit}, api, ui-anon)
 └── tsconfig.json
 ```
 
@@ -331,13 +331,13 @@ jobs:
 >     },
 >     projects: [
 >       // ... setup, ui-chromium/firefox/webkit, api (de M06/M07) ...
-> +     { name: "anonymous", use: { ...devices["Desktop Chrome"] }, testMatch: /tests\/.*\.anon\.spec\.ts/ },
+> +     { name: "ui-anon", use: { ...devices["Desktop Chrome"] }, testMatch: [/modulo-0[1234]-.*\/.*\.spec\.ts/, /tests\/.*\.anon\.spec\.ts/] },
 >     ]
 >   })
 > ```
-> **Se mantiene:** projects `setup` + 3 browsers + `api`. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI), `video: "retain-on-failure"`, y el 5º project `anonymous` (flujos sin sesión: login negativo, signup).
+> **Se mantiene:** projects `setup` + 3 browsers + `api`. **Entra:** flags de CI (`fullyParallel`, `forbidOnly`, `retries`, `workers`), reporters condicionales (`github` + `junit` sólo en CI), `video: "retain-on-failure"`, y el 5º project `ui-anon` (flujos sin sesión: login negativo, signup).
 
-M08 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `anonymous` para flujos negativos.
+M08 añade los **flags de comportamiento en CI**: `fullyParallel`, `retries`, `workers`, reporters extra (`github`, `junit`), `forbidOnly` y un quinto project `ui-anon` para flujos negativos.
 
 **Estado completo del config en M08 (= estado final del framework):**
 
@@ -382,19 +382,19 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "api",
@@ -402,9 +402,10 @@ export default defineConfig({
       testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
     },
     {
-      name: "anonymous",   // 🆕 para tests sin sesión (login negativo, etc.)
+      // 🆕 M01-M04 anónimos (login por UI) + flujos negativos *.anon.spec.ts
+      name: "ui-anon",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: /tests\/.*\.anon\.spec\.ts/,
+      testMatch: [/modulo-0[1234]-.*\/.*\.spec\.ts/, /tests\/.*\.anon\.spec\.ts/],
     },
   ],
 });
@@ -424,7 +425,7 @@ export default defineConfig({
 | `forbidOnly: !!process.env.CI` | Hace fallar el job si dejaste un `test.only(...)` por error |
 | `reporter: process.env.CI ? [...] : [...]` | `github` annotations + `junit` para integración externa |
 | `video: "retain-on-failure"` | Video disponible en el HTML report cuando algo se cae |
-| Project `anonymous` | Tests sin storageState (login negativo, signup flows) |
+| Project `ui-anon` | Tests sin storageState (login negativo, signup flows) |
 
 > 🔍 **Detalle que parece obvio — `retries: process.env.CI ? 2 : 0`**
 > **Qué es:** dos reintentos automáticos cuando un test falla en CI; **cero** reintentos cuando corres en local.

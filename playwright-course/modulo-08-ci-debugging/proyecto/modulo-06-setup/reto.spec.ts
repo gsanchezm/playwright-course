@@ -1,5 +1,5 @@
 // ============================================================
-// 🚩 Reto M04 — Login negativo (persona bloqueada) + mock con latencia
+// 🚩 Reto M06 — Login negativo (persona bloqueada) + mock con latencia
 // ============================================================
 // Tiene DOS partes independientes:
 //
@@ -19,7 +19,7 @@
 //
 // 🧰 Pre-requisitos:
 //   ✔ pnpm test:setup pasa y existe .auth/user.json
-//   ✔ pnpm m4 corre en verde
+//   ✔ pnpm m6 corre en verde
 //   ✔ Conoces fixtures/omnipizza.ts y sabes qué hace `dependencies`
 //
 // ▶ Cómo correr SOLO este reto:
@@ -46,7 +46,7 @@ import { test, expect } from "../fixtures/omnipizza";
 // login que queremos probar. `storageState: undefined` lo desactiva
 // SOLO para este describe (es el reverso del "storageState por
 // project" que configuraste en el paso 3.1 del README).
-test.describe("Challenge M04 — PART A: negative login (locked_out_user)", () => {
+test.describe("Challenge M06 — PART A: negative login (locked_out_user)", () => {
   test.use({ storageState: undefined });
 
   test.skip("TODO — blocked login shows 'Invalid credentials'", async ({
@@ -110,7 +110,7 @@ test.describe("Challenge M04 — PART A: negative login (locked_out_user)", () =
 // ============================================================
 // PARTE B — Mock con latencia simulada
 // ============================================================
-test.describe("Challenge M04 — PART B: mock with latency @regression", () => {
+test.describe("Challenge M06 — PART B: mock with latency @regression", () => {
   test("slow backend response shows skeleton/loader", async ({
     page,
   }) => {
@@ -193,7 +193,7 @@ test.describe("Challenge M04 — PART B: mock with latency @regression", () => {
 //      ¿el test sería determinista? (Esperado: NO — el tiempo real
 //      varía. Por eso mockeamos.)
 //
-// 👉 En M05 vas a ver la otra cara de la moneda: en lugar de
+// 👉 En M07 vas a ver la otra cara de la moneda: en lugar de
 //    mockear UI, vas a probar la API DIRECTAMENTE con servicios
 //    tipados (BaseService abstracta + factory pattern).
 // ============================================================

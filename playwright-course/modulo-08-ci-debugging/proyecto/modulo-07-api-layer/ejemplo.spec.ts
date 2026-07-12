@@ -1,5 +1,5 @@
 // ============================================================
-// M05 — API Layer con BaseService abstracta
+// M07 — API Layer con BaseService abstracta
 // ============================================================
 // Este ejemplo demuestra:
 //   1. Clase abstracta con método abstracto obligatorio.
@@ -20,7 +20,7 @@ const markets = marketsJson as Market[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 const API_URL = process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-test.describe("M05 — service layer demonstration @api", () => {
+test.describe("M07 — service layer demonstration @api", () => {
   test("full flow: auth → list pizzas by market", async () => {
     // 1. Login via AuthService (clase concreta que extiende BaseService)
     const auth = await AuthService.create(API_URL);

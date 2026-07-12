@@ -1,5 +1,5 @@
 // ============================================================
-// 🚩 Reto M02 — Añadir un 5º mercado sin tocar este spec
+// 🚩 Reto M03 — Añadir un 5º mercado sin tocar este spec
 // ============================================================
 // Objetivo pedagógico: comprobar que la parametrización funciona.
 // Vas a añadir Canadá (CA / CAD) y el test extra se ejecutará
@@ -11,7 +11,7 @@
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m2 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
+//   ✔ pnpm m3 corre en verde con los 4 mercados actuales (MX/US/CH/JP).
 //   ✔ Abres `types/omnipizza.d.ts` y `data/markets.json` en el editor.
 //
 // ▶ Cómo correr SOLO este reto:
@@ -30,7 +30,7 @@ const markets = marketsJson as Market[];
 const users = usersJson as User[];
 const standardUser = users.find((u) => u.username === "standard_user")!;
 
-test.describe("Challenge M02 — extended parameterization", () => {
+test.describe("Challenge M03 — extended parameterization", () => {
   // ────────────────────────────────────────────────────────
   // TODO 0 — Antes de venir aquí, edita estos DOS archivos:
   // ────────────────────────────────────────────────────────
@@ -38,7 +38,8 @@ test.describe("Challenge M02 — extended parameterization", () => {
   //   A) data/markets.json — añade al final del array:
   //        {
   //          "code": "CA",
-  //          "fullName": "Canada",
+  //          "fullName": "Emily Tremblay",
+  //          "country": "Canada",
   //          "currency": "CAD"
   //        }
   //
@@ -55,7 +56,7 @@ test.describe("Challenge M02 — extended parameterization", () => {
   //   type 'CountryCode'", es señal de que aún no actualizaste el .d.ts.
 
   for (const market of markets) {
-    test(`Challenge-${market.code} — catalog loads in ${market.fullName}`, async ({
+    test(`Challenge-${market.code} — catalog loads in ${market.country}`, async ({
       page,
     }) => {
       // ────────────────────────────────────────────────────────
@@ -153,6 +154,6 @@ test.describe("Challenge M02 — extended parameterization", () => {
 //      Pruébalo en tu editor: el tipo se vuelve `any` y pierdes
 //      el autocompletado de `market.code`. Por eso el cast importa.
 //
-// 👉 En M03 vas a refactorizar este bloque de login a una clase
+// 👉 En M04 vas a refactorizar este bloque de login a una clase
 //    POM: 5 líneas se convertirán en 1.
 // ============================================================
