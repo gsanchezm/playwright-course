@@ -41,6 +41,10 @@ const currencySymbol: Partial<Record<Currency, string>> = {
   // La app japonesa renderiza el yen FULL-WIDTH ￥ (U+FFE5) vía
   // Intl.NumberFormat('ja-JP'), NO el half-width ¥ (U+00A5).
   JPY: "￥",
+  // Arabia Saudita (RTL): el riyal se renderiza como "ر.س" — símbolo
+  // inequívoco, así que sí lo validamos (a diferencia de USD/CHF que
+  // dejamos fuera por ambigüedad del "$"/símbolo suizo).
+  SAR: "ر.س",
 };
 
 test.describe("Smoke parameterized by market (M03)", () => {

@@ -5,7 +5,14 @@
 // un E2E cuando todas las pantallas tienen su Page Object.
 //
 // Vas a implementar: login → catálogo → addToCart → checkout →
-// confirmación. Parametrizado por mercado. SIN locators inline.
+// confirmación. Parametrizado por los 5 mercados (MX/US/CH/JP/SA).
+// SIN locators inline.
+//
+// ⚠️ Arabia Saudita (SA) es el market nuevo y trae DOS diferencias
+// reales que este reto te hace descubrir:
+//   · su checkout NO tiene `zip-code`: usa el campo `district`.
+//   · "Place order" abre un MODAL de confirmación (role="dialog")
+//     antes de enviar; hay que confirmarlo.
 //
 // Regla de oro del POM:
 //   "Si necesitas un locator que no existe en su Page, NO lo escribas
@@ -13,7 +20,7 @@
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m4 corre en verde (POM básico funciona).
+//   ✔ pnpm m4 corre en verde con los 5 mercados (MX/US/CH/JP/SA).
 //   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
 //
 // ▶ Cómo correr SOLO este reto:
@@ -97,43 +104,57 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
       // TODO 4 — Rellenar el formulario con datos del mercado
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   `fillWithMarket` rellena nombre, teléfono, dirección y zip
-      //   con datos coherentes para el `market.code`.
+      //   `fillWithMarket` rellena nombre, teléfono, dirección y el
+      //   campo de dirección por mercado.
       //
       // Pista:
       //   await checkoutPage.fillWithMarket(market);
       //
+      // ⚠️ Reto real de SA: el checkout saudí NO tiene `zip-code`,
+      //   tiene `district` (testid `district`). Si `fillWithMarket`
+      //   siempre rellena `zip-code`, el caso SA fallará. Extiende
+      //   `CheckoutPage` para que, según `market.code`, rellene
+      //   `district` (con `market.district`) en SA y `zip-code` en el
+      //   resto. Ésa es la ventaja del POM: el cambio vive en UN
+      //   método, no en 5 tests.
+      //
       // Cómo verificar (UI mode):
-      //   Los 4 inputs del form aparecen rellenados con strings
-      //   distintos según el mercado.
+      //   Los inputs del form aparecen rellenados; en SA se llena
+      //   `district`, no `zip-code`.
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 5 — Confirmar la orden
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Click en el botón "Place order".
-      //
-      // Pista:
-      //   await checkoutPage.placeOrder();
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 6 — Verificar la pantalla de confirmación
+      // TODO 5 — Enviar y CONFIRMAR la orden (2 pasos)
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Aserción de UI: el badge/texto de confirmación aparece.
+      //   "Place order" ya NO envía directo: abre un MODAL de
+      //   confirmación (role="dialog", testid `confirm-order-modal`).
+      //   Hay que hacer click en "Place order" y luego confirmar en
+      //   el modal (`confirm-order-yes`).
+      //
+      // Pista (añade el método de confirmación a CheckoutPage si falta):
+      //   await checkoutPage.placeOrder();     // abre el modal
+      //   await checkoutPage.confirmOrder();   // confirm-order-yes
+
+
+      // ────────────────────────────────────────────────────────
+      // TODO 6 — Verificar la pantalla de éxito (/order-success)
+      // ────────────────────────────────────────────────────────
+      // Qué hacer:
+      //   Tras confirmar, la app navega a /order-success (pantalla
+      //   completa, no modal) con un id de orden generado.
       //
       // Pista:
-      //   await checkoutPage.expectConfirmation();
+      //   await checkoutPage.expectOrderSuccess();
       //
       // Criterio de éxito:
-      //   El test termina en VERDE para los 4 mercados.
+      //   El test termina en VERDE para los 5 mercados.
       //   En la terminal verás:
-      //     ✓ Reto-MX — checkout completo en Mexico
-      //     ✓ Reto-US — checkout completo en United States
-      //     ✓ Reto-CH — checkout completo en Switzerland
-      //     ✓ Reto-JP — checkout completo en Japan
+      //     ✓ Challenge-MX — complete checkout in Mexico
+      //     ✓ Challenge-US — complete checkout in United States
+      //     ✓ Challenge-CH — complete checkout in Switzerland
+      //     ✓ Challenge-JP — complete checkout in Japan
+      //     ✓ Challenge-SA — complete checkout in Saudi Arabia
 
 
       expect(market).toBeDefined(); // placeholder — quítalo cuando termines
@@ -152,9 +173,12 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 //   2. Si OmniPizza renombra el botón "Place order" a "Confirm",
 //      ¿cuántos archivos modificas? (Esperado: 1 — `CheckoutPage.ts`.)
 //
-//   3. Si tu colega añade un mercado nuevo a `markets.json`,
-//      ¿este reto se rompe? (Esperado: NO — se ejecuta una vez más
-//      sin que toques este archivo.)
+//   3. Si tu colega añade un mercado nuevo a `markets.json`, ¿este
+//      reto se rompe? (Esperado: casi nunca — se ejecuta una vez más
+//      solo. La EXCEPCIÓN fue SA: como cambió el CAMPO de dirección
+//      (`district` vs `zip-code`), tocaste UN método del POM, no 5
+//      tests. Ése es el límite sano del data-driven: los DATOS
+//      escalan gratis; un cambio de CONTRATO se absorbe en el POM.)
 //
 // 👉 En M06 vas a eliminar incluso la línea de login: un
 //    `auth.setup.ts` se ejecutará UNA sola vez y todos los TCs
