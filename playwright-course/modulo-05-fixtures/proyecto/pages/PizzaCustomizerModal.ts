@@ -9,9 +9,10 @@
 //
 //    1. NO expone role="dialog" — así que NO sirve
 //       getByRole("dialog"). Nos anclamos por testids del modal.
-//    2. "Choose Size" es REQUIRED: el botón `confirm-add-to-cart`
-//       nace DESHABILITADO y sólo se habilita al elegir un tamaño.
-//       Eso lo usamos como aserción de negocio.
+//    2. "Choose Size" se marca REQUIRED en la UI, pero el botón
+//       `confirm-add-to-cart` NO nace deshabilitado (verificado en
+//       vivo). Buena lección de QA: un "requerido" visual no siempre
+//       bloquea el submit — verifícalo, no lo asumas.
 //
 // Se abre al hacer clic en `add-to-cart-*` del catálogo (ver
 // CatalogPage.openCustomizerForFirst()).
