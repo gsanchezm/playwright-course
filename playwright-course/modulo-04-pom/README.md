@@ -68,6 +68,7 @@ data/markets.json ──► const markets = marketsJson as Market[]
 | Carpeta | Llega en | Para qué |
 |---|---|---|
 | `fixtures/`, `helpers/` | M05 | Inyectar el Page Object + datos únicos por test |
+| `CheckoutPage.confirmOrder()` / `.expectOrderSuccess()` | M05 | Confirmar el modal y llegar a `/order-success` — aquí solo verificas que el modal aparece |
 | `tests/setup/`, `.auth/` | M06 | Eliminar el login UI de cada test (badge heredado) |
 | `services/`, `tests/api/` | M07 | API testing |
 | `.github/workflows/` | M08 | CI/CD |
@@ -343,7 +344,7 @@ pages/
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `CatalogPage` exporta también el tipo `Category` para los filtros.
 
 **5.2 — Construye `CheckoutPage` (checkout `/checkout`)**
-- **Qué hago:** creo `pages/CheckoutPage.ts` en VS Code (`code pages/CheckoutPage.ts`), `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order`, `order-total`, el flujo de confirmación en 2 pasos (`confirm-order-modal` → `confirm-order-yes` → `screen-order-success` con `order-id`), y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation`, `expectTotalContains`.
+- **Qué hago:** creo `pages/CheckoutPage.ts` en VS Code (`code pages/CheckoutPage.ts`), `extends BasePage`, con los inputs del form (`checkout-fullname`, `checkout-phone`, `checkout-address`, `checkout-zip`), `place-order` (abre el modal `confirm-order-modal`), `order-total`, y los métodos `fillWithMarket`, `placeOrder`, `checkoutWith`, `expectLoaded`, `expectConfirmation` (verifica que el modal aparece), `expectTotalContains`. Confirmar el modal y llegar a la pantalla de éxito (`confirm-order-yes` → `screen-order-success`) es contenido de M05.
 - **Por qué:** `CheckoutPage` es la pantalla que usarás en el **reto**. Sus métodos ya están listos para que el reto se enfoque en **orquestar** el flujo E2E, no en escribir locators. `fillWithMarket(market)` rellena los 4 campos con datos coherentes por mercado.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; los métodos públicos aparecen al autocompletar `checkoutPage.` en el spec.
 

@@ -8,8 +8,10 @@ Abre `reto.spec.ts`. Tu trabajo es completar un flujo E2E **login → catálogo 
 
 - `checkoutWith(market)` — atajo: fill + placeOrder.
 - `fillWithMarket(market)` — sólo rellena el form.
-- `placeOrder()` — submit.
-- `expectLoaded()` / `expectConfirmation()` / `expectTotalContains(symbol)`.
+- `placeOrder()` — submit (abre el modal de confirmación).
+- `expectLoaded()` / `expectConfirmation()` (verifica que el modal aparece) / `expectTotalContains(symbol)`.
+
+Confirmar el modal (`confirm-order-yes`) y llegar a la pantalla `/order-success` es contenido de **M05** — aquí basta con que el modal aparezca.
 
 Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
 
@@ -130,38 +132,18 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 5 — Enviar la orden (abre el modal de confirmación)
+      // TODO 5 — Enviar la orden y verificar la confirmación
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Click en el botón "Place order". OJO: el checkout es de 2
-      //   pasos — "Place order" ya NO envía directo, abre un modal de
+      //   Click en "Place order". OJO: el checkout es de 2 pasos —
+      //   "Place order" ya NO envía directo, abre un modal de
       //   confirmación (`confirm-order-modal`, role="dialog").
+      //   Verifica que aparece — confirmarlo y llegar a
+      //   `/order-success` es contenido de M05.
       //
       // Pista:
-      //   await checkoutPage.placeOrder();
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 6 — Confirmar en el modal (paso 2 de 2)
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   En el modal `confirm-order-modal`, click en "Yes" para
-      //   confirmar. Sólo entonces la orden se envía y navegas a
-      //   `/order-success`.
-      //
-      // Pista:
-      //   await page.getByTestId("confirm-order-yes").click();
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 7 — Verificar la pantalla de confirmación
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Aserción de UI: llegaste a `/order-success` — la pantalla
-      //   `screen-order-success` aparece con su `order-id`.
-      //
-      // Pista:
-      //   await checkoutPage.expectConfirmation();
+      //   await checkoutPage.placeOrder();         // abre el modal
+      //   await checkoutPage.expectConfirmation();  // el modal aparece
       //
       // Criterio de éxito:
       //   El test termina en VERDE para los 5 mercados.

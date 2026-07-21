@@ -20,8 +20,11 @@ export class CheckoutPage extends BasePage {
   private txtZip: string = "zip-code";
   private btnPlaceOrder: string = "place-order-btn";
   private lblOrderTotal: string = "order-total";
-  // ⚠️ sin verificar: pantalla post-orden (no se capturó sin enviar el form)
-  private lblOrderConfirmation: string = "order-confirmation";
+  // Verificado en vivo 2026-07-12: "Place order" abre un MODAL de
+  // confirmación (role="dialog"), no envía directo. Confirmarlo y llegar
+  // a la pantalla /order-success es contenido de M05 — aquí solo
+  // comprobamos que el modal aparece.
+  private modalConfirmOrder: string = "confirm-order-modal";
 
   // --- Locators privados ---
   private get fullNameInput(): Locator {
@@ -49,8 +52,8 @@ export class CheckoutPage extends BasePage {
     return this.page.getByTestId(this.lblOrderTotal);
   }
 
-  private get orderConfirmation(): Locator {
-    return this.page.getByTestId(this.lblOrderConfirmation);
+  private get confirmOrderModal(): Locator {
+    return this.page.getByTestId(this.modalConfirmOrder);
   }
 
   // --- Acciones ---
@@ -77,8 +80,10 @@ export class CheckoutPage extends BasePage {
     await expect(this.placeOrderButton).toBeVisible();
   }
 
+  /** Verifica que "Place order" abrió el modal de confirmación (role="dialog"). */
   async expectConfirmation(): Promise<void> {
-    await expect(this.orderConfirmation).toBeVisible({ timeout: 20_000 });
+    await expect(this.confirmOrderModal).toBeVisible({ timeout: 20_000 });
+    await expect(this.page.getByRole("dialog")).toBeVisible();
   }
 
   async expectTotalContains(currencySymbol: string): Promise<void> {

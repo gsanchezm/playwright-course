@@ -12,7 +12,8 @@
 // reales que este reto te hace descubrir:
 //   · su checkout NO tiene `zip-code`: usa el campo `district`.
 //   · "Place order" abre un MODAL de confirmación (role="dialog")
-//     antes de enviar; hay que confirmarlo.
+//     en vez de enviar directo (confirmarlo y llegar a la pantalla
+//     de éxito es contenido de M05 — aquí basta con que aparezca).
 //
 // Regla de oro del POM:
 //   "Si necesitas un locator que no existe en su Page, NO lo escribas
@@ -124,28 +125,17 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 
 
       // ────────────────────────────────────────────────────────
-      // TODO 5 — Enviar y CONFIRMAR la orden (2 pasos)
+      // TODO 5 — Enviar la orden y verificar la confirmación
       // ────────────────────────────────────────────────────────
       // Qué hacer:
       //   "Place order" ya NO envía directo: abre un MODAL de
       //   confirmación (role="dialog", testid `confirm-order-modal`).
-      //   Hay que hacer click en "Place order" y luego confirmar en
-      //   el modal (`confirm-order-yes`).
-      //
-      // Pista (añade el método de confirmación a CheckoutPage si falta):
-      //   await checkoutPage.placeOrder();     // abre el modal
-      //   await checkoutPage.confirmOrder();   // confirm-order-yes
-
-
-      // ────────────────────────────────────────────────────────
-      // TODO 6 — Verificar la pantalla de éxito (/order-success)
-      // ────────────────────────────────────────────────────────
-      // Qué hacer:
-      //   Tras confirmar, la app navega a /order-success (pantalla
-      //   completa, no modal) con un id de orden generado.
+      //   Verifica que aparece — confirmarlo (`confirm-order-yes`) y
+      //   llegar a la pantalla `/order-success` es contenido de M05.
       //
       // Pista:
-      //   await checkoutPage.expectOrderSuccess();
+      //   await checkoutPage.placeOrder();       // abre el modal
+      //   await checkoutPage.expectConfirmation(); // el modal aparece
       //
       // Criterio de éxito:
       //   El test termina en VERDE para los 5 mercados.

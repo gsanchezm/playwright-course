@@ -7,6 +7,7 @@
 - `services/BaseService.ts` — **clase abstracta** (primera aparición del término en el curso).
 - `services/AuthService.ts`, `OrderService.ts`, `PizzaService.ts`.
 - `tests/api/*.spec.ts` — suite API pura.
+- `types/omnipizza.d.ts` **se amplía**: `Pizza`, `LoginResponse`, `PizzasResponse`, `OrderPayload`, `Order`, `ApiError` — los contratos de request/response que hasta ahora no hacían falta (M03–M06 solo tocan la app por UI).
 
 ---
 
@@ -32,7 +33,7 @@ playwright-course/
 │   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo
 │   │   └── pizzas.spec.ts         ← 🆕 data-driven por mercado
 │   └── setup/                     ← (M06 — UI; api NO depende de esto)
-├── types/                         ← (M03 — los mismos contratos sirven a UI y API)
+├── types/omnipizza.d.ts           ← ✏️ AMPLÍA — +Pizza, LoginResponse, PizzasResponse, OrderPayload, Order, ApiError (M03 trajo User/Market/Currency/CountryCode/Role)
 ├── modulo-07-api-layer/           ← 🆕 ESTE MÓDULO
 │   ├── README.md
 │   ├── ejemplo.spec.ts            ← 🆕 flujo: auth → list pizzas by market

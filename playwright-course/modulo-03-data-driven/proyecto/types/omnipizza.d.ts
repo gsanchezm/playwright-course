@@ -25,7 +25,7 @@ export interface User {
   role: Role;
   description?: string;
 }
- 
+
 export interface Market {
   code: CountryCode;
   currency: Currency;
@@ -39,61 +39,7 @@ export interface Market {
   taxRate?: number;
 }
 
-export interface Pizza {
-  id: string | number;
-  name: string;
-  price: number;
-  currency: Currency;
-  description?: string;
-  category?: string;
-  imageUrl?: string;
-}
-
-export interface LoginResponse {
-  access_token: string;
-  token_type?: string;
-  username?: string;
-}
-
-export interface PizzasResponse {
-  pizzas: Pizza[];
-}
-
-// Body de POST /api/checkout (snake_case, como lo espera el backend FastAPI
-// de OmniPizza). El nombre/dirección/teléfono van planos (no anidados en
-// `customer`) y los items usan `pizza_id` (no `pizzaId`). Además del bloque
-// común, el backend exige el CAMPO DE DIRECCIÓN según `country_code` (MX:
-// `colonia`, US: `zip_code`, CH: `plz`, JP: `prefectura`, SA: `district`); la propina
-// (`propina`/`tip`/`trinkgeld`/`chip`) es OPCIONAL. Por eso los campos por
-// mercado se modelan como opcionales aquí.
-export interface OrderPayload {
-  country_code: CountryCode;
-  items: Array<{ pizza_id: string | number; quantity: number }>;
-  name: string;
-  address: string;
-  phone: string;
-  // Campos por mercado — el de dirección es requerido por el backend según
-  // `country_code`; la propina es opcional.
-  colonia?: string;
-  propina?: number;
-  zip_code?: string;
-  tip?: number;
-  plz?: string;
-  trinkgeld?: number;
-  prefectura?: string;
-  district?: string;
-  chip?: number;
-}
-
-export interface Order {
-  id: string;
-  status: "pending" | "confirmed" | "delivered" | "cancelled";
-  total: number;
-  currency: Currency;
-  createdAt: string;
-}
-
-export interface ApiError {
-  detail: string | Array<{ msg: string; loc?: string[] }>;
-  statusCode?: number;
-}
+// Los contratos de la capa de API (Pizza, LoginResponse, PizzasResponse,
+// OrderPayload, Order, ApiError) todavía NO existen aquí: este módulo solo
+// consume el catálogo por UI (locators), nunca por HTTP directo. Llegan en
+// M07 — API Layer, cuando `services/` los consume por primera vez.

@@ -22,7 +22,7 @@ playwright-course/
 │       │   └── users.json         ← 🆕 5 personas: standard_user, locked_out_user, problem_user, performance_glitch_user, error_user
 │       ├── types/                 ← 🆕 contratos del dominio
 │       │   ├── index.ts           ← 🆕 barrel: re-exporta lo de omnipizza
-│       │   └── omnipizza.d.ts     ← 🆕 User, Market, Pizza, Currency, CountryCode
+│       │   └── omnipizza.d.ts     ← 🆕 User, Market, Currency, CountryCode
 │       ├── playwright.config.ts   ← igual que M02 (un solo project ui-anon)
 │       ├── tsconfig.json          ← include AMPLIADO para ver types/
 │       ├── .env.example, .gitignore
@@ -48,6 +48,7 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
 | `tests/setup/`, `.auth/` | M06 | Setup project + `storageState` (login una vez) |
 | `services/`, `tests/api/` | M07 | API testing |
+| `interface Pizza/LoginResponse/PizzasResponse/OrderPayload/Order/ApiError` | M07 | contratos de request/response — `types/omnipizza.d.ts` **se amplía** ahí, no aquí |
 | `.github/workflows/` (uso real) | M08 | CI/CD |
 
 > 💡 **Para el facilitador:** abre `types/omnipizza.d.ts` y `data/markets.json` lado a lado y dibuja la flecha con el dedo: **el `.d.ts` describe lo que `.json` debe contener**. Si rompes el contrato (typo, campo faltante), TS lo detecta antes de correr.
@@ -64,7 +65,7 @@ Un tester manual siempre trae consigo una **hoja de datos de prueba** (usuarios,
 
 ## ¿Qué aprenderás?
 
-1. **`interface` como contrato:** User, Market, Pizza — fallan en compile-time si el JSON no cumple.
+1. **`interface` como contrato:** User, Market — fallan en compile-time si el JSON no cumple.
 2. **Union / literal types** (`"MX" | "US" | …`) para acotar los valores legales de un campo.
 3. **`import type`** — traer sólo la forma, no el código.
 4. **Data-driven con `for...of` + `test()`** — registrar N casos desde un array de datos (el patrón que en Jest/Vitest harías con `test.each`, aquí es un `for`).
@@ -353,20 +354,13 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
     role: Role;
     description?: string;
   }
-
-  export interface Pizza {
-    id: string | number;
-    name: string;
-    currency: Currency;
-    price: number;
-  }
   ```
 - **Por qué:** una `interface` es el **contrato** que el JSON debe cumplir; los **union types** acotan los valores legales (un `code` solo puede ser uno de esos 4, un `role` solo puede ser `"customer"`). Juntos, atrapan typos en compile-time en vez de en runtime.
 - **Cómo verifico:** el editor no subraya en rojo el archivo; los `export` aparecen en el autocompletado al importar desde otro archivo.
 
 > 🔷 **TypeScript — `interface`**
 > Una `interface` describe la **forma** de un objeto (qué campos tiene y de qué tipo), sin generar código en runtime: es puro contrato de compilación. La alternativa obvia —no tipar nada y confiar en el JSON— te deja descubrir el campo faltante recién cuando el test revienta.
-> 📚 Lo viste en [TS · M06 — interfaces](../../typescript-qa-course/modulo-06-interfaces/). Aquí lo aplicas a `User`, `Market` y `Pizza`: el contrato que valida `data/*.json`.
+> 📚 Lo viste en [TS · M06 — interfaces](../../typescript-qa-course/modulo-06-interfaces/). Aquí lo aplicas a `User` y `Market`: el contrato que valida `data/*.json`.
 
 > 🔷 **TypeScript — union / literal types (`"MX" | "US" | …`)**
 > Un *literal type* es un valor concreto usado como tipo; un *union* los encadena con `|`. `CountryCode = "MX" | "US" | "CH" | "JP" | "SA"` significa "solo estos 5 strings son válidos" — más estricto que `string`, que aceptaría `"MNX"` o `""` sin chistar.
@@ -485,7 +479,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
 ### Paso 4 — Inspeccionar el contrato (`types/omnipizza.d.ts`)
 
 **4.1 — Lee el `.d.ts` como contrato, no como código**
-- **Qué hago:** abro `types/omnipizza.d.ts` y reviso `interface User`, `interface Market`, `interface Pizza`.
+- **Qué hago:** abro `types/omnipizza.d.ts` y reviso `interface User` e `interface Market`.
 - **Por qué:** fijar la idea **contrato vs implementación**: el `.d.ts` dice qué campos y tipos debe tener cada objeto; el JSON es la implementación que los rellena. Si el JSON pone un número donde el contrato pide `string`, TS falla en compile-time.
 - **Cómo verifico:** puedo señalar, campo por campo, qué entrada del JSON corresponde a cada propiedad de la interface.
 
