@@ -40,14 +40,14 @@ export class CatalogPage extends BasePage {
     return this.page.locator(`[data-testid^="${this.btnAddToCart}"]`);
   }
 
-  // confirm-add-to-cart NO lleva sufijo → getByTestId directo.
+  // confirm-add-to-cart y category-<c> no llevan sufijo, pero tid()
+  // cae al testid base cuando no hay match con -desktop/-responsive.
   private get confirmAddButton(): Locator {
-    return this.page.getByTestId(this.btnConfirmAddToCart);
+    return this.tid(this.btnConfirmAddToCart);
   }
 
-  // category-<c> NO lleva sufijo → getByTestId directo.
   private categoryButton(category: Category): Locator {
-    return this.page.getByTestId(`${this.btnCategory}${category}`);
+    return this.tid(`${this.btnCategory}${category}`);
   }
 
   // search-pizza lleva sufijo de viewport → helper tid().
@@ -55,10 +55,10 @@ export class CatalogPage extends BasePage {
     return this.tid(this.txtSearch);
   }
 
-  // nav-cart-count NO lleva sufijo y es condicional (ausente con
-  // carrito vacío) → getByTestId directo.
+  // nav-cart-count no lleva sufijo y es condicional (ausente con
+  // carrito vacío); tid() la resuelve igual vía su fallback.
   private get cartCount(): Locator {
-    return this.page.getByTestId(this.lblCartCount);
+    return this.tid(this.lblCartCount);
   }
 
   // --- Acciones públicas: la interfaz del POM ---

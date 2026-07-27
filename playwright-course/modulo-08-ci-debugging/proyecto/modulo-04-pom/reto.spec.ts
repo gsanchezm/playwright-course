@@ -134,8 +134,13 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
       //   llegar a la pantalla `/order-success` es contenido de M05.
       //
       // Pista:
-      //   await checkoutPage.placeOrder();       // abre el modal
-      //   await checkoutPage.expectConfirmation(); // el modal aparece
+      //   await checkoutPage.placeOrder();               // abre el modal
+      //   await checkoutPage.expectConfirmOrderModal();  // el modal aparece
+      //
+      // ⚠️ NO uses `expectConfirmation()`: ese método espera la pantalla
+      //   `/order-success` (confirmar el pedido con `confirm-order-yes`
+      //   y llegar ahí es contenido de M05) — aquí sólo verificamos que
+      //   el MODAL de confirmación aparece.
       //
       // Criterio de éxito:
       //   El test termina en VERDE para los 5 mercados.

@@ -2,9 +2,11 @@
 
 **Duración estimada:** 55-75 min
 **Piezas que suma al framework:**
-- `tests/setup/auth.setup.ts` — un SOLO test: login **por UI** → persiste `storageState` (el "badge").
+- `tests/setup/auth.setup.ts` — un SOLO test: login **por UI** (con el `LoginPage` de M04) → persiste `storageState` (el "badge").
 - `playwright.config.ts` con 2 projects: `setup` corre primero, `chromium` hereda el badge vía `dependencies`.
 - `.auth/` en `.gitignore` — el badge contiene una sesión válida y nunca se commitea.
+
+**Lo que NO suma — hereda de M04/M05 sin cambios:** `pages/` (set completo: `BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`, `MenuPage`, `ProfilePage`, `PizzaCustomizerModal`), `types/`, `data/`, `fixtures/omnipizza.ts` (set completo: `loginPage`, `catalogPage`, `checkoutPage`, `menuPage`, `profilePage`, `pizzaCustomizer`, `standardUser`, `defaultMarket`). El setup **reutiliza** ese POM — no lo reinventa.
 
 ---
 
@@ -18,16 +20,30 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Aparece la carpeta **`tests/setup/`** con un único `auth.setup.ts`, y el `playwright.config.ts` **cambia de orquestación por primera vez desde M01**: pasa de un project a **dos**, uno dependiendo del otro.
+Aparece la carpeta **`tests/setup/`** con un único `auth.setup.ts`, y el `playwright.config.ts` **cambia de orquestación por primera vez desde M01**: pasa de un project a **dos**, uno dependiendo del otro. El POM y los fixtures **no cambian** — es la MISMA base de M04/M05, solo que ahora vive rodeada de un setup project.
 
 ```
 modulo-06-setup/proyecto/
 ├── .auth/                          ← 🆕 (gitignored) badge persistido
 │   └── user.json                   ← 🆕 storageState generado por auth.setup.ts
+├── pages/                          ← (M05 — set completo, sin cambios)
+│   ├── BasePage.ts
+│   ├── LoginPage.ts
+│   ├── CatalogPage.ts
+│   ├── CheckoutPage.ts
+│   ├── MenuPage.ts
+│   ├── ProfilePage.ts
+│   ├── PizzaCustomizerModal.ts
+│   └── index.ts
+├── types/                          ← (M03 — sin cambios)
+├── data/                           ← (M03 — sin cambios)
+├── fixtures/                       ← (M05 — set completo: loginPage, catalogPage, checkoutPage,
+│   └── omnipizza.ts                    menuPage, profilePage, pizzaCustomizer, standardUser, defaultMarket)
 ├── tests/
 │   ├── setup/
-│   │   └── auth.setup.ts           ← 🆕 login por UI → guarda .auth/user.json
-│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (goto /catalog, sin login)
+│   │   └── auth.setup.ts           ← 🆕 login por UI (con LoginPage) → guarda .auth/user.json
+│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login)
+│   ├── interacciones-nuevas.spec.ts ← (M05 — mismos 8 escenarios, adaptados a sesión heredada)
 │   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
 ├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
 ├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
@@ -78,7 +94,7 @@ El tester manual, al llegar por la mañana, **se registra en recepción una sola
 2. **`storageState`** — cómo Playwright serializa cookies **y** localStorage a un archivo, y cómo eso captura la sesión de OmniPizza **sin escribir el token a mano**.
 3. **`dependencies: ['setup']`** — la precondición declarativa: "no arranques hasta que setup termine en verde".
 4. **`storageState` por project** — por qué va en el project `chromium` y no en el `use:` raíz.
-5. **Renunciar al badge** con `test.use({ storageState: undefined })` para probar flujos anónimos / login negativo.
+5. **Renunciar al badge** con `test.use({ storageState: { cookies: [], origins: [] } })` para probar flujos anónimos / login negativo.
 
 ---
 
@@ -91,7 +107,7 @@ El tester manual, al llegar por la mañana, **se registra en recepción una sola
 | `storageState` | El badge físico: cookies + localStorage serializados a un archivo |
 | `dependencies: ['setup']` | "No ejecutes hasta que setup haya terminado" — precondición declarativa |
 | `storageState` por project | Todos los TCs del project heredan el mismo badge |
-| `test.use({ storageState: undefined })` | Dejar el badge en recepción: entras anónimo a propósito |
+| `test.use({ storageState: { cookies: [], origins: [] } })` | Dejar el badge en recepción: entras anónimo a propósito |
 
 ---
 
@@ -131,10 +147,15 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 
 **0.1 — Verifica que M05 (Fixtures) quede verde**
 - **Qué hago:** desde el `proyecto/`, `pnpm typecheck`. (Vienes de M05, donde el login corría por UI en **cada** test; aquí lo vas a hacer **una vez**.)
-- **Por qué:** M06 no depende del código de M05, pero sí de que entiendas el "dolor" que resuelve: el login repetido. Tener M05 fresco hace clic el contraste.
+- **Por qué:** a diferencia de M03→M04→M05 (donde cada módulo AMPLIABA el anterior en el mismo árbol), aquí conviene refrescar la memoria porque M06 **sí depende del código de M05**: vas a traer su POM y sus fixtures tal cual, no a reinventarlos.
 - **Cómo verifico:** `pnpm typecheck` no imprime errores.
 
-> 💡 **Para el facilitador:** abre M05 y M06 lado a lado. En M05 cada test llamaba `loginPage.loginInMarket(...)`. En M06 ese login **desaparece** de los tests y vive UNA vez en `auth.setup.ts`. Ese "antes/después" es el módulo entero.
+**0.2 — Copia el POM/fixtures completos de M05**
+- **Qué hago:** de `modulo-05-fixtures/proyecto/`, copio las 6 clases de `pages/` (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`, `MenuPage`, `ProfilePage`, `PizzaCustomizerModal`) con su `pages/index.ts`, `types/`, `data/`, y `fixtures/omnipizza.ts` completo (`loginPage`, `catalogPage`, `checkoutPage`, `menuPage`, `profilePage`, `pizzaCustomizer`, `standardUser`, `defaultMarket`).
+- **Por qué:** M06 no es un proyecto nuevo — es M05 **+ storageState**. Traer el POM/fixtures completos (en vez de un subconjunto) mantiene el POM consistente entre módulos: la sesión heredada debe poder ejercitar checkout, menú, perfil y el modal de personalización igual que en M05, no solo login+catálogo.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `import { LoginPage, CatalogPage, CheckoutPage, MenuPage, ProfilePage, PizzaCustomizerModal } from "../pages"` y `import { test, expect } from "../fixtures/omnipizza"` resuelven sin error.
+
+> 💡 **Para el facilitador:** abre M05 y M06 lado a lado. En M05 cada test llamaba `loginPage.loginInMarket(...)` DENTRO del test. En M06 esa llamada **se muda** a `auth.setup.ts` — el POM y los fixtures son los MISMOS, solo cambia QUIÉN los invoca y CUÁNDO. Ese "antes/después" es el módulo entero.
 
 ---
 
@@ -162,23 +183,20 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 - **Por qué:** la extensión `.setup.ts` es la que el project `setup` matchea con su `testMatch`. La ubicación en `tests/setup/` lo mantiene separado de los `*.spec.ts` normales.
 - **Cómo verifico:** `ls tests/setup` muestra `auth.setup.ts`.
 
-**2.2 — Escribe el setup: un solo test que loguea y guarda el badge**
-- **Qué hago:** escribo el setup. **Un solo test**, sin warmup separado, sin modo serial, sin login por API, sin sembrar `localStorage` a mano.
+**2.2 — Escribe el setup: un solo test que loguea (con el LoginPage de M04) y guarda el badge**
+- **Qué hago:** escribo el setup. **Un solo test**, sin warmup separado, sin modo serial, sin login por API, sin sembrar `localStorage` a mano — y SIN reescribir el login: lo importo de `fixtures/omnipizza.ts`.
   ```ts
-  import { test as setup, expect } from "@playwright/test";
+  import { test as setup, expect } from "../../fixtures/omnipizza";
 
   const authFile = ".auth/user.json"; // el "badge" que heredarán los tests
 
-  setup("authenticate", async ({ page }) => {
+  setup("authenticate", async ({ page, loginPage, standardUser, defaultMarket }) => {
     // Render (free tier) duerme el backend tras 15 min → margen extra la 1ª vez.
     setup.setTimeout(90_000);
 
-    // 1) Login por UI — exactamente el flujo que ya practicaste en M01.
-    await page.goto("/");
-    await page.getByTestId("market-MX").click();
-    await page.getByTestId("username-desktop").fill(process.env.TEST_USER_USERNAME ?? "standard_user");
-    await page.getByTestId("password-desktop").fill(process.env.TEST_USER_PASSWORD ?? "pizza123");
-    await page.getByRole("button", { name: "Sign In" }).click();
+    // 1) Login por UI — el MISMO LoginPage de M04, inyectado por el
+    //    fixture de M05. El setup REUTILIZA el login, no lo reinventa.
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
     // 2) Señal inequívoca de sesión abierta: llegamos al catálogo.
     await expect(page).toHaveURL(/\/catalog/);
@@ -189,13 +207,13 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
     await page.context().storageState({ path: authFile });
   });
   ```
-- **Por qué:** el login por UI reusa lo que ya sabes (M01). El único ajuste nuevo es la última línea: `storageState({ path })` guarda la sesión completa a un archivo. Como OmniPizza persiste la sesión en `localStorage`, `storageState` la captura sola — no tocas `localStorage` tú.
-- **Cómo verifico:** `pnpm exec tsc --noEmit` pasa; el test importa `test as setup` (no `test` a secas) y usa `page.context().storageState(...)` al final.
+- **Por qué:** el `import { test as setup } from "../../fixtures/omnipizza"` es el punto clave del módulo — el setup NO llama `page.goto`/`getByTestId` a mano (eso ya lo hiciste en M01-M03): reutiliza el `loginPage` + `standardUser` + `defaultMarket` que M04/M05 ya construyeron, con `test as setup` como alias. El único ajuste nuevo es la última línea: `storageState({ path })` guarda la sesión completa a un archivo. Como OmniPizza persiste la sesión en `localStorage`, `storageState` la captura sola — no tocas `localStorage` tú.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` pasa; el test importa `test as setup` desde `../../fixtures/omnipizza` (no desde `@playwright/test` a secas) y usa `page.context().storageState(...)` al final.
 
-> 🔍 **Detalle que parece obvio — `import { test as setup }` (y la extensión `.setup.ts`)**
-> **Qué es:** es un test normal de Playwright, pero renombrado a `setup` por convención y guardado como `auth.setup.ts`. El project `setup` lo matchea con `testMatch: /.*\.setup\.ts/`.
-> **Por qué así (y no la alternativa obvia):** la extensión `.setup.ts` es lo que permite que **una sola** regla de `testMatch` capture el setup sin atrapar tus `*.spec.ts`. Y renombrar `test → setup` es solo legibilidad: deja claro que este archivo prepara el terreno, no prueba una feature.
-> **Qué pasa si lo cambias:** si lo renombras a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y `chromium` arranca sin sesión. Al revés: cualquier `*.setup.ts` suelto en `tests/` lo recogerá el setup project aunque no quieras.
+> 🔍 **Detalle que parece obvio — `import { test as setup } from "../../fixtures/omnipizza"`**
+> **Qué es:** el `test` custom que exportaste en M05 (con `loginPage`, `catalogPage`, `standardUser`, `defaultMarket` inyectados) sigue siendo un `test` de Playwright válido — así que renombrarlo `as setup` al importarlo funciona exactamente igual que con el `test` base. El project `setup` lo matchea con `testMatch: /.*\.setup\.ts/` por el NOMBRE DE ARCHIVO, no por de dónde viene el `test`.
+> **Por qué así (y no la alternativa obvia):** la alternativa obvia — `import { test as setup } from "@playwright/test"` + escribir el login a mano — DUPLICA lo que `loginPage`/`standardUser` ya resuelven. Extender el `test` de M05 significa que el setup y los specs comparten el MISMO POM: un cambio en `LoginPage` se propaga a ambos sin tocar dos lugares.
+> **Qué pasa si lo cambias:** si vuelves a `@playwright/test` puro, pierdes `loginPage`/`standardUser`/`defaultMarket` y tienes que reescribir el login con locators crudos — funciona, pero rompe la continuidad con M04/M05 (exactamente lo que este módulo evita). Si renombras el ARCHIVO a `auth.spec.ts`, el project `setup` deja de matchearlo (su regex pide `.setup.ts`) → el badge nunca se genera y `chromium` arranca sin sesión.
 
 > 🔍 **Detalle que parece obvio — `await page.context().storageState({ path: authFile })`**
 > **Qué es:** serializa el estado del `BrowserContext` (cookies + localStorage del `page` que acaba de loguearse) a `.auth/user.json` — el "badge".
@@ -324,15 +342,16 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 **5.2 — Lee el `ejemplo.spec.ts` y nota lo que NO tiene**
 - **Qué hago:** abro `tests/ejemplo.spec.ts` y señalo:
   ```ts
-  test("aterriza en /catalog sin hacer login @smoke", async ({ page }) => {
-    await page.goto("/catalog");                 // ← directo al catálogo
-    await expect(page).toHaveURL(/\/catalog/);   // ← no rebotó a "/"
-    const pizzaCards = page.locator('[data-testid^="pizza-card-"]');
-    await expect(pizzaCards.first()).toBeVisible({ timeout: 30_000 });
+  import { test, expect } from "../fixtures/omnipizza";
+
+  test("aterriza en /catalog sin hacer login @smoke", async ({ page, catalogPage }) => {
+    await page.goto("/catalog");        // ← directo al catálogo
+    await catalogPage.expectLoaded();   // ← el MISMO CatalogPage de M04
+    await catalogPage.expectHasPizzas();
   });
   ```
-  **No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso.
-- **Por qué:** ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó.
+  **No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04.
+- **Por qué:** ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó. Usar `catalogPage` en vez de `page.locator(...)` a mano demuestra que el POM/fixtures NO desaparecen al llegar aquí — solo se les suma el badge por encima.
 - **Cómo verifico:** el test pasa y no hay ninguna línea de login en el spec.
 
 > 💡 **Para el facilitador:** pide a cada alumno que **verbalice el flujo**: *"setup corre 1 vez → escribe `.auth/user.json` → chromium lo lee vía storageState → mi test arranca autenticado"*. No avances hasta que lo hayan dicho con sus palabras.
@@ -342,14 +361,14 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 ### Paso 6 — Resolver el reto (login negativo)
 
 **6.1 — Completa `reto.spec.ts` (`locked_out_user`)**
-- **Qué hago:** abro `reto.spec.ts`; trae TODOs detallados (formato **Qué hacer / Pista / Cómo verificar**). El reto: probar que `locked_out_user` **no** autentica — el login se rechaza con el texto exacto `Invalid credentials` y la URL **sigue** en `/login`.
-- **Por qué:** el reto enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** hay badge que guardar: es un **test de UI de auth fallida**, no un setup project. **(b)** Este spec corre bajo `chromium`, que ya hereda el badge de `standard_user`; para **ver** el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: undefined })` — exactamente el mecanismo inverso al `storageState` por project que configuraste en el Paso 3.
-- **Cómo verifico:** sigues los TODOs — **no** están resueltos ahí a propósito. El test pasa con `Invalid credentials` visible y la URL **sigue** en `/login` (no entró a `/catalog`).
+- **Qué hago:** abro `reto.spec.ts`; trae TODOs detallados (formato **Qué hacer / Pista / Cómo verificar**). El reto: probar que `locked_out_user` **no** autentica — el login se rechaza con el texto exacto `Invalid credentials` y NO llegas a `/catalog`. Usas el MISMO `LoginPage` (vía el fixture), pero con `loginAs` en vez de `loginInMarket` — porque `loginInMarket` espera llegar a `/catalog`, y aquí el login debe FALLAR.
+- **Por qué:** el reto enseña dos cosas honestas a la vez. **(a)** Un usuario bloqueado **no autentica**, así que **no** hay badge que guardar: es un **test de UI de auth fallida**, no un setup project. **(b)** Este spec corre bajo `chromium`, que ya hereda el badge de `standard_user`; para **ver** el formulario de login tienes que **renunciar** a esa sesión con `test.use({ storageState: { cookies: [], origins: [] } })` — exactamente el mecanismo inverso al `storageState` por project que configuraste en el Paso 3.
+- **Cómo verifico:** sigues los TODOs — **no** están resueltos ahí a propósito. El test pasa con `Invalid credentials` visible y `await expect(page).not.toHaveURL(/\/catalog/)` (no entró a la app).
 
-> 🔍 **Detalle que parece obvio — `test.use({ storageState: undefined })`**
+> 🔍 **Detalle que parece obvio — `test.use({ storageState: { cookies: [], origins: [] } })`**
 > **Qué es:** dentro del `describe` del reto, esta línea **anula** el `storageState` que el project `chromium` inyecta — solo para ese bloque.
-> **Por qué así (y no la alternativa obvia):** el reto necesita **ver el login**. Pero `chromium` arranca con la sesión de `standard_user` (el badge), así que la app te mandaría directo a `/catalog` y el formulario ni se renderiza. `storageState: undefined` "deja el badge en recepción" y entras anónimo.
-> **Qué pasa si lo cambias:** si borras esa línea, el test arranca autenticado, no ve el formulario, y tus asserts de `Invalid credentials` nunca encuentran nada. (Detalle TS: esta línea compila porque `exactOptionalPropertyTypes` está en `false` en el `tsconfig.json`; Playwright añadió `| undefined` a mano a ese tipo justamente para permitir renunciar a la sesión.)
+> **Por qué así (y no la alternativa obvia):** el reto necesita **ver el login**. Pero `chromium` arranca con la sesión de `standard_user` (el badge), así que la app te mandaría directo a `/catalog` y el formulario ni se renderiza. Un `storageState` vacío explícito "deja el badge en recepción" y entras anónimo.
+> **Qué pasa si lo cambias:** si borras esa línea, el test arranca autenticado, no ve el formulario, y tus asserts de `Invalid credentials` nunca encuentran nada. ⚠️ Y si en vez de borrarla pones `storageState: undefined`, el resultado es el MISMO fallo: Playwright trata `undefined` como "no anular" (no como "vaciar"), así que la sesión heredada se cuela igual y el login nunca se renderiza. Tiene que ser un objeto vacío explícito, `{ cookies: [], origins: [] }`. (Detalle TS: esto compila con `undefined` porque `exactOptionalPropertyTypes` está en `false` en el `tsconfig.json` — compila, pero no hace lo que crees.)
 
 ---
 
@@ -373,10 +392,10 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 - [ ] El test de `ejemplo.spec.ts` arranca **ya autenticado**: `page.goto("/catalog")` sin login.
 - [ ] Entiendes por qué `storageState` va **en el project** `chromium`, no en el `use:` raíz.
 - [ ] Sabes que `dependencies: ['setup']` declara el orden y hace visible el setup en el reporte.
-- [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, URL en `/login`) renunciando al badge con `test.use({ storageState: undefined })`.
+- [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, sin llegar a `/catalog`) renunciando al badge con `test.use({ storageState: { cookies: [], origins: [] } })`.
 
 ---
 
 ## ¿Qué viene en M07?
 
-Hasta aquí manejaste la sesión **desde el navegador** (login por UI → badge). En **M07 (API layer)** vas a probar la API **directamente**, sin UI: una capa de servicios tipados (`BaseService` abstracta + factory) que hace requests HTTP y valida contratos. Es la otra mitad del testing — y el lugar natural para la optimización de "API login" que mencionamos en la nota avanzada de este módulo.
+Hasta aquí manejaste la sesión **desde el navegador** (login por UI → badge). En **M07 (API layer)** el framework **suma** una capa de servicios tipados (`BaseService` abstracta + factory) que hace requests HTTP y valida contratos — **sin reemplazar** lo que ya tienes: `pages/`, `fixtures/` y el setup project de este módulo siguen ahí, corriendo junto a la nueva suite de API. Es la otra mitad del testing añadida al framework, no un cambio de rumbo — y el lugar natural para la optimización de "API login" que mencionamos en la nota avanzada de este módulo.

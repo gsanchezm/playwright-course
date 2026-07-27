@@ -153,9 +153,13 @@ puede tener — son el **mínimo** del contrato.)
   Los testids dinámicos (`[data-testid^="pizza-card-"]`) son la única excepción
   con `page.locator`, porque el prefijo es un testid.
 - Usa el helper `tid(base)` de `BasePage`: añade `-desktop` (viewport ≥768px) o
-  `-responsive` (<768px). Algunos testids **no** llevan sufijo (`login-error`,
-  `market-<code>`, `nav-cart-count`, `zip-code`, `order-total`): para esos usa
-  `page.getByTestId(...)` directo.
+  `-responsive` (<768px), y cae al testid base si ese sufijo no matchea. Úsalo
+  para **cualquier** testid de un elemento único — incluidos los que **no**
+  llevan sufijo (`login-error`, `market-<code>`, `nav-cart-count`, `zip-code`,
+  `order-total`): no necesitas decidir de antemano si un testid tiene o no
+  variante por viewport. Excepción: los testids **dinámicos con prefijo**
+  (`[data-testid^="pizza-card-"]`) no pasan por `tid()` — usan `page.locator`
+  directo, como ya indica el bullet anterior.
 - **NUNCA** `waitForTimeout`. Usa assertions web-first (`expect(...).toBeVisible()`),
   `locator.waitFor()` o `page.waitForURL()`.
 

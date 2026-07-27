@@ -11,9 +11,9 @@
 // SOLO funcionaría para México. Los testids son iguales en todos
 // los markets.
 //
-// Estos testids del nav NO llevan sufijo `-desktop`/`-responsive`,
-// así que usamos `getByTestId` directo (NO `tid()`, que aquí busca
-// siempre el sufijo y fallaría).
+// Estos testids del nav NO llevan sufijo `-desktop`/`-responsive`.
+// `tid()` también los resolvería (cae al testid base si no hay
+// match), pero aquí usamos `getByTestId` directo por simplicidad.
 // ============================================================
 
 import { expect, type Locator } from "@playwright/test";

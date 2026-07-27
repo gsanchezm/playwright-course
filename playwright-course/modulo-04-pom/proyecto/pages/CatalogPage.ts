@@ -50,6 +50,14 @@ export class CatalogPage extends BasePage {
     await this.page.getByTestId(this.btnConfirmAddToCart).click();
   }
 
+  /**
+   * Abre el modal "Customize Pizza" de la primera pizza SIN confirmar.
+   * Útil para demostrar la interacción con el popup (PizzaCustomizerModal).
+   */
+  async openCustomizerForFirst(): Promise<void> {
+    await this.addToCartButtons.first().click();
+  }
+
   async getPizzaCount(): Promise<number> {
     return this.pizzaCards.count();
   }

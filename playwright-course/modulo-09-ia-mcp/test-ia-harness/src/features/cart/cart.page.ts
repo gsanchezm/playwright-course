@@ -11,7 +11,9 @@
 // ni un factory, así que esta slice sólo tiene page + flow.
 //
 // OJO con los testids: TODOS los del carrito son SIN sufijo de
-// viewport, así que usamos page.getByTestId(...) directo, NUNCA tid().
+// viewport. `tid()` también los resolvería (cae al testid base si
+// no hay match), pero aquí usamos page.getByTestId(...) directo
+// por simplicidad.
 // ============================================================
 
 import { expect, type Locator } from "@playwright/test";

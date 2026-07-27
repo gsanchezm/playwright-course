@@ -23,13 +23,15 @@ export class BasePage {
    * Helper viewport-aware para resolver testids de OmniPizza.
    * La app añade "-desktop" (≥768px) o "-responsive" (<768px) a
    * muchos testids; lo encapsulamos aquí para no repetir lógica.
+   * No todos los testids tienen variante por viewport: si el
+   * sufijo no matchea, cae al testid base (sin sufijo).
    *
    * @param base — testid base, ej. "username"
    */
   protected tid(base: string): Locator {
     const size = this.page.viewportSize();
     const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
-    return this.page.getByTestId(`${base}${suffix}`);
+    return this.page.getByTestId(`${base}${suffix}`).or(this.page.getByTestId(base)).first();
   }
 
   /**

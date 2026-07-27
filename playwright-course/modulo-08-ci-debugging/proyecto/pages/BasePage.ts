@@ -27,7 +27,9 @@ export class BasePage {
    *
    * OmniPizza añade sufijos "-desktop" (≥768px) o "-responsive"
    * (<768px) a sus testids. En vez de duplicar lógica en cada
-   * Page hijo, la encapsulamos aquí.
+   * Page hijo, la encapsulamos aquí. No todos los testids tienen
+   * variante por viewport: si el sufijo no matchea, cae al testid
+   * base (sin sufijo).
    *
    * @param base — el testid base, ej. "username"
    * @returns Locator del testid con sufijo correcto
@@ -35,7 +37,7 @@ export class BasePage {
   protected tid(base: string): Locator {
     const size = this.page.viewportSize();
     const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
-    return this.page.getByTestId(`${base}${suffix}`);
+    return this.page.getByTestId(`${base}${suffix}`).or(this.page.getByTestId(base)).first();
   }
 
   /**

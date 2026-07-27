@@ -40,14 +40,14 @@ export class AuthPage extends BasePage {
     return this.tid(this.btnSignIn);
   }
 
-  // login-error NO lleva sufijo → getByTestId directo.
+  // login-error y market-<code> no llevan sufijo, pero tid() cae al
+  // testid base cuando no hay match con -desktop/-responsive.
   private get errorMessage(): Locator {
-    return this.page.getByTestId(this.lblError);
+    return this.tid(this.lblError);
   }
 
-  // market-<code> NO lleva sufijo → getByTestId directo.
   private marketFlag(code: CountryCode): Locator {
-    return this.page.getByTestId(`${this.btnMarket}${code}`);
+    return this.tid(`${this.btnMarket}${code}`);
   }
 
   // --- Acciones públicas: la interfaz del POM ---

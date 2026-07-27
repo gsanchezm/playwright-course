@@ -33,11 +33,11 @@ export class LoginPage extends BasePage {
   }
 
   private get errorMessage(): Locator {
-    return this.page.getByTestId(this.lblError);
+    return this.tid(this.lblError);
   }
 
   private marketFlag(code: CountryCode): Locator {
-    return this.page.getByTestId(`${this.btnMarket}${code}`);
+    return this.tid(`${this.btnMarket}${code}`);
   }
 
   // --- Acciones públicas: la interfaz del POM ---

@@ -1,0 +1,32 @@
+[
+  {
+    "username": "standard_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario estándar para flujos happy path"
+  },
+  {
+    "username": "locked_out_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)"
+  },
+  {
+    "username": "problem_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero con bugs visuales intencionales"
+  },
+  {
+    "username": "performance_glitch_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts"
+  },
+  {
+    "username": "error_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero dispara errores en acciones específicas"
+  }
+]

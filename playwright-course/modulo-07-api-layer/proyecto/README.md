@@ -14,9 +14,9 @@ Snapshot **runnable** de `playwright-course` **al terminar el Módulo 07**
 - **Config del runner:** nace el project **`api`** — sin `storageState`, sin
   `dependencies`, corriendo contra `API_URL` (backend) en vez de `BASE_URL`.
 
-> **Enfoque del snapshot.** M07 es la lección de **API**, así que este proyecto trae
-> solo el project `api` y las capas que la API necesita (`services`, `types`, `data`,
-> `helpers`). La matriz UI multi-browser (M08) no forma parte de esta lección.
+> **M07 SUMA, no reemplaza.** `pages/`, `fixtures/`, `tests/setup/` y los projects
+> `setup`+`chromium` de M04-M06 siguen aquí sin cambios (los tests heredados viven
+> en `tests/ui/`) — la capa de API corre AL LADO de la de UI, en su propio project.
 
 ## Cómo correr
 
@@ -25,10 +25,12 @@ pnpm install
 cp .env.example .env
 pnpm typecheck
 pnpm m7              # corre este módulo en el project api (sin browser)
-pnpm test:api       # toda la suite de API
+pnpm test:api        # toda la suite de API
+pnpm test:setup      # solo el setup de UI (genera .auth/user.json)
+pnpm test:ui-smoke   # solo la capa de UI heredada (M04-M06)
 pnpm report
 ```
 
-> **No requiere navegadores** para la suite de API (`pnpm install:browsers` es
-> opcional). **Cold start de Render:** el backend en free tier despierta en 30-40s;
-> si el primer request falla, vuelve a correr.
+> **La suite de API no requiere navegadores** (`pnpm install:browsers` sí hace
+> falta para `test:ui-smoke`). **Cold start de Render:** el backend en free tier
+> despierta en 30-40s; si el primer request falla, vuelve a correr.

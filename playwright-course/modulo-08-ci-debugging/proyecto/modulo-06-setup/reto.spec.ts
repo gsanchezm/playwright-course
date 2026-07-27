@@ -28,8 +28,9 @@
 //   ⚠️ PARTE A corre bajo `ui-chromium`, que HEREDA el badge de
 //      standard_user (.auth/user.json). Para VER el formulario de
 //      login hay que renunciar a esa sesión con
-//      `test.use({ storageState: undefined })` — si no, el test
-//      arranca ya autenticado y el login ni siquiera se renderiza.
+//      `test.use({ storageState: { cookies: [], origins: [] } })` —
+//      si no, el test arranca ya autenticado y el login ni siquiera
+//      se renderiza.
 // ============================================================
 
 import { test, expect } from "../fixtures/omnipizza";
@@ -43,43 +44,46 @@ import { test, expect } from "../fixtures/omnipizza";
 // `ui-chromium`, que declara `storageState: ".auth/user.json"` — o sea,
 // arranca con la sesión de standard_user ya cargada. Si no la anulamos,
 // la app te lleva directo a /catalog y NUNCA verás el formulario de
-// login que queremos probar. `storageState: undefined` lo desactiva
-// SOLO para este describe (es el reverso del "storageState por
-// project" que configuraste en el paso 3.1 del README).
+// login que queremos probar. `storageState: { cookies: [], origins: [] }`
+// lo desactiva SOLO para este describe (es el reverso del "storageState
+// por project" que configuraste en el paso 3.1 del README).
+//
+// ⚠️ `storageState: undefined` NO funciona aquí: Playwright lo trata
+// como "no anular" y la sesión heredada se cuela igual. Hay que pasar
+// un storageState VACÍO explícito (`{ cookies: [], origins: [] }`).
 test.describe("Challenge M06 — PART A: negative login (locked_out_user)", () => {
-  test.use({ storageState: undefined });
+  test.use({ storageState: { cookies: [], origins: [] } });
 
   test.skip("TODO — blocked login shows 'Invalid credentials'", async ({
     page,
+    loginPage,
   }) => {
     // ────────────────────────────────────────────────────────
     // TODO A1 — Llenar el formulario con locked_out_user
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Navega a /login y llena usuario/contraseña con la persona
-    //   bloqueada de data/users.json (locked_out_user / pizza123).
+    //   Usa el MISMO LoginPage de M04 (inyectado por el fixture) — pero
+    //   con `loginAs`, NO `loginInMarket`: `loginInMarket` espera llegar
+    //   a /catalog, y aquí el login debe FALLAR.
     //
-    // Pista (los inputs de OmniPizza NO tienen label accesible — su
-    //        nombre = el placeholder — así que getByRole/getByLabel
-    //        FALLAN; baja de nivel a testid):
-    //   await page.goto("/login");
-    //   await page.getByTestId("username-desktop").fill("locked_out_user");
-    //   await page.getByTestId("password-desktop").fill("pizza123");
+    // Pista:
+    //   await loginPage.goto();
+    //   await loginPage.selectMarket("MX");
+    //   await loginPage.loginAs({ username: "locked_out_user", password: "pizza123", role: "customer" });
     //
     // Cómo verificar:
     //   Con --headed ves los dos campos llenos antes de enviar.
 
 
     // ────────────────────────────────────────────────────────
-    // TODO A2 — Enviar y asertar el rechazo
+    // TODO A2 — Asertar el rechazo
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Haz clic en "Sign In" (este botón SÍ tiene role) y verifica que
-    //   el login se rechaza con el texto EXACTO "Invalid credentials".
+    //   `loginAs` ya hizo click en "Sign In". Verifica que el login se
+    //   rechaza con el texto EXACTO "Invalid credentials".
     //
     // ⚠️ El error se renderiza en un <div> inline SIN role=alert →
     //    getByRole("alert") NO lo encuentra. Usa getByText:
-    //   await page.getByTestId("login-button-desktop").click();
     //   await expect(page.getByText("Invalid credentials")).toBeVisible();
     //
     // Cómo verificar:
@@ -91,10 +95,10 @@ test.describe("Challenge M06 — PART A: negative login (locked_out_user)", () =
     // ────────────────────────────────────────────────────────
     // Qué hacer:
     //   Un login negativo no solo muestra el error: tampoco debe dejarte
-    //   pasar. Verifica que la URL SIGUE en /login (no saltó a /catalog).
+    //   pasar. Verifica que NO llegaste a /catalog.
     //
     // Pista:
-    //   await expect(page).toHaveURL(/\/login/);
+    //   await expect(page).not.toHaveURL(/\/catalog/);
     //
     // 💡 Nota conceptual: locked_out_user NUNCA autentica, así que no hay
     //    storageState que guardar — por eso esto es un test de auth

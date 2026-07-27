@@ -18,9 +18,9 @@ export class CheckoutPage extends BasePage {
   // Ruta de la pantalla de checkout.
   private readonly path = "/checkout";
 
-  // Testids base. Nombre/teléfono/dirección y el botón llevan sufijo
-  // -desktop/-responsive → se resuelven con tid(). zip-code y order-total
-  // NO llevan sufijo → getByTestId directo.
+  // Testids base. Todos se resuelven con tid(): nombre/teléfono/dirección
+  // y el botón llevan sufijo -desktop/-responsive; zip-code y order-total
+  // no, pero tid() cae al testid base cuando no hay match.
   private readonly txtFullName = "full-name";
   private readonly txtPhone = "phone";
   private readonly txtAddress = "address";
@@ -43,18 +43,16 @@ export class CheckoutPage extends BasePage {
     return this.tid(this.txtAddress);
   }
 
-  // zip-code NO lleva sufijo → getByTestId directo (no tid).
   private get zipInput(): Locator {
-    return this.page.getByTestId(this.txtZip);
+    return this.tid(this.txtZip);
   }
 
   private get placeOrderButton(): Locator {
     return this.tid(this.btnPlaceOrder);
   }
 
-  // order-total NO lleva sufijo → getByTestId directo.
   private get orderTotal(): Locator {
-    return this.page.getByTestId(this.lblOrderTotal);
+    return this.tid(this.lblOrderTotal);
   }
 
   // Items del resumen del pedido (testid dinámico con prefijo).

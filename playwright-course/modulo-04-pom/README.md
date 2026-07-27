@@ -231,10 +231,11 @@ pages/
     constructor(protected readonly page: Page) {}
 
     // Helper viewport-aware: añade "-desktop" (≥768px) o "-responsive".
+    // Si el testid no tiene variante por viewport, cae al testid base.
     protected tid(base: string): Locator {
       const size = this.page.viewportSize();
       const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
-      return this.page.getByTestId(`${base}${suffix}`);
+      return this.page.getByTestId(`${base}${suffix}`).or(this.page.getByTestId(base)).first();
     }
 
     protected async waitForUrl(pattern: RegExp, timeout = 15_000): Promise<void> {
@@ -294,9 +295,9 @@ pages/
     private get usernameInput(): Locator { return this.tid("username"); }
     private get passwordInput(): Locator { return this.tid("password"); }
     private get signInButton(): Locator  { return this.tid("login-button"); }
-    private get errorMessage(): Locator   { return this.page.getByTestId("login-error"); }
+    private get errorMessage(): Locator   { return this.tid("login-error"); }
     private marketFlag(code: CountryCode): Locator {
-      return this.page.getByTestId(`market-${code}`);
+      return this.tid(`market-${code}`);
     }
 
     // --- Acciones públicas: la interfaz del POM ---
@@ -319,7 +320,7 @@ pages/
     }
   }
   ```
-- **Por qué:** los locators son **`private get`** — propiedades calculadas: cada acceso reevalúa `this.tid(...)` — para que el test no pueda hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio. La alternativa obvia — escribir `this.page.getByTestId("username-desktop")` inline en cada método que lo use — reparte el locator por toda la clase; el getter lo centraliza: si el testid cambia, tocas **una línea**. Que sean `get` (no campos asignados en el constructor) los resuelve **perezosamente**: `tid()` consulta el `viewportSize()` en el momento del uso, no al construir el Page; si los asignaras en el constructor (`this.usernameInput = this.tid(...)`), congelarías el viewport al instante de `new LoginPage(page)`. `loginInMarket` encapsula los 5 pasos que en M03 estaban inline en cada test (los mismos que marcaste en el ritual). Las testids base (`"username"`, `"password"`, `"login-button"`) usan `tid()`, que les añade el sufijo `-desktop`/`-responsive`. Las banderas de mercado usan testid plano `market-XX` (sin sufijo de viewport) — por eso `marketFlag` va con `page.getByTestId` directo y no con `tid()`.
+- **Por qué:** los locators son **`private get`** — propiedades calculadas: cada acceso reevalúa `this.tid(...)` — para que el test no pueda hacer `loginPage.usernameInput.fill(...)` y saltarse la acción de negocio. La alternativa obvia — escribir `this.page.getByTestId("username-desktop")` inline en cada método que lo use — reparte el locator por toda la clase; el getter lo centraliza: si el testid cambia, tocas **una línea**. Que sean `get` (no campos asignados en el constructor) los resuelve **perezosamente**: `tid()` consulta el `viewportSize()` en el momento del uso, no al construir el Page; si los asignaras en el constructor (`this.usernameInput = this.tid(...)`), congelarías el viewport al instante de `new LoginPage(page)`. `loginInMarket` encapsula los 5 pasos que en M03 estaban inline en cada test (los mismos que marcaste en el ritual). Las testids base (`"username"`, `"password"`, `"login-button"`) usan `tid()`, que les añade el sufijo `-desktop`/`-responsive`. Las banderas de mercado usan testid plano `market-XX` (sin sufijo de viewport) — `tid()` también las resuelve: si no matchea el sufijo, cae al testid base.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` sigue limpio; si intentas escribir `new LoginPage(page).usernameInput` en el spec, el editor lo subraya en rojo ("propiedad privada").
 
 > 🔍 **Detalle que parece obvio — `readonly path = "/"`**

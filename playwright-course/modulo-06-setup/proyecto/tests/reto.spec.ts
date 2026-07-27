@@ -9,6 +9,8 @@
 //
 // Como NO autentica, NO es un setup project con storageState: es un
 // test de UI de autenticación fallida. Por eso NO hay badge que guardar.
+// Sí es el MISMO LoginPage de M04 — el reto negativo no inventa
+// locators nuevos, solo lo usa sin esperar a /catalog.
 //
 // 🧰 Pre-requisitos:
 //   ✔ pnpm test:setup pasa y existe .auth/user.json
@@ -21,57 +23,65 @@
 //   ⚠️ Este spec corre bajo `chromium`, que HEREDA el badge de
 //      standard_user (.auth/user.json). Para VER el formulario de login
 //      hay que RENUNCIAR a esa sesión con
-//      `test.use({ storageState: undefined })` — si no, el test arranca
-//      ya autenticado y el login ni siquiera se renderiza.
+//      `test.use({ storageState: { cookies: [], origins: [] } })` — si
+//      no, el test arranca ya autenticado y el login ni siquiera se
+//      renderiza. (⚠️ `storageState: undefined` NO funciona: ver nota
+//      abajo del describe.)
 // ============================================================
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/omnipizza";
+import type { User } from "../types";
+import usersJson from "../data/users.json";
+
+const users = usersJson as User[];
+const lockedOutUser = users.find((u) => u.username === "locked_out_user")!;
 
 // ============================================================
 // ⚠️ RENUNCIA AL BADGE HEREDADO.
 // El project `chromium` declara `storageState: ".auth/user.json"` — o sea,
 // arranca con la sesión de standard_user ya cargada. Si no la anulamos,
 // la app te lleva directo a /catalog y NUNCA verás el formulario de login
-// que queremos probar. `storageState: undefined` lo desactiva SOLO para
-// este describe — es el REVERSO del "storageState por project" que
-// configuraste en el playwright.config.ts.
+// que queremos probar. `storageState: { cookies: [], origins: [] }` lo
+// desactiva SOLO para este describe — es el REVERSO del "storageState por
+// project" que configuraste en el playwright.config.ts.
+//
+// ⚠️ `storageState: undefined` NO funciona aquí: Playwright lo trata como
+// "no anular" y la sesión heredada se cuela igual. Hay que pasar un
+// storageState VACÍO explícito (`{ cookies: [], origins: [] }`).
 // ============================================================
 test.describe("Reto M06 — login negativo (locked_out_user)", () => {
-  test.use({ storageState: undefined });
+  test.use({ storageState: { cookies: [], origins: [] } });
 
   test.skip("TODO — login bloqueado muestra 'Invalid credentials'", async ({
     page,
+    loginPage,
   }) => {
     // ────────────────────────────────────────────────────────
     // TODO 1 — Abrir el login y llenar con locked_out_user
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Abre la app, selecciona el mercado (MX) para ver el formulario y
-    //   llena usuario/contraseña con la persona BLOQUEADA (locked_out_user
-    //   / pizza123).
+    //   Usa el MISMO LoginPage de M04 (inyectado por el fixture) — pero
+    //   con `loginAs`, NO `loginInMarket`: `loginInMarket` espera llegar
+    //   a /catalog, y aquí el login debe FALLAR.
     //
-    // Pista (los inputs de OmniPizza NO tienen label accesible — su nombre
-    //        = el placeholder — así que getByRole/getByLabel FALLAN; usa
-    //        testid):
-    //   await page.goto("/");
-    //   await page.getByTestId("market-MX").click();
-    //   await page.getByTestId("username-desktop").fill("locked_out_user");
-    //   await page.getByTestId("password-desktop").fill("pizza123");
+    // Pista:
+    //   await loginPage.goto();
+    //   await loginPage.selectMarket("MX");
+    //   await loginPage.loginAs(lockedOutUser);
     //
     // Cómo verificar:
     //   Con --headed ves los dos campos llenos antes de enviar.
 
 
     // ────────────────────────────────────────────────────────
-    // TODO 2 — Enviar y asertar el rechazo
+    // TODO 2 — Asertar el rechazo
     // ────────────────────────────────────────────────────────
     // Qué hacer:
-    //   Haz clic en "Sign In" (este botón SÍ tiene role) y verifica que el
-    //   login se rechaza con el texto EXACTO "Invalid credentials".
+    //   `loginAs` ya hizo click en "Sign In". Verifica que el login se
+    //   rechaza con el texto EXACTO "Invalid credentials".
     //
     // ⚠️ El error se renderiza en un <div> inline SIN role=alert →
     //    getByRole("alert") NO lo encuentra. Usa getByText:
-    //   await page.getByRole("button", { name: "Sign In" }).click();
     //   await expect(page.getByText("Invalid credentials")).toBeVisible();
     //
     // Cómo verificar:
@@ -83,10 +93,10 @@ test.describe("Reto M06 — login negativo (locked_out_user)", () => {
     // ────────────────────────────────────────────────────────
     // Qué hacer:
     //   Un login negativo no solo muestra el error: tampoco debe dejarte
-    //   pasar. Verifica que la URL SIGUE en /login (no saltó a /catalog).
+    //   pasar. Verifica que NO llegaste a /catalog.
     //
     // Pista:
-    //   await expect(page).toHaveURL(/\/login/);
+    //   await expect(page).not.toHaveURL(/\/catalog/);
     //
     // 💡 Nota conceptual: locked_out_user NUNCA autentica, así que no hay
     //    storageState que guardar — por eso esto es un test de auth fallida,
@@ -106,9 +116,11 @@ test.describe("Reto M06 — login negativo (locked_out_user)", () => {
 //      storageState? (Esperado: nunca autentica, así que no hay badge que
 //      guardar — es un caso de aserción de error de UI.)
 //
-//   2. ¿Por qué necesitas `test.use({ storageState: undefined })` aquí y
-//      NO en el ejemplo? (Esperado: el ejemplo QUIERE la sesión heredada;
-//      este reto necesita VER el login, así que renuncia al badge.)
+//   2. ¿Por qué necesitas `test.use({ storageState: { cookies: [], origins: [] } })`
+//      aquí y NO en el ejemplo? (Esperado: el ejemplo QUIERE la sesión
+//      heredada; este reto necesita VER el login, así que renuncia al
+//      badge — y `storageState: undefined` NO sirve para eso: Playwright
+//      lo trata como "no anular", no como "vaciar".)
 //
 //   3. Si necesitaras un 2º rol AUTENTICADO, ¿cuántos archivos tocarías y
 //      cómo evitarías duplicar auth.setup.ts? (Esperado: 2 — un

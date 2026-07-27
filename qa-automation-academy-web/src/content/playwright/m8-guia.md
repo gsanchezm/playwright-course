@@ -23,7 +23,7 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 ├── data/                           ← (M03) markets.json, users.json
 ├── fixtures/                       ← (M05) omnipizza.ts
 ├── helpers/                        ← (M05) unique-data.ts
-├── pages/                          ← (M04) Base + Login + Catalog + Checkout
+├── pages/                          ← (M04-M05) Base + Login + Catalog + Checkout + Menu + Profile + PizzaCustomizerModal
 ├── services/                       ← (M07) Base (abstract) + Auth + Order + Pizza
 ├── tests/
 │   ├── api/                        ← (M07) auth.spec.ts, pizzas.spec.ts

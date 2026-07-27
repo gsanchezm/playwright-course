@@ -181,10 +181,11 @@ export class BasePage {
   // Helper viewport-aware: OmniPizza añade "-desktop" (≥768px)
   // o "-responsive" (<768px) a sus testids. Se resuelve aquí,
   // en un solo lugar, para que las hijas no dupliquen la lógica.
+  // Si el testid no tiene variante por viewport, cae al testid base.
   protected tid(base: string): Locator {
     const size = this.page.viewportSize();
     const suffix = size && size.width < 768 ? "-responsive" : "-desktop";
-    return this.page.getByTestId(`${base}${suffix}`);
+    return this.page.getByTestId(`${base}${suffix}`).or(this.page.getByTestId(base)).first();
   }
 
   // Espera "paciente" centralizada (sin sleep), con timeout configurable.
@@ -229,10 +230,11 @@ export class LoginPage extends BasePage {
   private get usernameInput(): Locator { return this.tid("username"); }
   private get passwordInput(): Locator { return this.tid("password"); }
   private get signInButton(): Locator  { return this.tid("login-button"); }
-  private get errorMessage(): Locator  { return this.page.getByTestId("login-error"); }
+  private get errorMessage(): Locator  { return this.tid("login-error"); }
   private marketFlag(code: CountryCode): Locator {
-    // Testid plano "market-XX" (sin sufijo de viewport) → getByTestId directo.
-    return this.page.getByTestId(`market-${code}`);
+    // Testid plano "market-XX" (sin sufijo de viewport); tid() lo
+    // resuelve igual — cae al testid base cuando no hay match.
+    return this.tid(`market-${code}`);
   }
 
   // --- Acciones públicas: la interfaz del POM ---
@@ -272,7 +274,7 @@ export class LoginPage extends BasePage {
 > `class Hija extends Padre` hereda propiedades y métodos del padre. Si la hija define su propio `constructor`, debe llamar `super(...)` para inicializar la parte del padre **antes** de usar `this`. Aquí `LoginPage` **no** declara constructor propio, así que TS usa el de `BasePage` automáticamente — por eso no ves `super()` explícito.
 > 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-login-page). Aquí cada Page `extends BasePage` para reutilizar los helpers comunes.
 
-Fíjate en dos detalles: los getters pasan el testid **base** (`"username"`, no `"username-desktop"`) — el sufijo de viewport lo añade el `tid()` heredado de `BasePage`. Y las banderas de mercado son la excepción: su testid es plano (`market-MX`, sin sufijo), por eso `marketFlag` usa `page.getByTestId` directo y no `tid()`.
+Fíjate en un detalle: los getters pasan el testid **base** (`"username"`, no `"username-desktop"`) — el sufijo de viewport lo añade el `tid()` heredado de `BasePage`. Las banderas de mercado son un caso especial: su testid es plano (`market-MX`, sin sufijo), pero `tid()` las resuelve igual — si el sufijo no matchea, cae al testid base.
 
 📄 `pages/index.ts` (barrel — facilita el import en los specs):
 

@@ -3,24 +3,22 @@
 // ============================================================
 // Un SOLO test de setup. Sin warmup separado, sin modo serial,
 // sin login por API, sin sembrar localStorage a mano.
-// Haces lo que un usuario real hace (login por UI, igual que en
-// M01) y Playwright guarda la sesión completa en un archivo.
+// Haces lo que un usuario real hace (login por UI, con el MISMO
+// LoginPage + fixtures que construiste en M04/M05) y Playwright
+// guarda la sesión completa en un archivo.
 // ============================================================
 
-import { test as setup, expect } from "@playwright/test";
+import { test as setup, expect } from "../../fixtures/omnipizza";
 
 const authFile = ".auth/user.json"; // el "badge" que heredarán los tests
 
-setup("authenticate", async ({ page }) => {
+setup("authenticate", async ({ page, loginPage, standardUser, defaultMarket }) => {
   // Render (free tier) duerme el backend tras 15 min → margen extra la 1ª vez.
   setup.setTimeout(90_000);
 
-  // 1) Login por UI — exactamente el flujo que ya practicaste en M01.
-  await page.goto("/");
-  await page.getByTestId("market-MX").click();
-  await page.getByTestId("username-desktop").fill(process.env.TEST_USER_USERNAME ?? "standard_user");
-  await page.getByTestId("password-desktop").fill(process.env.TEST_USER_PASSWORD ?? "pizza123");
-  await page.getByRole("button", { name: "Sign In" }).click();
+  // 1) Login por UI — el mismo LoginPage de M04, inyectado por el
+  //    fixture de M05. El setup no reinventa el login: lo REUTILIZA.
+  await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
   // 2) Señal inequívoca de sesión abierta: llegamos al catálogo.
   await expect(page).toHaveURL(/\/catalog/);

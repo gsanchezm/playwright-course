@@ -11,9 +11,9 @@ import type { Market } from "../types";
 export class CheckoutPage extends BasePage {
   readonly path = "/checkout";
 
-  // testids verificados contra la app en vivo (2026-06-29). Nombre/teléfono/
-  // dirección y el botón llevan sufijo -desktop/-responsive → se resuelven con
-  // tid(); zip-code y order-total NO llevan sufijo → getByTestId directo.
+  // testids verificados contra la app en vivo (2026-06-29). Todos se resuelven
+  // con tid(): algunos llevan sufijo -desktop/-responsive y otros (zip-code,
+  // order-total) no, pero tid() cae al testid base cuando no hay match.
   private txtFullName: string = "full-name";
   private txtPhone: string = "phone";
   private txtAddress: string = "address";
@@ -40,8 +40,7 @@ export class CheckoutPage extends BasePage {
   }
 
   private get zipInput(): Locator {
-    // zip-code NO lleva sufijo -desktop → getByTestId directo (no tid)
-    return this.page.getByTestId(this.txtZip);
+    return this.tid(this.txtZip);
   }
 
   private get placeOrderButton(): Locator {
@@ -49,11 +48,11 @@ export class CheckoutPage extends BasePage {
   }
 
   private get orderTotal(): Locator {
-    return this.page.getByTestId(this.lblOrderTotal);
+    return this.tid(this.lblOrderTotal);
   }
 
   private get confirmOrderModal(): Locator {
-    return this.page.getByTestId(this.modalConfirmOrder);
+    return this.tid(this.modalConfirmOrder);
   }
 
   // --- Acciones ---

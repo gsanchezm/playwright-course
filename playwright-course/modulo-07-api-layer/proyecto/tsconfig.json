@@ -15,9 +15,10 @@
     "playwright.config.ts",
     "types/**/*.ts",
     "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
     "helpers/**/*.ts",
     "services/**/*.ts",
-    "tests/**/*.ts",
     "tests/**/*.ts"
   ]
 }

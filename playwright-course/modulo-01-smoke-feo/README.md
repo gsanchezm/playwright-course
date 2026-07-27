@@ -411,7 +411,9 @@ EOF
   | `include` (las 2 entradas) | Qué archivos entran al type-check | El config + todo `tests/`: espejo del `testMatch` del Paso 4 |
 
   > ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
-  > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M08 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. Y el truco clave de M06, `test.use({ storageState: undefined })` para renunciar a la sesión heredada, solo compila porque Playwright añadió `| undefined` **a mano** en ese tipo: con la flag activa quedas a merced de cómo tipó cada librería sus opciones. `strict: true` ya te da la red de seguridad importante.
+  > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M08 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. `strict: true` ya te da la red de seguridad importante.
+  >
+  > ⚠️ **Ojo, esto NO es excusa para usar `storageState: undefined`** en M06 para renunciar a la sesión heredada — aunque también compilaría por la misma razón (Playwright le añadió `| undefined` al tipo). A diferencia de `workers`, ahí `undefined` SÍ compila pero NO hace lo que parece: Playwright lo trata como "no anular" (no como "vaciar"), así que la sesión heredada se cuela igual y el test falla en runtime. El patrón correcto para renunciar al badge es un `storageState` vacío explícito: `test.use({ storageState: { cookies: [], origins: [] } })`.
 
 - **Cómo verifico:**
   ```bash
