@@ -50,7 +50,7 @@ test.describe("Fixtures + storageState (M05)", () => {
 // ============================================================
 
 test.describe("page.route() — network mocking (M05)", () => {
-  test("UI shows an error when the API responds 500", async ({ page, catalogPage }) => {
+  test("UI reacts when the API responds 500", async ({ page, catalogPage }) => {
     // 1. Registrar el mock ANTES del navigate
     await page.route("**/api/pizzas*", (route) => {
       route.fulfill({

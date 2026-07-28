@@ -319,6 +319,19 @@ export default defineConfig({
 > Playwright ya tiene una herramienta más simple y más visible en el reporte para "ejecutar
 > código antes de cada test de este grupo": el hook.
 
+Así se ve en `tests/ejemplo.spec.ts` (dentro de `test.describe("Checkout widgets — item already in cart (M05)", ...)`):
+
+```ts
+test.beforeEach(async ({
+  page, loginPage, catalogPage, checkoutPage, standardUser, defaultMarket,
+}) => {
+  await loginPage.loginInMarket(standardUser, defaultMarket.code);
+  await catalogPage.addFirstPizza();
+  await page.goto("/checkout");
+  await checkoutPage.expectLoaded();
+});
+```
+
 **4.2 — Corre el ejemplo de fixtures**
 - **Qué hago:**
   ```bash
@@ -353,7 +366,7 @@ export default defineConfig({
 
 **Pregunta al grupo:** *"¿qué pasa si registras 2 mocks distintos al mismo URL?"* — respuesta: gana el último registrado.
 
-> 💡 **Para el facilitador:** los locators de error/empty en el ejemplo (`catalog-error`, `catalog-empty`) pueden no existir en OmniPizza tal cual. Es un PATRÓN a aprender, no un test que tenga que pasar perfectamente — está intencional como prototipo (por eso el assert real es un `body` visible tentativo).
+> 💡 **Para el facilitador:** OmniPizza no expone un testid propio de error/estado vacío en el catálogo — por eso el assert real del ejemplo es deliberadamente estructural (`body` visible), no un placeholder a mejorar después. Lo que se enseña es el PATRÓN de mocking; si tu propia app SÍ expone un testid de error, ese es el assert que usarías ahí.
 
 **5.2 — Versiona tu trabajo (Git)**
 - **Qué hago:** ahora que la suite corre verde, hago commit de lo nuevo del módulo.

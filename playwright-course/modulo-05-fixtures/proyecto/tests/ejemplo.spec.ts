@@ -148,6 +148,10 @@ test("uniqueEmail generates identifiers per worker", async ({}, testInfo) => {
 //   7. Mercado Arabia Saudita (RTL)     → locators multi-idioma / dir=rtl
 //   8. Confirmación de orden            → 2 popups encadenados → /order-success
 //
+// Nota de orden: el ítem 6 (Modal) aparece pegado al 1 en este archivo, no en
+// su posición numérica — ambos comparten precondición (login+catálogo) bajo
+// un solo `beforeEach`. M06/M07/M08 mantienen el orden estricto 1→8.
+//
 // Siguen sin sesión heredada: cada test hace login por UI. Antes cada
 // test repetía `loginPage.loginInMarket(...)` + `catalogPage.expectLoaded()`
 // a mano (y los 4 de checkout además llamaban a un helper manual

@@ -48,6 +48,19 @@ Abre `fixtures/omnipizza.ts` y señala la diferencia que es el corazón del mód
 > Playwright ya tiene una herramienta más simple y más visible en el reporte para "ejecutar
 > código antes de cada test de este grupo": el hook.
 
+Así se ve en `tests/ejemplo.spec.ts` (dentro de `test.describe("Checkout widgets — item already in cart (M05)", ...)`):
+
+```ts
+test.beforeEach(async ({
+  page, loginPage, catalogPage, checkoutPage, standardUser, defaultMarket,
+}) => {
+  await loginPage.loginInMarket(standardUser, defaultMarket.code);
+  await catalogPage.addFirstPizza();
+  await page.goto("/checkout");
+  await checkoutPage.expectLoaded();
+});
+```
+
 ---
 
 ## Paso 6 — Demostración de `page.route()` (network mocking)
@@ -75,7 +88,7 @@ Los dos mecanismos que verás:
 
 **¿Qué pasa si registras 2 mocks distintos al mismo URL?** Gana el **último** registrado.
 
-> **Los locators de error/vacío son un patrón, no un test que deba pasar perfecto.** Los testids `catalog-error` / `catalog-empty` pueden no existir en OmniPizza tal cual — por eso el assert real del ejemplo es un `body` visible tentativo. Lo que aprendes es el **patrón** de mocking; ajusta el testid al DOM real cuando tengas el catálogo instrumentado.
+> **El assert real es deliberadamente estructural, no un placeholder.** OmniPizza no expone un testid propio de error/estado vacío en el catálogo, así que el `body` visible es la verificación honesta que enseña el **patrón** de mocking — no un test provisional a mejorar. Si tu propia app SÍ expone un testid de error, ese es el assert que usarías ahí.
 
 ---
 
