@@ -12,9 +12,7 @@
 
 import { test, expect } from "../fixtures/omnipizza";
 import { uniqueEmail } from "../helpers/unique-data";
-import type { CatalogPage, CheckoutPage } from "../pages";
 import type { Market } from "../types";
-import type { Page } from "@playwright/test";
 import marketsJson from "../data/markets.json";
 
 // Mercado US para el flujo de checkout completo (usa `zip-code`, no
@@ -65,11 +63,12 @@ test.describe("page.route() — network mocking (M05)", () => {
     // 2. Ejecutar el flujo
     await page.goto("/catalog");
 
-    // 3. Verificar que la UI reacciona al error
-    //    (test esperado: aparece un toast, banner o mensaje de error)
-    //    Este assert es tentativo — ajusta al DOM real de OmniPizza.
+    // 3. Verificar que la UI reacciona al error.
+    //    OmniPizza no expone (todavía) un estado de error instrumentado
+    //    con testid propio — por eso el assert real de este demo es
+    //    estructural (la página sigue viva). Lo que se enseña es el
+    //    PATRÓN de mocking, no un aserto de UI verificado.
     await expect(page.locator("body")).toBeVisible();
-    // Idealmente: await expect(page.getByTestId('catalog-error')).toBeVisible();
   });
 
   test("UI shows empty state when there are no pizzas", async ({ page }) => {
@@ -82,7 +81,9 @@ test.describe("page.route() — network mocking (M05)", () => {
     });
 
     await page.goto("/catalog");
-    // Idealmente: await expect(page.getByTestId('catalog-empty')).toBeVisible();
+
+    // Mismo caso: sin testid de estado vacío confirmado, el assert real
+    // es estructural — el PATRÓN es lo que importa aquí.
     await expect(page.locator("body")).toBeVisible();
   });
 });
@@ -120,21 +121,6 @@ test("uniqueEmail generates identifiers per worker", async ({}, testInfo) => {
 // reto.spec.ts) — y hace su propio login como SA.
 // ============================================================
 
-// Helper de setup: agrega una pizza + abre el checkout ya poblado (el
-// checkout vacío muestra `start-order-btn`, no el form). No hay paso de
-// login aquí: el `page` ya llega autenticado.
-async function openCheckoutWithItem(
-  page: Page,
-  catalogPage: CatalogPage,
-  checkoutPage: CheckoutPage,
-): Promise<void> {
-  await page.goto("/catalog");
-  await catalogPage.expectLoaded();
-  await catalogPage.addFirstPizza();
-  await page.goto("/checkout");
-  await checkoutPage.expectLoaded();
-}
-
 // ============================================================
 // 1) Date picker NATIVO — <input type="date">
 // ============================================================
@@ -159,119 +145,117 @@ test.describe("Native date picker on the profile (M08)", () => {
   });
 });
 
-// ============================================================
-// 2) Dropdown NATIVO de la tarjeta — <select> → selectOption
-// ============================================================
-// La expiración son DOS <select> nativos (mes/año). No se escriben
-// ni se clickea la lista: se accionan con .selectOption(value).
-// ============================================================
-test.describe("Credit card dropdowns (M08)", () => {
-  test("selectOption picks expiration month/year on the native <select>s @regression", async ({
-    page,
-    catalogPage,
-    checkoutPage,
-  }) => {
-    await openCheckoutWithItem(page, catalogPage, checkoutPage);
+test.describe("Checkout widgets — item already in cart (M08)", () => {
+  // Precondición compartida: agregar una pizza + abrir el checkout ya
+  // poblado. No hay login aquí: el `page` ya llega autenticado. Antes
+  // vivía en la función `openCheckoutWithItem(page, catalogPage,
+  // checkoutPage)`, llamada a mano en cada uno de los 4 tests de abajo.
+  test.beforeEach(async ({ page, catalogPage, checkoutPage }) => {
+    await page.goto("/catalog");
+    await catalogPage.expectLoaded();
+    await catalogPage.addFirstPizza();
+    await page.goto("/checkout");
+    await checkoutPage.expectLoaded();
+  });
 
-    await checkoutPage.selectPaymentMethod("card");
-    await checkoutPage.expectCardFieldsVisible();
+  // ============================================================
+  // 2) Dropdown NATIVO de la tarjeta — <select> → selectOption
+  // ============================================================
+  // La expiración son DOS <select> nativos (mes/año). No se escriben
+  // ni se clickea la lista: se accionan con .selectOption(value).
+  // ============================================================
+  test.describe("Credit card dropdowns (M08)", () => {
+    test("selectOption picks expiration month/year on the native <select>s @regression", async ({
+      checkoutPage,
+    }) => {
+      await checkoutPage.selectPaymentMethod("card");
+      await checkoutPage.expectCardFieldsVisible();
 
-    // Tarjeta de PRUEBA. Lo pedagógico: expMonth/expYear van por
-    // .selectOption() (son <select> nativos), no por .fill().
-    await checkoutPage.fillCard({
-      holder: "STANDARD USER",
-      number: "4111 1111 1111 1111",
-      expMonth: "05",
-      expYear: "28",
-      cvv: "123",
+      // Tarjeta de PRUEBA. Lo pedagógico: expMonth/expYear van por
+      // .selectOption() (son <select> nativos), no por .fill().
+      await checkoutPage.fillCard({
+        holder: "STANDARD USER",
+        number: "4111 1111 1111 1111",
+        expMonth: "05",
+        expYear: "28",
+        cvv: "123",
+      });
+
+      // El value de un <select> es el `value` del <option> elegido.
+      await checkoutPage.expectExpiry("05", "28");
     });
-
-    // El value de un <select> es el `value` del <option> elegido.
-    await checkoutPage.expectExpiry("05", "28");
   });
-});
 
-// ============================================================
-// 3) Método de pago — radio group de botones (role="radio")
-// ============================================================
-// No son <input type="radio">: son botones con role="radio". Se
-// eligen con .click() y el grupo reacciona en AMBOS sentidos. Como
-// "card" ya viene seleccionado por defecto, para probar la INTERACCIÓN
-// (y no el estado inicial) demostramos la TRANSICIÓN: cambiar a otro
-// método y volver. Detalle real de OmniPizza: los campos de tarjeta se
-// QUITAN del DOM cuando el método no es "card".
-// ============================================================
-test.describe("Payment method (radio group) (M08)", () => {
-  test("switching method shows/hides the card fields @regression", async ({
-    page,
-    catalogPage,
-    checkoutPage,
-  }) => {
-    await openCheckoutWithItem(page, catalogPage, checkoutPage);
+  // ============================================================
+  // 3) Método de pago — radio group de botones (role="radio")
+  // ============================================================
+  // No son <input type="radio">: son botones con role="radio". Se
+  // eligen con .click() y el grupo reacciona en AMBOS sentidos. Como
+  // "card" ya viene seleccionado por defecto, para probar la INTERACCIÓN
+  // (y no el estado inicial) demostramos la TRANSICIÓN: cambiar a otro
+  // método y volver. Detalle real de OmniPizza: los campos de tarjeta se
+  // QUITAN del DOM cuando el método no es "card".
+  // ============================================================
+  test.describe("Payment method (radio group) (M08)", () => {
+    test("switching method shows/hides the card fields @regression", async ({
+      checkoutPage,
+    }) => {
+      // Estado inicial: "card" es el método por defecto.
+      await checkoutPage.expectPaymentSelected("card");
+      await checkoutPage.expectCardFieldsVisible();
 
-    // Estado inicial: "card" es el método por defecto.
-    await checkoutPage.expectPaymentSelected("card");
-    await checkoutPage.expectCardFieldsVisible();
+      // Cambiar a "cash": el radio pasa a cash y los campos de tarjeta
+      // se quitan del DOM.
+      await checkoutPage.selectPaymentMethod("cash");
+      await checkoutPage.expectPaymentSelected("cash");
+      await checkoutPage.expectCardFieldsHidden();
 
-    // Cambiar a "cash": el radio pasa a cash y los campos de tarjeta
-    // se quitan del DOM.
-    await checkoutPage.selectPaymentMethod("cash");
-    await checkoutPage.expectPaymentSelected("cash");
-    await checkoutPage.expectCardFieldsHidden();
-
-    // Volver a "card": el radio regresa y los campos reaparecen.
-    await checkoutPage.selectPaymentMethod("card");
-    await checkoutPage.expectPaymentSelected("card");
-    await checkoutPage.expectCardFieldsVisible();
+      // Volver a "card": el radio regresa y los campos reaparecen.
+      await checkoutPage.selectPaymentMethod("card");
+      await checkoutPage.expectPaymentSelected("card");
+      await checkoutPage.expectCardFieldsVisible();
+    });
   });
-});
 
-// ============================================================
-// 4) Tooltip CUSTOM — hover revela un [role="tooltip"]
-// ============================================================
-// El ícono ℹ️ de la propina expone su texto en un tooltip propio
-// del DOM (aria-describedby → [role="tooltip"]). Se prueba con
-// .hover() y afirmando que el tooltip se hace visible.
-// ============================================================
-test.describe("Custom tooltip on the tip (M08)", () => {
-  test("hovering ℹ️ makes the tooltip visible @regression", async ({
-    page,
-    catalogPage,
-    checkoutPage,
-  }) => {
-    await openCheckoutWithItem(page, catalogPage, checkoutPage);
-
-    // Antes del hover el tooltip no existe en el DOM (oculto)…
-    await checkoutPage.expectTipTooltipHidden();
-    // …y el hover lo revela. Así el test prueba el hover, no un
-    // tooltip que estuviera siempre visible.
-    await checkoutPage.hoverTipInfo();
-    await checkoutPage.expectTipTooltipVisible();
+  // ============================================================
+  // 4) Tooltip CUSTOM — hover revela un [role="tooltip"]
+  // ============================================================
+  // El ícono ℹ️ de la propina expone su texto en un tooltip propio
+  // del DOM (aria-describedby → [role="tooltip"]). Se prueba con
+  // .hover() y afirmando que el tooltip se hace visible.
+  // ============================================================
+  test.describe("Custom tooltip on the tip (M08)", () => {
+    test("hovering ℹ️ makes the tooltip visible @regression", async ({
+      checkoutPage,
+    }) => {
+      // Antes del hover el tooltip no existe en el DOM (oculto)…
+      await checkoutPage.expectTipTooltipHidden();
+      // …y el hover lo revela. Así el test prueba el hover, no un
+      // tooltip que estuviera siempre visible.
+      await checkoutPage.hoverTipInfo();
+      await checkoutPage.expectTipTooltipVisible();
+    });
   });
-});
 
-// ============================================================
-// 5) Tooltip NATIVO — atributo title
-// ============================================================
-// El teléfono usa el tooltip nativo del navegador (atributo `title`).
-// Dos lecciones:
-//   • Los title NO se pintan en el DOM al hacer hover → Playwright NO
-//     puede afirmarlos como visibles; se leen del atributo.
-//   • El MENSAJE está localizado por market (MX: "Ingrese un teléfono
-//     válido (7-15 dígitos)", US: "Enter a valid phone number (7-15
-//     digits)"). Por eso afirmamos el fragmento estable "7-15", no el
-//     texto completo — mismo principio i18n que con los testids.
-// ============================================================
-test.describe("Native tooltip on the phone (M08)", () => {
-  test("the title is verified by reading the attribute, not via hover @regression", async ({
-    page,
-    catalogPage,
-    checkoutPage,
-  }) => {
-    await openCheckoutWithItem(page, catalogPage, checkoutPage);
-
-    const title = await checkoutPage.getPhoneTitle();
-    expect(title).toContain("7-15");
+  // ============================================================
+  // 5) Tooltip NATIVO — atributo title
+  // ============================================================
+  // El teléfono usa el tooltip nativo del navegador (atributo `title`).
+  // Dos lecciones:
+  //   • Los title NO se pintan en el DOM al hacer hover → Playwright NO
+  //     puede afirmarlos como visibles; se leen del atributo.
+  //   • El MENSAJE está localizado por market (MX: "Ingrese un teléfono
+  //     válido (7-15 dígitos)", US: "Enter a valid phone number (7-15
+  //     digits)"). Por eso afirmamos el fragmento estable "7-15", no el
+  //     texto completo — mismo principio i18n que con los testids.
+  // ============================================================
+  test.describe("Native tooltip on the phone (M08)", () => {
+    test("the title is verified by reading the attribute, not via hover @regression", async ({
+      checkoutPage,
+    }) => {
+      const title = await checkoutPage.getPhoneTitle();
+      expect(title).toContain("7-15");
+    });
   });
 });
 
