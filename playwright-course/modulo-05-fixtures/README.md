@@ -74,6 +74,8 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 3. **Data isolation:** `uniqueEmail(workerInfo)` para `fullyParallel: true`.
 4. **`page.route()`** — mocking de red para casos de error / vacío / latencia deterministas.
 5. **Por qué el fixture reemplaza `new LoginPage(page)`** — el test se lee como user story, no como plomería.
+6. **`test.beforeEach`** para eliminar precondiciones repetidas entre tests de un mismo
+   `describe` — sin tocar la ejecución (eso lo hace M06).
 
 ---
 
@@ -90,6 +92,9 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 | `page.route('**/api/pizzas', ...)` | Stub en Postman Mock Server: tú decides la respuesta |
 | `route.fulfill(...)` | Respondo yo, el backend ni se entera |
 | `route.continue()` | Dejo pasar al backend real (útil para meter latencia) |
+| `test.beforeEach` | Se repite ANTES de cada TC del describe — la "rutina" que todos comparten |
+| `test.afterEach` | Se repite DESPUÉS de cada TC — normalmente limpieza (aquí no hace falta: el context se resetea solo por test) |
+| `test.describe` anidado | Agrupa sub-secciones bajo un hook compartido sin perder sus propios nombres en el reporte |
 
 ---
 
@@ -301,13 +306,26 @@ export default defineConfig({
 - **Por qué:** este es el corazón del módulo. El detalle del `scope` (recuadro 🔍 de arriba) es lo que hace que la suite sea rápida y correcta a la vez.
 - **Cómo verifico:** en un spec, al teclear `async ({ ` el editor sugiere `loginPage`, `catalogPage`, `standardUser` (test) y `defaultMarket` (worker), todos ya tipados.
 
+> 🔍 **Detalle que parece obvio — fixtures (QUÉ se inyecta) vs hooks (CUÁNDO corre código)**
+> **Qué es:** `test.extend` (fixtures) te ENTREGA un objeto ya construido —
+> `loginPage`, `catalogPage`, etc. `test.beforeEach` (hook) EJECUTA código antes de
+> cada test — no te entrega nada nuevo, corre una rutina.
+> **Por qué así (y no la alternativa obvia):** son ortogonales, no competidores: el
+> `beforeEach` de `Checkout widgets` USA el `loginPage`/`catalogPage`/`checkoutPage` que el
+> fixture ya inyectó — el hook no podría hacer login sin el Page Object que el fixture le
+> entrega primero.
+> **Qué pasa si lo confundes:** intentar "inyectar" una precondición como si fuera un
+> fixture (ej. un fixture `withItemInCart` que hace login+agrega pizza) funciona, pero
+> Playwright ya tiene una herramienta más simple y más visible en el reporte para "ejecutar
+> código antes de cada test de este grupo": el hook.
+
 **4.2 — Corre el ejemplo de fixtures**
 - **Qué hago:**
   ```bash
   pnpm m5
   ```
 - **Por qué:** demuestra el fixture en acción — el test usa `loginPage.loginInMarket(...)` y `catalogPage.expectLoaded()` sin construir un solo Page Object a mano.
-- **Cómo verifico:** el test `los fixtures entregan LoginPage/CatalogPage ya listos` pasa; el test `defaultMarket es un worker fixture` confirma `defaultMarket.code === "MX"`.
+- **Cómo verifico:** el test `the fixtures deliver LoginPage/CatalogPage ready to use @smoke` pasa; el test `defaultMarket is a worker fixture: created once per worker` confirma `defaultMarket.code === "MX"`.
 
 > 💡 **Para el facilitador:** haz notar que **este spec todavía hace login por UI** en cada TC (dentro de `loginInMarket`). Ese es el puente a M06: *"¿y si el login se hiciera UNA sola vez y todos arrancaran ya dentro?"* — esa pregunta es literalmente el módulo siguiente.
 
@@ -322,6 +340,11 @@ export default defineConfig({
   3. `route.continue()` deja pasar el request al backend real (útil para introducir latencia, no para cambiar la respuesta).
 - **Por qué:** mockear la red da **determinismo absoluto** para casos de error (5xx, 404) o estado vacío, sin depender de qué responda hoy el backend real.
 - **Cómo verifico:** el patrón del ejemplo usa `**/api/pizzas*` como URL del route; el `route.fulfill` con `status: 500` produce el caso de error sin tocar OmniPizza.
+
+> 🪝 **Por qué esta sección no tiene un hook:** el mock debe registrarse ANTES del login
+> (que navega), y el body de cada mock es distinto (500 vs lista vacía) — no hay
+> precondición común que extraer. Es el contraste útil: un hook ayuda cuando 2+ tests
+> comparten código idéntico: aquí no lo comparten.
 
 > 🔍 **Detalle que parece obvio — registrar el mock ANTES del login, no justo antes de `/catalog`**
 > **Qué es:** en el ejemplo el `page.route("**/api/pizzas*", ...)` va **arriba del todo del test**, antes del `loginPage.loginInMarket(...)` que navega.
@@ -371,9 +394,10 @@ export default defineConfig({
 - [ ] Puedes mockear una respuesta con `page.route()` registrándolo **antes** del navigate.
 - [ ] Entiendes por qué en M05 el login todavía corre por UI en cada test (y por qué M06 lo elimina).
 - [ ] Resolviste el reto del mock con latencia (skeleton durante ~3s, pizzas después).
+- [ ] Puedes explicar la diferencia entre hooks (`beforeEach`/`afterEach`, CUÁNDO corre código) y fixtures (`test.extend`, QUÉ se inyecta).
 
 ---
 
 ## ¿Qué viene en M06?
 
-En M05 el login todavía corre por UI en **cada** test (dentro del fixture `loginPage`). En **M06 (Setup)** vas a eliminar ese login repetido: un `auth.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies: ['setup']` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures que armaste aquí van a "cobrar vida" corriendo ya con sesión.
+Los `test.beforeEach` de este módulo eliminan la repetición del **código** (ya no copias/pegas login+catálogo en cada test), pero el navegador **sigue** ejecutando un login real por UI en cada test — el hook corre igual de seguido que antes. En **M06 (Setup)** vas a eliminar esa repetición de **ejecución**: un `auth.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies: ['setup']` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures (y los hooks) que armaste aquí van a "cobrar vida" corriendo ya con sesión.
