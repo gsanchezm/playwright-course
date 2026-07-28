@@ -120,6 +120,7 @@ Ahora en M07 tenemos **3 servicios** (`Auth`, `Order`, `Pizza`) que comparten `b
 | `static async create(...)` | Factory — construye la instancia con todo conectado |
 | `extraHTTPHeaders: { Authorization }` | Bearer configurado una vez para toda la instancia |
 | `dispose()` | Limpieza: cierra el contexto HTTP al final del TC |
+| `test.beforeAll` / `test.afterAll` | Hermanos SUITE-scoped de los `beforeEach`/`afterEach` de M05 — corren 1 vez por archivo/describe, no por TC |
 
 ---
 

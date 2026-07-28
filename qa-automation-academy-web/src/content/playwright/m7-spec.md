@@ -97,6 +97,11 @@ export async function createAuthedContext(
 > Un método `static` pertenece a la **clase**, no a la instancia: se llama como `AuthService.create(...)`, sin haber creado nada todavía. Lo usamos porque la construcción es **asíncrona** (`await request.newContext(...)`) y un `constructor` en TS/JS **no puede ser `async`**. El factory `static async create()` envuelve ese `await` y devuelve la instancia ya armada.
 > 📚 Lo viste en [TS · M05 — Clases](/docs/typescript/m5-base-page). Aquí lo aplicas para construir cada servicio con su `APIRequestContext` (y, en las hijas con auth, sus headers) ya conectado.
 
+> 🔍 **Detalle que parece obvio — por qué `auth.spec.ts` usa `beforeAll`, no `beforeEach`**
+> **Qué es:** `tests/api/auth.spec.ts` envuelve sus tests en `test.beforeAll` (`auth = await AuthService.create(API_URL)`) y `test.afterAll` (`await auth.dispose()`) — no en `test.beforeEach` como los hooks de M05.
+> **Por qué así (y no la alternativa obvia):** el `APIRequestContext` que crea `AuthService.create()` es caro de construir y ningún test lo muta — compartirlo una vez por archivo (`beforeAll`) es correcto. Un `beforeEach` lo recrearía en cada test sin necesidad, encareciendo la suite sin ganar aislamiento real.
+> **Qué pasa si lo cambias:** si mutaras el `auth` compartido dentro de un test (ej. cerrando su contexto a mitad de la suite), los tests siguientes fallarían con errores confusos de "contexto cerrado" — la regla es la misma que en M05: recurso caro e inmutable → scope amplio (`beforeAll`/worker fixture); recurso ligado al test → scope por test (`beforeEach`/test fixture).
+
 > 🔷 **TypeScript — genéricos `Promise<T>`**
 > `Promise<LoginResponse>` es un **genérico**: `Promise` es el contenedor y `<LoginResponse>` el tipo que resuelve dentro. Al hacer `await auth.login(user)` TypeScript ya sabe que tienes un `LoginResponse` (con su `access_token`), no un `any`. Cambia el `<LoginResponse>` del retorno de `login()` por `<any>` y verás que el tipo del genérico deja de propagarse: quien hace `await` pierde el autocompletado de `access_token`.
 > 📚 Lo viste en [TS · M03 — Funciones](/docs/typescript/m3-login) (`async`/`await` y el tipo de retorno `Promise<T>`). Aquí lo aplicas a cada método de servicio para que el `await` devuelva el contrato correcto y no `any`.
