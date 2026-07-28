@@ -155,7 +155,7 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 - **Por qué:** M06 no es un proyecto nuevo — es M05 **+ storageState**. Traer el POM/fixtures completos (en vez de un subconjunto) mantiene el POM consistente entre módulos: la sesión heredada debe poder ejercitar checkout, menú, perfil y el modal de personalización igual que en M05, no solo login+catálogo.
 - **Cómo verifico:** `pnpm exec tsc --noEmit` limpio; `import { LoginPage, CatalogPage, CheckoutPage, MenuPage, ProfilePage, PizzaCustomizerModal } from "../pages"` y `import { test, expect } from "../fixtures/omnipizza"` resuelven sin error.
 
-> 💡 **Para el facilitador:** abre M05 y M06 lado a lado. En M05 cada test llamaba `loginPage.loginInMarket(...)` DENTRO del test. En M06 esa llamada **se muda** a `auth.setup.ts` — el POM y los fixtures son los MISMOS, solo cambia QUIÉN los invoca y CUÁNDO. Ese "antes/después" es el módulo entero.
+> 💡 **Para el facilitador:** abre M05 y M06 lado a lado. En M05 cada test llamaba `loginPage.loginInMarket(...)` dentro de un `test.beforeEach` (o directo en el test). En M06 esa llamada **se muda** a `auth.setup.ts` — el POM y los fixtures son los MISMOS, solo cambia QUIÉN los invoca y CUÁNDO. Ese "antes/después" es el módulo entero.
 
 ---
 
