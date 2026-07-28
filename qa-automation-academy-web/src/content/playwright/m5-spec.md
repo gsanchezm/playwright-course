@@ -1,6 +1,6 @@
 # El spec paso a paso
 
-Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: correr los specs que ya reciben los Page Objects inyectados por fixtures, leer la distinción test fixture vs worker fixture, y revisar la demostración de `page.route()` (mocking de red). Al final tienes el código completo de los tres archivos nuevos: `helpers/unique-data.ts`, `fixtures/omnipizza.ts` y `ejemplo.spec.ts`.
+Esta página cubre la parte de **lectura y ejecución del ejemplo** de M05: correr los specs que ya reciben los Page Objects inyectados por fixtures, leer la distinción test fixture vs worker fixture, y revisar la demostración de `page.route()` (mocking de red). Al final tienes el código completo de los tres archivos nuevos: `helpers/unique-data.ts`, `fixtures/omnipizza.ts` y `ejemplo.spec.ts` — este último también incluye los 8 escenarios de widgets nuevos que ves en detalle en [5.3 Widgets nuevos](/docs/playwright/m5-interacciones).
 
 ---
 
@@ -19,6 +19,7 @@ pnpm test:ui
 - El test `los fixtures entregan LoginPage/CatalogPage ya listos` pasa: usa `loginPage.loginInMarket(...)` y `catalogPage.expectLoaded()` **sin construir un solo Page Object a mano**.
 - El test `defaultMarket es un worker fixture` confirma `defaultMarket.code === "MX"` sin navegar (el dato no depende de una pestaña).
 - Los tests de `page.route()` mockean `/api/pizzas` (500 y estado vacío) y validan que la UI reacciona.
+- Al final del archivo corren los 8 escenarios de widgets nuevos (date picker, dropdowns, radio group, tooltips, modal, mercado RTL y confirmación de orden) — detalle completo en [5.3 Widgets nuevos](/docs/playwright/m5-interacciones).
 
 ---
 
@@ -129,7 +130,14 @@ export function workerPrefix(info: TestInfo): string {
 // ============================================================
 
 import { test as base, expect } from "@playwright/test";
-import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import {
+  LoginPage,
+  CatalogPage,
+  CheckoutPage,
+  MenuPage,
+  ProfilePage,
+  PizzaCustomizerModal,
+} from "../pages";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
@@ -141,6 +149,9 @@ type PageFixtures = {
   loginPage: LoginPage;
   catalogPage: CatalogPage;
   checkoutPage: CheckoutPage;
+  menuPage: MenuPage;
+  profilePage: ProfilePage;
+  pizzaCustomizer: PizzaCustomizerModal;
   standardUser: User;
 };
 
@@ -168,6 +179,15 @@ export const test = base.extend<PageFixtures, WorkerFixtures>({
   checkoutPage: async ({ page }, use) => {
     await use(new CheckoutPage(page));
   },
+  menuPage: async ({ page }, use) => {
+    await use(new MenuPage(page));
+  },
+  profilePage: async ({ page }, use) => {
+    await use(new ProfilePage(page));
+  },
+  pizzaCustomizer: async ({ page }, use) => {
+    await use(new PizzaCustomizerModal(page));
+  },
   // eslint-disable-next-line no-empty-pattern
   standardUser: async ({}, use) => {
     const u = users.find((u) => u.username === "standard_user");
@@ -184,6 +204,8 @@ export type { Market, User };
 
 ## Código completo — `ejemplo.spec.ts`
 
+Este archivo también incluye los 8 escenarios de widgets nuevos (date picker, dropdowns, radio group, tooltips, modal, mercado RTL y confirmación de orden) — los ves explicados paso a paso en [5.3 Widgets nuevos](/docs/playwright/m5-interacciones); aquí tienes el archivo completo.
+
 ```ts
 // @file modulo-05-fixtures/tests/ejemplo.spec.ts
 // ============================================================
@@ -199,6 +221,14 @@ export type { Market, User };
 // ============================================================
 
 import { test, expect } from "../fixtures/omnipizza";
+import { uniqueEmail } from "../helpers/unique-data";
+import type { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import type { Market, User } from "../types";
+import type { Page } from "@playwright/test";
+import marketsJson from "../data/markets.json";
+
+// Mercado US para el flujo de checkout (usa `zip-code`, no `district`).
+const usMarket = (marketsJson as Market[]).find((m) => m.code === "US")!;
 
 test.describe("Fixtures inyectan Page Objects (M05)", () => {
   test("los fixtures entregan LoginPage/CatalogPage ya listos @smoke", async ({
@@ -294,13 +324,254 @@ test.describe("page.route() — network mocking (M05)", () => {
 // siembran el mismo email/orden, colisionan. `uniqueEmail(info)` usa
 // `workerIndex` para que el dato de cada worker sea propio.
 
-import { uniqueEmail } from "../helpers/unique-data";
-
 test("uniqueEmail genera identificadores por worker", async ({}, testInfo) => {
   const email1 = uniqueEmail(testInfo);
   const email2 = uniqueEmail(testInfo, "locked");
   expect(email1).toContain(`w${testInfo.workerIndex}`);
   expect(email1).not.toBe(email2);
   expect(email2).toContain("locked+");
+});
+
+// ============================================================
+// 🧩 Interactuando con los widgets NUEVOS de OmniPizza
+// ============================================================
+// Antes vivían en tests/interacciones-nuevas.spec.ts — ahora están
+// aquí para tener TODO el módulo en un solo archivo.
+//
+// La plataforma sumó controles que valen oro para enseñar, porque
+// cada uno se automatiza con una técnica DISTINTA de Playwright:
+//
+//   1. Date picker nativo (perfil)      → fill("YYYY-MM-DD")
+//   2. Dropdown de tarjeta (checkout)   → selectOption(value)
+//   3. Método de pago (radio group)     → click + estado
+//   4. Tooltip CUSTOM (propina)         → hover + toBeVisible
+//   5. Tooltip NATIVO (teléfono)        → getAttribute("title")
+//   6. Modal / popup (Customize Pizza)  → abrir → interactuar → confirmar
+//   7. Mercado Arabia Saudita (RTL)     → locators multi-idioma / dir=rtl
+//   8. Confirmación de orden            → 2 popups encadenados → /order-success
+//
+// Siguen sin sesión heredada: cada test hace login por UI con el
+// fixture `loginPage` (en M06 ese login desaparece con storageState).
+// Los Page Objects vienen inyectados por el fixture.
+// ============================================================
+
+// Helper de setup: login por UI + agrega una pizza + abre el checkout
+// ya poblado (el checkout vacío muestra `start-order-btn`, no el form).
+// Lo compartimos entre los tests de checkout para no repetir el flujo.
+async function openCheckoutWithItem(
+  page: Page,
+  loginPage: LoginPage,
+  catalogPage: CatalogPage,
+  checkoutPage: CheckoutPage,
+  user: User,
+  market: Market,
+): Promise<void> {
+  await loginPage.loginInMarket(user, market.code);
+  await catalogPage.expectLoaded();
+  await catalogPage.addFirstPizza();
+  await page.goto("/checkout");
+  await checkoutPage.expectLoaded();
+}
+
+test.describe("Date picker nativo del perfil (M05)", () => {
+  test("fill('YYYY-MM-DD') fija el cumpleaños sin tocar el calendario @regression", async ({
+    loginPage,
+    catalogPage,
+    profilePage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
+    await catalogPage.expectLoaded();
+
+    await profilePage.goto();
+    await profilePage.expectLoaded();
+
+    await profilePage.setBirthday("1990-05-15");
+    await profilePage.expectBirthday("1990-05-15");
+  });
+});
+
+test.describe("Dropdowns de la tarjeta de crédito (M05)", () => {
+  test("selectOption elige mes/año de expiración en los <select> nativos @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await openCheckoutWithItem(
+      page,
+      loginPage,
+      catalogPage,
+      checkoutPage,
+      standardUser,
+      defaultMarket,
+    );
+
+    await checkoutPage.selectPaymentMethod("card");
+    await checkoutPage.expectCardFieldsVisible();
+    await checkoutPage.fillCard({
+      holder: "STANDARD USER",
+      number: "4111 1111 1111 1111",
+      expMonth: "05",
+      expYear: "28",
+      cvv: "123",
+    });
+    await checkoutPage.expectExpiry("05", "28");
+  });
+});
+
+test.describe("Método de pago (radio group) (M05)", () => {
+  test("cambiar de método muestra/oculta los campos de tarjeta @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await openCheckoutWithItem(
+      page,
+      loginPage,
+      catalogPage,
+      checkoutPage,
+      standardUser,
+      defaultMarket,
+    );
+
+    await checkoutPage.expectPaymentSelected("card");
+    await checkoutPage.expectCardFieldsVisible();
+
+    await checkoutPage.selectPaymentMethod("cash");
+    await checkoutPage.expectPaymentSelected("cash");
+    await checkoutPage.expectCardFieldsHidden();
+
+    await checkoutPage.selectPaymentMethod("card");
+    await checkoutPage.expectPaymentSelected("card");
+    await checkoutPage.expectCardFieldsVisible();
+  });
+});
+
+test.describe("Tooltip custom de la propina (M05)", () => {
+  test("hover sobre ℹ️ hace visible el tooltip @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await openCheckoutWithItem(
+      page,
+      loginPage,
+      catalogPage,
+      checkoutPage,
+      standardUser,
+      defaultMarket,
+    );
+
+    await checkoutPage.expectTipTooltipHidden();
+    await checkoutPage.hoverTipInfo();
+    await checkoutPage.expectTipTooltipVisible();
+  });
+});
+
+test.describe("Tooltip nativo del teléfono (M05)", () => {
+  test("el title se verifica leyendo el atributo, no por hover @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await openCheckoutWithItem(
+      page,
+      loginPage,
+      catalogPage,
+      checkoutPage,
+      standardUser,
+      defaultMarket,
+    );
+
+    const title = await checkoutPage.getPhoneTitle();
+    expect(title).toContain("7-15");
+  });
+});
+
+test.describe("Modal 'Customize Pizza' (M05)", () => {
+  test("abrir → elegir size + topping → confirmar suma al carrito @regression", async ({
+    loginPage,
+    catalogPage,
+    pizzaCustomizer,
+    menuPage,
+    standardUser,
+    defaultMarket,
+  }) => {
+    await loginPage.loginInMarket(standardUser, defaultMarket.code);
+    await catalogPage.expectLoaded();
+
+    await catalogPage.openCustomizerForFirst();
+    await pizzaCustomizer.expectOpen();
+
+    await pizzaCustomizer.selectSize("large");
+    await pizzaCustomizer.toggleTopping("mushrooms");
+
+    await pizzaCustomizer.confirm();
+    await pizzaCustomizer.expectClosed();
+    await menuPage.expectCartCount(1);
+  });
+});
+
+test.describe("Mercado Arabia Saudita / RTL (M05)", () => {
+  test("SA renderiza la app en RTL y precios en SAR @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    standardUser,
+  }) => {
+    await loginPage.loginInMarket(standardUser, "SA");
+    await catalogPage.expectLoaded();
+
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+
+    const price = await catalogPage.getFirstPizzaPrice();
+    expect(price).toContain("ر.س");
+  });
+});
+
+test.describe("Popups de confirmación de orden (M05)", () => {
+  test("place-order → modal de confirmación → /order-success @regression", async ({
+    page,
+    loginPage,
+    catalogPage,
+    checkoutPage,
+    standardUser,
+  }) => {
+    await loginPage.loginInMarket(standardUser, "US");
+    await catalogPage.expectLoaded();
+    await catalogPage.addFirstPizza();
+
+    await page.goto("/checkout");
+    await checkoutPage.expectLoaded();
+
+    await checkoutPage.fillWithMarket(usMarket);
+    await checkoutPage.selectPaymentMethod("card");
+    await checkoutPage.fillCard({
+      holder: "TEST USER",
+      number: "4111 1111 1111 1111",
+      expMonth: "05",
+      expYear: "28",
+      cvv: "123",
+    });
+
+    await checkoutPage.placeOrder();
+    await checkoutPage.expectConfirmOrderModal();
+
+    await checkoutPage.confirmOrder();
+    await checkoutPage.expectOrderSuccess();
+  });
 });
 ```

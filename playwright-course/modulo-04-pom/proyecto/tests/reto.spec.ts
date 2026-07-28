@@ -32,7 +32,7 @@
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import { LoginPage, CatalogPage, CheckoutPage, MenuPage } from "../pages";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
@@ -46,11 +46,12 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
     test(`Challenge-${market.code} — complete checkout in ${market.country}`, async ({
       page,
     }) => {
-      // Instanciamos los 3 Page Objects con el mismo `page`.
+      // Instanciamos los 4 Page Objects con el mismo `page`.
       // El POM no comparte estado entre ellos — solo la pestaña.
       const loginPage = new LoginPage(page);
       const catalogPage = new CatalogPage(page);
       const checkoutPage = new CheckoutPage(page);
+      const menuPage = new MenuPage(page);
 
       // ────────────────────────────────────────────────────────
       // TODO 1 — Login con standard_user en este mercado
@@ -88,17 +89,16 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
       // TODO 3 — Navegar a la pantalla de checkout
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Click en el enlace/ícono de "checkout" en la nav. El
-      //   testid suele ser `nav-checkout-desktop` (verifica en UI mode
-      //   si es distinto).
+      //   Click en el enlace de "checkout" en la nav.
       //
       // Pista:
-      //   await page.getByTestId("nav-checkout-desktop").click();
+      //   await menuPage.goToCheckout();
       //   await checkoutPage.expectLoaded();
       //
-      // 💡 Nota de POM: si terminas usando `nav-checkout-desktop`
-      // en varios tests, AÑADE un método público a `LoginPage` o
-      // crea un `NavBar` page. Por ahora, déjalo en el spec.
+      // 💡 Nota de POM: `MenuPage` ya existe (pages/MenuPage.ts) y
+      // encapsula la nav de TODA pantalla autenticada — por eso no
+      // escribes el testid `nav-checkout-*` inline aquí. Míralo en
+      // acción en tests/ejemplo.spec.ts.
 
 
       // ────────────────────────────────────────────────────────
@@ -157,8 +157,8 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 // ============================================================
 //
 //   1. ¿Cuántas líneas de Playwright (page.* / locator.*) terminaste
-//      escribiendo INLINE en el spec? (Esperado: ~1 — la del
-//      `nav-checkout-desktop`. El resto vive en los Pages.)
+//      escribiendo INLINE en el spec? (Esperado: ~0 — hasta la nav a
+//      checkout vive en MenuPage. TODO vive en los Pages.)
 //
 //   2. Si OmniPizza renombra el botón "Place order" a "Confirm",
 //      ¿cuántos archivos modificas? (Esperado: 1 — `CheckoutPage.ts`.)

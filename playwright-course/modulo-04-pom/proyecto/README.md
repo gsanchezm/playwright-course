@@ -7,8 +7,8 @@ Snapshot **runnable** de `playwright-course` **al terminar el Módulo 04**
 ## Qué suma M04 sobre M03
 
 - `pages/` — Page Objects (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`,
-  `MenuPage` + `index.ts`). Las ~8 líneas de login duplicadas de M01-M03 se vuelven
-  `await loginPage.loginInMarket(user, "MX")`.
+  `MenuPage`, `ProfilePage`, `PizzaCustomizerModal` + `index.ts`). Las ~8 líneas de
+  login duplicadas de M01-M03 se vuelven `await loginPage.loginInMarket(user, "MX")`.
 - Los specs de `modulo-04-pom/` se reescriben como *user stories* instanciando Pages.
 - **Config del runner: sin cambios vs M01-M03.** M04 es puro código (arquitectura POM
   en `pages/`), no toca configuración. Sigue con el único project anónimo `ui-anon`.

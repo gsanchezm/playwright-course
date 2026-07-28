@@ -19,8 +19,8 @@ import { test, expect } from "@playwright/test";
 const USERNAME = process.env.TEST_USER_USERNAME ?? "standard_user";
 const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 
-test.describe("Smoke con jerarquía de locators (M02)", () => {
-  test("TC-001 — login + catálogo aplicando la jerarquía @smoke", async ({ page }) => {
+test.describe("Smoke with locator hierarchy (M02)", () => {
+  test("TC-001 — login + catalog applying the hierarchy @smoke", async ({ page }) => {
     // --- PASO 1: Login ---
     await page.goto("/");
 

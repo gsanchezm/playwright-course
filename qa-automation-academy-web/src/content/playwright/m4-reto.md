@@ -4,6 +4,8 @@
 
 Abre `reto.spec.ts`. Tu trabajo es completar un flujo E2E **login → catálogo → addToCart → checkout → confirmación** usando los Page Objects ya construidos.
 
+Para navegar a checkout usas `menuPage.goToCheckout()` — `MenuPage` ya encapsula la nav de toda pantalla autenticada, así que no escribes ningún testid inline en el spec.
+
 `CheckoutPage` ya tiene métodos listos (revísalos primero):
 
 - `checkoutWith(market)` — atajo: fill + placeOrder.
@@ -28,7 +30,15 @@ Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
 // un E2E cuando todas las pantallas tienen su Page Object.
 //
 // Vas a implementar: login → catálogo → addToCart → checkout →
-// confirmación. Parametrizado por mercado. SIN locators inline.
+// confirmación. Parametrizado por los 5 mercados (MX/US/CH/JP/SA).
+// SIN locators inline.
+//
+// ⚠️ Arabia Saudita (SA) es el market nuevo y trae DOS diferencias
+// reales que este reto te hace descubrir:
+//   · su checkout NO tiene `zip-code`: usa el campo `district`.
+//   · "Place order" abre un MODAL de confirmación (role="dialog")
+//     en vez de enviar directo (confirmarlo y llegar a la pantalla
+//     de éxito es contenido de M05 — aquí basta con que aparezca).
 //
 // Regla de oro del POM:
 //   "Si necesitas un locator que no existe en su Page, NO lo escribas
@@ -36,18 +46,18 @@ Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**.
 // ============================================================
 //
 // 🧰 Pre-requisitos:
-//   ✔ pnpm m4 corre en verde (POM básico funciona).
+//   ✔ pnpm m4 corre en verde con los 5 mercados (MX/US/CH/JP/SA).
 //   ✔ Lees pages/CheckoutPage.ts y conoces sus métodos públicos.
 //
 // ▶ Cómo correr SOLO este reto:
-//   pnpm exec playwright test modulo-04-pom/reto.spec.ts --headed --project=ui-anon
+//   pnpm exec playwright test tests/reto.spec.ts --headed --project=ui-anon
 //
 //   (o con UI mode:)
 //   pnpm test:ui
 // ============================================================
 
 import { test, expect } from "@playwright/test";
-import { LoginPage, CatalogPage, CheckoutPage } from "../pages";
+import { LoginPage, CatalogPage, CheckoutPage, MenuPage } from "../pages";
 import type { Market, User } from "../types";
 import marketsJson from "../data/markets.json";
 import usersJson from "../data/users.json";
@@ -61,11 +71,12 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
     test(`Challenge-${market.code} — complete checkout in ${market.country}`, async ({
       page,
     }) => {
-      // Instanciamos los 3 Page Objects con el mismo `page`.
+      // Instanciamos los 4 Page Objects con el mismo `page`.
       // El POM no comparte estado entre ellos — solo la pestaña.
       const loginPage = new LoginPage(page);
       const catalogPage = new CatalogPage(page);
       const checkoutPage = new CheckoutPage(page);
+      const menuPage = new MenuPage(page);
 
       // ────────────────────────────────────────────────────────
       // TODO 1 — Login con standard_user en este mercado
@@ -103,52 +114,58 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
       // TODO 3 — Navegar a la pantalla de checkout
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Click en el enlace/ícono de "checkout" en la nav. El
-      //   testid suele ser `nav-checkout-desktop` (verifica en UI mode
-      //   si es distinto).
+      //   Click en el enlace de "checkout" en la nav.
       //
       // Pista:
-      //   await page.getByTestId("nav-checkout-desktop").click();
+      //   await menuPage.goToCheckout();
       //   await checkoutPage.expectLoaded();
       //
-      // 💡 Nota de POM: si terminas usando `nav-checkout-desktop`
-      // en varios tests, AÑADE un método público a `LoginPage` o
-      // crea un `NavBar` page. Por ahora, déjalo en el spec.
+      // 💡 Nota de POM: `MenuPage` ya existe (pages/MenuPage.ts) y
+      // encapsula la nav de TODA pantalla autenticada — por eso no
+      // escribes el testid `nav-checkout-*` inline aquí. Míralo en
+      // acción en tests/ejemplo.spec.ts.
 
 
       // ────────────────────────────────────────────────────────
       // TODO 4 — Rellenar el formulario con datos del mercado
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   `fillWithMarket` rellena nombre, teléfono, dirección y zip
-      //   con datos coherentes para el `market.code`.
+      //   `fillWithMarket` rellena nombre, teléfono, dirección y el
+      //   campo de dirección por mercado.
       //
       // Pista:
       //   await checkoutPage.fillWithMarket(market);
       //
+      // ⚠️ Reto real de SA: el checkout saudí NO tiene `zip-code`,
+      //   tiene `district` (testid `district`). Si `fillWithMarket`
+      //   siempre rellena `zip-code`, el caso SA fallará. Extiende
+      //   `CheckoutPage` para que, según `market.code`, rellene
+      //   `district` (con `market.district`) en SA y `zip-code` en el
+      //   resto. Ésa es la ventaja del POM: el cambio vive en UN
+      //   método, no en 5 tests.
+      //
       // Cómo verificar (UI mode):
-      //   Los 4 inputs del form aparecen rellenados con strings
-      //   distintos según el mercado.
+      //   Los inputs del form aparecen rellenados; en SA se llena
+      //   `district`, no `zip-code`.
 
 
       // ────────────────────────────────────────────────────────
       // TODO 5 — Enviar la orden y verificar la confirmación
       // ────────────────────────────────────────────────────────
       // Qué hacer:
-      //   Click en "Place order". OJO: el checkout es de 2 pasos —
-      //   "Place order" ya NO envía directo, abre un modal de
-      //   confirmación (`confirm-order-modal`, role="dialog").
-      //   Verifica que aparece — confirmarlo y llegar a
-      //   `/order-success` es contenido de M05.
+      //   "Place order" ya NO envía directo: abre un MODAL de
+      //   confirmación (role="dialog", testid `confirm-order-modal`).
+      //   Verifica que aparece — confirmarlo (`confirm-order-yes`) y
+      //   llegar a la pantalla `/order-success` es contenido de M05.
       //
       // Pista:
-      //   await checkoutPage.placeOrder();         // abre el modal
-      //   await checkoutPage.expectConfirmation();  // el modal aparece
+      //   await checkoutPage.placeOrder();       // abre el modal
+      //   await checkoutPage.expectConfirmation(); // el modal aparece
       //
       // Criterio de éxito:
       //   El test termina en VERDE para los 5 mercados.
       //   En la terminal verás:
-      //     ✓ Challenge-MX — complete checkout in México
+      //     ✓ Challenge-MX — complete checkout in Mexico
       //     ✓ Challenge-US — complete checkout in United States
       //     ✓ Challenge-CH — complete checkout in Switzerland
       //     ✓ Challenge-JP — complete checkout in Japan
@@ -165,15 +182,18 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 // ============================================================
 //
 //   1. ¿Cuántas líneas de Playwright (page.* / locator.*) terminaste
-//      escribiendo INLINE en el spec? (Esperado: ~1 — la del
-//      `nav-checkout-desktop`. El resto vive en los Pages.)
+//      escribiendo INLINE en el spec? (Esperado: ~0 — hasta la nav a
+//      checkout vive en MenuPage. TODO vive en los Pages.)
 //
 //   2. Si OmniPizza renombra el botón "Place order" a "Confirm",
 //      ¿cuántos archivos modificas? (Esperado: 1 — `CheckoutPage.ts`.)
 //
-//   3. Si tu colega añade un mercado nuevo a `markets.json`,
-//      ¿este reto se rompe? (Esperado: NO — se ejecuta una vez más
-//      sin que toques este archivo.)
+//   3. Si tu colega añade un mercado nuevo a `markets.json`, ¿este
+//      reto se rompe? (Esperado: casi nunca — se ejecuta una vez más
+//      solo. La EXCEPCIÓN fue SA: como cambió el CAMPO de dirección
+//      (`district` vs `zip-code`), tocaste UN método del POM, no 5
+//      tests. Ése es el límite sano del data-driven: los DATOS
+//      escalan gratis; un cambio de CONTRATO se absorbe en el POM.)
 //
 // 👉 En M06 vas a eliminar incluso la línea de login: un
 //    `auth.setup.ts` se ejecutará UNA sola vez y todos los TCs

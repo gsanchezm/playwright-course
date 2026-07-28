@@ -13,7 +13,7 @@ vive en [`../../modulo-05-fixtures/README.md`](../../modulo-05-fixtures/README.m
 - Interacciones con widgets nuevos: `pages/ProfilePage.ts` (date picker nativo) +
   `pages/PizzaCustomizerModal.ts` (modal "Customize Pizza") + `pages/CheckoutPage.ts`
   ampliado (radio de pago, `<select>` de tarjeta, tooltips, confirmación de orden en 2
-  pasos) y `tests/interacciones-nuevas.spec.ts` (8 tests).
+  pasos) — 8 escenarios más, todos dentro de `tests/ejemplo.spec.ts`.
 - **Config del runner: sin cambios de orquestación.** Un único project `chromium`
   anónimo. Los tests hacen login por UI (encapsulado en el POM). El setup project +
   `storageState` + `dependencies` llegan en **M06**; multi-browser en **M08**.

@@ -38,8 +38,8 @@ modulo-06-setup/proyecto/
 ├── tests/
 │   ├── setup/
 │   │   └── auth.setup.ts           ← 🆕 login por UI (con LoginPage) → guarda .auth/user.json
-│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login)
-│   ├── interacciones-nuevas.spec.ts ← (M05 — mismos 8 escenarios, adaptados a sesión heredada)
+│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login) +
+│   │                                    (M05) mismos 8 escenarios, adaptados a sesión heredada
 │   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
 ├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
 ├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
