@@ -12,7 +12,7 @@
 // que ya construiste en M04, inyectado por el fixture de M05.
 // ============================================================
 
-import { test, expect } from "../fixtures/omnipizza";
+import { test } from "../fixtures/omnipizza";
 
 test.describe("Setup & auth — inherited session (M06)", () => {
   test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {

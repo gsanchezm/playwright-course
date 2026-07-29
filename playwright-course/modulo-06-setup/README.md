@@ -358,7 +358,7 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 **5.3 — El segundo test: la sesión sobrevive varias páginas, no solo `/catalog`**
 - **Qué hago:** en el mismo archivo, el test `the badge persists across pages without re-login` va más lejos: agrega una pizza en `/catalog`, navega a `/profile` y luego a `/checkout` — sin ningún login en el camino — y confirma que las 3 cargan.
 - **Por qué:** el primer test solo prueba UNA página. Este prueba que el badge no es un truco de la primera pantalla: te sigue por toda la app.
-- **Cómo verifico:** el test pasa y, si buscas la palabra `login` en el archivo, solo aparece en comentarios.
+- **Cómo verifico:** el test pasa y no hay ninguna llamada a `loginPage.loginInMarket(...)` en el archivo.
 
 **5.4 — El widget de muestra: el modal bajo sesión heredada**
 - **Qué hago:** reviso el describe `Modal 'Customize Pizza' (M06)`. Es el MISMO modal de M05 (mismo `PizzaCustomizerModal`, mismos pasos: abrir → tamaño → topping → confirmar) — la única diferencia es que ya no hay `loginPage.loginInMarket(...)` antes: arranca con `page.goto('/catalog')` directo.

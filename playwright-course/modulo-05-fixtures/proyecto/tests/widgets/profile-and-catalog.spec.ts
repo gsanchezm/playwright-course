@@ -21,7 +21,8 @@
 //
 // Nota de orden: el ítem 6 (Modal) vive junto al 1 en ESTE archivo, no en
 // su posición numérica — ambos comparten precondición (login+catálogo) bajo
-// un solo `beforeEach`. M06/M07/M08 mantienen el orden estricto 1→8.
+// un solo `beforeEach`. M08 (el agregado final) mantiene el orden estricto
+// 1→8; M06 se queda solo con el ítem 6 y M07 con ninguno.
 //
 // Siguen sin sesión heredada: cada test hace login por UI. Antes cada
 // test repetía `loginPage.loginInMarket(...)` + `catalogPage.expectLoaded()`
@@ -32,7 +33,7 @@
 // eso lo elimina M06 con storageState), pero el CÓDIGO ya no se repite.
 // ============================================================
 
-import { test, expect } from "../../fixtures/omnipizza";
+import { test } from "../../fixtures/omnipizza";
 
 test.describe("Catalog-scoped widgets (M05)", () => {
   // Precondición compartida: login + catálogo cargado. Antes eran las

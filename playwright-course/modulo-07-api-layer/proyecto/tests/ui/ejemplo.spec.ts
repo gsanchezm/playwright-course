@@ -19,7 +19,7 @@
 // `modulo-06-setup/proyecto/tests/ejemplo.spec.ts`.
 // ============================================================
 
-import { test, expect } from "../../fixtures/omnipizza";
+import { test } from "../../fixtures/omnipizza";
 
 test.describe("Setup & auth — inherited session (M04-M06, still valid in M07)", () => {
   test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {

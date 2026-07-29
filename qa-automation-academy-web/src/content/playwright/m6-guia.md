@@ -359,7 +359,7 @@ Esto demuestra el grafo — no invocas el setup tú: lo **declaras** y Playwrigh
 // que ya construiste en M04, inyectado por el fixture de M05.
 // ============================================================
 
-import { test, expect } from "../fixtures/omnipizza";
+import { test } from "../fixtures/omnipizza";
 
 test.describe("Setup & auth — inherited session (M06)", () => {
   test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {
@@ -395,7 +395,7 @@ test.describe("Setup & auth — inherited session (M06)", () => {
 });
 ```
 
-**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó, sin renunciar al POM/fixtures. Un segundo test lleva la prueba más lejos: la misma sesión te sigue de `/catalog` a `/profile` y a `/checkout` sin volver a pasar por login, así que el badge no es un truco de la primera pantalla.
+**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó, sin renunciar al POM/fixtures. Un segundo test lleva la prueba más lejos: la misma sesión te sigue de `/catalog` a `/profile` y a `/checkout` sin volver a pasar por login, así que el badge no es un truco de la primera pantalla. El archivo suma además un widget de muestra: el mismo modal "Customize Pizza" de M05, pero arrancando directo con `page.goto('/catalog')` en vez de login — prueba que la técnica del widget no cambia según cómo llegaste autenticado (los otros 7 no se repiten; siguen en `modulo-05-fixtures/proyecto/tests/widgets/`).
 
 ---
 
