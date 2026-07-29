@@ -55,6 +55,7 @@ test.beforeEach(async ({
   page, loginPage, catalogPage, checkoutPage, standardUser, defaultMarket,
 }) => {
   await loginPage.loginInMarket(standardUser, defaultMarket.code);
+  await catalogPage.expectLoaded();
   await catalogPage.addFirstPizza();
   await page.goto("/checkout");
   await checkoutPage.expectLoaded();
