@@ -417,6 +417,7 @@ test.describe("Setup & auth — inherited session (M06)", () => {
 - [ ] `.auth/user.json` se crea al correr el setup (login por UI → `storageState`).
 - [ ] Puedes explicar por qué el login es **por UI** aquí (y cuándo cambiarías a API).
 - [ ] El test de `ejemplo.spec.ts` arranca **ya autenticado**: `page.goto("/catalog")` sin login.
+- [ ] Puedes explicar por qué el test de persistencia entre páginas (`/catalog` → `/profile` → `/checkout`) es una prueba más fuerte de "sesión heredada" que aterrizar una sola vez en `/catalog`.
 - [ ] Entiendes por qué `storageState` va **en el project** `chromium`, no en el `use:` raíz.
 - [ ] Sabes que `dependencies: ['setup']` declara el orden y hace visible el setup en el reporte.
 - [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, sin llegar a `/catalog`) renunciando al badge con `test.use({ storageState: { cookies: [], origins: [] } })`.
