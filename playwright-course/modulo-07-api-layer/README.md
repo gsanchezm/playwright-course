@@ -13,7 +13,7 @@
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** (la suite que la consume). La novedad conceptual: por primera vez en el curso aparece una **clase abstracta**. Y algo que NO es novedad y por eso vale la pena señalarlo: `pages/`, `fixtures/`, `tests/setup/` (POM + storageState de M04-M06) **siguen aquí, intactos** — M07 SUMA una capa, no reemplaza la anterior. `tests/ejemplo.spec.ts`/`tests/reto.spec.ts` de M06 se mudan a `tests/ui/` (mismo contenido) solo para no chocar de nombre con los `ejemplo.spec.ts`/`reto.spec.ts` NUEVOS de este módulo, que son de API.
+Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** (la suite que la consume). La novedad conceptual: por primera vez en el curso aparece una **clase abstracta**. Y algo que NO es novedad y por eso vale la pena señalarlo: `pages/`, `fixtures/`, `tests/setup/` (POM + storageState de M04-M06) **siguen aquí, intactos** — M07 SUMA una capa, no reemplaza la anterior. `tests/ejemplo.spec.ts`/`tests/reto.spec.ts` de M06 se mudan a `tests/ui/` solo para no chocar de nombre con los `ejemplo.spec.ts`/`reto.spec.ts` NUEVOS de este módulo, que son de API. `reto.spec.ts` sigue siendo el mismo contenido; `ejemplo.spec.ts` no — M06 y M07 recortaron su replay de widgets de forma independiente (M06 se quedó con 3 tests, M07 con 1), así que ya no son idénticos.
 
 ```
 playwright-course/
