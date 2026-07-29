@@ -5,7 +5,7 @@
 - `fixtures/omnipizza.ts` — custom fixtures con `test.extend`: inyectan Page Objects + usuario/mercado.
 - `helpers/unique-data.ts` — identificadores únicos por worker para paralelismo seguro.
 - Demostración de `page.route()` para mocking de red (error, estado vacío, latencia).
-- `pages/ProfilePage.ts` + `pages/PizzaCustomizerModal.ts` + `pages/CheckoutPage.ts` ampliado (radio de pago, `<select>` de tarjeta, tooltips, confirmación de orden en 2 pasos) — interacciones con widgets nuevos, 8 escenarios más dentro de `tests/ejemplo.spec.ts`.
+- `pages/ProfilePage.ts` + `pages/PizzaCustomizerModal.ts` + `pages/CheckoutPage.ts` ampliado (radio de pago, `<select>` de tarjeta, tooltips, confirmación de orden en 2 pasos) — interacciones con widgets nuevos, 8 escenarios más repartidos en `tests/widgets/` (uno por funcionalidad).
 
 ---
 
@@ -28,8 +28,11 @@ modulo-05-fixtures/proyecto/
 │   └── CheckoutPage.ts            ← ampliado: radio pago, <select> tarjeta, tooltips, confirmación de orden
 ├── types/                         ← (M03)
 ├── tests/
-│   ├── ejemplo.spec.ts            ← 🆕 fixtures + page.route() (mocking) + widgets nuevos
-│   │                                  (date picker, modal Customize, checkout 2 pasos, tooltips) — 8 escenarios más
+│   ├── ejemplo.spec.ts            ← 🆕 fixtures + page.route() (mocking) + data isolation
+│   ├── widgets/                   ← 🆕 8 escenarios de widgets nuevos, repartidos por funcionalidad
+│   │   ├── profile-and-catalog.spec.ts    ← date picker + modal Customize Pizza
+│   │   ├── checkout-controls.spec.ts      ← dropdowns, método de pago, 2 tooltips
+│   │   └── market-and-order-flow.spec.ts  ← mercado SA/RTL + confirmación de orden
 │   └── reto.spec.ts               ← 🆕 mock con latencia simulada
 ├── playwright.config.ts           ← un solo project `chromium` (sin setup, sin storageState)
 ├── package.json · tsconfig.json · .env.example
@@ -319,7 +322,7 @@ export default defineConfig({
 > Playwright ya tiene una herramienta más simple y más visible en el reporte para "ejecutar
 > código antes de cada test de este grupo": el hook.
 
-Así se ve en `tests/ejemplo.spec.ts` (dentro de `test.describe("Checkout widgets — item already in cart (M05)", ...)`):
+Así se ve en `tests/widgets/checkout-controls.spec.ts` (dentro de `test.describe("Checkout widgets — item already in cart (M05)", ...)`):
 
 ```ts
 test.beforeEach(async ({

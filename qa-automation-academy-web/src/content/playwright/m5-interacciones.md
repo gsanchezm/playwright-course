@@ -1,13 +1,13 @@
 # M05 · Widgets nuevos: interacciones de UI
 
-> 🎁 **Vive en el `proyecto/` de M05.** OmniPizza sumó controles nuevos —date picker, dropdowns, radio group, tooltips, modales y un market RTL— y cada uno se automatiza con una técnica **distinta** de Playwright. Todo esto ya está armado en el proyecto de referencia: los Page Objects `pages/ProfilePage.ts` y `pages/PizzaCustomizerModal.ts`, las ampliaciones de `pages/CheckoutPage.ts` / `pages/CatalogPage.ts`, y 8 escenarios más dentro de `tests/ejemplo.spec.ts` (junto con los fixtures y el mocking de red del resto del módulo). Ábrelo con `pnpm install` → `cp .env.example .env` → `pnpm exec playwright test tests/ejemplo.spec.ts --grep @regression`.
+> 🎁 **Vive en el `proyecto/` de M05.** OmniPizza sumó controles nuevos —date picker, dropdowns, radio group, tooltips, modales y un market RTL— y cada uno se automatiza con una técnica **distinta** de Playwright. Todo esto ya está armado en el proyecto de referencia: los Page Objects `pages/ProfilePage.ts` y `pages/PizzaCustomizerModal.ts`, las ampliaciones de `pages/CheckoutPage.ts` / `pages/CatalogPage.ts`, y 8 escenarios más repartidos en `tests/widgets/` (un archivo por funcionalidad; los fixtures y el mocking de red del resto del módulo viven en `tests/ejemplo.spec.ts`). Ábrelo con `pnpm install` → `cp .env.example .env` → `pnpm exec playwright test tests/widgets --grep @regression`.
 
 **Duración estimada:** 45-60 min
 **Piezas que suma al framework:**
 - `pages/ProfilePage.ts` — 🆕 date picker NATIVO (`<input type="date">`).
 - `pages/PizzaCustomizerModal.ts` — 🆕 modal SIN `role="dialog"`.
 - `pages/CheckoutPage.ts` — ampliado: radio group de pago, dropdowns de tarjeta, tooltips y confirmación de orden.
-- 8 escenarios más (uno por técnica) dentro de `tests/ejemplo.spec.ts`.
+- 8 escenarios más (uno por técnica), repartidos en `tests/widgets/` (un archivo por funcionalidad).
 
 Corre en el mismo project `chromium` **sin sesión heredada**: cada test hace login por UI con el fixture `loginPage`, y todos los Page Objects (`profilePage`, `pizzaCustomizer`, `checkoutPage`…) **vienen inyectados** por el fixture de M05. Aquí no construyes ningún Page Object a mano.
 
@@ -74,7 +74,7 @@ async expectBirthday(isoDate: string): Promise<void> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/profile-and-catalog.spec.ts
 await profilePage.goto();
 await profilePage.expectLoaded();
 
@@ -120,7 +120,7 @@ async expectExpiry(month: string, year: string): Promise<void> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/checkout-controls.spec.ts
 await checkoutPage.selectPaymentMethod("card");
 await checkoutPage.expectCardFieldsVisible();
 
@@ -169,7 +169,7 @@ async expectCardFieldsHidden(): Promise<void> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/checkout-controls.spec.ts
 // Estado inicial: "card" es el método por defecto.
 await checkoutPage.expectPaymentSelected("card");
 await checkoutPage.expectCardFieldsVisible();
@@ -222,7 +222,7 @@ async getPhoneTitle(): Promise<string | null> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/checkout-controls.spec.ts
 // CUSTOM: antes del hover no existe; el hover lo revela.
 await checkoutPage.expectTipTooltipHidden();
 await checkoutPage.hoverTipInfo();
@@ -271,7 +271,7 @@ async expectClosed(): Promise<void> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/profile-and-catalog.spec.ts
 await catalogPage.openCustomizerForFirst();
 await pizzaCustomizer.expectOpen();
 
@@ -328,7 +328,7 @@ async expectOrderSuccess(): Promise<void> {
 ```
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/market-and-order-flow.spec.ts
 // Paso 1 — place-order abre el popup de confirmación (role="dialog").
 await checkoutPage.placeOrder();
 await checkoutPage.expectConfirmOrderModal();
@@ -350,7 +350,7 @@ await checkoutPage.expectOrderSuccess();
 Al elegir el market `SA`, la app entera pasa a **RTL**: `html[dir="rtl"] lang="ar"` y los precios salen en riyal saudí (`ر.س`, SAR). Su checkout usa un campo `district` (no `zip-code`, ver `data/markets.json`). Es el recordatorio del curso: por eso **no** se localiza por texto —los testids son estables en todos los markets, el texto no.
 
 ```ts
-// @file modulo-05-fixtures/tests/ejemplo.spec.ts
+// @file modulo-05-fixtures/tests/widgets/market-and-order-flow.spec.ts
 // "SA" ya es un CountryCode válido (ver types/omnipizza.d.ts).
 await loginPage.loginInMarket(standardUser, "SA");
 await catalogPage.expectLoaded();
@@ -372,7 +372,7 @@ expect(price).toContain("ر.س");
 
 ## ▶️ Cómo ejecutar
 
-- **Solo estos escenarios:** desde `proyecto/`, `pnpm exec playwright test tests/ejemplo.spec.ts --grep @regression --headed --project=chromium`
+- **Solo estos escenarios:** desde `proyecto/`, `pnpm exec playwright test tests/widgets --grep @regression --headed --project=chromium`
 - **Filtrar por tag:** `pnpm exec playwright test --grep @regression`
 - **UI mode (recomendado la 1ª vez):** `pnpm test:ui`
 - **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
