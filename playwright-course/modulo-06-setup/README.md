@@ -43,7 +43,8 @@ modulo-06-setup/proyecto/
 │   ├── setup/
 │   │   └── auth.setup.ts           ← 🆕 login por UI (con LoginPage) → guarda .auth/user.json
 │   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login) +
-│   │                                    (M05) mismos 8 escenarios, adaptados a sesión heredada
+│   │                                    prueba de sesión persistente entre páginas + 1 widget de
+│   │                                    muestra (modal); los otros 7 de M05 no se repiten aquí
 │   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
 ├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
 ├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
@@ -344,7 +345,7 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
   ```ts
   import { test, expect } from "../fixtures/omnipizza";
 
-  test("aterriza en /catalog sin hacer login @smoke", async ({ page, catalogPage }) => {
+  test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {
     await page.goto("/catalog");        // ← directo al catálogo
     await catalogPage.expectLoaded();   // ← el MISMO CatalogPage de M04
     await catalogPage.expectHasPizzas();
@@ -353,6 +354,16 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
   **No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04.
 - **Por qué:** ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó. Usar `catalogPage` en vez de `page.locator(...)` a mano demuestra que el POM/fixtures NO desaparecen al llegar aquí — solo se les suma el badge por encima.
 - **Cómo verifico:** el test pasa y no hay ninguna línea de login en el spec.
+
+**5.3 — El segundo test: la sesión sobrevive varias páginas, no solo `/catalog`**
+- **Qué hago:** en el mismo archivo, el test `the badge persists across pages without re-login` va más lejos: agrega una pizza en `/catalog`, navega a `/profile` y luego a `/checkout` — sin ningún login en el camino — y confirma que las 3 cargan.
+- **Por qué:** el primer test solo prueba UNA página. Este prueba que el badge no es un truco de la primera pantalla: te sigue por toda la app.
+- **Cómo verifico:** el test pasa y, si buscas la palabra `login` en el archivo, solo aparece en comentarios.
+
+**5.4 — El widget de muestra: el modal bajo sesión heredada**
+- **Qué hago:** reviso el describe `Modal 'Customize Pizza' (M06)`. Es el MISMO modal de M05 (mismo `PizzaCustomizerModal`, mismos pasos: abrir → tamaño → topping → confirmar) — la única diferencia es que ya no hay `loginPage.loginInMarket(...)` antes: arranca con `page.goto('/catalog')` directo.
+- **Por qué:** M05 ya enseñó los 8 escenarios de widgets completos; repetirlos aquí no cambiaría nada de la TÉCNICA (la forma de interactuar con un `<select>`, un tooltip o un modal no depende de cómo llegaste autenticado). Este módulo se queda con uno solo, a modo de prueba, y te manda de vuelta a `modulo-05-fixtures/proyecto/tests/widgets/` si quieres repasar los otros 7.
+- **Cómo verifico:** el test pasa; comparado con el mismo test en M05, es idéntico salvo por la precondición.
 
 > 💡 **Para el facilitador:** pide a cada alumno que **verbalice el flujo**: *"setup corre 1 vez → escribe `.auth/user.json` → chromium lo lee vía storageState → mi test arranca autenticado"*. No avances hasta que lo hayan dicho con sus palabras.
 
@@ -390,6 +401,7 @@ Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup proj
 - [ ] `.auth/user.json` se crea al correr el setup (login por UI → `storageState`).
 - [ ] Puedes explicar por qué el login es **por UI** aquí (y cuándo cambiarías a API).
 - [ ] El test de `ejemplo.spec.ts` arranca **ya autenticado**: `page.goto("/catalog")` sin login.
+- [ ] Puedes explicar por qué el test de persistencia entre páginas (`/catalog` → `/profile` → `/checkout`) es una prueba más fuerte de "sesión heredada" que aterrizar una sola vez en `/catalog`.
 - [ ] Entiendes por qué `storageState` va **en el project** `chromium`, no en el `use:` raíz.
 - [ ] Sabes que `dependencies: ['setup']` declara el orden y hace visible el setup en el reporte.
 - [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, sin llegar a `/catalog`) renunciando al badge con `test.use({ storageState: { cookies: [], origins: [] } })`.

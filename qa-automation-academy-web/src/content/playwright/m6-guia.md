@@ -39,7 +39,8 @@ modulo-06-setup/proyecto/
 │   ├── setup/
 │   │   └── auth.setup.ts           ← 🆕 login por UI (con LoginPage) → guarda .auth/user.json
 │   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login) +
-│   │                                    (M05) mismos 8 escenarios, adaptados a sesión heredada
+│   │                                    prueba de sesión persistente entre páginas + 1 widget de
+│   │                                    muestra (modal); los otros 7 de M05 no se repiten aquí
 │   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
 ├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
 ├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
@@ -360,8 +361,8 @@ Esto demuestra el grafo — no invocas el setup tú: lo **declaras** y Playwrigh
 
 import { test, expect } from "../fixtures/omnipizza";
 
-test.describe("Setup & auth — sesión heredada (M06)", () => {
-  test("aterriza en /catalog sin hacer login @smoke", async ({ page, catalogPage }) => {
+test.describe("Setup & auth — inherited session (M06)", () => {
+  test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {
     // ⚠️ No hay paso de login. El storageState ya trajo la sesión.
     await page.goto("/catalog");
 
@@ -371,10 +372,30 @@ test.describe("Setup & auth — sesión heredada (M06)", () => {
     await catalogPage.expectLoaded();
     await catalogPage.expectHasPizzas();
   });
+
+  test("the badge persists across pages without re-login @smoke", async ({
+    page,
+    catalogPage,
+    profilePage,
+    checkoutPage,
+  }) => {
+    // Prueba más fuerte que el test de arriba: no solo aterrizas
+    // autenticado en /catalog — la MISMA sesión te sigue a /profile y
+    // a /checkout sin volver a pasar por login en ningún punto.
+    await page.goto("/catalog");
+    await catalogPage.expectLoaded();
+    await catalogPage.addFirstPizza();
+
+    await profilePage.goto();
+    await profilePage.expectLoaded();
+
+    await page.goto("/checkout");
+    await checkoutPage.expectLoaded();
+  });
 });
 ```
 
-**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó, sin renunciar al POM/fixtures.
+**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó, sin renunciar al POM/fixtures. Un segundo test lleva la prueba más lejos: la misma sesión te sigue de `/catalog` a `/profile` y a `/checkout` sin volver a pasar por login, así que el badge no es un truco de la primera pantalla.
 
 ---
 
