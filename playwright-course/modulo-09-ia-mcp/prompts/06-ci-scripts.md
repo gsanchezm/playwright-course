@@ -28,19 +28,25 @@ REQUIREMENTS:
    - typecheck
    - report
    - install:browsers
-2. .github/workflows/playwright.yml with TWO jobs:
-   Job "test" — runs on push + pull_request; fast, chromium-only:
+2. .github/workflows/playwright.yml with THREE jobs, wired to make the test pyramid visible as a real pipeline (API gates UI):
+   Job "api-tests" — runs on push + pull_request; the pyramid's base layer, no browser needed:
    - checkout
    - setup Node
-   - setup pnpm
+   - setup pnpm (use actions/setup-node's built-in `cache: pnpm` so the duplicated installs across jobs stay cheap)
+   - pnpm install --frozen-lockfile
+   - pnpm typecheck
+   - pnpm test:api
+   - upload Playwright report on failure
+   Job "ui-tests" — runs on push + pull_request; `needs: api-tests` so it only starts once the API layer is green; chromium-only for fast feedback:
+   - checkout
+   - setup Node
+   - setup pnpm (same pnpm cache)
    - pnpm install --frozen-lockfile
    - pnpm exec playwright install --with-deps chromium
-   - pnpm typecheck
    - pnpm test:smoke
-   - pnpm test:api
    - pnpm test:ui
    - upload Playwright report on failure
-   Job "cross-browser" — opt-in only (on: workflow_dispatch and optionally a nightly schedule); full matrix:
+   Job "cross-browser" — opt-in only (on: workflow_dispatch and optionally a nightly schedule); full matrix, independent from the push path:
    - checkout / setup Node / setup pnpm / pnpm install --frozen-lockfile
    - pnpm exec playwright install --with-deps chromium firefox webkit
    - pnpm test:cross
@@ -48,6 +54,7 @@ REQUIREMENTS:
    Keep the cross-browser job OFF the per-push path so PRs stay fast; it runs on demand or on schedule.
 3. Keep secrets/env explicit through .env.example and CI env vars.
 4. Do not skip API tests when TEST_PLAN.md contains confirmed API cases.
+5. The `needs: api-tests` dependency is the point of this design: it makes the pyramid a real gate, not just doc — if `api-tests` fails, `ui-tests` never runs, so PRs fail fast on the cheaper integration layer before paying for the slower E2E layer.
 
 RULES:
 - Do not introduce npm or yarn lockfiles.

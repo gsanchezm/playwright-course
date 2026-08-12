@@ -367,10 +367,14 @@ pnpm test:ui
 ```
 
 CI se agrega aqui porque antes de tener specs reales no hay suficiente evidencia
-para decidir que debe correr el pipeline. El workflow tiene dos jobs: `test`
-(chromium, corre en cada push/PR: smoke + api + ui) y `cross-browser` (opt-in via
-`workflow_dispatch` o nightly: instala Chromium/Firefox/WebKit y corre
-`pnpm test:cross`). Asi los PRs quedan rapidos y la matriz completa corre bajo
+para decidir que debe correr el pipeline. El workflow tiene tres jobs:
+`api-tests` (corre en cada push/PR: typecheck + api), `ui-tests` (chromium,
+corre en cada push/PR pero solo si `api-tests` paso, via `needs: api-tests`:
+smoke + ui) y `cross-browser` (opt-in via `workflow_dispatch` o nightly:
+instala Chromium/Firefox/WebKit y corre `pnpm test:cross`). La dependencia
+`api-tests` -> `ui-tests` deja visible en GitHub Actions la piramide de
+pruebas: la capa API (mas rapida, mas casos) bloquea la capa UI (mas lenta,
+mas cara) si falla. Asi los PRs quedan rapidos y la matriz completa corre bajo
 demanda. El workflow se valida localmente; solo corre en GitHub cuando el paso 8
 crea el repo y hace push.
 
