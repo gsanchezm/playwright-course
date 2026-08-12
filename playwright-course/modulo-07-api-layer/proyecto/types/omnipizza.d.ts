@@ -85,15 +85,49 @@ export interface OrderPayload {
   chip?: number;
 }
 
-export interface Order {
-  id: string;
-  status: "pending" | "confirmed" | "delivered" | "cancelled";
-  total: number;
-  currency: Currency;
-  createdAt: string;
+// Ítem tal como lo devuelve el backend en la respuesta (no confundir con el
+// ítem del REQUEST en OrderPayload): trae `size`/`toppings` con defaults
+// que el servidor rellena, aunque el request no los haya mandado.
+export interface OrderItem {
+  pizza_id: string | number;
+  quantity: number;
+  size?: string;
+  toppings?: string[];
 }
 
+// Verificado en vivo contra el backend real (POST /api/checkout, GET
+// /api/orders, GET /api/orders/{id}) — el contrato NO usa `id`/`createdAt`
+// como sugeriría un REST genérico, sino `order_id`/`timestamp`, y desglosa
+// el total en `subtotal`/`delivery_fee`/`tax`/`tip`. `status` SOLO viene en
+// el historial (`GET /api/orders`); ni la respuesta de `POST /api/checkout`
+// ni el detalle (`GET /api/orders/{id}`) lo incluyen — por eso es opcional.
+export interface Order {
+  order_id: string;
+  items: OrderItem[];
+  subtotal: number;
+  delivery_fee: number;
+  tax_rate: number;
+  tax: number;
+  tip_percentage?: number;
+  tip?: number;
+  total: number;
+  currency: Currency;
+  currency_symbol?: string;
+  timestamp: string;
+  status?: "pending" | "confirmed" | "delivered" | "cancelled";
+}
+
+// `GET /api/orders` no devuelve un array plano — lo envuelve en `{ orders }`
+// (mismo patrón que `PizzasResponse` envuelve el catálogo en `{ pizzas }`).
+export interface OrdersListResponse {
+  orders: Order[];
+}
+
+// Verificado en vivo: el backend responde `{ error, status_code, timestamp }`
+// (no `{ detail }, que es el shape default de FastAPI/Pydantic — este backend
+// lo sobreescribe con su propio error handler).
 export interface ApiError {
-  detail: string | Array<{ msg: string; loc?: string[] }>;
-  statusCode?: number;
+  error: string;
+  status_code: number;
+  timestamp?: string;
 }

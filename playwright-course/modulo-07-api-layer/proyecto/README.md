@@ -9,7 +9,8 @@ Snapshot **runnable** de `playwright-course` **al terminar el Módulo 07**
 - `services/` — capa de servicios (`BaseService` + `AuthService`, `PizzaService`,
   `OrderService`): prueban la API **sin navegador**, creando su propio contexto
   autenticado vía `AuthService`.
-- `tests/api/` — specs de API puros (`auth.spec.ts`, `pizzas.spec.ts`).
+- `tests/api/` — specs de API puros (`auth.spec.ts`, `pizzas.spec.ts`, `orders.spec.ts`), cada uno con su
+  gemela en `with-fixtures/` (Paso 9 bis: mismo comportamiento, hooks vs. fixtures).
 - Los specs de `modulo-07-api-layer/` consumen los servicios + datos tipados.
 - **Config del runner:** nace el project **`api`** — sin `storageState`, sin
   `dependencies`, corriendo contra `API_URL` (backend) en vez de `BASE_URL`.

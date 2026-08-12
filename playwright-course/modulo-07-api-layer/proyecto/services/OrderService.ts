@@ -8,7 +8,7 @@
 
 import { BaseService } from "./BaseService";
 import { createAuthedContext } from "./AuthService";
-import type { CountryCode, Order, OrderPayload } from "../types";
+import type { CountryCode, Order, OrderPayload, OrdersListResponse } from "../types";
 
 export class OrderService extends BaseService {
   protected basePath(): string {
@@ -46,6 +46,10 @@ export class OrderService extends BaseService {
     if (!res.ok()) {
       throw new Error(`listMine failed (${res.status()}): ${await res.text()}`);
     }
-    return (await res.json()) as Order[];
+    // OJO: igual que PizzasResponse envuelve el catálogo en `{ pizzas }`,
+    // este endpoint envuelve el historial en `{ orders }` — NO es un array
+    // plano (verificado en vivo; el cast directo a `Order[]` estaba mal).
+    const body = (await res.json()) as OrdersListResponse;
+    return body.orders ?? [];
   }
 }

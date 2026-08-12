@@ -6,6 +6,7 @@
 - `services/AuthService.ts`, `OrderService.ts`, `PizzaService.ts`.
 - `tests/api/*.spec.ts` — suite API pura.
 - `types/omnipizza.d.ts` **se amplía**: `Pizza`, `LoginResponse`, `PizzasResponse`, `OrderPayload`, `Order`, `ApiError` — los contratos de request/response que hasta ahora no hacían falta (M03–M06 solo tocan la app por UI).
+- `fixtures/api.ts` + `tests/api/with-fixtures/*.spec.ts` — **Paso 9 bis:** `auth.spec.ts`/`pizzas.spec.ts` refactorizados a fixtures, lado a lado con la versión con hooks, para comparar cuándo usar cada uno.
 
 ---
 
@@ -19,7 +20,7 @@ Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** 
 playwright-course/
 ├── .auth/                         ← (M06 — sigue vigente; solo lo usa el project chromium)
 ├── data/                          ← (M03 — compartido entre UI y API)
-├── fixtures/                      ← (M05 — sigue vigente sin cambios)
+├── fixtures/                      ← (M05 — sigue vigente) + api.ts 🆕 (Paso 9 bis)
 ├── helpers/                       ← (M05 — uniqueEmail / uniqueOrderId)
 ├── pages/                         ← (M04 — sigue vigente sin cambios)
 ├── services/                      ← 🆕 capa de servicios HTTP
@@ -30,8 +31,13 @@ playwright-course/
 │   └── index.ts                   ← 🆕 barrel export
 ├── tests/
 │   ├── api/                       ← 🆕 suite API pura
-│   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo
-│   │   └── pizzas.spec.ts         ← 🆕 data-driven por mercado
+│   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo (con hooks)
+│   │   ├── pizzas.spec.ts         ← 🆕 data-driven por mercado (con hooks)
+│   │   ├── orders.spec.ts         ← 🆕 checkout MX/SA + historial + 400 (con hooks)
+│   │   └── with-fixtures/         ← 🆕 Paso 9 bis — los mismos 3 specs, con fixtures
+│   │       ├── auth.spec.ts
+│   │       ├── pizzas.spec.ts
+│   │       └── orders.spec.ts
 │   ├── setup/                     ← (M06 — UI; el project `api` NO depende de esto)
 │   └── ui/                        ← ✏️ MUDANZA — el ejemplo/reto de M06, sin cambios de contenido
 │       ├── ejemplo.spec.ts        ← (M06) sesión heredada, catálogo autenticado
@@ -133,7 +139,8 @@ services/
 
 tests/api/
 ├── auth.spec.ts          ← login positivo + negativo
-└── pizzas.spec.ts        ← data-driven por mercado
+├── pizzas.spec.ts        ← data-driven por mercado
+└── orders.spec.ts        ← checkout (MX/SA) + historial + 400 por campo faltante
 ```
 
 ---
@@ -353,7 +360,7 @@ export class PizzaService extends BaseService {
 }
 ```
 
-`OrderService.ts` sigue el mismo molde (`basePath() → "/api/orders"`, factory con auth, `createOrder()` y `listMine()`). Con un matiz importante en la API real de OmniPizza: **`/api/orders` sirve solo para LEER** — `GET /api/orders` es el historial y `GET /api/orders/{order_id}` el detalle. **La orden se CREA con `POST /api/checkout`**, no con `POST /api/orders`. Por eso `listMine()` hace `GET` sobre el `basePath` y `createOrder()` postea al endpoint de checkout (no al `basePath`) — así está ya en el código.
+`OrderService.ts` sigue el mismo molde (`basePath() → "/api/orders"`, factory con auth, `createOrder()` y `listMine()`). Con un matiz importante en la API real de OmniPizza: **`/api/orders` sirve solo para LEER** — `GET /api/orders` es el historial y `GET /api/orders/{order_id}` el detalle. **La orden se CREA con `POST /api/checkout`**, no con `POST /api/orders`. Por eso `listMine()` hace `GET` sobre el `basePath` y `createOrder()` postea al endpoint de checkout (no al `basePath`) — así está ya en el código. La suite que ejercita este servicio es `tests/api/orders.spec.ts` (+ su gemela con fixtures) — ver Paso 6.
 
 > 💡 **Por qué `createOrder()` no usa `this.url()` — y postea directo a `/api/checkout`.** En esta capa hay una asimetría deliberada: `listMine()` lee con `GET` sobre el `basePath` (`/api/orders`), pero `createOrder()` **ya postea** a `${this.baseURL}/api/checkout` (mira `OrderService.ts`). El motivo es que la API real **no crea órdenes en `/api/orders`** (ese endpoint es solo lectura: historial y detalle); la creación vive en **`POST /api/checkout`**. Como el endpoint de creación cae fuera del `basePath` del servicio, `createOrder()` construye la URL directo desde `baseURL` en vez de usar `this.url()`/`basePath()` (que armaría `/api/orders`). El body que envía cumple `OrderPayload` (`country_code`, `items`, `name`, `address`, `phone` + el campo de dirección por mercado, p. ej. `colonia` en MX, y opcionalmente la propina como `propina`). Puedes confirmar el endpoint en Swagger (ver más abajo).
 
@@ -549,6 +556,8 @@ pnpm exec playwright test --project=api
 - **Por qué:** es el patrón canónico de la capa de API — *"un servicio por endpoint family, factory async, dispose siempre"*. El `for...of` sobre `markets` es data-driven puro (un `for`, no una API mágica de Playwright).
 - **Cómo verifico:** `pnpm exec playwright test tests/ejemplo.spec.ts --project=api` pasa en verde; el report muestra el flujo completo sin abrir navegador.
 
+> 💡 **`ejemplo.spec.ts` se queda en hooks a propósito.** Es el flujo guiado de este paso — mantenerlo en su forma más explícita (login manual, sin fixtures) hace el trace más fácil de seguir la primera vez. La comparación hooks-vs-fixtures vive en el **Paso 9 bis**, sobre `auth.spec.ts`/`pizzas.spec.ts` — los dos specs donde el mismo login SÍ se repite entre archivos, que es justo el caso donde fixtures se ganan su lugar.
+
 > 🔷 **TypeScript — union types para errores (`Order | ApiError`)**
 > Un **union type** dice "esto es A **o** B". Míralo en negativo: sin el guard de `res.ok()` + `throw` temprano, la firma honesta de `createOrder()` (en `OrderService`) sería `Promise<Order | ApiError>` — y **cada** llamada tendría que **estrechar** (narrow) el union antes de tocar un campo de `Order`. El `throw` temprano saca el camino de error de la firma y te deja devolver un `Promise<Order>` limpio; `ApiError` (en `types/omnipizza.d.ts`) describe la forma del body de error que el backend devuelve.
 > 📚 Lo viste en [TS · M04 — Tipos de objetos](../../typescript-qa-course/modulo-04-objects-types/) (uniones y forma de objetos). Aquí el guard de `res.ok()` es lo que te ahorra cargar ese union en cada firma de la capa.
@@ -578,6 +587,135 @@ Mide en el pizarrón:
 - **Cómo verifico:** `pnpm typecheck` pasa con los métodos nuevos, y `pnpm exec playwright test tests/reto.spec.ts --project=api` queda en verde (tras quitar el `test.skip`).
 
 > El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO, indicando dónde escribir cada método dentro de `services/PizzaService.ts`. Los TODOs se quedan sin resolver en este README — vívelos en el archivo.
+
+---
+
+### Paso 9 bis — Refactor: de hooks a fixtures (cuándo usar cada uno)
+
+> 🎯 **Objetivo de este paso:** no reemplazar `auth.spec.ts`/`pizzas.spec.ts` — **compararlos** contra la misma suite reescrita con fixtures, y entender el criterio real para elegir entre ambos. Los 4 archivos quedan en el proyecto, lado a lado, corriendo los dos en `pnpm test:api`.
+
+**9B.1 — El síntoma: código repetido que un hook no puede compartir**
+- **Qué hago:** releo `auth.spec.ts` (usa `beforeAll`/`afterAll` para compartir 1 `AuthService` entre sus 2 tests) y `pizzas.spec.ts` (repite `AuthService.create()` + `login()` + `dispose()` **dentro del `for`**, una vez por mercado — porque su `beforeAll` es local a `pizzas.spec.ts` y no puede pedirle prestado el de `auth.spec.ts`).
+- **Por qué:** un hook (`beforeAll`/`afterAll`) vive **dentro de un solo archivo** — no se importa. Si dos specs necesitan el mismo login, cada uno repite su propio hook (o su propia llamada manual, como hace `pizzas.spec.ts`). Ese es el síntoma concreto que fixtures resuelven: **reutilización entre archivos**, no "hooks son antiguos, fixtures son modernos".
+- **Cómo verifico:** cuento cuántas veces aparece `AuthService.create(` en `tests/api/*.spec.ts` — 4 veces (una en `auth.spec.ts`, dos en `pizzas.spec.ts` porque además está adentro del `for`, una en `orders.spec.ts`) para lograr exactamente lo mismo: un `access_token` válido.
+
+**9B.2 — Crear `fixtures/api.ts` (compone sobre el `test` de M05)**
+- **Qué hago:** creo `fixtures/api.ts` que hace `omnipizzaTest.extend(...)` sobre el `test` que ya exporta `fixtures/omnipizza.ts` — así heredo gratis `standardUser` (y el resto de fixtures de M05) en vez de reimplementar el `users.find(...)`. Sumo dos fixtures propias: `authService` (**worker**-scoped, un solo `AuthService`/`APIRequestContext` por archivo — el equivalente exacto de lo que hacía el `beforeAll`/`afterAll` de `auth.spec.ts`) y `accessToken` (**test**-scoped, un login fresco por TC vía `authService.login(standardUser)`).
+- **Por qué:** una fixture `worker`-scoped puede depender de otra `worker`-scoped, pero **no** de una `test`-scoped — por eso `authService` no depende de `standardUser` (que es `test`-scoped en `fixtures/omnipizza.ts`); en cambio `accessToken` (`test`-scoped) sí puede pedir ambas. Regla general de Playwright: una fixture solo puede depender de otras de **igual o mayor** alcance (`worker` ⊇ `test`), nunca al revés.
+- **Cómo verifico:** `pnpm typecheck` pasa; el editor autocompleta `authService` y `accessToken` como parámetros válidos de `test(...)`.
+
+```ts
+// fixtures/api.ts
+import { test as omnipizzaTest, expect } from "./omnipizza";
+import { AuthService } from "../services";
+
+export const API_URL =
+  process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
+
+type ApiFixtures = { accessToken: string };
+type ApiWorkerFixtures = { authService: AuthService };
+
+export const test = omnipizzaTest.extend<ApiFixtures, ApiWorkerFixtures>({
+  // eslint-disable-next-line no-empty-pattern
+  authService: [
+    async ({}, use) => {
+      const auth = await AuthService.create(API_URL);
+      await use(auth);
+      await auth.dispose();
+    },
+    { scope: "worker" },
+  ],
+
+  accessToken: async ({ authService, standardUser }, use) => {
+    const { access_token } = await authService.login(standardUser);
+    await use(access_token);
+  },
+});
+
+export { expect };
+```
+
+**9B.3 — `tests/api/with-fixtures/auth.spec.ts` — antes / después**
+
+| | Con hooks (`auth.spec.ts`) | Con fixtures (`with-fixtures/auth.spec.ts`) |
+|---|---|---|
+| Setup | `test.beforeAll` + `let auth: AuthService` | `authService` como parámetro del test |
+| Teardown | `test.afterAll` manual | Automático — el `use()` de la fixture lo garantiza |
+| Usuario | `users.find(u => u.username === "standard_user")!` manual | `standardUser` (heredado de M05, sin reimplementar) |
+| Firma del test | No declara qué necesita — `auth` es una variable de closure | `async ({ authService, standardUser })` — explícito |
+
+```ts
+// tests/api/with-fixtures/auth.spec.ts
+import { test, expect } from "../../../fixtures/api";
+
+test.describe("AuthService @api (con fixtures)", () => {
+  test("successful login returns access_token", async ({
+    authService,
+    standardUser,
+  }) => {
+    const res = await authService.login(standardUser);
+    expect(res.access_token).toBeTruthy();
+    expect(typeof res.access_token).toBe("string");
+  });
+
+  test("login with invalid password fails", async ({
+    authService,
+    standardUser,
+  }) => {
+    await expect(
+      authService.login({ ...standardUser, password: "wrong-password" }),
+    ).rejects.toThrow(/Login failed/);
+  });
+});
+```
+
+**9B.4 — `tests/api/with-fixtures/pizzas.spec.ts` — el caso donde más se nota**
+- **Qué hago:** comparo el `for` de `pizzas.spec.ts` (repite `AuthService.create()` + `login()` + `dispose()` en **cada iteración**, una vez por mercado) contra `with-fixtures/pizzas.spec.ts`, donde el token llega listo como `accessToken` y el `for` solo construye el `PizzaService` (que sí varía por mercado, y por eso se queda inline).
+- **Por qué:** esto es lo que hace visible el ahorro real — no es solo "menos líneas", es que la fixture separa lo que **no cambia entre iteraciones** (el login) de lo que **sí cambia** (el mercado). Un hook no puede hacer esa separación dentro de un `for`; una fixture sí, porque el `for` vive en el cuerpo del test y la fixture ya resolvió su parte antes de que el test empiece.
+- **Cómo verifico:** cuento las llamadas a `AuthService.create(` — baja de 5 (una por mercado) a 0 en el archivo del test (vive una sola vez, en la fixture, compartida por todo el worker).
+
+```ts
+// tests/api/with-fixtures/pizzas.spec.ts
+import { test, expect, API_URL } from "../../../fixtures/api";
+import { PizzaService } from "../../../services";
+import marketsJson from "../../../data/markets.json";
+import type { Market } from "../../../types";
+
+const markets = marketsJson as Market[];
+
+test.describe("PizzaService @api (con fixtures)", () => {
+  for (const market of markets) {
+    test(`lists pizzas in market ${market.code} with currency ${market.currency}`, async ({
+      accessToken,
+    }) => {
+      const pizzas = await PizzaService.create(API_URL, accessToken, market.code);
+      const list = await pizzas.list();
+      await pizzas.dispose();
+
+      expect(list.length).toBeGreaterThan(0);
+      expect(list[0].currency).toBe(market.currency);
+    });
+  }
+});
+```
+
+**9B.5 — Correr ambas versiones y confirmar que son equivalentes**
+- **Qué hago:** corro `pnpm test:api` completo (corre las 6 suites: con hooks y con fixtures) y comparo resultados.
+- **Por qué:** el punto del ejercicio no es que una versión "gane" — es confirmar que **el mismo comportamiento** se puede expresar con dos mecanismos distintos, y que la elección entre ellos es de diseño, no de corrección.
+- **Cómo verifico:** `tests/api/{auth,pizzas,orders}.spec.ts` y `tests/api/with-fixtures/{auth,pizzas,orders}.spec.ts` pasan los 6 en verde con las mismas aserciones.
+
+> 🧭 **Hooks vs Fixtures — cuándo usar cada uno**
+>
+> | Escenario | Hooks (`beforeAll`/`afterAll`) | Fixtures (`test.extend`) |
+> |---|---|---|
+> | El setup se usa en **1 solo archivo** | ✅ más corto, no requiere tocar `fixtures/` | Funciona, pero es composición sin beneficio real |
+> | El setup se **repite en 2+ archivos** | ❌ no se puede importar un `beforeAll` de otro spec — cada archivo lo reescribe (como hacía `pizzas.spec.ts`) | ✅ se declara una vez en `fixtures/`, cualquier spec lo pide por nombre |
+> | Quieres que la **firma del test** declare qué necesita | ❌ el recurso vive en una variable de closure, invisible desde afuera | ✅ `async ({ authService, standardUser })` es explícito y autocompleta |
+> | El recurso es caro y se comparte entre varios TCs de un archivo | ✅ `beforeAll`/`afterAll` — scope de archivo | ✅ fixture con `scope: "worker"` — mismo efecto, reutilizable en más archivos |
+>
+> **El criterio real no es "fixtures son mejores"** — es *reutilización entre archivos*. Mismo criterio que ya usaste en M04 para decidir cuándo `BasePage` se ganaba `abstract`: el patrón se paga cuando **2 o más consumidores** lo necesitan, no antes. `auth.spec.ts` solo no justificaba una fixture (por eso el módulo lo enseñó con hooks primero); en cuanto `pizzas.spec.ts` necesitó el mismo login, el hook dejó de alcanzar.
+>
+> **Quédate con hooks cuando** el setup es de un solo archivo y no necesitas declararlo como parámetro tipado del test — es más corto y no toca `fixtures/`. Sube a fixtures **en cuanto** un segundo archivo necesite el mismo recurso, o quieras que el teardown esté garantizado por diseño (el `use()` de la fixture corre incluso si el test lanza) en vez de confiado a un `afterAll` que alguien podría olvidar.
 
 ---
 
@@ -638,12 +776,12 @@ Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hac
 
 **4 — Ejecuta un endpoint protegido (`GET /api/pizzas`).** Expande **`GET /api/pizzas`** (⚠️ requiere auth — por eso el paso 3 va primero) → **"Try it out"** → en el campo del header **`X-Country-Code`** escribe **`MX`** → **Execute**. Verás el catálogo de pizzas con **precios en la moneda del mercado**. Cambia `X-Country-Code` a `US` / `CH` / `JP` / `SA` y vuelve a **Execute**: los precios y la `currency` cambian. (Esto es exactamente lo que itera `ejemplo.spec.ts` con su `for (const market of markets)`.)
 
-**5 — Crea una orden y míralas (`POST /api/checkout` → `GET /api/orders`).** Expande **`POST /api/checkout`** (el que **crea** la orden) → **"Try it out"** → pega un body válido. Un body mínimo para **MX** (toma un `pizza_id` real del catálogo del paso 4):
+**5 — Crea una orden y míralas (`POST /api/checkout` → `GET /api/orders`).** Expande **`POST /api/checkout`** (el que **crea** la orden) → **"Try it out"** → pega un body válido. Un body mínimo para **MX** (`pizza_id` es un **string** como `"p01"`, cópialo tal cual del catálogo del paso 4 — no es un número):
 
 ```json
 {
   "country_code": "MX",
-  "items": [{ "pizza_id": 1, "quantity": 1 }],
+  "items": [{ "pizza_id": "p01", "quantity": 1 }],
   "name": "QA Tester",
   "address": "Av. Siempre Viva 742",
   "phone": "5512345678",
@@ -652,13 +790,15 @@ Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hac
 }
 ```
 
-→ **Execute**. La respuesta (2xx) confirma la orden creada con su `order_id`.
+→ **Execute**. La respuesta (2xx) confirma la orden creada con su `order_id` (no `id` — el backend real usa `order_id`, ver el aviso de más abajo).
 
-> ⚠️ Si recibes **422**, al body le falta un campo **requerido**: revisa que `pizza_id` exista (cópialo del paso 4) y que esté el **campo de dirección del mercado** — el único obligatorio por mercado: en **MX** `colonia`, en **US** `zip_code` (5 dígitos), en **CH** `plz`, en **JP** `prefectura`, en **SA** `district`. La **propina es opcional** y NO causa 422 si la omites (`propina` en MX, `tip` en US, `trinkgeld` en CH, `chip` en JP).
+> ⚠️ Si recibes **400** (no 422 — este backend valida con su propio handler, no con el 422 default de FastAPI/Pydantic), al body le falta un campo **requerido**: el error te lo dice explícito, ej. `{"error": "Field 'colonia' is required for country MX", ...}`. Revisa que esté el **campo de dirección del mercado** — el único obligatorio por mercado: en **MX** `colonia`, en **US** `zip_code`, en **CH** `plz`, en **JP** `prefectura`, en **SA** `district`. La **propina es opcional** y NO causa 400 si la omites (`propina` en MX, `tip` en US, `trinkgeld` en CH, `chip` en JP).
 
-Después, expande **`GET /api/orders`** → **Execute** → verás el **historial** con la orden que acabas de crear. Y **`GET /api/orders/{order_id}`** → pega el `order_id` de arriba → **Execute** → verás el **detalle** de esa orden.
+Después, expande **`GET /api/orders`** → **Execute** → verás el **historial** con la orden que acabas de crear, envuelto en `{ "orders": [...] }` (no un array plano). Y **`GET /api/orders/{order_id}`** → pega el `order_id` de arriba → **Execute** → verás el **detalle** de esa orden.
 
 > 💡 **El "premio" de este recorrido:** ahora cada método de servicio tiene un referente visible. Cuando un test API falle, abre Swagger, repite la llamada a mano, y compara la respuesta real con lo que el test esperaba — así sabes si el bug está en el test, en el servicio, o en el backend.
+>
+> 📄 **Recorrido con respuestas reales capturadas en vivo** (login, los 3 códigos de error del 403/401/400, el body exacto de cada endpoint, y por qué `Order`/`ApiError` en `types/omnipizza.d.ts` no eran el contrato real): [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md).
 
 ---
 
@@ -694,3 +834,6 @@ cp .env.example .env
 - [ ] Llamas `await service.dispose()` al final de cada uso.
 - [ ] Los mismos contratos (`User`, `Market`, `Pizza`) alimentan UI y API.
 - [ ] Completaste `getByMarket(market)` y `getById(id)` en `PizzaService`.
+- [ ] Explicas cuándo usar hooks (`beforeAll`/`afterAll`) vs fixtures (`test.extend`) para el mismo setup — y por qué `pizzas.spec.ts` fue el caso que lo justificó (Paso 9 bis).
+- [ ] `OrderService` tiene su propia suite (`tests/api/orders.spec.ts` + su gemela con fixtures): checkout con el campo de dirección por mercado (MX/SA), historial (`GET /api/orders`) y el 400 por campo faltante.
+- [ ] Sabes por qué `Order`/`ApiError` en `types/omnipizza.d.ts` cambiaron: el contrato original (`id`/`status`/`createdAt`, `detail`) no era el que el backend real devuelve (`order_id`/`timestamp`, `error`) — verificado en vivo, ver [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md).
