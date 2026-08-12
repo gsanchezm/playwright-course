@@ -8,8 +8,24 @@
 // un hijo que no las implemente — como el sistema de tickets
 // rechaza un reporte sin severidad.
 //
-// PRIMERA APARICIÓN de `abstract` en el curso. Se difirió hasta
-// aquí a propósito — ahora hay 2+ servicios que la justifican.
+// PRIMERA APARICIÓN de `abstract` en el curso. No es por tener 3
+// servicios — es porque BaseService necesita un CONTRATO real:
+// `basePath()` no tiene una implementación por defecto razonable
+// (¿qué path le pondrías?), y sin `abstract` nada impide instanciar
+// BaseService directo con un basePath roto — TypeScript no se
+// quejaría, solo fallarías en runtime con una URL mal construida.
+//
+// Compara con pages/BasePage.ts (M04): tiene el DOBLE de hijos que
+// BaseService y sigue siendo una clase normal, porque ninguno de
+// sus métodos necesita que un hijo lo sobreescriba — todos ya
+// tienen cuerpo. El criterio no es "cuántos hijos", es "¿hay un
+// método sin implementación razonable que el compilador deba
+// forzar?". Aquí sí lo hay; en BasePage, no.
+//
+// (Los 3 servicios sí importan, pero para otra cosa: con 1 solo
+// servicio el riesgo de "se me olvidó definir basePath()" es
+// abstracto — con 3 compartiendo el mismo molde, es el tipo de bug
+// real que `abstract` evita de raíz.)
 // ============================================================
 
 import type { APIRequestContext } from "@playwright/test";

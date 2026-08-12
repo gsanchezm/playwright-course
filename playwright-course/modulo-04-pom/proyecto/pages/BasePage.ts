@@ -5,9 +5,18 @@
 // "Toda pantalla tiene header, toast, y necesita un helper
 // para resolver testids con sufijo de viewport."
 //
-// IMPORTANTE (M04): esta clase NO es abstracta — es una clase
-// normal. La palabra `abstract` la veremos en M07 cuando tengamos
-// varios servicios que la justifiquen.
+// IMPORTANTE: esta clase NO es abstracta — es una clase normal.
+// No es por cantidad de hijos (ya tiene varios: LoginPage,
+// CatalogPage, CheckoutPage...) — es porque no necesita imponer
+// ningún contrato. Cada método de BasePage (tid(), waitForUrl(),
+// screenshot()) ya tiene cuerpo y sirve tal cual a cualquier hijo;
+// ninguno está obligado a sobreescribir nada para ser válido.
+//
+// Compara con services/BaseService.ts (M07): ahí SÍ hace falta
+// `abstract basePath(): string`, porque url() no puede construirse
+// sin que cada servicio concreto lo defina. Ese es el criterio real:
+// `abstract` entra cuando la base necesita un método SIN cuerpo que
+// el compilador fuerce a implementar — no solo "cuando hay 2+ hijos".
 //
 // Convención: no instancies BasePage directamente. Extiéndela.
 // ============================================================
