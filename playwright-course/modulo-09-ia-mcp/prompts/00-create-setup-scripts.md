@@ -9,7 +9,7 @@ Create or refresh the setup scripts that let a beginner create an external AI te
 The scripts may provide course example defaults, but the generated files must stay generic and must not assume any application feature names.
 
 CONTEXT:
-Run this prompt from the course repo, inside modulo-09-ia-mcp.
+Run this prompt from this course module's own folder (the one containing this prompts/ directory), inside the course repo.
 The generated harness must live outside the course repo so it stays separated from the SUT and from course material.
 
 FILES TO CREATE OR UPDATE:
@@ -44,7 +44,7 @@ SCRIPT REQUIREMENTS:
 - Create:
   - .mcp.json for Claude Code
   - .vscode/mcp.json for VS Code
-  - prompts/ copied from modulo-09-ia-mcp/prompts
+  - prompts/ copied from this module's prompts/ folder (resolve the source path relative to the script's own location, never a hardcoded module folder name)
   - PROJECT_BRIEF.md
   - CLAUDE.md
   - .gitignore

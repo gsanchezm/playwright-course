@@ -59,13 +59,13 @@ $ pnpm test:api
 $ pnpm test:cross     # chromium + firefox + webkit + Pixel 5 + iPhone 13
 ```
 
-✅ **Cómo verificar:** la suite corre en paralelo; el workflow tiene dos jobs (`test` chromium en push/PR + `cross-browser` opt-in). Si un test pasa en `ui-chromium` pero falla en `ui-mobile-*`, ese es un bug **responsive** real (testid `-responsive`), no del test — anótalo.
+✅ **Cómo verificar:** la suite corre en paralelo; el workflow tiene tres jobs (`api-tests` + `ui-tests` chromium en push/PR, con `ui-tests` bloqueado por `needs: api-tests`, + `cross-browser` opt-in). Si un test pasa en `ui-chromium` pero falla en `ui-mobile-*`, ese es un bug **responsive** real (testid `-responsive`), no del test — anótalo.
 
 ### Paso 6 — Healer y cierre (prompt 07, y 08 opcional)
 
 Pega `prompts/07-healer-review.md` con los outputs reales. Opcional: `prompts/08-git-github-pr.md` para commit + repo + push a `main` y ver el CI en verde.
 
-✅ **Cómo verificar:** suite verde o diagnóstico claro tras máximo 3 iteraciones. Si publicaste, el job `test` del CI sale verde.
+✅ **Cómo verificar:** suite verde o diagnóstico claro tras máximo 3 iteraciones. Si publicaste, los jobs `api-tests` y `ui-tests` del CI salen verdes.
 
 ### Paso 7 — Bonus: skill reutilizable (prompts 09 → 10)
 

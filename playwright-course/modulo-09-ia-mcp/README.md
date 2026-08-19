@@ -11,18 +11,18 @@ Este modulo ya no trata de pedirle a la IA "un test suelto". El objetivo es mas 
 
 ## Resultado esperado
 
-Al terminar tendras una carpeta externa, por ejemplo:
+Al terminar tendras una carpeta externa llamada `harness` (el nombre es libre; el modulo usa `harness` en todos los ejemplos):
 
 ```text
-C:\tmp\omnipizza-ai-harness
+C:\tmp\harness
 # o en macOS/Linux:
-~/tmp/omnipizza-ai-harness
+~/tmp/harness
 ```
 
 con un proyecto generado por Claude Code:
 
 ```text
-omnipizza-ai-harness/
+harness/
   .claude/
   .vscode/
   src/
@@ -148,27 +148,27 @@ ambiente, no sólo para generar tests.
 ### Windows
 
 ```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
+.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
 ```
 
 ### macOS/Linux
 
 ```bash
 chmod +x playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
+./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
 ```
 
-OmniPizza es el SUT por defecto. Para otro sistema, cambia solo las URLs:
+OmniPizza es el SUT por defecto. Para otro sistema, cambia solo las URLs (el nombre de la carpeta sigue siendo libre; se muestra `harness` para reforzar que no depende del SUT):
 
 ```powershell
 .\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 `
-  -TargetDir C:\tmp\mi-harness `
+  -TargetDir C:\tmp\harness `
   -UiUrl https://mi-ui.example.com `
   -ApiUrl https://mi-api.example.com
 ```
 
 ```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/mi-harness" \
+./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness" \
   --ui-url https://mi-ui.example.com \
   --api-url https://mi-api.example.com
 ```
@@ -260,16 +260,16 @@ eso `03` no cambia). Recomendacion: correrlos antes de `prompts/03-test-plan.md`
 Windows:
 
 ```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
-cd C:\tmp\omnipizza-ai-harness
+.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
+cd C:\tmp\harness
 claude
 ```
 
 macOS/Linux:
 
 ```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
-cd "$HOME/tmp/omnipizza-ai-harness"
+./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
+cd "$HOME/tmp/harness"
 claude
 ```
 

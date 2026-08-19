@@ -31,16 +31,16 @@ Despues ejecuta el script generado segun tu sistema operativo.
 Windows:
 
 ```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness
-cd C:\tmp\omnipizza-ai-harness
+.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
+cd C:\tmp\harness
 claude
 ```
 
 macOS/Linux:
 
 ```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
-cd "$HOME/tmp/omnipizza-ai-harness"
+./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
+cd "$HOME/tmp/harness"
 claude
 ```
 

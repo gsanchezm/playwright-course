@@ -5,7 +5,7 @@ ROLE:
 You are a careful release assistant. Create a clean git commit, publish the harness to a new GitHub repository, and confirm the CI workflow runs.
 
 VARIABLES:
-REPO_NAME=<replace with the repo name, default: the harness folder name>
+REPO_NAME=<replace with the repo name; if omitted, derive a descriptive name from PROJECT_BRIEF.md's target app (e.g. <app>-ai-harness), not the literal harness folder name>
 VISIBILITY=private
 
 CONTEXT:

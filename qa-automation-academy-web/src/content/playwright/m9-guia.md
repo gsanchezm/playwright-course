@@ -26,7 +26,7 @@ En M09 dejamos de pedirle a la IA "un test". El salto profesional es usar **Clau
 El harness vive en una **carpeta externa** (fuera del repo del curso, separado del SUT). Su forma es **vertical-slice**: cada feature es autocontenida.
 
 ```
-omnipizza-ai-harness/                estado FINAL
+harness/                estado FINAL
 ├── AGENTS.md              ← 🆕 contrato de arquitectura (lo lee la IA antes de cada slice)
 ├── PROJECT_BRIEF.md       ← 🆕 misión + URLs del SUT
 ├── TEST_PLAN.md           ← 🆕 matriz de casos UI/API descubierta con MCP
@@ -104,12 +104,12 @@ Desde el repo del curso, pega [`prompts/00-create-setup-scripts.md`](https://git
 ### Paso 2 — Crea la carpeta externa y entra a Claude Code
 
 ```bash
-$ ./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
-$ cd "$HOME/tmp/omnipizza-ai-harness"
+$ ./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
+$ cd "$HOME/tmp/harness"
 $ claude
 ```
 
-> 🪟 **Windows / PowerShell:** `.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\omnipizza-ai-harness`
+> 🪟 **Windows / PowerShell:** `.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness`
 
 El script escribe `PROJECT_BRIEF.md`, `CLAUDE.md`, `.mcp.json` (config de Playwright MCP), `.vscode/mcp.json`, copia los `prompts/` y hace `git init`. **No** crea `src/` ni `package.json`: eso lo genera la IA en el paso 4. Para otro SUT, cambia solo las URLs: `--ui-url`/`--api-url` (bash) o `-UiUrl`/`-ApiUrl` (PowerShell).
 
@@ -190,12 +190,13 @@ $ pnpm exec playwright test src/features/<slice> --project=api   # si hay *.api.
 
 ### Paso 7 — Fixtures/DI y CI (prompts 05 y 06)
 
-`prompts/05-fixtures-di.md` cablea `src/shared/fixtures.ts` (inyección de dependencias) sin meter lógica de feature en `shared/`. `prompts/06-ci-scripts.md` agrega scripts y un workflow de GitHub Actions con **dos jobs**:
+`prompts/05-fixtures-di.md` cablea `src/shared/fixtures.ts` (inyección de dependencias) sin meter lógica de feature en `shared/`. `prompts/06-ci-scripts.md` agrega scripts y un workflow de GitHub Actions con **tres jobs**:
 
-- **`test`** — corre en cada push/PR, rápido: instala solo Chromium y corre `typecheck` + `test:smoke` + `test:api` + `test:ui`.
+- **`api-tests`** — corre en cada push/PR; la base de la pirámide, sin browser: `typecheck` + `test:api`.
+- **`ui-tests`** — corre en cada push/PR, pero solo si `api-tests` pasó (`needs: api-tests`); solo Chromium: `test:smoke` + `test:ui`.
 - **`cross-browser`** — opt-in (`workflow_dispatch` o nightly): instala Chromium/Firefox/WebKit y corre `pnpm test:cross`.
 
-> 🎯 **Por qué dos jobs:** los PRs quedan rápidos (chromium) y la matriz completa corre bajo demanda. Instalar 3 motores en cada push sería lento y caro sin agregar señal en el 99% de los cambios.
+> 🎯 **Por qué `api-tests` bloquea a `ui-tests`:** la dependencia `needs: api-tests` deja visible en GitHub Actions la pirámide de pruebas — la capa API (más rápida, más casos) bloquea la capa UI (más lenta, más cara) si falla. Así los PRs fallan rápido en la capa barata antes de pagar la capa E2E, y la matriz cross-browser completa corre bajo demanda en vez de en cada push.
 
 ### Paso 8 — Healer, commit y skill (prompts 07 → 10)
 

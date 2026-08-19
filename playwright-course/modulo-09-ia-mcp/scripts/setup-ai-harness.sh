@@ -13,7 +13,7 @@ Usage:
   ./scripts/setup-ai-harness.sh <target-dir> [--ui-url <url>] [--api-url <url>] [--force] [--no-open-code]
 
 Example:
-  ./scripts/setup-ai-harness.sh "$HOME/tmp/omnipizza-ai-harness"
+  ./scripts/setup-ai-harness.sh "$HOME/tmp/harness"
 EOF
 }
 
