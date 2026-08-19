@@ -12,9 +12,6 @@ jobs:
     name: ${{ matrix.project }} / shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: playwright-course
     strategy:
       fail-fast: false
       matrix:
@@ -62,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.project }}-shard${{ matrix.shard }}
-          path: playwright-course/playwright-report
+          path: playwright-report
           retention-days: 7
 
       - name: Upload traces and videos
@@ -70,5 +67,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces-${{ matrix.project }}-shard${{ matrix.shard }}
-          path: playwright-course/test-results
+          path: test-results
           retention-days: 7

@@ -9,7 +9,7 @@
 // ============================================================
 
 import { defineConfig, devices } from "@playwright/test";
-import "dotenv/config";
+import { env } from "./src/core/env";
 
 export default defineConfig({
   // Los specs viven junto a cada slice vertical en src/features/<feature>/.
@@ -36,7 +36,7 @@ export default defineConfig({
 
   // Defaults para todos los projects.
   use: {
-    baseURL: process.env.BASE_URL,
+    baseURL: env.baseURL,
     trace: "retain-on-failure",
   },
 
@@ -74,7 +74,7 @@ export default defineConfig({
     // --- API: sin navegador, sólo los *.api.spec.ts ------------------------
     {
       name: "api",
-      use: { baseURL: process.env.API_URL },
+      use: { baseURL: env.apiURL },
       testMatch: /.*\.api\.spec\.ts/,
     },
   ],

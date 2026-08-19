@@ -2,9 +2,17 @@ import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import type { Components } from "react-markdown";
 import { Link } from "react-router-dom";
 import CodeWindow from "./CodeWindow";
+
+// defaultSchema ya cubre GFM (incluye <input type=checkbox> de los task lists).
+// Sumamos <details>/<summary>, el unico HTML crudo real que usa el contenido del curso.
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "details", "summary"],
+};
 
 function collectText(node: ReactNode): string {
   if (node == null || node === false) return "";
@@ -177,7 +185,7 @@ export default function MarkdownContent({ content }: Props) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
+      rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
       components={components}
     >
       {content}

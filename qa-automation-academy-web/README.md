@@ -57,7 +57,7 @@ La app sirve los cursos como lecciones navegables bajo `/docs/<seccion>/<slug>`:
 | `/docs/setup` | ✅ Completo | Guía de setup (terminal, Node, pnpm, Git, VS Code, GitHub/SSH, Playwright browsers, herramientas de IA). |
 | `/docs/typescript` | ✅ Completo | Módulos 1–6 del curso de TypeScript: Hello World, Tipos, Funciones, Objetos, Clases (POM) e Interfaces, con reto al final de cada módulo. |
 | `/docs/git-github` | ✅ Completo | Módulos 1–6 del curso de Git/GitHub: Introducción, Git básico, Undo/remotos/tags, Ramas y merge, Workflows y rebase, GitHub, con reto al final de cada módulo. |
-| `/docs/playwright` | 🚧 Próximamente | Aún no publicado en `/docs` (el curso fuente vive en `playwright-course/`). |
+| `/docs/playwright` | ✅ Completo | Módulos 0–9 del curso de Playwright: locators, data-driven, POM, fixtures, setup, API layer, CI/debugging y AI Test Harness, con reto al final de cada módulo. |
 
 El contenido vive en `src/content/<seccion>/<slug>.md` y se carga con `import.meta.glob` (raw markdown → `MarkdownContent`). El índice y los grupos por módulo se definen en `src/data/docsNav.ts`. Para añadir una lección nueva: crear el `.md` en la carpeta de la sección y registrar el slug en `docsNav.ts`.
 

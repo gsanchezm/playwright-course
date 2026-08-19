@@ -214,7 +214,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-docs/
+**/docs/*
+# Excepcion: landing spec versionada a proposito (ver README de qa-automation-academy-web)
+!/docs/render-landing/
 .claude/
 CLAUDE.md
 design_handoff_qa_academy_redesign/

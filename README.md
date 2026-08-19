@@ -43,8 +43,8 @@ El curso de Playwright es **autónomo**: trae Git/GitHub esencial integrado (M00
 
 ```bash
 # 1. Clonar
-git clone git@github.com:gilbertosanchez/typescript.git
-cd typescript
+git clone git@github.com:gsanchezm/playwright-course.git
+cd playwright-course
 
 # 2. Setup completo (sigue el README de 00-setup)
 open 00-setup/README.md
