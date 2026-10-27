@@ -94,8 +94,8 @@ pnpm tsx modulo-02-types/01-booleans.ts   # mini-clase específica
 | 3 | `modulo-03-data-driven` | `types/*` + `data/*.json` + `for...of` parametrizado por mercado |
 | 4 | `modulo-04-pom` | POM incremental con `BasePage` · *Git break:* feature branches + conflictos |
 | 5 | `modulo-05-fixtures` | `test.extend` + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR |
-| 6 | `modulo-06-setup` | Setup project: `auth.setup.ts` (login UI → `storageState`) · *Git break:* deshacer cambios |
-| 7 | `modulo-07-api-layer` | API Layer con `BaseService` (abstract) + `tests/api/` |
+| 6 | `modulo-06-api-layer` | API Layer con `BaseService` (abstract) + `tests/api/` |
+| 7 | `modulo-07-setup` | Setup projects: `auth.ui.setup.ts` / `auth.api.setup.ts` (login → `storageState`) · *Git break:* deshacer cambios |
 | 8 | `modulo-08-ci-debugging` | GitHub Actions matrix CI (cross-browser) + Trace Viewer |
 | 9 | `modulo-09-ia-mcp` | *(opcional)* IA + Playwright MCP — copiloto que genera/depura/mantiene tests |
 

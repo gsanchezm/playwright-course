@@ -42,4 +42,4 @@ export interface Market {
 // Los contratos de la capa de API (Pizza, LoginResponse, PizzasResponse,
 // OrderPayload, Order, ApiError) todavía NO existen aquí: este módulo solo
 // consume el catálogo por UI (locators), nunca por HTTP directo. Llegan en
-// M07 — API Layer, cuando `services/` los consume por primera vez.
+// M06 — API Layer, cuando `services/` los consume por primera vez.

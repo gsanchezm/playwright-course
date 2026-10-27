@@ -15,7 +15,7 @@ Snapshot **runnable** de `playwright-course` **al terminar el Módulo 04**
 
 > **Nota de normalización.** El banner de config del README de M04 muestra
 > `ui-chromium`, pero su propio texto y el script `m4` del repo usan **`ui-anon`**
-> (el project autenticado nace en M06). Este snapshot usa `ui-anon` por coherencia.
+> (el project autenticado nace en M07). Este snapshot usa `ui-anon` por coherencia.
 
 ## Cómo correr
 

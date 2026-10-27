@@ -54,8 +54,8 @@ test("...", async ({ loginPage, catalogPage }) => {  ◄── ya vienen listos,
 
 | Carpeta / pieza | Llega en | Para qué |
 |---|---|---|
-| `tests/setup/`, `.auth/`, `storageState`, `dependencies` | M06 | Setup project: login UNA vez → badge heredado |
-| `services/`, `tests/api/` | M07 | Suite de API pura (BaseService abstracta) |
+| `services/`, `tests/api/` | M06 | Suite de API pura (BaseService abstracta) |
+| `tests/setup/`, `.auth/`, `storageState`, `dependencies` | M07 | Setup project: login UNA vez → badge heredado |
 | `.github/workflows/` + multi-browser (firefox/webkit) | M08 | CI/CD con matrix por browser |
 
 ---
@@ -76,7 +76,7 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 4. **`page.route()`** — mocking de red para casos de error / vacío / latencia deterministas.
 5. **Por qué el fixture reemplaza `new LoginPage(page)`** — el test se lee como user story, no como plomería.
 6. **`test.beforeEach`** para eliminar precondiciones repetidas entre tests de un mismo
-   `describe` — sin tocar la ejecución (eso lo hace M06).
+   `describe` — sin tocar la ejecución (eso lo hace M07).
 
 ---
 
@@ -238,7 +238,7 @@ Con `test.extend` el TC **ya no escribe `new LoginPage(page)`** — el fixture s
 > # (M05 añade fixtures/ y helpers/, que son ARCHIVOS de código, no config
 > #  del runner. Un solo project `chromium`, anónimo, sigue corriendo todo.)
 > ```
-> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`, y el **único project `chromium`** (anónimo). **Entra:** nada en el config — el incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. El próximo cambio real llega en **M06**, donde nacen el `setup` project + `storageState` + `dependencies`.
+> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`, y el **único project `chromium`** (anónimo). **Entra:** nada en el config — el incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. El próximo cambio real llega en **M06** (entra el project `api`); el `setup` project + `storageState` + `dependencies` nacen en **M07**.
 
 **3.1 — Confirma el config mínimo.** Un único project `chromium` y `testDir: "./tests"` — sin `setup`, sin `storageState`, sin `dependencies`, sin firefox/webkit.
 
@@ -260,14 +260,14 @@ export default defineConfig({
     navigationTimeout: 45_000,
   },
   // Un solo project, anónimo: los tests hacen login por UI (el badge
-  // heredado con storageState nace en M06).
+  // heredado con storageState nace en M07).
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
 });
 ```
 
-El incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. Los tests corren **anónimos**: cada uno hace su login por UI (encapsulado en el POM). Ese login repetido es exactamente el "dolor" que M06 elimina con el setup project.
+El incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. Los tests corren **anónimos**: cada uno hace su login por UI (encapsulado en el POM). Ese login repetido es exactamente el "dolor" que M07 elimina con el setup project.
 
 **3.2 — Confirma el `include` del `tsconfig.json`.** `fixtures/`, `helpers/` y `tests/` deben estar en el `include`:
 
@@ -314,12 +314,12 @@ Si una carpeta nueva no está en `include`, TS no la typechequea: `pnpm typechec
 - [ ] Los TCs usan `loginPage`/`catalogPage` inyectados — **sin** `new LoginPage(page)`.
 - [ ] Sabes generar data única por worker con `uniqueEmail(info)`.
 - [ ] Puedes mockear una respuesta con `page.route()` registrándolo **antes** del navigate.
-- [ ] Entiendes por qué en M05 el login todavía corre por UI en cada test (y por qué M06 lo elimina).
+- [ ] Entiendes por qué en M05 el login todavía corre por UI en cada test (y por qué M07 lo elimina).
 - [ ] Resolviste el reto del mock con latencia (skeleton durante ~3s, pizzas después).
 - [ ] Puedes explicar la diferencia entre hooks (`beforeEach`/`afterEach`, CUÁNDO corre código) y fixtures (`test.extend`, QUÉ se inyecta).
 
 ---
 
-## ¿Qué viene en M06?
+## ¿Qué viene en M06 y M07?
 
-Los `test.beforeEach` de este módulo eliminan la repetición del **código** (ya no copias/pegas login+catálogo en cada test), pero el navegador **sigue** ejecutando un login real por UI en cada test — el hook corre igual de seguido que antes. En **M06 (Setup)** vas a eliminar esa repetición de **ejecución**: un `auth.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies: ['setup']` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures (y los hooks) que armaste aquí van a "cobrar vida" corriendo ya con sesión.
+Los `test.beforeEach` de este módulo eliminan la repetición del **código** (ya no copias/pegas login+catálogo en cada test), pero el navegador **sigue** ejecutando un login real por UI en cada test — el hook corre igual de seguido que antes. En **M06 (API Layer)** cambias de capa: construyes `services/` (`BaseService` abstracta + `AuthService`/`PizzaService`/`OrderService`) y una suite de API pura, sin navegador. Y en **M07 (Setup)** eliminas esa repetición de **ejecución**: un `auth.*.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures (y los hooks) que armaste aquí van a "cobrar vida" corriendo ya con sesión.

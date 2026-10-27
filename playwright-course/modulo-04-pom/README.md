@@ -69,8 +69,8 @@ data/markets.json ──► const markets = marketsJson as Market[]
 |---|---|---|
 | `fixtures/`, `helpers/` | M05 | Inyectar el Page Object + datos únicos por test |
 | `CheckoutPage.confirmOrder()` / `.expectOrderSuccess()` | M05 | Confirmar el modal y llegar a `/order-success` — aquí solo verificas que el modal aparece |
-| `tests/setup/`, `.auth/` | M06 | Eliminar el login UI de cada test (badge heredado) |
-| `services/`, `tests/api/` | M07 | API testing |
+| `services/`, `tests/api/` | M06 | API testing |
+| `tests/setup/`, `.auth/` | M07 | Eliminar el login UI de cada test (badge heredado) |
 | `.github/workflows/` | M08 | CI/CD |
 
 > 💡 **Para el facilitador:** después de presentar la jerarquía, abre `pages/LoginPage.ts` y muestra que **todos los `get` son `private`**. Eso significa que el test NO puede acceder al locator directamente — debe ir por la acción pública (`loginInMarket`). Ése es el corazón del POM.
@@ -110,7 +110,7 @@ Sólo **después** de ese ejercicio abrimos `BasePage.ts`. El patrón se gana �
 | `protected tid()` | Herramienta del equipo QA interno: la ven las hijas, no el cliente (test) |
 | `readonly page: Page` | Tu pestaña del navegador: no cambia a mitad del TC |
 
-> **⚠️ Nota sobre `abstract`:** en este módulo `BasePage` es una clase **normal**, no abstracta. La palabra `abstract` aparecerá por primera vez en M07 cuando tengamos varios servicios que realmente la justifiquen. Por ahora la convención es humana: **no instancies `BasePage` directamente — extiéndela**.
+> **⚠️ Nota sobre `abstract`:** en este módulo `BasePage` es una clase **normal**, no abstracta. La palabra `abstract` aparecerá por primera vez en M06 cuando tengamos varios servicios que realmente la justifiquen. Por ahora la convención es humana: **no instancies `BasePage` directamente — extiéndela**.
 
 ---
 
@@ -167,7 +167,7 @@ pages/
   git push -u origin main              # sube main y deja upstream
   git push -u origin feature/m04-pom   # sube tu rama de trabajo
   ```
-- **Por qué:** hasta ahora todo vive **solo en tu laptop**. Conectar `origin` es lo que convierte tu repo local en algo compartible: respaldas el trabajo, y a partir de M06 podrás abrir Pull Requests para code review. Lo hacemos **una sola vez** por repo; los módulos siguientes asumen que `origin` ya existe. El `-u` (`--set-upstream`) vincula tu rama local con su gemela remota, así los siguientes `git push` / `git pull` ya no necesitan argumentos.
+- **Por qué:** hasta ahora todo vive **solo en tu laptop**. Conectar `origin` es lo que convierte tu repo local en algo compartible: respaldas el trabajo, y a partir de M05 podrás abrir Pull Requests para code review. Lo hacemos **una sola vez** por repo; los módulos siguientes asumen que `origin` ya existe. El `-u` (`--set-upstream`) vincula tu rama local con su gemela remota, así los siguientes `git push` / `git pull` ya no necesitan argumentos.
 - **Cómo verifico:** recargo el repo en github.com y abro el **selector de ramas** (el dropdown que dice "main"): aparecen **`main`** y **`feature/m04-pom`**. En la terminal, `git remote -v` lista `origin` y `git status` dice `Your branch is up to date with 'origin/feature/m04-pom'`.
 
 > 🌿 **Git JIT — local vs remoto, ¿cuándo eliges HTTPS o SSH?**
@@ -221,7 +221,7 @@ pages/
 - **Cómo verifico:** tras guardar el archivo en VS Code, `ls pages/` muestra `BasePage.ts`.
 
 **3.2 — Escribe la clase y su constructor**
-- **Qué hago:** escribo `pages/BasePage.ts` como **clase normal** (NO abstract — eso llega en M07):
+- **Qué hago:** escribo `pages/BasePage.ts` como **clase normal** (NO abstract — eso llega en M06):
   ```ts
   import type { Page, Locator } from "@playwright/test";
 
@@ -398,7 +398,7 @@ pages/
 > # playwright.config.ts — SIN CAMBIOS vs M01-M03
 > # (M04 refactoriza los tests a Page Object Model; el runner corre igual)
 > ```
-> **Se mantiene:** todo (dotenv, baseURL, timeouts, el único project **anónimo** `ui-anon`). **Entra:** nada en el config — el incremental de M04 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M06** (ahí nacen el setup project y el `ui-chromium` autenticado).
+> **Se mantiene:** todo (dotenv, baseURL, timeouts, el único project **anónimo** `ui-anon`). **Entra:** nada en el config — el incremental de M04 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M07** (ahí nacen el setup project y el `ui-chromium` autenticado).
 
 Tu `playwright.config.ts` sigue idéntico a M03:
 
@@ -620,7 +620,7 @@ cp .env.example .env
 - [ ] Sabes extender `BasePage` para crear un Page nuevo.
 - [ ] **Puedes contar las líneas eliminadas** vs M03.
 - [ ] Completaste el reto E2E con `CheckoutPage`.
-- [ ] Sabes que `abstract` llega en M07 — no lo introdujimos aquí.
+- [ ] Sabes que `abstract` llega en M06 — no lo introdujimos aquí.
 - [ ] Aislaste el refactor en `feature/m04-pom` y lo mergeaste a `main`.
 - [ ] Creaste el repo en GitHub (`omnipizza-playwright`, sin archivos iniciales) y conectaste `origin`.
 - [ ] Subiste `main` y `feature/m04-pom` con `git push -u` y los ves en el selector de ramas.
@@ -630,4 +630,4 @@ cp .env.example .env
 
 ## ¿Qué viene en M05?
 
-En M04 el login todavía corre por UI en **cada** test, y cada test instancia sus Page Objects a mano. En **M05 (fixtures)** vas a inyectar esos Page Objects y datos únicos por test vía **fixtures custom** (`test.extend`), matando ese boilerplate. Y en **M06 (setup + auth)** vas a eliminar el login repetido: un `auth.setup.ts` se ejecuta **una sola vez**, guarda el estado de sesión en `.auth/`, y todos los TCs arrancan ya autenticados. Ahí entra el primer cambio real al `playwright.config.ts` desde M01 (un `project` de `setup` con dependencias) y, en Git, el ciclo `push → PR → code review → deshacer` (`git restore` / `git revert`) porque tocar `auth.setup.ts` puede romper toda la suite.
+En M04 el login todavía corre por UI en **cada** test, y cada test instancia sus Page Objects a mano. En **M05 (fixtures)** vas a inyectar esos Page Objects y datos únicos por test vía **fixtures custom** (`test.extend`), matando ese boilerplate. Y en **M07 (setup + auth)** vas a eliminar el login repetido: un `auth.setup.ts` se ejecuta **una sola vez**, guarda el estado de sesión en `.auth/`, y todos los TCs arrancan ya autenticados. Ahí entra el primer cambio real al `playwright.config.ts` desde M01 (un `project` de `setup` con dependencias) y, en Git, el ciclo `push → PR → code review → deshacer` (`git restore` / `git revert`) porque tocar `auth.setup.ts` puede romper toda la suite.

@@ -17,7 +17,7 @@ Cada TODO del reto sigue el formato **Qué hacer / Pista / Cómo verificar**. No
 
 > 💡 **Si OmniPizza no muestra un skeleton, este reto te enseña algo: abre un bug.** Una carga larga **sin** feedback visual es un defecto de UX clásico — esa es la conversación QA↔UX. El reto no es solo "haz que pase el test", es reconocer cuándo el test revela un hueco de producto.
 
-Este reto **no** toca sesión ni `storageState` (eso llega en M06). Corre en el project `chromium` anónimo: el catálogo se alcanza haciendo login por UI.
+Este reto **no** toca sesión ni `storageState` (eso llega en M07). Corre en el project `chromium` anónimo: el catálogo se alcanza haciendo login por UI.
 
 ---
 
@@ -42,7 +42,7 @@ Criterio de éxito: el test pasa y su duración total es **≥ 3s** (por la late
 // con `setTimeout` + `route.continue()`, y validar que la UI muestra
 // un skeleton/loader mientras el backend "tarda".
 //
-// Este reto NO toca sesión ni storageState (eso llega en M06). Corre
+// Este reto NO toca sesión ni storageState (eso llega en M07). Corre
 // en el project `chromium` anónimo: el catálogo se alcanza haciendo
 // login por UI con el fixture `loginPage`.
 //
@@ -148,7 +148,7 @@ test.describe("Reto M05 — mock con latencia @regression", () => {
 //      (Esperado: errores 5xx/404, respuestas vacías, respuestas con
 //      esquema inesperado — todos deterministas sin tocar el backend.)
 //
-// 👉 En M06 vas a ver la otra cara: en vez de hacer login por UI en cada
+// 👉 En M07 vas a ver la otra cara: en vez de hacer login por UI en cada
 //    test, un `auth.setup.ts` lo hace UNA vez, guarda el badge
 //    (storageState) y todos los tests arrancan ya autenticados.
 // ============================================================

@@ -10,12 +10,12 @@
 
 | Herramienta | Costo | Para qué | Necesaria para |
 |-------------|-------|----------|----------------|
-| **Claude Code (CLI)** | Plan Claude (Free / Pro $20) | Agente en terminal: genera, verifica y refactoriza el harness | **Módulo 7 (principal)** |
-| **Playwright MCP** | Gratis | Da a la IA un navegador real para descubrir selectores | **Módulo 7 (principal)** |
-| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 7 (complemento) |
-| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + MCP (alternativa a Claude Code) | Alternativa M7 |
+| **Claude Code (CLI)** | Plan Claude (Free / Pro $20) | Agente en terminal: genera, verifica y refactoriza el harness | **Módulo 9 (principal)** |
+| **Playwright MCP** | Gratis | Da a la IA un navegador real para descubrir selectores | **Módulo 9 (principal)** |
+| **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 9 (complemento) |
+| **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + MCP (alternativa a Claude Code) | Alternativa M9 |
 | **Cursor** | $20/mes (gratis básico) | Editor con IA integrada (alternativa a VS Code) | Cualquier módulo |
-| **ChatGPT / Gemini / Claude.ai** | Gratis (con límites) | Clientes MCP alternativos / prompts en web | Alternativa M7 |
+| **ChatGPT / Gemini / Claude.ai** | Gratis (con límites) | Clientes MCP alternativos / prompts en web | Alternativa M9 |
 
 ---
 
@@ -50,9 +50,9 @@
 
 ---
 
-## 2. Claude Code (CLI) — la herramienta principal del Módulo 7
+## 2. Claude Code (CLI) — la herramienta principal del Módulo 9
 
-**¿Qué es?** El agente de Anthropic en la **terminal**. A diferencia del autocompletado de Copilot, Claude Code lee tu repo, ejecuta comandos y **genera, verifica y refactoriza** archivos completos siguiendo tus instrucciones. Es el motor del Módulo 7: le pegas los prompts numerados (`00 → 10`) y construye el AI Test Harness paso a paso.
+**¿Qué es?** El agente de Anthropic en la **terminal**. A diferencia del autocompletado de Copilot, Claude Code lee tu repo, ejecuta comandos y **genera, verifica y refactoriza** archivos completos siguiendo tus instrucciones. Es el motor del Módulo 9: le pegas los prompts numerados (`00 → 10`) y construye el AI Test Harness paso a paso.
 
 - **Docs oficiales:** https://code.claude.com/docs
 - **Precio:** incluido en tu plan de Claude (Free con límites; Pro $20/mes rinde más).
@@ -75,13 +75,13 @@
    playwright    npx @playwright/mcp@latest    ✓ connected
    ```
 
-> 💡 En el Módulo 7 no configuras MCP a mano: el **script de setup del harness** escribe un `.mcp.json` en la carpeta del proyecto, así que Claude Code arranca con Playwright MCP ya conectado. El comando de arriba es para conectarlo en cualquier otra carpeta.
+> 💡 En el Módulo 9 no configuras MCP a mano: el **script de setup del harness** escribe un `.mcp.json` en la carpeta del proyecto, así que Claude Code arranca con Playwright MCP ya conectado. El comando de arriba es para conectarlo en cualquier otra carpeta.
 
 ---
 
 ## 3. Claude Desktop (alternativa a Claude Code)
 
-**¿Qué es?** App oficial de Anthropic para chatear con Claude. **Soporta MCP nativamente**, así que también puede conectarse a Playwright — pero para el Módulo 7 es un plan B: Claude Desktop no lee ni edita tu repo desde la terminal como Claude Code.
+**¿Qué es?** App oficial de Anthropic para chatear con Claude. **Soporta MCP nativamente**, así que también puede conectarse a Playwright — pero para el Módulo 9 es un plan B: Claude Desktop no lee ni edita tu repo desde la terminal como Claude Code.
 
 - **Sitio oficial:** https://claude.ai/download
 - **Precio:** plan Free con uso limitado, plan Pro $20/mes.
@@ -110,12 +110,12 @@
 
 ## 4. Playwright MCP
 
-**¿Qué es?** Un servidor MCP oficial de Microsoft que permite a Claude (u otros clientes MCP) **controlar un navegador real** vía Playwright. Le da a la IA "manos" para abrir páginas web, leer el árbol de accesibilidad, hacer click, llenar formularios, etc. En el Módulo 7 es lo que usa Claude Code para **descubrir selectores reales** antes de generar un test.
+**¿Qué es?** Un servidor MCP oficial de Microsoft que permite a Claude (u otros clientes MCP) **controlar un navegador real** vía Playwright. Le da a la IA "manos" para abrir páginas web, leer el árbol de accesibilidad, hacer click, llenar formularios, etc. En el Módulo 9 es lo que usa Claude Code para **descubrir selectores reales** antes de generar un test.
 
 - **Repositorio oficial:** https://github.com/microsoft/playwright-mcp
 - **Docs de MCP:** https://modelcontextprotocol.io/
 
-### Setup en Claude Code (recomendado para M7)
+### Setup en Claude Code (recomendado para M9)
 
 ```bash
 $ claude mcp add playwright npx @playwright/mcp@latest
@@ -172,7 +172,7 @@ Si MCP está bien configurado, **abrirá un navegador real** y te responderá co
 
 ## 6. Otros clientes MCP (Copilot Agent, Gemini, ChatGPT)
 
-El flujo del Módulo 7 está pensado para **Claude Code**, pero sus prompts son **agnósticos del agente**: cualquier cliente que soporte MCP y pueda leer/editar tu repo también sirve. Alternativas maduras:
+El flujo del Módulo 9 está pensado para **Claude Code**, pero sus prompts son **agnósticos del agente**: cualquier cliente que soporte MCP y pueda leer/editar tu repo también sirve. Alternativas maduras:
 
 - **GitHub Copilot (Agent mode)** en VS Code — configura MCP en `.vscode/mcp.json` (clave `servers` en vez de `mcpServers`).
 - **Gemini CLI** — `~/.gemini/settings.json`.

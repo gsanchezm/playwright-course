@@ -170,7 +170,7 @@ test.describe("Challenge M04 — E2E checkout with POM", () => {
 //      tests. Ése es el límite sano del data-driven: los DATOS
 //      escalan gratis; un cambio de CONTRATO se absorbe en el POM.)
 //
-// 👉 En M06 vas a eliminar incluso la línea de login: un
+// 👉 En M07 vas a eliminar incluso la línea de login: un
 //    `auth.setup.ts` se ejecutará UNA sola vez y todos los TCs
 //    arrancarán ya autenticados.
 // ============================================================

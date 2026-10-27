@@ -13,7 +13,7 @@ Aparece **`.github/workflows/`** — el cuarto del robot. Con eso el framework q
 
 ```
 playwright-course/                  ← 🎯 ESTADO FINAL del framework
-├── .auth/                          ← (M06 — gitignored)
+├── .auth/                          ← (M07 — gitignored)
 ├── .env                            ← (M01 — gitignored)
 ├── .env.example                    ← (M01)
 ├── .github/                        ← 🆕
@@ -24,10 +24,10 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 ├── fixtures/                       ← (M05) omnipizza.ts
 ├── helpers/                        ← (M05) unique-data.ts
 ├── pages/                          ← (M04-M05) Base + Login + Catalog + Checkout + Menu + Profile + PizzaCustomizerModal
-├── services/                       ← (M07) Base (abstract) + Auth + Order + Pizza
+├── services/                       ← (M06) Base (abstract) + Auth + Order + Pizza
 ├── tests/
-│   ├── api/                        ← (M07) auth.spec.ts, pizzas.spec.ts
-│   └── setup/                      ← (M06) auth.setup.ts
+│   ├── api/                        ← (M06) auth.spec.ts, pizzas.spec.ts
+│   └── setup/                      ← (M07) auth.setup.ts
 ├── types/                          ← (M03) omnipizza.d.ts
 ├── modulo-00-git-esencial/         ← (lecciones — no contribuyen al framework)
 ├── modulo-01-smoke-feo/            ← (M01)
@@ -35,8 +35,8 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 ├── modulo-03-data-driven/          ← (M03)
 ├── modulo-04-pom/                  ← (M04)
 ├── modulo-05-fixtures/             ← (M05)
-├── modulo-06-setup/                ← (M06)
-├── modulo-07-api-layer/            ← (M07)
+├── modulo-06-api-layer/            ← (M06)
+├── modulo-07-setup/                ← (M07)
 ├── modulo-08-ci-debugging/         ← 🆕 ESTE MÓDULO
 │   ├── README.md
 │   ├── ejemplo.spec.ts             ← 🆕 smoke canary, regression, demo trace
@@ -160,15 +160,16 @@ pnpm exec playwright show-trace path/to/trace.zip
 
 ### Paso 0 — Pre-requisitos
 
-Antes de tocar CI, asegúrate de que el framework de M07 corre verde **en local** y de que tienes las herramientas de GitHub listas.
+Antes de tocar CI, asegúrate de que el framework acumulado (M06 API Layer + M07 Setup) corre verde **en local** y de que tienes las herramientas de GitHub listas.
 
-**0.1 — Verifica que M07 está verde**
+**0.1 — Verifica que M06 y M07 están verdes**
 - **Qué hago:** desde `proyecto/` (de este módulo), corro la suite anterior y el typecheck.
   ```bash
-  pnpm m7            # API layer corre en verde
+  pnpm m6            # API layer corre en verde (project api)
+  pnpm m7            # UI autenticada (setup) corre en verde
   pnpm typecheck     # sin errores
   ```
-- **Por qué:** CI sólo amplifica lo que ya tienes. Si M07 falla en tu laptop, va a fallar en 7 jobs paralelos a la vez — y vas a debuggear en el peor sitio (un runner remoto) en vez de en tu máquina.
+- **Por qué:** CI sólo amplifica lo que ya tienes. Si M06 o M07 fallan en tu laptop, va a fallar en 7 jobs paralelos a la vez — y vas a debuggear en el peor sitio (un runner remoto) en vez de en tu máquina.
 - **Cómo verifico:** ambos comandos terminan en verde; `pnpm typecheck` no imprime errores.
 
 **0.2 — Verifica las herramientas de GitHub**
@@ -340,7 +341,7 @@ jobs:
 
 ### Paso 3 — Ajustes a `playwright.config.ts` (estado FINAL del curso)
 
-> **📐 Config — cambios vs M07 (estado FINAL del curso)**
+> **📐 Config — cambios vs M06 + M07 (estado FINAL del curso)**
 > ```diff
 >   export default defineConfig({
 > +   fullyParallel: true,
@@ -461,24 +462,24 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "api",
       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-06-api-layer\/.*\.spec\.ts/],
     },
     {
       // ui-anon: existe desde M01 (M01-M04 anónimos) + flujos negativos *.anon.spec.ts
@@ -490,7 +491,7 @@ export default defineConfig({
 });
 ```
 
-**Diff conceptual vs M07:**
+**Diff conceptual vs M06 + M07 (API Layer + Setup):**
 
 | Cambio | Por qué |
 |---|---|

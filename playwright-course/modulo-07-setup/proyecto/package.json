@@ -1,0 +1,25 @@
+{
+  "name": "omnipizza-m07-setup",
+  "version": "1.0.0",
+  "description": "Snapshot autocontenido de playwright-course al terminar el Modulo 07 (setup project + storageState + dependencies) sobre OmniPizza",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:pw-ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:setup-ui": "playwright test --project=setup-ui",
+    "test:setup-api": "playwright test --project=setup-api",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install",
+    "m7": "playwright test --project=chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^20.11.0",
+    "dotenv": "^17.4.2",
+    "typescript": "^5.7.0"
+  }
+}

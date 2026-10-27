@@ -5,7 +5,7 @@
 // con `setTimeout` + `route.continue()`, y validar que la UI muestra
 // un skeleton/loader mientras el backend "tarda".
 //
-// Este reto NO toca sesión ni storageState (eso llega en M06). Corre
+// Este reto NO toca sesión ni storageState (eso llega en M07). Corre
 // en el project `chromium` anónimo: el catálogo se alcanza haciendo
 // login por UI con el fixture `loginPage`.
 //
@@ -111,7 +111,7 @@ test.describe("Reto M05 — mock con latencia @regression", () => {
 //      (Esperado: errores 5xx/404, respuestas vacías, respuestas con
 //      esquema inesperado — todos deterministas sin tocar el backend.)
 //
-// 👉 En M06 vas a ver la otra cara: en vez de hacer login por UI en cada
+// 👉 En M07 vas a ver la otra cara: en vez de hacer login por UI en cada
 //    test, un `auth.setup.ts` lo hace UNA vez, guarda el badge
 //    (storageState) y todos los tests arrancan ya autenticados.
 // ============================================================

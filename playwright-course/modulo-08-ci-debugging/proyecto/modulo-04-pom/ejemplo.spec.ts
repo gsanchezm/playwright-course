@@ -6,7 +6,7 @@
 // un mapa reutilizable por pantalla.
 //
 // NOTA: `BasePage` aquí es clase normal (no abstracta). La
-// palabra `abstract` llega en M07.
+// palabra `abstract` llega en M06.
 // ============================================================
 
 import { test } from "@playwright/test";

@@ -46,9 +46,9 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 |---|---|---|
 | `pages/` | M04 | Page Object Model (matar la duplicación) |
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + `storageState` (login una vez) |
-| `services/`, `tests/api/` | M07 | API testing |
-| `interface Pizza/LoginResponse/PizzasResponse/OrderPayload/Order/ApiError` | M07 | contratos de request/response — `types/omnipizza.d.ts` **se amplía** ahí, no aquí |
+| `services/`, `tests/api/` | M06 | API testing |
+| `tests/setup/`, `.auth/` | M07 | Setup project + `storageState` (login una vez) |
+| `interface Pizza/LoginResponse/PizzasResponse/OrderPayload/Order/ApiError` | M06 | contratos de request/response — `types/omnipizza.d.ts` **se amplía** ahí, no aquí |
 | `.github/workflows/` (uso real) | M08 | CI/CD |
 
 > 💡 **Para el facilitador:** abre `types/omnipizza.d.ts` y `data/markets.json` lado a lado y dibuja la flecha con el dedo: **el `.d.ts` describe lo que `.json` debe contener**. Si rompes el contrato (typo, campo faltante), TS lo detecta antes de correr.
@@ -390,7 +390,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
   // data/users.json — las 5 personas reales de OmniPizza (todas role "customer")
   [
     { "username": "standard_user",            "password": "pizza123", "role": "customer", "description": "Usuario estándar para flujos happy path" },
-    { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)" },
+    { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — la API responde 403 y la UI muestra 'Sorry, this user has been locked out.' (útil para login negativo)" },
     { "username": "problem_user",             "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero con bugs visuales intencionales" },
     { "username": "performance_glitch_user",  "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts" },
     { "username": "error_user",               "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero dispara errores en acciones específicas" }
@@ -461,7 +461,7 @@ Este paso construye las **dos carpetas nuevas** de la arquitectura. Orden: prime
     ],
   });
   ```
-- **Por qué:** M03 añade **datos**, no configuración del runner. Si tu config difiere de M02, algo se coló de otro módulo. (Sigue siendo un solo project **anónimo** `ui-anon`: M03 también es login por UI. El project autenticado con `storageState` llega con el setup de M06.)
+- **Por qué:** M03 añade **datos**, no configuración del runner. Si tu config difiere de M02, algo se coló de otro módulo. (Sigue siendo un solo project **anónimo** `ui-anon`: M03 también es login por UI. El project autenticado con `storageState` llega con el setup de M07.)
 - **Cómo verifico:** un diff mental contra M02 da cero cambios; `pnpm test` arranca sin errores de config.
 
 **3.3 — El script `m3` del proyecto**

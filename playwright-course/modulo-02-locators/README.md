@@ -34,8 +34,8 @@ playwright-course/
 | `data/`, `types/` | M03 | Datos tipados (mercados, usuarios) → parametrizar el smoke |
 | `pages/` | M04 | Page Object Model (matar la duplicación de login) |
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + `storageState` (login una vez, hereda sesión) |
-| `services/`, `tests/api/` | M07 | Capa de servicios para API testing |
+| `services/`, `tests/api/` | M06 | Capa de servicios para API testing |
+| `tests/setup/`, `.auth/` | M07 | Setup project + `storageState` (login una vez, hereda sesión) |
 | `.github/workflows/` (uso real) | M08 | CI/CD en GitHub Actions |
 
 > 💡 **Para el facilitador:** deja claro desde el inicio que M02 **no crea archivos de datos** (eso es M03). Su producto es una **habilidad**: mirar un elemento y saber en qué nivel de la jerarquía vive. La prueba en vivo es Codegen (más abajo): revela la calidad del DOM elemento por elemento.
@@ -270,7 +270,7 @@ Hasta aquí escribiste los locators a mano leyendo la chuleta. Pero existe una h
     ],
   });
   ```
-- **Por qué:** M02 añade **criterio**, no configuración del runner. Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI). El project autenticado (con `storageState` + setup) nace en **M06**.
+- **Por qué:** M02 añade **criterio**, no configuración del runner. Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI). El project autenticado (con `storageState` + setup) nace en **M07**.
 - **Cómo verifico:** un diff mental contra M01 da cero cambios; `pnpm test` arranca sin errores de config.
 
 **2.2 — Confirma el `include` mínimo de `tsconfig.json`**

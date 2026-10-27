@@ -33,7 +33,7 @@ Abre `fixtures/omnipizza.ts` y señala la diferencia que es el corazón del mód
 
 **Cómo verificarlo:** en un spec, al teclear `async ({ ` el editor sugiere `loginPage`, `catalogPage`, `standardUser` (test) y `defaultMarket` (worker), todos ya tipados por los genéricos `PageFixtures`/`WorkerFixtures`.
 
-> **Nota:** en M05 el `page` **NO viene autenticado** — el test hace su login por UI usando `loginPage`. El badge heredado (`storageState` por project) llega en M06; aquí los fixtures solo inyectan Page Objects + datos (usuario estándar, mercado por defecto).
+> **Nota:** en M05 el `page` **NO viene autenticado** — el test hace su login por UI usando `loginPage`. El badge heredado (`storageState` por project) llega en M07; aquí los fixtures solo inyectan Page Objects + datos (usuario estándar, mercado por defecto).
 
 > 🔍 **Detalle que parece obvio — fixtures (QUÉ se inyecta) vs hooks (CUÁNDO corre código)**
 > **Qué es:** `test.extend` (fixtures) te ENTREGA un objeto ya construido —
@@ -157,7 +157,7 @@ export function workerPrefix(info: TestInfo): string {
 //
 // Nota importante: en M05 el `page` NO viene autenticado — el test
 // hace su login por UI usando `loginPage`. El badge heredado
-// (`storageState` por project) llega en M06; aquí los fixtures solo
+// (`storageState` por project) llega en M07; aquí los fixtures solo
 // inyectan Page Objects + datos (usuario estándar, mercado por defecto).
 // ============================================================
 
@@ -245,7 +245,7 @@ Este archivo se queda con lo propio de M05: fixtures + `page.route()` + data iso
 // ============================================================
 // Este spec corre en el project `chromium` SIN sesión heredada.
 // El login se hace por UI dentro del test — el badge/storageState
-// que evita ese login llega en M06 (Setup).
+// que evita ese login llega en M07 (Setup).
 //
 // El fixture `loginPage`/`catalogPage` inyecta Page Objects ya
 // ligados a la pestaña del TC: en el test NUNCA escribes
@@ -264,7 +264,7 @@ test.describe("Fixtures inject Page Objects (M05)", () => {
   }) => {
     // Sin `new LoginPage(page)`: el fixture ya inyectó los Page Objects.
     // Sin sesión heredada: hacemos el login por UI (igual que en M01,
-    // pero encapsulado en el POM). En M06 este login desaparece.
+    // pero encapsulado en el POM). En M07 este login desaparece.
     await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
     await catalogPage.expectLoaded();

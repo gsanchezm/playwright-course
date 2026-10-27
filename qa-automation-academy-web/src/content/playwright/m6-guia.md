@@ -1,95 +1,113 @@
-# M06 · Guía del módulo: Setup
+# M06 · Guía del módulo: API Layer
 
-> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test:setup` → `pnpm m6`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
+> 🎁 **Proyecto de referencia.** En el repo del curso, este módulo incluye una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json`, independiente del monorepo). Úsalo como **solución de referencia**: ábrelo aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de esta guía siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto".
 
-**Duración estimada:** 55-75 min
+**Duración estimada:** 50-60 min
 **Piezas que suma al framework:**
-- `tests/setup/auth.setup.ts` — un SOLO test: login **por UI** (con el `LoginPage` de M04) → persiste `storageState` (el "badge").
-- `playwright.config.ts` con 2 projects: `setup` corre primero, `chromium` hereda el badge vía `dependencies`.
-- `.auth/` en `.gitignore` — el badge contiene una sesión válida y nunca se commitea.
+- `services/BaseService.ts` — **clase abstracta** (primera aparición del término en el curso).
+- `services/AuthService.ts`, `OrderService.ts`, `PizzaService.ts`.
+- `tests/api/*.spec.ts` — suite API pura.
+- `tests/ui/ejemplo.spec.ts` — el MISMO flujo (login → pizzas → orden) por UI, para compararlo lado a lado con `tests/ejemplo.spec.ts` (API) en el **Paso 8**.
+- `types/omnipizza.d.ts` **se amplía**: `Pizza`, `LoginResponse`, `PizzasResponse`, `OrderPayload`, `Order`, `ApiError` — los contratos de request/response que hasta ahora no hacían falta (M03–M05 solo tocan la app por UI).
 
-**Lo que NO suma — hereda de M04/M05 sin cambios:** `pages/` (set completo: `BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`, `MenuPage`, `ProfilePage`, `PizzaCustomizerModal`), `types/`, `data/`, `fixtures/omnipizza.ts` (set completo: `loginPage`, `catalogPage`, `checkoutPage`, `menuPage`, `profilePage`, `pizzaCustomizer`, `standardUser`, `defaultMarket`). El setup **reutiliza** ese POM — no lo reinventa.
-
-**La idea, en una frase:** inicia sesión **una vez** (como un usuario real), guarda la sesión en un archivo, y declara `dependencies: ['setup']` para que todos tus tests arranquen ya autenticados. Nada más. Ese es el módulo completo — un solo concepto, hecho bien.
+**M06 SUMA, no reemplaza:** `pages/`, `fixtures/` y el project `chromium` de M04-M05 siguen aquí (la UI vive en `tests/ui/`, con login por fixture) — la capa de API corre AL LADO de la de UI, en su propio project, no en su reemplazo. **No hay `tests/setup/`, ni `.auth/`, ni `storageState`:** el badge llega en M07.
 
 ---
 
 ## 🏗️ Arquitectura al terminar este módulo
 
-Aparece la carpeta **`tests/setup/`** con un único `auth.setup.ts`, y el `playwright.config.ts` **cambia de orquestación por primera vez desde M01**: pasa de un project a **dos**, uno dependiendo del otro. El POM y los fixtures **no cambian** — es la MISMA base de M04/M05, solo que ahora vive rodeada de un setup project.
+Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** (la suite que la consume). La novedad conceptual: por primera vez en el curso aparece una **clase abstracta**. Y algo que NO es novedad y por eso vale la pena señalarlo: `pages/` y `fixtures/` (POM + fixtures de M04-M05) **siguen aquí, intactos** — M06 SUMA una capa, no reemplaza la anterior. **No hay `tests/setup/`, ni `.auth/`, ni `storageState`:** la UI sigue haciendo login por la fixture `loginPage`, igual que en M05 (el badge llega en M07). `tests/ejemplo.spec.ts`/`tests/reto.spec.ts` de M05 se mudan a `tests/ui/` solo para no chocar de nombre con los `ejemplo.spec.ts`/`reto.spec.ts` NUEVOS de este módulo, que son de API. Los de `tests/ui/` ya no son los de M05: `ejemplo.spec.ts` es el flujo login → pizzas → orden por UI (el que se compara con la API en el Paso 8). El login negativo de `locked_out_user` no está aquí: se hace en M07, donde además decide qué badge usa cada test.
 
 ```
-modulo-06-setup/proyecto/
-├── .auth/                          ← 🆕 (gitignored) badge persistido
-│   └── user.json                   ← 🆕 storageState generado por auth.setup.ts
-├── pages/                          ← (M05 — set completo, sin cambios)
-│   ├── BasePage.ts
-│   ├── LoginPage.ts
-│   ├── CatalogPage.ts
-│   ├── CheckoutPage.ts
-│   ├── MenuPage.ts
-│   ├── ProfilePage.ts
-│   ├── PizzaCustomizerModal.ts
-│   └── index.ts
-├── types/                          ← (M03 — sin cambios)
-├── data/                           ← (M03 — sin cambios)
-├── fixtures/                       ← (M05 — set completo: loginPage, catalogPage, checkoutPage,
-│   └── omnipizza.ts                    menuPage, profilePage, pizzaCustomizer, standardUser, defaultMarket)
+playwright-course/
+├── data/                          ← (M03 — compartido entre UI y API)
+├── fixtures/                      ← (M05 — sigue vigente sin cambios)
+├── helpers/                       ← (M05 — uniqueEmail / uniqueOrderId)
+├── pages/                         ← (M04 — sigue vigente sin cambios)
+├── services/                      ← 🆕 capa de servicios HTTP
+│   ├── BaseService.ts             ← 🆕 ABSTRACT — baseURL, api, dispose, url, basePath
+│   ├── AuthService.ts             ← 🆕 factory: create(baseURL)
+│   ├── OrderService.ts            ← 🆕 create(baseURL, token, country) — Bearer + X-Country-Code
+│   ├── PizzaService.ts            ← 🆕 create(baseURL, token, country)
+│   └── index.ts                   ← 🆕 barrel export
 ├── tests/
-│   ├── setup/
-│   │   └── auth.setup.ts           ← 🆕 login por UI (con LoginPage) → guarda .auth/user.json
-│   ├── ejemplo.spec.ts             ← 🆕 arranca YA autenticado (catalogPage, sin login) +
-│   │                                    prueba de sesión persistente entre páginas + 1 widget de
-│   │                                    muestra (modal); los otros 7 de M05 no se repiten aquí
-│   └── reto.spec.ts                ← 🆕 login negativo (locked_out_user)
-├── playwright.config.ts            ← ✏️ 2 projects: setup → chromium (dependencies)
-├── package.json · tsconfig.json · .env.example · .gitignore (con .auth/)
+│   ├── api/                       ← 🆕 suite API pura
+│   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo
+│   │   └── pizzas.spec.ts         ← 🆕 data-driven por mercado
+│   └── ui/                        ← ✏️ MUDANZA — la UI, con login por fixture (sin badge)
+│       ├── ejemplo.spec.ts        ← flujo login → pizzas → orden (contraparte del API)
+│       └── reto.spec.ts           ← login negativo (locked_out_user)
+├── types/omnipizza.d.ts           ← ✏️ AMPLÍA — +Pizza, LoginResponse, PizzasResponse, OrderPayload, Order, ApiError (M03 trajo User/Market/Currency/CountryCode/Role)
+├── modulo-06-api-layer/           ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 flujo API: login → pizzas → crear orden
+│   └── reto.spec.ts               ← 🆕 extender OrderService con getById + test de contrato
+└── playwright.config.ts           ← ✏️ DOS projects: `chromium` (UI, tests/ui) y `api` (nuevo) — sin `setup`, sin `dependencies`
 ```
 
-**Project graph** (cómo Playwright orquesta la ejecución):
+**Jerarquía de servicios** (el patrón abstracto + factory):
 
 ```
-┌─────────────┐   crea .auth/user.json   ┌───────────────────────────────┐
-│   setup     │ ───────────────────────► │  chromium                     │
-│ (login UI)  │      dependencies:       │  (hereda el badge vía          │
-│             │        ['setup']         │   storageState → autenticado)  │
-└─────────────┘                          └───────────────────────────────┘
+              BaseService (abstract)
+              ─────────────────────
+              · baseURL
+              · api: APIRequestContext
+              · abstract basePath(): string  ◄── cada hijo DEBE implementarlo
+              · url(path)
+              · dispose()
+                        ▲
+                        │ extends
+        ┌───────────────┼────────────────┐
+        │               │                │
+   AuthService     OrderService     PizzaService
+   /api/auth       /api/orders      /api/pizzas
+   static create   static create    static create
+   (factory)       (factory)        (factory)
 ```
 
-**Flujo del badge** (de dónde sale la sesión y quién la hereda):
+**Pirámide de testing** (cómo M06 complementa lo anterior):
 
 ```
-auth.setup.ts ──► login por UI ──► page.context().storageState({ path })
-                                              │  serializa cookies + localStorage
-                                              ▼
-                                       .auth/user.json  (el "badge")
-                                              │  storageState: ".auth/user.json"
-                                              ▼
-                   cada test del project chromium arranca YA con esa sesión
+                /\
+               /  \   ◄── UI E2E (M04–M05) — pocos, caros, regresión visual
+              /────\
+             /      \
+            / API    \  ◄── M06 — muchos, rápidos, validan contratos
+           /──────────\
+          / unit (–)   \  ◄── fuera del alcance del curso
+         /──────────────\
 ```
 
 **Qué NO existe todavía:**
 
-| Carpeta / pieza | Llega en | Para qué |
+| Carpeta | Llega en | Para qué |
 |---|---|---|
-| firefox / webkit (matriz cross-browser) | M08 | CI/CD con matrix por browser |
-| `services/`, `tests/api/` | M07 | Suite de API pura (BaseService abstracta) |
+| `tests/setup/` + `.auth/` | M07 | Setup project que hace login una vez y guarda el badge (`storageState`) para que la UI arranque ya autenticada |
+| `.github/workflows/` | M08 | CI/CD con matrix por browser + traces como artefactos |
+
+Nota: `types/` (de M03) alimenta TANTO a UI como a API — ese es el premio del tipado fuerte. Si OmniPizza cambia `interface Pizza`, los specs de UI y API rompen al mismo tiempo y los arreglas de un solo golpe.
 
 ---
 
 ## Analogía de apertura
 
-El tester manual, al llegar por la mañana, **se registra en recepción una sola vez** y recibe un **badge**. Con ese badge entra a todas las salas del día sin volver a identificarse en cada puerta. En M05 era como enseñar tu credencial **en cada puerta** (login por UI en cada test); aquí lo haces **una vez**, guardas el badge (`storageState`) y las puertas se abren solas (`dependencies` + `storageState`).
+Hasta ahora el framework "entra por la puerta principal" (UI). Pero los servidores aceptan llamadas directas al backend (API). Probar por API es **como abrir Postman dentro del test**: más rápido, más estable, y valida contratos sin pintar píxeles.
+
+Aquí aparece por primera vez la **clase abstracta** — un **formato obligatorio de reporte de bug** corporativo. Cada servicio concreto (`AuthService`, `OrderService`, `PizzaService`) **debe** rellenar las secciones obligatorias (`basePath()`) antes de contar como servicio válido. TypeScript se niega a compilar un hijo incompleto — como el sistema de tickets rechaza un reporte sin severidad.
 
 ---
 
-## ¿Qué aprenderás?
+## ¿Por qué hasta ahora?
 
-1. **`auth.setup.ts` como un project** — un test normal, con extensión `.setup.ts`, que corre primero.
-2. **`storageState`** — cómo Playwright serializa cookies **y** localStorage a un archivo, y cómo eso captura la sesión de OmniPizza **sin escribir el token a mano**.
-3. **`dependencies: ['setup']`** — la precondición declarativa: "no arranques hasta que setup termine en verde".
-4. **`storageState` por project** — por qué va en el project `chromium` y no en el `use:` raíz.
-5. **Renunciar al badge** con `test.use({ storageState: { cookies: [], origins: [] } })` para probar flujos anónimos / login negativo.
+En M04 `BasePage` era una **clase normal**. `abstract` no aportaba; con un solo hijo no hay patrón.
+
+Ahora en M06 tenemos **3 servicios** (`Auth`, `Order`, `Pizza`) que comparten `baseURL`, `api`, `dispose()`. Sin `abstract`:
+- El compilador no garantiza que cada hijo defina `basePath()`.
+- Alguien podría instanciar `BaseService` directo y romper invariantes.
+
+**Ahora sí vale la pena.** Ese es el sentido de "just-in-time": el concepto entra cuando el problema lo reclama.
+
+Y la capa de API llega **justo después de las fixtures (M05)** por una razón práctica: ya tienes el `test` con `standardUser` y las páginas inyectadas, así que la UI no necesita nada nuevo para convivir con la API — cada una vive en su propio project. El badge (`storageState`) todavía no existe: se introduce en M07, cuando el login repetido por UI empiece a doler.
 
 ---
 
@@ -97,172 +115,150 @@ El tester manual, al llegar por la mañana, **se registra en recepción una sola
 
 | Concepto | Analogía |
 |---|---|
-| `auth.setup.ts` (project) | Registro en recepción: se hace 1 vez, el badge vale todo el día |
-| `.setup.ts` (la extensión) | El sticker que marca "este test es un setup", no un caso normal |
-| `storageState` | El badge físico: cookies + localStorage serializados a un archivo |
-| `dependencies: ['setup']` | "No ejecutes hasta que setup haya terminado" — precondición declarativa |
-| `storageState` por project | Todos los TCs del project heredan el mismo badge |
-| `test.use({ storageState: { cookies: [], origins: [] } })` | Dejar el badge en recepción: entras anónimo a propósito |
+| Pirámide de testing | Muchos tests rápidos en API, pocos (y caros) por UI |
+| `APIRequestContext` | Postman embebido en Playwright |
+| `abstract class` | Formato obligatorio de reporte de bug: las secciones obligatorias deben estar |
+| `abstract method` | Sección que CADA hijo debe rellenar — sin excepción |
+| `static async create(...)` | Factory — construye la instancia con todo conectado |
+| `extraHTTPHeaders: { Authorization }` | Bearer configurado una vez para toda la instancia |
+| `dispose()` | Limpieza: cierra el contexto HTTP al final del TC |
+| `test.beforeAll` / `test.afterAll` | Hermanos SUITE-scoped de los `beforeEach`/`afterEach` de M05 — corren 1 vez por archivo/describe, no por TC |
 
 ---
 
-## ¿Por qué UI login aquí (y no API)?
+## Arquitectura
 
-Este módulo usa el login **por UI** — exactamente el flujo que ya hiciste a mano en M01 — porque para **aprender el concepto** es lo más claro:
+```
+services/
+├── BaseService.ts        ← ABSTRACT — baseURL, api, dispose(), url(), basePath()
+├── AuthService.ts        ← factory: create(baseURL)
+├── OrderService.ts       ← factory: create(baseURL, token, country) — Bearer + X-Country-Code
+└── PizzaService.ts       ← factory: create(baseURL, token, country)
 
-- **Reusa lo conocido:** el alumno YA hizo este login. El setup es "hazlo una vez y guárdalo", no un concepto nuevo de red.
-- **Cero magia de `localStorage`:** `page.context().storageState()` serializa cookies **y** localStorage. Como OmniPizza guarda la sesión en localStorage, queda capturada **sin** que escribas `window.localStorage.setItem(...)` a mano — que es justo la parte que más confunde.
-- **Es el patrón canónico** de la doc oficial de Playwright (`auth.setup.ts` que llena el formulario y guarda `storageState`).
+tests/api/
+├── auth.spec.ts          ← login positivo + negativo
+└── pizzas.spec.ts        ← data-driven por mercado
 
-> 💡 **Nota avanzada — API login (la optimización, no el concepto).**
-> El login por **API** es más rápido y determinista (un `POST /api/auth/login` en vez de navegar). Cuando la suite crezca y el setup se vuelva un cuello de botella, cámbialo: `request.post('/api/auth/login')` → obtén el token → siémbralo en `localStorage` → `storageState`. Pagas más complejidad (decodificar el JWT, replicar el store que el SPA escribe) a cambio de velocidad. **Para aprender, UI es más claro; API es la optimización** que aplicas cuando el número lo justifique.
-
----
-
-## ¿Por qué un setup project (y no `globalSetup`)?
-
-Playwright ofrece dos formas de preparar sesión. Este curso usa el **setup project**, no `globalSetup`:
-
-| Aspecto | `globalSetup` (hook) | `auth.setup.ts` (project) |
-|---|---|---|
-| Qué es | Una función que corre antes de todo, fuera del runner | Un **test normal** con extensión `.setup.ts` |
-| Visibilidad en el reporte | No aparece (es un hook escondido) | **Aparece como test** — ves si el login pasó o falló |
-| Orden con otros projects | Manual | Declarativo con `dependencies` |
-| Reutilización por rol | Difícil | Trivial (un `.setup.ts` por persona que autentica) |
-
-> El punto pedagógico: `dependencies: ['setup']` hace el orden **explícito y visible**. No escondes el login en un hook — lo declaras como un paso que el reporte muestra.
+tests/ui/
+├── ejemplo.spec.ts       ← flujo login → pizzas → orden por UI (login por fixture)
+└── reto.spec.ts          ← login negativo (locked_out_user)
+```
 
 ---
 
 ## Paso a paso
 
-> **Cómo leer esta sección:** cada paso dice exactamente **qué archivo se crea o edita** y en qué orden. Primero blindas el `.gitignore`, luego escribes el setup, luego el config que lo ata, y al final corres solo el setup y después el módulo completo.
-
 ### Paso 0 — Pre-requisitos
 
-Verifica que **M05 (Fixtures) quede verde** antes de empezar. A diferencia de M03→M04→M05 (donde cada módulo ampliaba el anterior en el mismo árbol), aquí conviene refrescar la memoria porque M06 **sí depende del código de M05**: vas a traer su POM y sus fixtures tal cual, no a reinventarlos.
+```bash
+# Desde proyecto/
+cd proyecto
+pnpm install
+pnpm typecheck     # debe pasar
+```
+
+Este módulo NO usa `storageState` ni un setup project — el project `api` está aislado a propósito y la UI hace login por fixture, como en M05. Abre `playwright.config.ts` y observa que ningún project tiene `dependencies` ni `storageState`.
+
+---
+
+### Paso 1 — Dependencias requeridas
+
+**M06 no añade paquetes npm nuevos.** `APIRequestContext` ya viene en `@playwright/test`.
 
 ```bash
-# Desde el proyecto/
-pnpm typecheck     # debe pasar limpio
+pnpm list @playwright/test dotenv typescript @types/node
+# Las 4 deben aparecer. Si no:
+#   pnpm install     (si package.json ya las lista)
+#   pnpm add -D @playwright/test dotenv typescript @types/node
 ```
-
-**Copia el POM/fixtures completos de M05.** De `modulo-05-fixtures/proyecto/`, copia las 6 clases de `pages/` (`BasePage`, `LoginPage`, `CatalogPage`, `CheckoutPage`, `MenuPage`, `ProfilePage`, `PizzaCustomizerModal`) con su `pages/index.ts`, `types/`, `data/`, y `fixtures/omnipizza.ts` completo (`loginPage`, `catalogPage`, `checkoutPage`, `menuPage`, `profilePage`, `pizzaCustomizer`, `standardUser`, `defaultMarket`). M06 no es un proyecto nuevo — es M05 **+ storageState**.
 
 ---
 
-### Paso 1 — Blinda el `.gitignore` ANTES de generar el badge
+### Paso 2 — Crear `services/` y `tests/api/`
 
-**1.1 — Asegura que `.auth/` esté en `.gitignore`.** Abre el `.gitignore` y confirma que tenga `.auth/`. Si no, añádelo al final.
-
-```gitignore
-# --- Secrets y storageState ---
-.env
-.env.local
-.auth/
+```bash
+mkdir services
+mkdir tests
+mkdir tests/api
 ```
 
-El `storageState` que vas a generar contiene una **sesión válida** (el token vive en `localStorage`). Commitearlo es filtrar credenciales en el historial de Git.
+`tests/` ya existe desde M05 (ahí vivían `ejemplo.spec.ts` y `reto.spec.ts`) — si ya existe, salta esa línea.
 
-> ⚠️ Haz esto **antes** del primer `pnpm test:setup`. Una vez que `.auth/user.json` entra al historial, sacarlo requiere reescribir commits.
+Crea los 7 archivos abriéndolos en VS Code (cada `code <ruta>` abre el archivo como nuevo; guárdalo con `Ctrl+S` para que exista en disco):
 
-**Cómo verifico:** `git check-ignore .auth/` imprime `.auth/` (la ruta quedó cubierta), y `git status` **no** muestra `.auth/` ni siquiera después de correr el setup.
+```bash
+code services/BaseService.ts
+code services/AuthService.ts
+code services/OrderService.ts
+code services/PizzaService.ts
+code services/index.ts
+code tests/api/auth.spec.ts
+code tests/api/pizzas.spec.ts
+```
+
+Los esqueletos mínimos de `BaseService.ts`, `AuthService.ts` y `index.ts` los tienes en **El spec paso a paso** (con su `// @file`). `PizzaService` y `OrderService` siguen el mismo molde — los completas con el ejemplo.
 
 ---
 
-### Paso 2 — Escribe `tests/setup/auth.setup.ts` (login por UI → badge)
+### Paso 3 — Ajustes a `playwright.config.ts` (dos projects: `chromium` para la UI y `api` nuevo)
 
-Crea `tests/setup/` y dentro `auth.setup.ts`. La extensión `.setup.ts` es la que el project `setup` matchea con su `testMatch`; la ubicación en `tests/setup/` lo mantiene separado de los `*.spec.ts` normales. **Un solo test**, sin warmup separado, sin modo serial, sin login por API, sin sembrar `localStorage` a mano.
-
-```ts
-// @file modulo-06-setup/tests/setup/auth.setup.ts
-// ============================================================
-// M06 — Setup & auth: inicia sesión UNA vez, guarda el "badge"
-// ============================================================
-// Un SOLO test de setup. Sin warmup separado, sin modo serial,
-// sin login por API, sin sembrar localStorage a mano — y SIN
-// reescribir el login: lo importo de fixtures/omnipizza.ts.
-// ============================================================
-
-import { test as setup, expect } from "../../fixtures/omnipizza";
-
-const authFile = ".auth/user.json"; // el "badge" que heredarán los tests
-
-setup("authenticate", async ({ page, loginPage, standardUser, defaultMarket }) => {
-  // Render (free tier) duerme el backend tras 15 min → margen extra la 1ª vez.
-  setup.setTimeout(90_000);
-
-  // 1) Login por UI — el MISMO LoginPage de M04, inyectado por el
-  //    fixture de M05. El setup REUTILIZA el login, no lo reinventa.
-  await loginPage.loginInMarket(standardUser, defaultMarket.code);
-
-  // 2) Señal inequívoca de sesión abierta: llegamos al catálogo.
-  await expect(page).toHaveURL(/\/catalog/);
-
-  // 3) Guardar el badge. storageState serializa cookies + localStorage;
-  //    OmniPizza guarda la sesión en localStorage, así que queda
-  //    capturada AUTOMÁTICAMENTE — sin escribir el token a mano.
-  await page.context().storageState({ path: authFile });
-});
-```
-
-El `import { test as setup } from "../../fixtures/omnipizza"` es el punto clave del módulo — el setup NO llama `page.goto`/`getByTestId` a mano: reutiliza el `loginPage` + `standardUser` + `defaultMarket` que M04/M05 ya construyeron. El único ajuste nuevo es la última línea: `storageState({ path })` guarda la sesión completa a un archivo. Como OmniPizza persiste la sesión en `localStorage`, `storageState` la captura sola — no tocas `localStorage` tú.
-
-> 🔍 **Detalle que parece obvio — `import { test as setup } from "../../fixtures/omnipizza"`**
-> **Qué es:** el `test` custom que exportaste en M05 (con `loginPage`, `catalogPage`, `standardUser`, `defaultMarket` inyectados) sigue siendo un `test` de Playwright válido — renombrarlo `as setup` al importarlo funciona igual que con el `test` base. El project `setup` lo matchea con `testMatch: /.*\.setup\.ts/` por el NOMBRE DE ARCHIVO, no por de dónde viene el `test`.
-> **Por qué así (y no la alternativa obvia):** la alternativa obvia — `import { test as setup } from "@playwright/test"` + escribir el login a mano — DUPLICA lo que `loginPage`/`standardUser` ya resuelven. Extender el `test` de M05 significa que el setup y los specs comparten el MISMO POM.
-> **Qué pasa si lo cambias:** si vuelves a `@playwright/test` puro, pierdes `loginPage`/`standardUser`/`defaultMarket` y tienes que reescribir el login con locators crudos — rompe la continuidad con M04/M05. Si renombras el ARCHIVO a `auth.spec.ts`, el project `setup` deja de matchearlo → el badge nunca se genera y `chromium` arranca sin sesión.
-
-> 🔍 **Detalle que parece obvio — `await page.context().storageState({ path: authFile })`**
-> **Qué es:** serializa el estado del `BrowserContext` (cookies + localStorage del `page` que acaba de loguearse) a `.auth/user.json` — el "badge".
-> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" (y frágil) sería leer el token y escribir el JSON a mano. No hace falta: `storageState` **siempre** guarda cookies + localStorage juntos, así que captura la sesión sea cual sea el mecanismo. Como OmniPizza guarda la sesión en localStorage, el badge queda completo sin que toques `window.localStorage`.
-> **Qué pasa si lo cambias:** si omites esta línea, el login ocurre pero **no se persiste nada** → `.auth/user.json` no existe y `chromium` arranca anónimo. Si algún día OmniPizza migrara a cookies httpOnly, este mismo `storageState` seguiría funcionando sin tocar el setup.
-
-> 🔷 **TypeScript — `setup.setTimeout(90_000)` (número con separador `_`)**
-> El `_` en `90_000` es un **separador de dígitos**: TS lo ignora al compilar (`90_000 === 90000`), pero para el humano `90_000` se lee "noventa mil" de un vistazo. El gotcha: es solo azúcar visual, no cambia el valor.
-> 📚 Lo viste en [TS · M02 — Tipos](/docs/typescript/m2-numbers). Aquí lo aplicas para darle margen al cold start de Render en el primer login del día.
-
----
-
-### Paso 3 — Escribe el `playwright.config.ts` (2 projects: setup → chromium)
-
-> **📐 Config — cambios vs M05 (aquí el config cambia de orquestación por 1ª vez)**
+> **📐 Config — SUMA el project `api`; `chromium` solo acota su `testMatch` (M06)**
 > ```diff
->   import { defineConfig, devices } from "@playwright/test";
->   import "dotenv/config";
->
 >   projects: [
-> -   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-> +   { name: "setup", testMatch: /.*\.setup\.ts/ },
-> +   {
-> +     name: "chromium",
-> +     use: { ...devices["Desktop Chrome"], storageState: ".auth/user.json" },
-> +     dependencies: ["setup"],
-> +   },
+> +   { name: "chromium", use: { ...devices["Desktop Chrome"] },
+> +     testMatch: [/tests\/ui\/.*\.spec\.ts/] },
+> +   { name: "api",
+> +     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+> +     testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/] },
 >   ]
 > ```
-> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`. **Entra:** el project `setup` (corre primero, genera el badge) y, en `chromium`, `storageState` + `dependencies: ["setup"]`. **Nota lo que NO entra:** ni firefox/webkit (eso es M08), ni `testIgnore` gigantes (este proyecto solo tiene SUS tests).
+> **Se mantiene:** el project `chromium` de M05 (UI, login por fixture) — solo se le acota el `testMatch` a `tests/ui/` porque ahora conviven con specs de API que NO deben correr bajo navegador. **Entra:** el project `api` — **sin `storageState` y sin `dependencies`**. Corre contra `API_URL` (backend); `chromium` sigue usando `BASE_URL` (frontend), definido en el `use:` raíz. No hay project `setup`: el badge (`storageState`) llega en M07.
 
-**3.1 — Reemplaza `projects` por la versión de 2 projects.**
+Hay que **definir el project `api`**, DEBAJO de `chromium` (que dejas intacto salvo su `testMatch`). NO depende de ningún otro project ni hereda storageState.
+
+Dentro del array `projects`:
 
 ```ts
-// @file modulo-06-setup/playwright.config.ts
-// ============================================================
-// M06 — Setup & auth: el config MÍNIMO que hace falta
-// ============================================================
-// Solo 2 projects: `setup` corre primero y crea el badge;
-// `chromium` depende de él y arranca ya autenticado.
-// (Sin firefox/webkit: la matriz cross-browser vive en M08 · CI.
-//  Sin testIgnore gigantes: este proyecto solo tiene SUS tests.)
-// ============================================================
+{
+  name: "api",
+  use: {
+    baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com",
+  },
+  testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/],
+},
+```
+
+> 🔍 **Detalle que parece obvio — `{ name: "api", ... }` sin `storageState`, sin `dependencies`**
+> **Por qué así (y no la alternativa obvia):** los tests de API se autentican por su cuenta — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. No dependen de ninguna sesión de navegador.
+> **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies` hacia otro project, cada corrida de API esperaría a que ese project termine — más lento y acoplado a algo que la API no consume. El aislamiento es intencional.
+
+Con dos familias de specs conviviendo en `tests/` (UI en `tests/ui/`, API en el resto), `chromium` acota su suite con `testMatch: [/tests\/ui\/.*\.spec\.ts/]` en vez de un `testIgnore` — declara "esto SÍ" en vez de "esto NO". `pnpm exec playwright test --list --project=chromium` muestra solo `tests/ui/*`; `--project=api` muestra el resto, sin mezclarse.
+
+**Estado completo del config en M06:**
+
+```ts
+// playwright.config.ts — Estado en M06 (UI por fixture + capa de API nueva)
+// ---------------------------------------------------------------------
+// M06 introduce la capa de servicios (services/) para probar la API SIN
+// navegador. Aquí NO hay setup, NI storageState, NI `.auth/`: dos
+// projects independientes, sin `dependencies`.
+//   - `chromium`: UI (tests/ui/**). Cada test hace login por UI con la
+//     fixture `loginPage` (mecanismo de M05). Corre contra BASE_URL.
+//   - `api`: capa de servicios (tests/api/** y tests/{ejemplo,reto}.spec.ts).
+//     Cada servicio crea su propio contexto autenticado vía AuthService.
+//     Corre contra API_URL (backend), no BASE_URL — por eso api NO hereda
+//     el `baseURL` raíz.
+// El badge (storageState) llega después, en M07 (Setup).
 
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
 export default defineConfig({
-  testDir: "./tests",
+  testDir: ".",
+
   timeout: 60_000,
   expect: { timeout: 10_000 },
+
   reporter: [["html", { open: "never" }], ["list"]],
 
   use: {
@@ -274,156 +270,227 @@ export default defineConfig({
   },
 
   projects: [
-    // 1) Corre primero → genera .auth/user.json (el badge).
-    { name: "setup", testMatch: /.*\.setup\.ts/ },
-
-    // 2) Hereda el badge vía storageState + dependencies → arranca autenticado.
+    // --- UI (login por fixture, sin badge ni dependencies) ---
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], storageState: ".auth/user.json" },
-      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: [/tests\/ui\/.*\.spec\.ts/],
+    },
+
+    // --- API (🆕 M06) — sin storageState, sin dependencies: la API no pasa por la UI ---
+    {
+      name: "api",
+      use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+      testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/],
     },
   ],
 });
 ```
 
-El project `setup` corre **primero** y genera el badge; `chromium` lo hereda vía `storageState` + `dependencies`. Fíjate que `chromium` **no** define `testMatch`: usa el default (`*.spec.ts`), así que NO recoge el `auth.setup.ts` — por eso este config no necesita `testIgnore`.
-
-> 🔍 **Detalle que parece obvio — `dependencies: ["setup"]`**
-> **Qué es:** la precondición declarativa, a nivel de project: "este project no arranca hasta que el project `setup` termine **en verde**".
-> **Por qué así (y no la alternativa obvia):** no es un `import`, ni un `globalSetup`, ni una llamada en un `beforeAll`. No ejecutas el login tú mismo — **declaras** el orden y Playwright construye el grafo (por eso el setup aparece como un test en el reporte y se reutiliza por rol).
-> **Qué pasa si lo cambias:** si borras `dependencies`, `chromium` ya **no espera** al setup. Puede arrancar antes de que `.auth/user.json` exista (o con uno viejo) → tests que fallan con "sesión no encontrada" de forma intermitente, según quién gane la carrera.
-
-> 🔍 **Detalle que parece obvio — `storageState: ".auth/user.json"` (en el project `chromium`, NO en el `use:` raíz)**
-> **Qué es:** la asignación del badge **por project** — dentro de `chromium`, no en el bloque `use:` global de `defineConfig`.
-> **Por qué así (y no la alternativa obvia):** la alternativa "obvia" es ponerlo una vez arriba en `use:` para no repetirlo. Pero eso autenticaría **TODO**, incluido el propio `setup` (que debe correr **sin** sesión, porque su trabajo ES loguearse) y cualquier flujo anónimo/negativo futuro.
-> **Qué pasa si lo cambias:** si lo subes al `use:` raíz, el project `setup` arrancaría con una sesión que aún no existe (huevo y gallina), y tus flujos negativos (login inválido, acceso anónimo) arrancarían **ya logueados** y dejarían de probar lo que dicen probar. Los falsos verdes más peligrosos nacen aquí.
-
-**3.2 — Añade los scripts al `package.json`.** Agrega el atajo del módulo y el del setup aislado.
+Añade los scripts de M06 al `package.json` (`test:ui` corre el project `chromium`; `test:pw-ui` y `test:pw-api` abren la **UI Mode** de Playwright, el segundo limitado al project `api`):
 
 ```json
 "scripts": {
-  "m6": "playwright test --project=chromium",
-  "test:setup": "playwright test --project=setup"
+  "test:ui": "playwright test --project=chromium",
+  "test:pw-ui": "playwright test --ui",
+  "test:pw-api": "playwright test --ui --project=api",
+  "test:api": "playwright test --project=api",
+  "m6": "playwright test --project=api"
 }
 ```
 
-`test:setup` te deja correr **solo** el setup (para inspeccionar el badge); `m6` corre el módulo completo (setup arranca solo por `dependencies`).
+Y verifica que `tsconfig.json` incluya `pages/`, `fixtures/` (heredados) y `services/` (nuevo):
 
-**3.3 — Confirma el `tsconfig.json`.** El `include` ya trae `tests/**/*.ts`, así que el nuevo `auth.setup.ts` (vive bajo `tests/setup/`) queda cubierto y `pnpm typecheck` lo valida sin tocar nada más.
+```json
+{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "services/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}
+```
 
 ---
 
-### Paso 4 — Corre SOLO el setup project
+### Paso 9 — Resolver el reto
 
-```bash
-pnpm test:setup
-```
-
-Correr el setup aislado te deja **ver el badge nacer** antes de que ningún test lo herede. Verás **un** test verde en el project `setup`: `authenticate`. Tras la corrida, aparece `.auth/user.json` en disco:
-
-```bash
-ls .auth
-cat .auth/user.json    # fíjate: "cookies" y "origins" (ahí vive el localStorage)
-```
-
-Ese archivo contiene la sesión. **Está en `.gitignore`** — nunca lo commitees.
-
-> 💡 **Si falla** con `TimeoutError` o `ECONNREFUSED`: probablemente OmniPizza está dormido (cold start de Render). El `setup.setTimeout(90_000)` da margen; si aun así falla, vuelve a correr — el backend ya estará despierto.
+El reto de este módulo es de API: extender `OrderService` con `getById(orderId)` y escribir un **test de contrato** (200 + schema, 404 y 403 `Access denied`). Está en **🚩 Reto M6**.
 
 ---
 
-### Paso 5 — Corre el módulo completo (el setup arranca solo)
+### Paso 9 bis — Refactor: de hooks a fixtures (cuándo usar cada uno)
 
-```bash
-# El project chromium declara dependencies: ['setup'],
-# así que Playwright corre setup automáticamente primero.
-pnpm m6
-```
+> 🎯 No reemplazas `auth.spec.ts`/`pizzas.spec.ts`/`orders.spec.ts` — los **comparas** contra la misma suite reescrita con fixtures (`tests/api/with-fixtures/`). Los 6 archivos corren juntos en `pnpm test:api`.
 
-Esto demuestra el grafo — no invocas el setup tú: lo **declaras** y Playwright lo orquesta. Setup corre primero (genera/refresca `.auth/user.json`) y el `ejemplo.spec.ts` arranca **ya autenticado**: hace `page.goto("/catalog")` **sin** paso de login previo y el catálogo carga.
+**El síntoma.** Un hook (`beforeAll`/`afterAll`) vive **dentro de un solo archivo** — no se importa. `auth.spec.ts` comparte 1 `AuthService` entre sus 2 tests con `beforeAll`, pero `pizzas.spec.ts` repite `AuthService.create()` + `login()` + `dispose()` **dentro del `for`** (una vez por mercado, 5 ejecuciones) porque no puede pedirle prestado el hook de otro archivo. Eso es lo que resuelven las fixtures: **reutilización entre archivos**.
+
+**La fixture.** `fixtures/api.ts` compone sobre el `test` de M05 (hereda `standardUser` gratis) y suma `authService` (scope `worker`, un `AuthService` por archivo) y `accessToken` (scope `test`).
 
 ```ts
-// @file modulo-06-setup/tests/ejemplo.spec.ts
+// @file fixtures/api.ts
 // ============================================================
-// M06 — Arranca YA autenticado gracias al setup project
+// fixtures/api.ts — Custom fixtures para la capa de API (M06)
 // ============================================================
-// Este spec corre en el project `chromium`, que declara
-// `dependencies: ['setup']` + `storageState: '.auth/user.json'`.
-// Antes de ejecutarlo, Playwright corre `tests/setup/auth.setup.ts`
-// (login por UI → guarda el badge) y este test HEREDA la sesión.
-//
-// Fíjate en lo que NO hay: ni goto('/'), ni selección de mercado,
-// ni fill de credenciales, ni click en "Sign In". El badge ya trajo
-// todo eso. Vamos DIRECTO al catálogo — con el MISMO CatalogPage
-// que ya construiste en M04, inyectado por el fixture de M05.
+// Analogía QA: extiende el `test` de fixtures/omnipizza.ts (M05) en
+// vez de reescribirlo — así los specs de API heredan `standardUser`
+// gratis y solo suman lo propio de esta capa: `authService`
+// (worker-scoped, un solo APIRequestContext por archivo, como hacía
+// el beforeAll/afterAll manual) y `accessToken` (test-scoped, un
+// login fresco por TC vía `authService.login(standardUser)`).
 // ============================================================
 
-import { test } from "../fixtures/omnipizza";
+import { test as omnipizzaTest, expect } from "./omnipizza";
+import { AuthService } from "../services";
 
-test.describe("Setup & auth — inherited session (M06)", () => {
-  test("lands on /catalog without logging in @smoke", async ({ page, catalogPage }) => {
-    // ⚠️ No hay paso de login. El storageState ya trajo la sesión.
-    await page.goto("/catalog");
+export const API_URL =
+  process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
 
-    // Señal de sesión abierta: seguimos en /catalog (no nos rebotó a "/")
-    // y el catálogo muestra al menos una pizza — las mismas assertions
-    // de CatalogPage que usaste en M04, no locators nuevos.
-    await catalogPage.expectLoaded();
-    await catalogPage.expectHasPizzas();
+type ApiFixtures = {
+  accessToken: string;
+};
+
+type ApiWorkerFixtures = {
+  authService: AuthService;
+};
+
+export const test = omnipizzaTest.extend<ApiFixtures, ApiWorkerFixtures>({
+  // eslint-disable-next-line no-empty-pattern
+  authService: [
+    async ({}, use) => {
+      const auth = await AuthService.create(API_URL);
+      await use(auth);
+      await auth.dispose();
+    },
+    { scope: "worker" },
+  ],
+
+  accessToken: async ({ authService, standardUser }, use) => {
+    const { access_token } = await authService.login(standardUser);
+    await use(access_token);
+  },
+});
+
+export { expect };
+```
+
+> Una fixture solo puede depender de otras de **igual o mayor** alcance: por eso `authService` (worker) no depende de `standardUser` (test), pero `accessToken` (test) sí puede pedir ambas.
+
+**Antes / después en `auth.spec.ts`:**
+
+| | Con hooks (`auth.spec.ts`) | Con fixtures (`with-fixtures/auth.spec.ts`) |
+|---|---|---|
+| Setup | `test.beforeAll` + `let auth: AuthService` | `authService` como parámetro del test |
+| Teardown | `test.afterAll` manual | Automático — el `use()` de la fixture lo garantiza |
+| Usuario | `users.find(...)` manual | `standardUser` (heredado de M05) |
+| Firma del test | No declara qué necesita (variable de closure) | `async ({ authService, standardUser })` — explícito |
+
+```ts
+// @file tests/api/with-fixtures/auth.spec.ts
+// ============================================================
+// tests/api/with-fixtures/auth.spec.ts — la MISMA suite de
+// auth.spec.ts, refactorizada a fixtures (M06 — Paso 9 bis)
+// ============================================================
+// Compara este archivo con ../auth.spec.ts línea por línea:
+// el `beforeAll`/`afterAll` + `users.find(...)` manual desaparecen,
+// reemplazados por `{ authService, standardUser }` como parámetros
+// del test. Ver README → Paso 9 bis para el porqué.
+// ============================================================
+
+import { test, expect } from "../../../fixtures/api";
+
+test.describe("AuthService @api (con fixtures)", () => {
+  test("successful login returns access_token", async ({
+    authService,
+    standardUser,
+  }) => {
+    const res = await authService.login(standardUser);
+    expect(res.access_token).toBeTruthy();
+    expect(typeof res.access_token).toBe("string");
   });
 
-  test("the badge persists across pages without re-login @smoke", async ({
-    page,
-    catalogPage,
-    profilePage,
-    checkoutPage,
+  test("login with invalid password fails", async ({
+    authService,
+    standardUser,
   }) => {
-    // Prueba más fuerte que el test de arriba: no solo aterrizas
-    // autenticado en /catalog — la MISMA sesión te sigue a /profile y
-    // a /checkout sin volver a pasar por login en ningún punto.
-    await page.goto("/catalog");
-    await catalogPage.expectLoaded();
-    await catalogPage.addFirstPizza();
-
-    await profilePage.goto();
-    await profilePage.expectLoaded();
-
-    await page.goto("/checkout");
-    await checkoutPage.expectLoaded();
+    await expect(
+      authService.login({ ...standardUser, password: "wrong-password" }),
+    ).rejects.toThrow(/Login failed/);
   });
 });
 ```
 
-**No hay** `goto('/')`, ni `market-MX`, ni `fill` de credenciales, ni click en "Sign In". El badge trajo todo eso. Y las assertions **no son locators nuevos** — son los mismos métodos de `CatalogPage` que ya usaste en M04. Ese contraste con M05 (donde el login estaba en cada test) es la prueba de que el setup funcionó, sin renunciar al POM/fixtures. Un segundo test lleva la prueba más lejos: la misma sesión te sigue de `/catalog` a `/profile` y a `/checkout` sin volver a pasar por login, así que el badge no es un truco de la primera pantalla. El archivo suma además un widget de muestra: el mismo modal "Customize Pizza" de M05, pero arrancando directo con `page.goto('/catalog')` en vez de login — prueba que la técnica del widget no cambia según cómo llegaste autenticado (los otros 7 no se repiten; siguen en `modulo-05-fixtures/proyecto/tests/widgets/`).
+> 🧭 **Hooks vs Fixtures — el criterio real no es "fixtures son mejores", es *reutilización entre archivos*.** Quédate con hooks cuando el setup es de un solo archivo; sube a fixtures en cuanto un segundo archivo necesite el mismo recurso, o quieras el teardown garantizado por diseño y la firma del test explícita. Mismo criterio que usaste en M04 para `abstract`: el patrón se paga cuando **2 o más consumidores** lo necesitan.
+
+---
+
+### Paso 10 — Versiona tu trabajo (Git JIT)
+
+La capa de servicios + su config + el módulo son una unidad coherente: un commit por capa deja un historial legible (y, en M08, fácil de revertir en CI).
+
+```bash
+git add services tests playwright.config.ts
+git commit -m "feat(m06): API layer con BaseService abstracta"
+git log --oneline -1
+```
+
+**Cómo verificas:** `git log --oneline -1` muestra el commit `feat(m06): ...` en la cima.
+
+---
+
+## 🔎 Cómo probar los endpoints en Swagger (sin código)
+
+Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hace cada endpoint: ir a la URL, mandar la petición y leer la respuesta. Es la **fuente de la verdad** contra la que comparar lo que devuelven `AuthService`, `PizzaService` y `OrderService`.
+
+| Endpoint | Método | ¿Requiere auth? | Headers relevantes | Lo envuelve |
+|---|---|---|---|---|
+| `/api/auth/login` | POST | No | — | `AuthService.login()` |
+| `/api/pizzas` | GET | **Sí** (Bearer) | `X-Country-Code` (MX/US/CH/JP/SA), `X-Language` (opc.) | `PizzaService.list()` |
+| `/api/checkout` | POST | **Sí** (Bearer) | `Authorization: Bearer`, `X-Country-Code` | `OrderService.createOrder()` |
+| `/api/orders` | GET | **Sí** (Bearer) | `Authorization: Bearer` | `OrderService.listMine()` |
+| `/api/orders/{order_id}` | GET | **Sí** (Bearer) | `Authorization: Bearer` | `OrderService.getById()` (lo escribes en el reto) |
+
+> **Crear vs. leer órdenes:** la orden **se crea con `POST /api/checkout`**; `/api/orders` es solo lectura (historial y detalle).
+
+1. **Abre el Swagger UI:** https://omnipizza-backend.onrender.com/api/docs (FastAPI). La primera petición del día puede tardar 30-40s (cold start de Render).
+2. **Autentícate:** `POST /api/auth/login` → *Try it out* → `{ "username": "standard_user", "password": "pizza123" }` → *Execute*. Copia el `access_token`.
+3. **Autoriza:** botón *Authorize* → pega **solo el token, sin la palabra `Bearer`** (Swagger ya la antepone; si la duplicas, 401).
+4. **`GET /api/pizzas`** con el header `X-Country-Code: MX` (y luego `US`/`CH`/`JP`/`SA`): cambian precios y `currency` — exactamente lo que itera `ejemplo.spec.ts`.
+5. **`POST /api/checkout`** con un body válido del mercado (ej. MX: `country_code`, `items: [{ "pizza_id": "p01", "quantity": 1 }]`, `name`, `address`, `phone`, `colonia`). Si falta el campo de dirección del mercado (MX `colonia`, US `zip_code`, CH `plz`, JP `prefectura`, SA `district`) recibes **400** con `{"error": "Field '...' is required for country ..."}`; un body mal formado (p. ej. `address` de menos de 5 caracteres) da **422** con el body de Pydantic.
+6. **`GET /api/orders`** (historial, envuelto en `{ "orders": [...] }`) y **`GET /api/orders/{order_id}`** (detalle). Para el reto necesitas los errores reales: orden inexistente → **404** `Order ... not found`; orden de otro usuario → **403** `Access denied`.
+
+> 💡 Cuando un test API falle, repite la llamada a mano en Swagger y compara: así sabes si el bug está en el test, en el servicio o en el backend.
 
 ---
 
 ## ▶️ Cómo ejecutar este módulo
 
-- **Correr SOLO el setup (genera el badge):** desde `proyecto/`, `pnpm test:setup`
-- **Comando del módulo (completo):** `pnpm m6` (setup arranca solo por `dependencies`)
-- **UI mode:** `pnpm test:ui`
-- **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
-- **Solo el reto:** `pnpm exec playwright test tests/reto.spec.ts --headed --project=chromium`
+- **Comando del módulo (project api):** `pnpm m6`
+- **Suite API completa:** `pnpm test:api`
+- **Solo la capa de UI (login por fixture):** `pnpm test:ui` (project `chromium`; necesita los navegadores: `pnpm exec playwright install chromium`)
+- **Todo el módulo (UI + API):** `pnpm test`
+- **UI Mode de Playwright (explorador interactivo):** `pnpm test:pw-ui` (todo) · `pnpm test:pw-api` (solo API)
+- **Verificar tipos:** `pnpm typecheck`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts --project=api`)
 - **Ver el reporte:** `pnpm report`
-- **🪟 Windows / PowerShell:** variables de entorno con `$env:VAR="x"; pnpm m6` (no `VAR=x pnpm m6`, sintaxis bash que falla en PowerShell)
+- **🪟 Windows / PowerShell:** las variables de entorno van con `$env:VAR="x"; pnpm m6` (no `VAR=x pnpm m6`). Ej.: `$env:API_URL="https://mi-backend"; pnpm m6`
+
+> M06 corre contra el **backend** (`API_URL`) para el project `api`. El project `chromium` (UI) usa `BASE_URL` (frontend) — cada project apunta a lo suyo.
 
 ---
 
 ## Outcome esperado
 
-- [ ] `.auth/` está en `.gitignore` **antes** del primer `pnpm test:setup`.
-- [ ] `.auth/user.json` se crea al correr el setup (login por UI → `storageState`).
-- [ ] Puedes explicar por qué el login es **por UI** aquí (y cuándo cambiarías a API).
-- [ ] El test de `ejemplo.spec.ts` arranca **ya autenticado**: `page.goto("/catalog")` sin login.
-- [ ] Puedes explicar por qué el test de persistencia entre páginas (`/catalog` → `/profile` → `/checkout`) es una prueba más fuerte de "sesión heredada" que aterrizar una sola vez en `/catalog`.
-- [ ] Entiendes por qué `storageState` va **en el project** `chromium`, no en el `use:` raíz.
-- [ ] Sabes que `dependencies: ['setup']` declara el orden y hace visible el setup en el reporte.
-- [ ] Resolviste el login negativo con `locked_out_user` (`Invalid credentials`, sin llegar a `/catalog`) renunciando al badge con `test.use({ storageState: { cookies: [], origins: [] } })`.
-
----
-
-## ¿Qué viene en M07?
-
-Hasta aquí manejaste la sesión **desde el navegador** (login por UI → badge). En **M07 (API layer)** el framework **suma** una capa de servicios tipados (`BaseService` abstracta + factory) que hace requests HTTP y valida contratos — **sin reemplazar** lo que ya tienes: `pages/`, `fixtures/` y el setup project de este módulo siguen ahí, corriendo junto a la nueva suite de API. Es la otra mitad del testing añadida al framework, no un cambio de rumbo.
+- [ ] Entiendes **por qué** `abstract` hasta ahora (y no en M03).
+- [ ] Sabes qué pasa si intentas `new BaseService(...)` (TS lo bloquea).
+- [ ] Puedes explicar el factory `static async create`.
+- [ ] Sabes cómo se inyecta el Bearer con `extraHTTPHeaders`.
+- [ ] Llamas `await service.dispose()` al final de cada uso.
+- [ ] Los mismos contratos (`User`, `Market`, `Pizza`) alimentan UI y API.
+- [ ] Completaste `getById(orderId)` en `OrderService` y su test de contrato: 200 + schema, 404 y 403 `Access denied` para la orden de otro usuario.
+- [ ] Comparaste el MISMO flujo (login → pizzas → orden) por UI y por API (Paso 8) y sabes qué cubre cada capa.

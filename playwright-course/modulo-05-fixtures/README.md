@@ -54,11 +54,11 @@ test("...", async ({ loginPage, catalogPage }) => {  ◄── ya vienen listos,
 
 | Carpeta / pieza | Llega en | Para qué |
 |---|---|---|
-| `tests/setup/`, `.auth/`, `storageState`, `dependencies` | M06 | Setup project: login UNA vez → badge heredado |
-| `services/`, `tests/api/` | M07 | Suite de API pura (BaseService abstracta) |
+| `services/`, `tests/api/` | M06 | Suite de API pura (BaseService abstracta) |
+| `tests/setup/`, `.auth/`, `storageState`, `dependencies` | M07 | Setup project: login UNA vez → badge heredado |
 | `.github/workflows/` + multi-browser (firefox/webkit) | M08 | CI/CD con matrix por browser |
 
-> 💡 **Para el facilitador:** deja claro desde el minuto uno que M05 es el módulo **fácil** de este par. Los fixtures **solo** inyectan objetos que el alumno ya conoce (los Page Objects de M04) — no tocan `projects`, ni sesión, ni red de auth. El módulo pesado (setup + `storageState` + `dependencies`) es **M06**, y llega después a propósito (decisión D2): primero los fixtures "en frío", luego cobran vida autenticados.
+> 💡 **Para el facilitador:** deja claro desde el minuto uno que M05 es el módulo **fácil** de este par. Los fixtures **solo** inyectan objetos que el alumno ya conoce (los Page Objects de M04) — no tocan `projects`, ni sesión, ni red de auth. El módulo pesado (setup + `storageState` + `dependencies`) es **M07**, y llega después a propósito (decisión D2): primero los fixtures "en frío", luego cobran vida autenticados.
 
 ---
 
@@ -78,7 +78,7 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 4. **`page.route()`** — mocking de red para casos de error / vacío / latencia deterministas.
 5. **Por qué el fixture reemplaza `new LoginPage(page)`** — el test se lee como user story, no como plomería.
 6. **`test.beforeEach`** para eliminar precondiciones repetidas entre tests de un mismo
-   `describe` — sin tocar la ejecución (eso lo hace M06).
+   `describe` — sin tocar la ejecución (eso lo hace M07).
 
 ---
 
@@ -118,7 +118,7 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 - **Por qué:** M05 construye **encima** de `pages/`. Si el POM está roto, los fixtures arrastran el error y no sabrás si el bug es de M04 o de M05.
 - **Cómo verifico:** `pnpm typecheck` no imprime errores; `ls pages/` muestra `BasePage.ts`, `LoginPage.ts`, `CatalogPage.ts`.
 
-> 💡 **Para el facilitador:** este módulo introduce 2 conceptos ligeros (fixtures + mocking) sobre algo ya conocido (los Page Objects). Es un buen momento para respirar antes de M06, que sí es denso.
+> 💡 **Para el facilitador:** este módulo introduce 2 conceptos ligeros (fixtures + mocking) sobre algo ya conocido (los Page Objects). Es un buen momento para respirar antes de M06/M07, que sí son densos.
 
 ---
 
@@ -241,7 +241,7 @@ En Playwright eso se traduce en dos cosas: (1) `test.extend` te **entrega** el `
 > # (M05 añade fixtures/ y helpers/, que son ARCHIVOS de código, no config
 > #  del runner. Un solo project `chromium`, anónimo, sigue corriendo todo.)
 > ```
-> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`, y el **único project `chromium`** (anónimo). **Entra:** nada en el config. El próximo cambio real llega en **M06**, donde nacen el `setup` project + `storageState` + `dependencies`.
+> **Se mantiene:** `baseURL`, timeouts, reporter, `trace`, y el **único project `chromium`** (anónimo). **Entra:** nada en el config. El próximo cambio real llega en **M06** (entra el project `api`); el `setup` project + `storageState` + `dependencies` nacen en **M07**.
 
 **3.1 — Confirma el config mínimo (edita solo si hiciera falta)**
 - **Qué hago:** verifico que el `playwright.config.ts` tenga un único project `chromium` y `testDir: "./tests"` — sin `setup`, sin `storageState`, sin `dependencies`, sin firefox/webkit.
@@ -269,7 +269,7 @@ export default defineConfig({
 });
 ```
 
-- **Por qué:** el incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. Los tests corren **anónimos**: cada uno hace su login por UI (encapsulado en el POM). Ese login repetido es exactamente el "dolor" que M06 elimina con el setup project.
+- **Por qué:** el incremental de M05 es de **arquitectura de código** (fixtures + helpers), no del runner. Los tests corren **anónimos**: cada uno hace su login por UI (encapsulado en el POM). Ese login repetido es exactamente el "dolor" que M07 elimina con el setup project.
 - **Cómo verifico:** `pnpm exec playwright test --list` corre sin error de parseo y lista los tests bajo el único project `chromium`.
 
 **3.2 — Confirma el `include` del `tsconfig.json` (edita si falta algo)**
@@ -344,7 +344,7 @@ test.beforeEach(async ({
 - **Por qué:** demuestra el fixture en acción — el test usa `loginPage.loginInMarket(...)` y `catalogPage.expectLoaded()` sin construir un solo Page Object a mano.
 - **Cómo verifico:** el test `the fixtures deliver LoginPage/CatalogPage ready to use @smoke` pasa; el test `defaultMarket is a worker fixture: created once per worker` confirma `defaultMarket.code === "MX"`.
 
-> 💡 **Para el facilitador:** haz notar que **este spec todavía hace login por UI** en cada TC (dentro de `loginInMarket`). Ese es el puente a M06: *"¿y si el login se hiciera UNA sola vez y todos arrancaran ya dentro?"* — esa pregunta es literalmente el módulo siguiente.
+> 💡 **Para el facilitador:** haz notar que **este spec todavía hace login por UI** en cada TC (dentro de `loginInMarket`). Ese es el puente a M07 (pasando antes por la capa API de M06): *"¿y si el login se hiciera UNA sola vez y todos arrancaran ya dentro?"* — esa pregunta se responde dos módulos más adelante (M07).
 
 ---
 
@@ -378,7 +378,7 @@ test.beforeEach(async ({
   git add fixtures helpers tests playwright.config.ts package.json tsconfig.json
   git commit -m "feat(m05): custom fixtures + data isolation + page.route()"
   ```
-- **Por qué:** un commit atómico con mensaje claro deja un punto de retorno limpio. M05 no toca secretos ni `.auth/` (eso es M06), así que el commit es directo.
+- **Por qué:** un commit atómico con mensaje claro deja un punto de retorno limpio. M05 no toca secretos ni `.auth/` (eso es M07), así que el commit es directo.
 - **Cómo verifico:** `git log --oneline -1` muestra el commit `feat(m05): ...`.
 
 ---
@@ -409,12 +409,12 @@ test.beforeEach(async ({
 - [ ] Los TCs usan `loginPage`/`catalogPage` inyectados — **sin** `new LoginPage(page)`.
 - [ ] Sabes generar data única por worker con `uniqueEmail(info)`.
 - [ ] Puedes mockear una respuesta con `page.route()` registrándolo **antes** del navigate.
-- [ ] Entiendes por qué en M05 el login todavía corre por UI en cada test (y por qué M06 lo elimina).
+- [ ] Entiendes por qué en M05 el login todavía corre por UI en cada test (y por qué M07 lo elimina).
 - [ ] Resolviste el reto del mock con latencia (skeleton durante ~3s, pizzas después).
 - [ ] Puedes explicar la diferencia entre hooks (`beforeEach`/`afterEach`, CUÁNDO corre código) y fixtures (`test.extend`, QUÉ se inyecta).
 
 ---
 
-## ¿Qué viene en M06?
+## ¿Qué viene en M06 y M07?
 
-Los `test.beforeEach` de este módulo eliminan la repetición del **código** (ya no copias/pegas login+catálogo en cada test), pero el navegador **sigue** ejecutando un login real por UI en cada test — el hook corre igual de seguido que antes. En **M06 (Setup)** vas a eliminar esa repetición de **ejecución**: un `auth.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies: ['setup']` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures (y los hooks) que armaste aquí van a "cobrar vida" corriendo ya con sesión.
+Los `test.beforeEach` de este módulo eliminan la repetición del **código** (ya no copias/pegas login+catálogo en cada test), pero el navegador **sigue** ejecutando un login real por UI en cada test. En **M06 (API Layer)** cambias de capa: construyes `services/` (`BaseService` abstracta + `AuthService`/`PizzaService`/`OrderService`) y una suite de API pura, sin navegador. Y en **M07 (Setup)** eliminas esa repetición de **ejecución**: un `auth.*.setup.ts` se ejecuta **una sola vez**, guarda la sesión en `.auth/` (el "badge"), y todos los TCs arrancan **ya autenticados** gracias a `dependencies` + `storageState`. Es el primer cambio real de orquestación en el `playwright.config.ts` desde M01 — y los fixtures (y los hooks) que armaste aquí van a "cobrar vida" corriendo ya con sesión.

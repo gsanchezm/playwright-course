@@ -25,8 +25,8 @@
     "m3": "playwright test modulo-03-data-driven --project=ui-anon",
     "m4": "playwright test modulo-04-pom --project=ui-anon",
     "m5": "playwright test modulo-05-fixtures --project=ui-chromium",
-    "m6": "playwright test modulo-06-setup --project=ui-chromium",
-    "m7": "playwright test modulo-07-api-layer --project=api",
+    "m6": "playwright test modulo-06-api-layer --project=api",
+    "m7": "playwright test modulo-07-setup --project=ui-chromium",
     "m8": "playwright test modulo-08-ci-debugging --project=ui-chromium"
   },
   "devDependencies": {

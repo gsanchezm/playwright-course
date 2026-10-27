@@ -49,7 +49,7 @@ Abre M03 y M04 simultáneamente y responde:
 // un mapa reutilizable por pantalla.
 //
 // NOTA: `BasePage` aquí es clase normal (no abstracta). La
-// palabra `abstract` llega en M07.
+// palabra `abstract` llega en M06.
 // ============================================================
 
 import { test, expect } from "@playwright/test";
@@ -282,7 +282,7 @@ test.describe("POM — ProfilePage: the native date picker and saving changes", 
     // SIEMPRE que se espere esa respuesta antes de navegar (si navegas
     // de inmediato, cancelas el PATCH en vuelo). No probamos eso aquí con
     // un reload porque obligaría al spec a esperar la red directamente —
-    // awareness de HTTP es contenido de M07 (API Layer). Este test se
+    // awareness de HTTP es contenido de M06 (API Layer). Este test se
     // queda en el contrato de M04: verificar por UI que el form guarda
     // el estado que se le pidió.
     await profilePage.setBirthday("1985-03-20");

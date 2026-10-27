@@ -22,7 +22,7 @@
 // Nota de orden: el ítem 6 (Modal) vive junto al 1 en ESTE archivo, no en
 // su posición numérica — ambos comparten precondición (login+catálogo) bajo
 // un solo `beforeEach`. M08 (el agregado final) mantiene el orden estricto
-// 1→8; M06 se queda solo con el ítem 6 y M07 con ninguno.
+// 1→8; M07 se queda solo con el ítem 6 y M06 con ninguno.
 //
 // Siguen sin sesión heredada: cada test hace login por UI. Antes cada
 // test repetía `loginPage.loginInMarket(...)` + `catalogPage.expectLoaded()`
@@ -30,7 +30,7 @@
 // `openCheckoutWithItem(...)` reenviando 6 parámetros). Ahora esa
 // precondición compartida vive en UN `test.beforeEach` por grupo — el
 // hook corre igual de seguido (sigue siendo login por UI en cada test;
-// eso lo elimina M06 con storageState), pero el CÓDIGO ya no se repite.
+// eso lo elimina M07 con storageState), pero el CÓDIGO ya no se repite.
 // ============================================================
 
 import { test } from "../../fixtures/omnipizza";

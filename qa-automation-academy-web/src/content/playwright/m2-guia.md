@@ -34,8 +34,8 @@ playwright-course/
 | `data/`, `types/` | M03 | Datos tipados (mercados, usuarios) → parametrizar el smoke |
 | `pages/` | M04 | Page Object Model (matar la duplicación de login) |
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + `storageState` (login una vez, hereda sesión) |
-| `services/`, `tests/api/` | M07 | Capa de servicios para API testing |
+| `services/`, `tests/api/` | M06 | Capa de servicios para API testing |
+| `tests/setup/`, `.auth/` | M07 | Setup project + `storageState` (login una vez, hereda sesión) |
 | `.github/workflows/` (uso real) | M08 | CI/CD en GitHub Actions |
 
 ---
@@ -274,7 +274,7 @@ El proyecto ya define el atajo `m2` en `package.json`:
 }
 ```
 
-`pnpm m2` es azúcar sintáctica dentro del proyecto: equivale a `pnpm exec playwright test --project=ui-anon` (y `pnpm test` corre exactamente lo mismo, porque el único project es `ui-anon`). Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI); el project autenticado con `storageState` nace en **M06**.
+`pnpm m2` es azúcar sintáctica dentro del proyecto: equivale a `pnpm exec playwright test --project=ui-anon` (y `pnpm test` corre exactamente lo mismo, porque el único project es `ui-anon`). Sigue siendo un solo project **anónimo** `ui-anon` (M01-M03 son login por UI); el project autenticado con `storageState` nace en **M07**.
 
 ---
 

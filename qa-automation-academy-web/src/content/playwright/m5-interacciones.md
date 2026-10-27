@@ -394,6 +394,6 @@ expect(price).toContain("ر.س");
 
 ---
 
-## ¿Qué viene en M06?
+## ¿Qué viene en M06 y M07?
 
-Aquí, cada test de interacciones todavía hace su **login por UI** antes de tocar el widget (dentro del fixture `loginPage`). En **M06 (Setup)** ese login desaparece: un `auth.setup.ts` corre **una sola vez**, guarda la sesión en `.auth/`, y los tests arrancan **ya autenticados** con `storageState` + `dependencies: ['setup']`. Las mismas técnicas de widgets que practicaste aquí correrán más rápido, sin repetir el login en cada TC.
+Aquí, cada test de interacciones todavía hace su **login por UI** antes de tocar el widget (dentro del fixture `loginPage`). En **M06 (API Layer)** sumas la capa de servicios (API sin navegador) y en **M07 (Setup)** ese login desaparece: un `auth.*.setup.ts` corre **una sola vez**, guarda la sesión en `.auth/`, y los tests arrancan **ya autenticados** con `storageState` + `dependencies`. Las mismas técnicas de widgets que practicaste aquí correrán más rápido, sin repetir el login en cada TC.

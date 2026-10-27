@@ -89,7 +89,7 @@ test.describe("page.route() — network mocking (M05)", () => {
 });
 
 // ============================================================
-// Data isolation con workerInfo — prepara el terreno para M07
+// Data isolation con workerInfo — prepara el terreno para M06
 // ============================================================
 
 test("uniqueEmail generates identifiers per worker", async ({}, testInfo) => {
@@ -117,7 +117,7 @@ test("uniqueEmail generates identifiers per worker", async ({}, testInfo) => {
 // después), y la sesión heredada quedó autenticada en MX (el
 // `defaultMarket` de fixtures/omnipizza.ts). Ese describe RENUNCIA al
 // badge con `test.use({ storageState: { cookies: [], origins: [] } })`
-// — el mismo patrón que el reto de locked_out_user (modulo-06-setup/
+// — el mismo patrón que el reto de locked_out_user (modulo-07-setup/
 // reto.spec.ts) — y hace su propio login como SA.
 // ============================================================
 

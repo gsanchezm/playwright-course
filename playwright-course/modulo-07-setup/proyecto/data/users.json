@@ -1,0 +1,32 @@
+[
+  {
+    "username": "standard_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario estándar para flujos happy path"
+  },
+  {
+    "username": "locked_out_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario bloqueado — la API responde 403 y la UI muestra 'Sorry, this user has been locked out.' (útil para login negativo)"
+  },
+  {
+    "username": "problem_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero con bugs visuales intencionales"
+  },
+  {
+    "username": "performance_glitch_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts"
+  },
+  {
+    "username": "error_user",
+    "password": "pizza123",
+    "role": "customer",
+    "description": "Usuario que autentica pero dispara errores en acciones específicas"
+  }
+]

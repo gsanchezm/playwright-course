@@ -7,7 +7,7 @@
 //
 // Nota importante: en M05 el `page` NO viene autenticado — el test
 // hace su login por UI usando `loginPage`. El badge heredado
-// (`storageState` por project) llega en M06; aquí los fixtures solo
+// (`storageState` por project) llega en M07; aquí los fixtures solo
 // inyectan Page Objects + datos (usuario estándar, mercado por defecto).
 // ============================================================
 

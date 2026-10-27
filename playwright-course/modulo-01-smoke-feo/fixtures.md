@@ -44,7 +44,7 @@ Playwright trae varios fixtures ya hechos. Estos son los más usados:
 | Fixture | Tipo | Para qué sirve | ¿En M01 lo usas? |
 |---|---|---|---|
 | `page` | `Page` | Una pestaña del navegador, aislada por test | ✅ Sí, en TC-001 y TC-002 |
-| `request` | `APIRequestContext` | Cliente HTTP (GET/POST/etc) sin navegador | ❌ Aún no (lo usarás en M07, API layer) |
+| `request` | `APIRequestContext` | Cliente HTTP (GET/POST/etc) sin navegador | ❌ Aún no (lo usarás en M06, API layer) |
 | `context` | `BrowserContext` | Sesión incógnita (cookies/storage propios) | ❌ Aún no (M04/M05) |
 | `browser` | `Browser` | La instancia del navegador para todo el worker | ❌ Aún no |
 | `browserName` | `'chromium' \| 'firefox' \| 'webkit'` | El nombre del navegador actual (para condicionales) | ❌ Aún no |
@@ -98,7 +98,7 @@ Un fixture vive durante una **ventana de tiempo**. Esa ventana se llama **scope*
 | **`worker`** | Se crea una vez por proceso worker; sobrevive entre tests | `browser`, `browserName` | Cosas caras de construir (un cliente DB, un browser) que pueden compartirse sin contaminar tests |
 
 > 💡 **Por qué importa para M01:**
-> El fixture `page` que usan TC-001 y TC-002 es **`test`-scoped por default**: Playwright te da una pestaña **nueva y limpia** en cada test. Por eso ambos tests repiten el login desde cero — no comparten sesión, y ese aislamiento es justo lo que te hace **sentir la duplicación**. En cambio `browser` es **`worker`-scoped**: se construye una sola vez por proceso y se reutiliza entre tests porque abrir un navegador es caro. En M06 aprovecharás el scope `worker` con un `setup project` que loguea **una vez** y comparte el `storageState`.
+> El fixture `page` que usan TC-001 y TC-002 es **`test`-scoped por default**: Playwright te da una pestaña **nueva y limpia** en cada test. Por eso ambos tests repiten el login desde cero — no comparten sesión, y ese aislamiento es justo lo que te hace **sentir la duplicación**. En cambio `browser` es **`worker`-scoped**: se construye una sola vez por proceso y se reutiliza entre tests porque abrir un navegador es caro. En M07 aprovecharás el scope `worker` con un `setup project` que loguea **una vez** y comparte el `storageState`.
 
 ---
 
@@ -206,7 +206,7 @@ Anatomía sin entrar a fondo (esto se profundiza en M05):
 ## 9. Resumen de 30 segundos
 
 1. **Un fixture es un objeto que Playwright te prepara, te inyecta y limpia.**
-2. **Ya usas uno en M01 sin saberlo:** `page` (el `request` para API llega en M07).
+2. **Ya usas uno en M01 sin saberlo:** `page` (el `request` para API llega en M06).
 3. **El scope decide cuánto vive:** `test` (por TC) o `worker` (por proceso).
 4. **Hooks ≠ fixtures.** Hooks ejecutan código; fixtures **además te entregan un objeto tipado y reutilizable entre archivos**.
 5. **Cuando sientas que copias las mismas 6 líneas en cada test → ese es el momento de crear un fixture custom.** Ese momento llega oficialmente en M05.
@@ -219,5 +219,5 @@ Anatomía sin entrar a fondo (esto se profundiza en M05):
 - En este curso, los siguientes módulos te llevan paso a paso:
   - **M04** → crearás Page Objects (todavía sin envolverlos en fixtures).
   - **M05** → envuelves esos Page Objects en fixtures custom.
-  - **M06** → storage state reutilizable (login una vez, compartido vía setup project).
-  - **M07** → fixture `apiClient` para tests de API sin pasar por la UI.
+  - **M06** → fixture `apiClient` para tests de API sin pasar por la UI.
+  - **M07** → storage state reutilizable (login una vez, compartido vía setup project).

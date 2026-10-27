@@ -9,7 +9,7 @@
     "username": "locked_out_user",
     "password": "pizza123",
     "role": "customer",
-    "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)"
+    "description": "Usuario bloqueado — la API responde 403 y la UI muestra 'Sorry, this user has been locked out.' (útil para login negativo)"
   },
   {
     "username": "problem_user",

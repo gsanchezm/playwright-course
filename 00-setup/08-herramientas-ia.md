@@ -51,7 +51,7 @@
 
 ## 2. Claude Desktop
 
-**¿Qué es?** App oficial de Anthropic para chatear con Claude. Es importante porque **soporta MCP nativamente**, lo que te permite conectar Claude con Playwright (módulo 7).
+**¿Qué es?** App oficial de Anthropic para chatear con Claude. Es importante porque **soporta MCP nativamente**, lo que te permite conectar Claude con Playwright (módulo 9).
 
 - **Sitio oficial:** https://claude.ai/download
 - **Precio:** plan Free con uso limitado, plan Pro $20/mes.
@@ -133,7 +133,7 @@ Si MCP está bien configurado, **abrirá un navegador real** y te responderá co
 
 ## 5. ChatGPT / Claude.ai (web)
 
-Para hacer prompts del módulo 7, basta con la versión web gratuita de cualquiera:
+Para hacer prompts del módulo 9, basta con la versión web gratuita de cualquiera:
 
 - **ChatGPT:** https://chat.openai.com/
 - **Claude:** https://claude.ai/

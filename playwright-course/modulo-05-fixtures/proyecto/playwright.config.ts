@@ -6,7 +6,7 @@
 // del test).
 //
 // El setup project + storageState + dependencies + multi-browser NO viven
-// aquí: llegan en M06 (Setup) y M08 (CI). Este config es deliberadamente
+// aquí: llegan en M07 (Setup) y M08 (CI). Este config es deliberadamente
 // mínimo — así el módulo se enfoca en fixtures, no en orquestación.
 
 import { defineConfig, devices } from "@playwright/test";
@@ -29,7 +29,7 @@ export default defineConfig({
   },
 
   // Un solo project, anónimo: los tests hacen login por UI (el badge
-  // heredado con storageState nace en M06).
+  // heredado con storageState nace en M07).
   projects: [
     {
       name: "chromium",

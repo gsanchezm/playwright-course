@@ -30,8 +30,8 @@ pnpm typecheck
 
 # Atajos por módulo
 pnpm m1 ; pnpm m2 ; pnpm m3 ; pnpm m4   # UI anónimos (ui-anon)
-pnpm m5 ; pnpm m6                # UI autenticado (setup → ui-chromium)
-pnpm m7                          # API (project api)
+pnpm m5 ; pnpm m7                # UI autenticado (setup → ui-chromium)
+pnpm m6                          # API (project api)
 pnpm m8                          # UI autenticado (CI)
 
 # Suites transversales

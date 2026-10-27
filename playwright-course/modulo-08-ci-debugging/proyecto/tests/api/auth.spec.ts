@@ -1,5 +1,5 @@
 // ============================================================
-// tests/api/auth.spec.ts — Suite API para autenticación (M07)
+// tests/api/auth.spec.ts — Suite API para autenticación (M06)
 // ============================================================
 // Corre en project `api` (sin storageState de UI).
 // ============================================================

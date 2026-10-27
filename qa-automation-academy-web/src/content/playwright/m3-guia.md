@@ -46,9 +46,9 @@ types/omnipizza.d.ts ┘     (raw JSON)             (tipo seguro)        (data-d
 |---|---|---|
 | `pages/` | M04 | Page Object Model (matar la duplicación) |
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + `storageState` (login una vez) |
-| `services/`, `tests/api/` | M07 | API testing |
-| `interface Pizza/LoginResponse/PizzasResponse/OrderPayload/Order/ApiError` | M07 | contratos de request/response — `types/omnipizza.d.ts` **se amplía** ahí, no aquí |
+| `services/`, `tests/api/` | M06 | API testing |
+| `tests/setup/`, `.auth/` | M07 | Setup project + `storageState` (login una vez) |
+| `interface Pizza/LoginResponse/PizzasResponse/OrderPayload/Order/ApiError` | M06 | contratos de request/response — `types/omnipizza.d.ts` **se amplía** ahí, no aquí |
 | `.github/workflows/` (uso real) | M08 | CI/CD |
 
 ---
@@ -387,7 +387,7 @@ export * from "./omnipizza";
 ```json
 [
   { "username": "standard_user",            "password": "pizza123", "role": "customer", "description": "Usuario estándar para flujos happy path" },
-  { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — el login falla con 'Invalid credentials' (útil para login negativo)" },
+  { "username": "locked_out_user",          "password": "pizza123", "role": "customer", "description": "Usuario bloqueado — el login falla (API 403; la UI muestra 'Sorry, this user has been locked out.') (útil para login negativo)" },
   { "username": "problem_user",             "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero con bugs visuales intencionales" },
   { "username": "performance_glitch_user",  "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero tarda 3-6× más en cargar — prueba de timeouts" },
   { "username": "error_user",               "password": "pizza123", "role": "customer", "description": "Usuario que autentica pero dispara errores en acciones específicas" }
@@ -465,7 +465,7 @@ El `package.json` de este proyecto trae el atajo `m3` (equivale a `pnpm test`, y
 }
 ```
 
-Sigue siendo un solo project **anónimo** `ui-anon`: M03 también es login por UI. El project autenticado con `storageState` llega con el setup de **M06**.
+Sigue siendo un solo project **anónimo** `ui-anon`: M03 también es login por UI. El project autenticado con `storageState` llega con el setup de **M07**.
 
 ---
 

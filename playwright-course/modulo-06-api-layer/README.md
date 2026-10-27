@@ -1,0 +1,867 @@
+# Módulo 06 — API Layer (N-layered completo)
+
+**Duración estimada:** 50-60 min
+**Piezas que suma al framework:**
+- `services/BaseService.ts` — **clase abstracta** (primera aparición del término en el curso).
+- `services/AuthService.ts`, `OrderService.ts`, `PizzaService.ts`.
+- `tests/api/*.spec.ts` — suite API pura.
+- `tests/ui/ejemplo.spec.ts` — el MISMO flujo (login → pizzas → orden) por UI, para compararlo lado a lado con `tests/ejemplo.spec.ts` (API) en el **Paso 8**.
+- `types/omnipizza.d.ts` **se amplía**: `Pizza`, `LoginResponse`, `PizzasResponse`, `OrderPayload`, `Order`, `ApiError` — los contratos de request/response que hasta ahora no hacían falta (M03–M05 solo tocan la app por UI).
+- `fixtures/api.ts` + `tests/api/with-fixtures/*.spec.ts` — **Paso 9 bis:** `auth.spec.ts`/`pizzas.spec.ts`/`orders.spec.ts` refactorizados a fixtures, lado a lado con la versión con hooks, para comparar cuándo usar cada uno.
+
+---
+
+> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Este módulo trae una carpeta `proyecto/`: un proyecto Playwright **autocontenido y ejecutable** con el estado final de este módulo ya armado (su propio `package.json` · `playwright.config.ts` · `tsconfig.json` · `.env.example`, independiente del resto del curso). Es la **solución de referencia** para comparar: ábrela aparte y corre `pnpm install` → `cp .env.example .env` → `pnpm test`. Los pasos de este README siguen construyendo **tu** proyecto incremental; `proyecto/` es el "ya resuelto". Detalles en [`proyecto/README.md`](proyecto/README.md).
+
+## 🏗️ Arquitectura al terminar este módulo
+
+Aparece la carpeta **`services/`** (la capa de API) y se llena **`tests/api/`** (la suite que la consume). La novedad conceptual: por primera vez en el curso aparece una **clase abstracta**. Y algo que NO es novedad y por eso vale la pena señalarlo: `pages/` y `fixtures/` (POM + fixtures de M04-M05) **siguen aquí, intactos** — M06 SUMA una capa, no reemplaza la anterior. **No hay `tests/setup/`, ni `.auth/`, ni `storageState`:** la UI sigue haciendo login por la fixture `loginPage`, igual que en M05 (el badge llega en M07). `tests/ejemplo.spec.ts`/`tests/reto.spec.ts` de M05 se mudan a `tests/ui/` solo para no chocar de nombre con los `ejemplo.spec.ts`/`reto.spec.ts` NUEVOS de este módulo, que son de API. Los de `tests/ui/` ya no son los de M05: `ejemplo.spec.ts` es el flujo login → pizzas → orden por UI (el que se compara con la API en el Paso 8). El login negativo de `locked_out_user` no está aquí: se hace en M07, donde además decide qué badge usa cada test.
+
+```
+playwright-course/
+├── data/                          ← (M03 — compartido entre UI y API)
+├── fixtures/                      ← (M05 — sigue vigente) + api.ts 🆕 (Paso 9 bis)
+├── helpers/                       ← (M05 — uniqueEmail / uniqueOrderId)
+├── pages/                         ← (M04 — sigue vigente sin cambios)
+├── services/                      ← 🆕 capa de servicios HTTP
+│   ├── BaseService.ts             ← 🆕 ABSTRACT — baseURL, api, dispose, url, basePath
+│   ├── AuthService.ts             ← 🆕 factory: create(baseURL)
+│   ├── OrderService.ts            ← 🆕 create(baseURL, token, country) — Bearer + X-Country-Code
+│   ├── PizzaService.ts            ← 🆕 create(baseURL, token, country)
+│   └── index.ts                   ← 🆕 barrel export
+├── tests/
+│   ├── api/                       ← 🆕 suite API pura
+│   │   ├── auth.spec.ts           ← 🆕 login positivo + negativo (con hooks)
+│   │   ├── pizzas.spec.ts         ← 🆕 data-driven por mercado (con hooks)
+│   │   ├── orders.spec.ts         ← 🆕 checkout MX/SA + historial + 400 (con hooks)
+│   │   └── with-fixtures/         ← 🆕 Paso 9 bis — los mismos 3 specs, con fixtures
+│   │       ├── auth.spec.ts
+│   │       ├── pizzas.spec.ts
+│   │       └── orders.spec.ts
+│   └── ui/                        ← ✏️ MUDANZA — la UI, con login por fixture (sin badge)
+│       └── ejemplo.spec.ts        ← flujo login → pizzas → orden (contraparte del API)
+├── types/omnipizza.d.ts           ← ✏️ AMPLÍA — +Pizza, LoginResponse, PizzasResponse, OrderPayload, Order, ApiError (M03 trajo User/Market/Currency/CountryCode/Role)
+├── modulo-06-api-layer/           ← 🆕 ESTE MÓDULO
+│   ├── README.md
+│   ├── ejemplo.spec.ts            ← 🆕 flujo API: login → pizzas → crear orden
+│   └── reto.spec.ts               ← 🆕 extender OrderService con getById + test de contrato
+└── playwright.config.ts           ← ✏️ DOS projects: `chromium` (UI, tests/ui) y `api` (nuevo) — sin `setup`, sin `dependencies`
+```
+
+**Jerarquía de servicios** (el patrón abstracto + factory):
+
+```
+              BaseService (abstract)
+              ─────────────────────
+              · baseURL
+              · api: APIRequestContext
+              · abstract basePath(): string  ◄── cada hijo DEBE implementarlo
+              · url(path)
+              · dispose()
+                        ▲
+                        │ extends
+        ┌───────────────┼────────────────┐
+        │               │                │
+   AuthService     OrderService     PizzaService
+   /api/auth       /api/orders      /api/pizzas
+   static create   static create    static create
+   (factory)       (factory)        (factory)
+```
+
+**Pirámide de testing** (cómo M06 complementa lo anterior):
+
+```
+                /\
+               /  \   ◄── UI E2E (M04–M06) — pocos, caros, regresión visual
+              /────\
+             /      \
+            / API    \  ◄── M06 — muchos, rápidos, validan contratos
+           /──────────\
+          / unit (–)   \  ◄── fuera del alcance del curso
+         /──────────────\
+```
+
+**Qué NO existe todavía:**
+
+| Carpeta | Llega en | Para qué |
+|---|---|---|
+| `tests/setup/` + `.auth/` | M07 | Setup project que hace login una vez y guarda el badge (`storageState`) para que la UI arranque ya autenticada |
+| `.github/workflows/` | M08 | CI/CD con matrix por browser + traces como artefactos |
+
+> 💡 **Para el facilitador:** señala que `types/` (de M03) alimenta TANTO a UI como a API — ese es el premio del tipado fuerte. Si OmniPizza cambia `interface Pizza`, los specs de UI y API rompen al mismo tiempo y los arreglas de un solo golpe.
+
+---
+
+## Analogía de apertura
+
+Hasta ahora el framework "entra por la puerta principal" (UI). Pero los servidores aceptan llamadas directas al backend (API). Probar por API es **como abrir Postman dentro del test**: más rápido, más estable, y valida contratos sin pintar píxeles.
+
+Aquí aparece por primera vez la **clase abstracta** — un **formato obligatorio de reporte de bug** corporativo. Cada servicio concreto (`AuthService`, `OrderService`, `PizzaService`) **debe** rellenar las secciones obligatorias (`basePath()`) antes de contar como servicio válido. TypeScript se niega a compilar un hijo incompleto — como el sistema de tickets rechaza un reporte sin severidad.
+
+---
+
+## ¿Por qué hasta ahora?
+
+En M04 `BasePage` era una **clase normal**. `abstract` no aportaba; con un solo hijo no hay patrón.
+
+Ahora en M06 tenemos **3 servicios** (`Auth`, `Order`, `Pizza`) que comparten `baseURL`, `api`, `dispose()`. Sin `abstract`:
+- El compilador no garantiza que cada hijo defina `basePath()`.
+- Alguien podría instanciar `BaseService` directo y romper invariantes.
+
+**Ahora sí vale la pena.** Ese es el sentido de "just-in-time": el concepto entra cuando el problema lo reclama.
+
+Y la capa de API llega **justo después de las fixtures (M05)** por una razón práctica: ya tienes el `test` con `standardUser` y las páginas inyectadas, así que la UI no necesita nada nuevo para convivir con la API — cada una vive en su propio project. El badge (`storageState`) todavía no existe: se introduce en M07, cuando el login repetido por UI empiece a doler.
+
+---
+
+## Conceptos JIT
+
+| Concepto | Analogía |
+|---|---|
+| Pirámide de testing | Muchos tests rápidos en API, pocos (y caros) por UI |
+| `APIRequestContext` | Postman embebido en Playwright |
+| `abstract class` | Formato obligatorio de reporte de bug: las secciones obligatorias deben estar |
+| `abstract method` | Sección que CADA hijo debe rellenar — sin excepción |
+| `static async create(...)` | Factory — construye la instancia con todo conectado |
+| `extraHTTPHeaders: { Authorization }` | Bearer configurado una vez para toda la instancia |
+| `dispose()` | Limpieza: cierra el contexto HTTP al final del TC |
+| `test.beforeAll` / `test.afterAll` | Hermanos SUITE-scoped de los `beforeEach`/`afterEach` de M05 — corren 1 vez por archivo/describe, no por TC |
+
+---
+
+## Arquitectura
+
+```
+services/
+├── BaseService.ts        ← ABSTRACT — baseURL, api, dispose(), url(), basePath()
+├── AuthService.ts        ← factory: create(baseURL)
+├── OrderService.ts       ← factory: create(baseURL, token, country) — Bearer + X-Country-Code
+└── PizzaService.ts       ← factory: create(baseURL, token, country)
+
+tests/api/
+├── auth.spec.ts          ← login positivo + negativo
+├── pizzas.spec.ts        ← data-driven por mercado
+└── orders.spec.ts        ← checkout (MX/SA) + historial + 400 por campo faltante
+
+tests/ui/
+└── ejemplo.spec.ts       ← flujo login → pizzas → orden por UI (login por fixture)
+```
+
+---
+
+## Paso a paso
+
+> Cada micro-paso lleva la tripleta **Qué hago / Por qué / Cómo verifico**, y dice **qué archivo se crea/edita** y en qué orden. El orden importa: primero `BaseService` (el contrato), luego las clases concretas que lo extienden, después el barrel y por último el config que las pone a correr.
+
+### Paso 0 — Pre-requisitos
+
+**0.1 — Confirmar que la base (M05) está sana**
+- **Qué hago:** entro al proyecto de este módulo y preparo el entorno: `cd proyecto`, `pnpm install`, `cp .env.example .env`, `pnpm typecheck`.
+- **Por qué:** M06 reutiliza `types/` (M03), `helpers/` (M05 — `uniqueEmail` / `uniqueOrderId`) y `data/`. Si esa base ya rompe, no quiero diagnosticar dos capas a la vez.
+- **Cómo verifico:** `pnpm typecheck` no imprime errores.
+
+```bash
+# Desde proyecto/
+cd proyecto
+pnpm install
+pnpm typecheck     # debe pasar
+```
+
+> 💡 **Para el facilitador:** este módulo NO usa `storageState` ni un setup project — el project `api` está aislado a propósito y la UI hace login por fixture, como en M05. Pídeles que abran `playwright.config.ts` y vean que ningún project tiene `dependencies` ni `storageState`.
+
+---
+
+### Paso 1 — Dependencias requeridas
+
+**1.1 — Verificar que no falta nada (M06 no añade paquetes)**
+- **Qué hago:** corro `pnpm list @playwright/test dotenv typescript @types/node`.
+- **Por qué:** `APIRequestContext` ya viene dentro de `@playwright/test`. No hay `npm add` nuevo en este módulo — la capa de API se construye con lo que ya tienes.
+- **Cómo verifico:** las 4 dependencias aparecen listadas. Si alguna falta, `pnpm install` (si ya están en `package.json`) o `pnpm add -D @playwright/test dotenv typescript @types/node`.
+
+```bash
+pnpm list @playwright/test dotenv typescript @types/node
+# Las 4 deben aparecer. Si no:
+#   pnpm install     (si package.json ya las lista)
+#   pnpm add -D @playwright/test dotenv typescript @types/node
+```
+
+---
+
+### Paso 2 — Crear `services/` y `tests/api/`
+
+**2.1 — Crear las carpetas y los archivos vacíos**
+- **Qué hago:** creo `services/` y `tests/api/`, y creo vacíos los 5 archivos de servicios + los 2 specs de API.
+- **Por qué:** `services/` es la **nueva capa** de este módulo (el cliente HTTP), `tests/api/` es la suite que la consume. Tenerlos vacíos primero me deja llenar el contrato (`BaseService`) antes que las hijas.
+- **Cómo verifico:** `ls services` muestra los 5 archivos de servicios y `ls tests/api` los 2 specs.
+
+```bash
+mkdir services
+mkdir tests
+mkdir tests/api
+```
+
+`tests/` ya existe desde M05 (ahí vivían `ejemplo.spec.ts` y `reto.spec.ts`) — si ya existe, salta esa línea.
+
+Crea los 7 archivos abriéndolos en VS Code (cada `code <ruta>` abre el archivo como nuevo; guárdalo con `Ctrl+S` para que exista en disco — los llenarás en 2.2-2.5):
+
+```bash
+code services/BaseService.ts
+code services/AuthService.ts
+code services/OrderService.ts
+code services/PizzaService.ts
+code services/index.ts
+code tests/api/auth.spec.ts
+code tests/api/pizzas.spec.ts
+```
+
+**2.2 — Escribir `services/BaseService.ts` (la clase abstracta — el contrato)**
+- **Qué hago:** escribo la primera **clase abstracta del curso**: un `protected constructor`, un `protected abstract basePath()` y los helpers compartidos `url()` y `dispose()`.
+- **Por qué:** las 3 hijas (`Auth`, `Order`, `Pizza`) comparten `api`, `baseURL`, `url()` y `dispose()`. `abstract` impide instanciar la base directa y **obliga** a cada hija a definir `basePath()`. Por eso este archivo va **primero**: es el molde que las demás extienden.
+- **Cómo verifico:** el editor no subraya en rojo; `pnpm exec tsc --noEmit` sigue verde (aún no hay hijas, pero el archivo solo compila).
+
+```ts
+import type { APIRequestContext } from "@playwright/test";
+
+export abstract class BaseService {
+  protected constructor(
+    protected readonly api: APIRequestContext,
+    protected readonly baseURL: string,
+  ) {}
+
+  // Cada hijo DEBE definirlo o TS no compila.
+  protected abstract basePath(): string;
+
+  protected url(path = ""): string {
+    return `${this.baseURL}${this.basePath()}${path}`;
+  }
+
+  async dispose(): Promise<void> {
+    await this.api.dispose();
+  }
+}
+```
+
+> 🔷 **TypeScript — `abstract class` + métodos abstractos**
+> Una clase `abstract` **no se puede instanciar** (`new BaseService(...)` no compila) y puede declarar métodos sin cuerpo (`abstract basePath(): string`) que cada hija **está obligada** a implementar. Es la diferencia clave con una clase normal: una normal con un método "vacío" compila aunque la hija se olvide de él; `abstract` lo convierte en error de compilación.
+> **Qué pasa si lo cambias:** si quitas `abstract` solo de `basePath()`, el compilador deja de exigir que cada hija lo defina — y `url()` podría construir rutas contra un `basePath` inexistente.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/) (y el contrato que impone se ve a fondo en [TS · M06 — Interfaces](../../typescript-qa-course/modulo-06-interfaces/)). Aquí lo aplicas a `BaseService`, que fuerza a `AuthService`/`OrderService`/`PizzaService` a declarar su `basePath()`.
+
+> ⚠️ **Primera vez que aparece `abstract` en el curso — y a propósito.** En M04 `BasePage` era una clase **normal**: con una sola hija, `abstract` no aportaba nada. Aquí ya hay **3 servicios** que comparten comportamiento, así que el patrón por fin se gana su lugar. Ese es el sentido de *just-in-time*: el concepto entra cuando el problema lo reclama.
+
+**2.3 — Escribir `services/AuthService.ts` (primera clase concreta + factory async)**
+- **Qué hago:** creo `AuthService extends BaseService`, implemento `basePath()`, añado el factory `static async create(...)` y el método `login()`. Aquí también vive el helper `createAuthedContext(...)` que inyecta el Bearer.
+- **Por qué:** `AuthService` es la primera **hija concreta**: prueba que el contrato de `BaseService` funciona. El factory `create()` es `static async` porque crear el `APIRequestContext` requiere `await` — y un `constructor` no puede ser `async`.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde; el editor reconoce `AuthService.create` y `auth.login`.
+
+> 🔎 **Pruébalo en Swagger (sin código):** `POST /api/auth/login` (no requiere auth) → body `{ "username": "standard_user", "password": "pizza123" }` → **Execute** → copia el `access_token` de la respuesta. Eso es exactamente lo que hace `auth.login(user)` aquí abajo. [Abrir Swagger](https://omnipizza-backend.onrender.com/api/docs) · (el walkthrough completo está en [🔎 Cómo probar los endpoints en Swagger](#-cómo-probar-los-endpoints-en-swagger-sin-código))
+
+```ts
+import { request, type APIRequestContext } from "@playwright/test";
+import { BaseService } from "./BaseService";
+import type { LoginResponse, User } from "../types";
+
+export class AuthService extends BaseService {
+  protected basePath(): string {
+    return "/api/auth";
+  }
+
+  // Factory — crea una instancia con un APIRequestContext listo.
+  static async create(baseURL: string): Promise<AuthService> {
+    const api = await request.newContext({ baseURL });
+    return new AuthService(api, baseURL);
+  }
+
+  // Login con usuario/contraseña. Devuelve el token o lanza.
+  async login(user: User): Promise<LoginResponse> {
+    const res = await this.api.post(this.url("/login"), {
+      data: { username: user.username, password: user.password },
+    });
+    if (!res.ok()) {
+      const body = await res.text();
+      throw new Error(`Login failed (${res.status()}): ${body}`);
+    }
+    return (await res.json()) as LoginResponse;
+  }
+}
+
+// Utilidad — crea un APIRequestContext ya autenticado con Bearer.
+export async function createAuthedContext(
+  baseURL: string,
+  token: string,
+  extraHeaders: Record<string, string> = {},
+): Promise<APIRequestContext> {
+  return request.newContext({
+    baseURL,
+    extraHTTPHeaders: { Authorization: `Bearer ${token}`, ...extraHeaders },
+  });
+}
+```
+
+> 🔍 **Detalle que parece obvio — `const api = await request.newContext({ baseURL })`**
+> **Qué es:** el servicio importa `request` de `@playwright/test` y crea su propio contexto HTTP; el tipo de ese contexto es `APIRequestContext`.
+> **Por qué así (y no la alternativa obvia):** `request.newContext()` levanta un cliente HTTP **sin navegador**. La alternativa `page.request` existe, pero exige una `page` (y por tanto un browser arrancado), que aquí no se necesita para nada.
+> **Qué pasa si lo cambias:** si usaras `page.request`, tendrías que pedir el fixture `page` y pagar el costo de abrir un navegador por test. Quedarte con `request.newContext()` es la razón del efecto que verás en el Paso 6: los tests del project `api` corren en <1s y sin abrir navegador — son llamadas HTTP puras.
+
+> 🔍 **Detalle que parece obvio — `if (!res.ok()) throw new Error(... ${res.status()} ...)`**
+> **Qué es:** cada método (`login` aquí, y luego `list`, `createOrder`, `listMine`) chequea `res.ok()` y, si falla, lanza incluyendo `res.status()` y el body.
+> **Por qué así (y no la alternativa obvia):** `res.ok()` es `true` para cualquier 2xx; chequearlo explícito convierte un 4xx/5xx en un error claro **antes** de intentar `res.json()`. La alternativa "asumir 200 y parsear directo" produciría un crash opaco al deserializar un body de error.
+> **Qué pasa si lo cambias:** sin el guard, un login con password inválido devolvería un body de error y `res.json()` lo parsearía como si fuera el token — el test fallaría más tarde y con un mensaje confuso. Justamente `auth.spec.ts` valida `rejects.toThrow(/Login failed/)` apoyado en este patrón.
+
+> 🔍 **Detalle que parece obvio — `this.api.post(this.url("/login"), { data: { ... } })`**
+> **Qué es:** los POST mandan el body con la opción `data` (objeto JS), no `form`.
+> **Por qué así (y no la alternativa obvia):** `data` con un objeto serializa a **JSON** y fija `Content-Type: application/json`, que es lo que espera el backend de OmniPizza. `form` enviaría `application/x-www-form-urlencoded`, otro formato de body.
+> **Qué pasa si lo cambias:** si cambias `data` por `form`, el backend recibe campos urlencoded en vez de JSON; lo más probable es un 4xx (body no parseable como JSON) y, gracias al guard de `res.ok()` de arriba, un `Error` con el status real.
+
+> 🔷 **TypeScript — factory con `static`**
+> Un método `static` pertenece a la **clase**, no a la instancia: se llama como `AuthService.create(...)`, sin haber creado nada todavía. Lo usamos porque la construcción es **asíncrona** (`await request.newContext(...)`) y un `constructor` en TS/JS **no puede ser `async`**. El factory `static async create()` envuelve ese `await` y devuelve la instancia ya armada.
+> 📚 Lo viste en [TS · M05 — Clases](../../typescript-qa-course/modulo-05-classes/). Aquí lo aplicas para construir cada servicio con su `APIRequestContext` (y, en las hijas con auth, sus headers) ya conectado.
+
+> 🔍 **Detalle que parece obvio — por qué `auth.spec.ts` usa `beforeAll`, no `beforeEach`**
+> **Qué es:** `tests/api/auth.spec.ts` envuelve sus tests en `test.beforeAll` (`auth = await AuthService.create(API_URL)`) y `test.afterAll` (`await auth.dispose()`) — no en `test.beforeEach` como los hooks de M05.
+> **Por qué así (y no la alternativa obvia):** el `APIRequestContext` que crea `AuthService.create()` es caro de construir y ningún test lo muta — compartirlo una vez por archivo (`beforeAll`) es correcto. Un `beforeEach` lo recrearía en cada test sin necesidad, encareciendo la suite sin ganar aislamiento real.
+> **Qué pasa si lo cambias:** si mutaras el `auth` compartido dentro de un test (ej. cerrando su contexto a mitad de la suite), los tests siguientes fallarían con errores confusos de "contexto cerrado" — la regla es la misma que en M05: recurso caro e inmutable → scope amplio (`beforeAll`/worker fixture); recurso ligado al test → scope por test (`beforeEach`/test fixture).
+
+> 🔷 **TypeScript — genéricos `Promise<T>`**
+> `Promise<LoginResponse>` es un **genérico**: `Promise` es el contenedor y `<LoginResponse>` el tipo que resuelve dentro. Al hacer `await auth.login(user)` TypeScript ya sabe que tienes un `LoginResponse` (con su `access_token`), no un `any`. Cambia el `<LoginResponse>` del retorno de `login()` por `<any>` y verás que el tipo del genérico deja de propagarse: quien hace `await` pierde el autocompletado de `access_token`.
+> 📚 Lo viste en [TS · M03 — Funciones](../../typescript-qa-course/modulo-03-functions/) (`async`/`await` y el tipo de retorno `Promise<T>`). Aquí lo aplicas a cada método de servicio para que el `await` devuelva el contrato correcto y no `any`.
+
+**2.4 — Escribir `services/PizzaService.ts` y `services/OrderService.ts` (mismo molde, con auth)**
+- **Qué hago:** creo las otras dos hijas. Ambas implementan `basePath()` y un factory `create(baseURL, token, country)` que usa `createAuthedContext` para meter `Authorization: Bearer` + `X-Country-Code`.
+- **Por qué:** `Pizza` y `Order` necesitan **token y mercado**, a diferencia de `Auth` (que aún no tiene token). El header `X-Country-Code` hace que el backend filtre por mercado. `OrderService` es la base del **reto** (le añadirás `getById` después).
+- **Cómo verifico:** `pnpm exec tsc --noEmit` verde con las 3 hijas implementadas.
+
+> 🔎 **Pruébalo en Swagger (sin código):** `GET /api/pizzas` (⚠️ **requiere auth** — primero pega el token con **Authorize**) → añade el header `X-Country-Code: MX` → **Execute** → verás el catálogo con precios por mercado. Es lo que devuelve `PizzaService.list()`. Cambia el header a `US`/`CH`/`JP`/`SA` y observa cómo cambia la `currency`. [Abrir Swagger](https://omnipizza-backend.onrender.com/api/docs)
+
+```ts
+import { BaseService } from "./BaseService";
+import { createAuthedContext } from "./AuthService";
+import type { CountryCode, Pizza, PizzasResponse } from "../types";
+
+export class PizzaService extends BaseService {
+  protected basePath(): string {
+    return "/api/pizzas";
+  }
+
+  static async create(
+    baseURL: string,
+    token: string,
+    country: CountryCode,
+  ): Promise<PizzaService> {
+    const api = await createAuthedContext(baseURL, token, {
+      "X-Country-Code": country,
+    });
+    return new PizzaService(api, baseURL);
+  }
+
+  async list(): Promise<Pizza[]> {
+    const res = await this.api.get(this.url(""));
+    if (!res.ok()) {
+      throw new Error(`list pizzas failed (${res.status()}): ${await res.text()}`);
+    }
+    const body = (await res.json()) as PizzasResponse;
+    return body.pizzas ?? [];
+  }
+}
+```
+
+`OrderService.ts` sigue el mismo molde (`basePath() → "/api/orders"`, factory con auth, `createOrder()` y `listMine()`). Con un matiz importante en la API real de OmniPizza: **`/api/orders` sirve solo para LEER** — `GET /api/orders` es el historial y `GET /api/orders/{order_id}` el detalle. **La orden se CREA con `POST /api/checkout`**, no con `POST /api/orders`. Por eso `listMine()` hace `GET` sobre el `basePath` y `createOrder()` postea al endpoint de checkout (no al `basePath`) — así está ya en el código. La suite que ejercita este servicio es `tests/api/orders.spec.ts` (+ su gemela con fixtures) — ver Paso 6.
+
+> 💡 **Por qué `createOrder()` no usa `this.url()` — y postea directo a `/api/checkout`.** En esta capa hay una asimetría deliberada: `listMine()` lee con `GET` sobre el `basePath` (`/api/orders`), pero `createOrder()` **ya postea** a `${this.baseURL}/api/checkout` (mira `OrderService.ts`). El motivo es que la API real **no crea órdenes en `/api/orders`** (ese endpoint es solo lectura: historial y detalle); la creación vive en **`POST /api/checkout`**. Como el endpoint de creación cae fuera del `basePath` del servicio, `createOrder()` construye la URL directo desde `baseURL` en vez de usar `this.url()`/`basePath()` (que armaría `/api/orders`). El body que envía cumple `OrderPayload` (`country_code`, `items`, `name`, `address`, `phone` + el campo de dirección por mercado, p. ej. `colonia` en MX, y opcionalmente la propina como `propina`). Puedes confirmar el endpoint en Swagger (ver más abajo).
+
+> 🔎 **Pruébalo en Swagger (sin código):** la orden se crea con `POST /api/checkout` (⚠️ requiere auth). Tras crearla, `GET /api/orders` muestra el historial y `GET /api/orders/{order_id}` el detalle. [Abrir Swagger](https://omnipizza-backend.onrender.com/api/docs) · pasos detallados en [🔎 Cómo probar los endpoints en Swagger](#-cómo-probar-los-endpoints-en-swagger-sin-código).
+
+**2.5 — Escribir `services/index.ts` (barrel export)**
+- **Qué hago:** reexporto las 3 clases y el helper desde un solo `index.ts`.
+- **Por qué:** así los specs importan `from "../services"` en una línea, en vez de cuatro rutas distintas. Es la fachada pública de la capa.
+- **Cómo verifico:** en `ejemplo.spec.ts`, `import { AuthService, PizzaService } from "../services"` resuelve sin error.
+
+```ts
+export { BaseService } from "./BaseService";
+export { AuthService, createAuthedContext } from "./AuthService";
+export { OrderService } from "./OrderService";
+export { PizzaService } from "./PizzaService";
+```
+
+---
+
+### Paso 3 — Ajustes a `playwright.config.ts` (dos projects: `chromium` para la UI y `api` nuevo)
+
+> **📐 Config — SUMA el project `api`; `chromium` solo acota su `testMatch` (M06)**
+> ```diff
+>   projects: [
+> +   { name: "chromium", use: { ...devices["Desktop Chrome"] },
+> +     testMatch: [/tests\/ui\/.*\.spec\.ts/] },
+> +   { name: "api",
+> +     use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+> +     testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/] },
+>   ]
+> ```
+> **Se mantiene:** el project `chromium` de M05 (UI, login por fixture) — solo se le acota el `testMatch` a `tests/ui/` porque ahora conviven con specs de API que NO deben correr bajo navegador. **Entra:** el project `api` — **sin `storageState` y sin `dependencies`**. Corre contra `API_URL` (backend); `chromium` sigue usando `BASE_URL` (frontend), definido en el `use:` raíz. No hay project `setup`: el badge (`storageState`) llega en M07.
+
+**3.1 — Definir el project `api` (sin `storageState`, sin `dependencies`)**
+- **Qué hago:** dentro del array `projects`, DEBAJO de `chromium` (que dejas intacto salvo su `testMatch`), agrego el project `api` que solo fija `baseURL` (el backend) y su `testMatch`.
+- **Por qué:** los tests de API se autentican solos — `AuthService.create()` hace login y obtiene un `access_token` fresco que `PizzaService`/`OrderService` inyectan como `Authorization: Bearer`. No dependen de ninguna sesión de navegador ni de otro project — el aislamiento es intencional. Fíjate que `chromium` solo cambió su `testMatch` para que no intente correr los specs nuevos de API.
+- **Cómo verifico:** `pnpm exec playwright test --list --project=api` lista solo los specs de API; `pnpm exec playwright test --list --project=chromium` lista solo `tests/ui/*.spec.ts`.
+
+```ts
+{
+  name: "api",
+  use: {
+    baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com",
+  },
+  testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/],
+},
+```
+
+> 🔍 **Detalle que parece obvio — `{ name: "api", ... }` sin `storageState`, sin `dependencies`**
+> **Qué pasa si lo cambias:** si le agregas `storageState`, Playwright intentaría cargar cookies de UI en un `APIRequestContext` que no las usa (ruido, y dependencia falsa de un artefacto de otra capa). Si le agregas `dependencies` hacia otro project, cada corrida de API esperaría a que ese project termine — más lento y acoplado a algo que la API no consume.
+
+**3.2 — Por qué `chromium` necesita acotar su `testMatch` (y no `testIgnore`)**
+- **Qué hago:** confirmo que `chromium` limita su suite a `tests/ui/*.spec.ts` con `testMatch`, en vez de dejar el default (`*.spec.ts`) + un `testIgnore` para los specs de API.
+- **Por qué:** con dos familias de specs conviviendo en `tests/` (UI en `tests/ui/`, API en el resto), un `testMatch` explícito por project es más simple de leer que un `testIgnore` — declara "esto SÍ" en vez de "esto NO". (El mono-repo completo del curso, con M01–M04 anónimos + M08 CI, sí necesita `testIgnore` porque tiene MÁS familias de specs a la vez — la regla general: un mismo archivo pertenece o no a un project según las reglas de match/ignore.)
+- **Cómo verifico:** `pnpm exec playwright test --list --project=chromium` muestra solo `tests/ui/ejemplo.spec.ts`; `pnpm exec playwright test --list --project=api` muestra `tests/ejemplo.spec.ts`, `tests/reto.spec.ts` y `tests/api/*.spec.ts`, sin mezclarse.
+
+**Estado completo del config en M06:**
+
+```ts
+// playwright.config.ts — Estado en M06 (UI por fixture + capa de API nueva)
+// ---------------------------------------------------------------------
+// M06 introduce la capa de servicios (services/) para probar la API SIN
+// navegador. Aquí NO hay setup, NI storageState, NI `.auth/`: dos
+// projects independientes, sin `dependencies`.
+//   - `chromium`: UI (tests/ui/**). Cada test hace login por UI con la
+//     fixture `loginPage` (mecanismo de M05). Corre contra BASE_URL.
+//   - `api`: capa de servicios (tests/api/** y tests/{ejemplo,reto}.spec.ts).
+//     Cada servicio crea su propio contexto autenticado vía AuthService.
+//     Corre contra API_URL (backend), no BASE_URL — por eso api NO hereda
+//     el `baseURL` raíz.
+// El badge (storageState) llega después, en M07 (Setup).
+
+import { defineConfig, devices } from "@playwright/test";
+import "dotenv/config";
+
+export default defineConfig({
+  testDir: ".",
+
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+
+  reporter: [["html", { open: "never" }], ["list"]],
+
+  use: {
+    baseURL: process.env.BASE_URL ?? "https://omnipizza-frontend.onrender.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
+  },
+
+  projects: [
+    // --- UI (login por fixture, sin badge ni dependencies) ---
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: [/tests\/ui\/.*\.spec\.ts/],
+    },
+
+    // --- API (🆕 M06) — sin storageState, sin dependencies: la API no pasa por la UI ---
+    {
+      name: "api",
+      use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
+      testMatch: [/tests\/(ejemplo|reto)\.spec\.ts/, /tests\/api\/.*\.spec\.ts/],
+    },
+  ],
+});
+```
+
+**3.3 — Añadir los scripts de M06 a `package.json`**
+- **Qué hago:** agrego `test:api` y `m6` (project `api`) y dejo `test:ui` (project `chromium`) para la capa de UI. `test:pw-ui` y `test:pw-api` son otra cosa: abren la **UI Mode de Playwright** (`--ui`), el segundo limitado al project `api`.
+- **Por qué:** atajos memorables para el alumno; `--project=api` evita arrancar el navegador sin querer, y `test:ui` te deja correr SOLO la capa de UI para confirmar que sigue viva.
+- **Cómo verifico:** `pnpm m6`, `pnpm test:api` y `pnpm test:ui` arrancan sin "missing script".
+
+```json
+"scripts": {
+  "test:ui": "playwright test --project=chromium",
+  "test:pw-ui": "playwright test --ui",
+  "test:api": "playwright test --project=api",
+  "m6": "playwright test --project=api"
+}
+```
+
+**3.4 — Confirmar que `tsconfig.json` incluye `pages/`, `fixtures/` y `services/`**
+- **Qué hago:** reviso que el array `include` de `tsconfig.json` tenga `"pages/**/*.ts"`, `"fixtures/**/*.ts"` (heredados de M04/M05) y `"services/**/*.ts"` (nuevo).
+- **Por qué:** si una carpeta no está en `include`, `pnpm typecheck` no la chequea y los errores de tipo pasarían desapercibidos — sea código nuevo o heredado.
+- **Cómo verifico:** `pnpm exec tsc --noEmit` reporta errores de cualquiera de esas carpetas cuando los introduces a propósito (y ninguno cuando el código está bien).
+
+```json
+{
+  "include": [
+    "playwright.config.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts",
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "services/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}
+```
+
+> 💡 **Para el facilitador:** muestra **dos comandos lado a lado** para ver que un mismo archivo pertenece o no a un project según match/ignore:
+> ```bash
+> pnpm exec playwright test --project=chromium tests/api/auth.spec.ts   # se salta (no matchea tests/ui/)
+> pnpm exec playwright test --project=api                               # los corre todos
+> ```
+
+---
+
+### Paso 4 — Lectura guiada de `services/BaseService.ts`
+
+**4.1 — Leer el contrato línea por línea**
+- **Qué hago:** abro `BaseService.ts` y señalo en voz alta: `export abstract class` (primera vez en el curso), `protected constructor` (nadie de fuera puede `new`), `protected abstract basePath()` (cada hija lo DEBE definir), `url()` (helper compartido) y `dispose()` (cierra el contexto HTTP).
+- **Por qué:** entender el molde antes de ver las hijas hace obvio por qué `AuthService` "solo" declara `basePath()` y el factory: todo lo demás lo heredó.
+- **Cómo verifico (en vivo):** escribo `const x = new BaseService(...)` en un editor; TypeScript se queja con **"Cannot create an instance of an abstract class"**. Ese error en una línea es el valor de `abstract`. (No guardo el archivo — es solo demostración.)
+
+---
+
+### Paso 5 — Lectura guiada de `AuthService.ts` y `PizzaService.ts`
+
+**5.1 — Identificar el patrón factory + auth + dispose**
+- **Qué hago:** recorro las hijas y marco: `static async create(...)` (el factory, porque la construcción es `async`); `createAuthedContext(baseURL, token, extraHeaders)` (inyecta `Authorization: Bearer` + `X-Country-Code` en TODAS las requests); cada servicio implementa `basePath()` (sin eso TS no compila); y `await service.dispose()` al final de cada uso.
+- **Por qué:** es el patrón que se repite en los 3 servicios — "un servicio por endpoint family, factory async, dispose siempre". Reconocerlo aquí evita explicarlo 3 veces.
+- **Cómo verifico:** en el editor, autocompletar `pizzas.` muestra `list` y `dispose`; `AuthService.create` y `PizzaService.create` aparecen como `static`.
+
+---
+
+### Paso 6 — Correr la suite API
+
+**6.1 — Ejecutar solo el project `api`**
+- **Qué hago:** corro `pnpm test:api` (o `pnpm exec playwright test --project=api`).
+- **Por qué:** valida que servicios + config + specs encajan, sin arrancar el navegador. Son llamadas HTTP puras: por eso corren en <1s cada una.
+- **Cómo verifico:** el HTML report muestra los tests de `tests/api/*.spec.ts` **y** el `ejemplo.spec.ts` de este módulo en verde (el `reto.spec.ts` aparece como *skipped* hasta que lo resuelvas), sin que se abra ningún navegador. (La primera corrida del día puede tardar 30-40s por el cold start de Render.)
+
+```bash
+# Solo el project api (sin abrir el navegador)
+pnpm test:api
+
+# O directamente
+pnpm exec playwright test --project=api
+```
+
+---
+
+### Paso 7 — Lectura guiada del flujo del `ejemplo.spec.ts`
+
+**7.1 — Trazar el flujo auth → list por mercado**
+- **Qué hago:** identifico con el grupo las 3 fases del primer test (`full flow: auth → list pizzas by market`): (1) **Auth** — `AuthService.create(API_URL)` → `auth.login(user)` → guardo el `access_token` → `auth.dispose()`; (2) **Reutilización del token** — el mismo token alimenta cada `PizzaService.create(...)`; (3) **Iteración por mercado** — `for (const market of markets)` crea un `PizzaService` por mercado, lista pizzas, valida `currency`, dispose.
+- **Por qué:** es el patrón canónico de la capa de API — *"un servicio por endpoint family, factory async, dispose siempre"*. El `for...of` sobre `markets` es data-driven puro (un `for`, no una API mágica de Playwright).
+- **Cómo verifico:** `pnpm exec playwright test tests/ejemplo.spec.ts --project=api` pasa en verde; el report muestra el flujo completo sin abrir navegador.
+
+El segundo test del archivo (`same steps as the UI flow: login → pizzas → create order`) repite esas piezas y añade `OrderService.createOrder(...)`: es la contraparte de API del flujo de UI que comparas en el Paso 8.
+
+> 💡 **`ejemplo.spec.ts` no usa hooks ni fixtures a propósito.** Es el flujo guiado de este paso — mantenerlo en su forma más explícita (login manual dentro de cada test) hace el trace más fácil de seguir la primera vez. La comparación hooks-vs-fixtures vive en el **Paso 9 bis**, sobre `auth.spec.ts`/`pizzas.spec.ts` — los dos specs donde el mismo login SÍ se repite entre archivos, que es justo el caso donde fixtures se ganan su lugar.
+
+> 🔷 **TypeScript — union types para errores (`Order | ApiError`)**
+> Un **union type** dice "esto es A **o** B". Míralo en negativo: sin el guard de `res.ok()` + `throw` temprano, la firma honesta de `createOrder()` (en `OrderService`) sería `Promise<Order | ApiError>` — y **cada** llamada tendría que **estrechar** (narrow) el union antes de tocar un campo de `Order`. El `throw` temprano saca el camino de error de la firma y te deja devolver un `Promise<Order>` limpio; `ApiError` (en `types/omnipizza.d.ts`) describe la forma del body de error que el backend devuelve.
+> 📚 Lo viste en [TS · M04 — Tipos de objetos](../../typescript-qa-course/modulo-04-objects-types/) (uniones y forma de objetos). Aquí el guard de `res.ok()` es lo que te ahorra cargar ese union en cada firma de la capa.
+
+---
+
+### Paso 8 — Comparativa UI vs API del MISMO flujo (5 min)
+
+**8.1 — Leer los dos `ejemplo.spec.ts` lado a lado**
+- **Qué hago:** abro `tests/ui/ejemplo.spec.ts` y, junto a él, el segundo test de `tests/ejemplo.spec.ts` (`same steps as the UI flow`). Los dos hacen **login → pizzas → crear orden**, el mismo mercado (US) y el mismo usuario (`standard_user`).
+- **Por qué:** comparar dos capas con flujos distintos no enseña nada; el mismo flujo por dos caminos deja ver qué cambia de verdad (selectores y navegador vs. contratos HTTP).
+- **Cómo verifico:** `pnpm test:ui` y `pnpm test:api` pasan; el reporte muestra cuánto tarda cada uno.
+
+| Paso | UI (`tests/ui/ejemplo.spec.ts`, project `chromium`) | API (`tests/ejemplo.spec.ts`, project `api`) |
+|---|---|---|
+| 1. Login | `loginPage.loginInMarket(standardUser, usMarket.code)` | `AuthService.login(standardUser)` |
+| 2. Pizzas | `catalogPage.expectLoaded()` + `catalogPage.expectHasPizzas()` | `PizzaService.list()` + `expect(list.length).toBeGreaterThan(0)` |
+| 3. Orden | `addFirstPizza()` → `/checkout` → `fillWithMarket` → `fillCard` → `placeOrder()` → `confirmOrder()` → `expectOrderSuccess()` | `OrderService.createOrder(payload)` + `expect(created.order_id).toMatch(/^ORDER-/)` |
+
+Misma intención, distinta capa: la UI recorre el navegador; la API habla directo con el backend, sin selectores.
+
+**8.2 — Medir y concluir**
+
+Mide en el pizarrón:
+
+| Aspecto | Test UI (`tests/ui/ejemplo.spec.ts`) | Test API (`tests/ejemplo.spec.ts`) |
+|---|---|---|
+| Duración por TC | ~10-15s | <1s |
+| Determinismo | Medio (DOM, animaciones) | Alto (HTTP) |
+| Cubre regresión visual | Sí | No |
+| Cubre lógica de negocio | Indirecto | Directo |
+
+**Mensaje:** la API es la base de la pirámide. **No reemplaza** los E2E de UI; los **acompaña**.
+
+---
+
+### Paso 9 — Resolver el reto
+
+**9.1 — Extender `OrderService` con `getById` y escribir un test de contrato**
+- **Qué hago:** abro `tests/reto.spec.ts` y sigo sus TODOs. Añado **un método público** a `services/OrderService.ts` — `getById(orderId)`, que envuelve `GET /api/orders/{order_id}` — junto a `listMine()`, y luego escribo un test de **contrato** que lo use: no basta con "devuelve algo", hay que verificar tres cosas.
+  1. **Caso feliz:** status 200 y **schema** del detalle (`order_id`, `subtotal`, `total`, `currency`, `timestamp`, `items`, con su tipo correcto).
+  2. **404:** una orden inexistente se rechaza con `Order ... not found`.
+  3. **403 `Access denied`:** otro usuario (`performance_glitch_user`) pide la orden de `standard_user` — autenticado SÍ, autorizado NO.
+- **Por qué:** practica el patrón "un método por endpoint" dentro de una hija concreta de `BaseService`, y enseña qué es un test de contrato: status + forma de la respuesta + errores. El reto **conserva sus TODOs** a propósito — el dolor de implementarlo es el ejercicio; no lo resuelvas aquí. Los códigos y mensajes reales están en [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md) (sección 7.3).
+- **Cómo verifico:** `pnpm typecheck` pasa con el método nuevo, y `pnpm exec playwright test tests/reto.spec.ts --project=api` queda en verde (tras quitar el `test.skip` y la línea sentinela).
+
+> El reto sigue **Qué hacer / Pista / Cómo verificar** por cada TODO (TODO 0 = el método en `services/OrderService.ts`; TODO 1-3 = los tres casos de arriba; TODO 4 = `dispose`). Los TODOs se quedan sin resolver en este README — vívelos en el archivo.
+
+
+
+---
+
+### Paso 9 bis — Refactor: de hooks a fixtures (cuándo usar cada uno)
+
+> 🎯 **Objetivo de este paso:** no reemplazar `auth.spec.ts`/`pizzas.spec.ts` — **compararlos** contra la misma suite reescrita con fixtures, y entender el criterio real para elegir entre ambos. Los 4 archivos quedan en el proyecto, lado a lado, corriendo los dos en `pnpm test:api`.
+
+**9B.1 — El síntoma: código repetido que un hook no puede compartir**
+- **Qué hago:** releo `auth.spec.ts` (usa `beforeAll`/`afterAll` para compartir 1 `AuthService` entre sus 2 tests) y `pizzas.spec.ts` (repite `AuthService.create()` + `login()` + `dispose()` **dentro del `for`**, una vez por mercado — porque su `beforeAll` es local a `pizzas.spec.ts` y no puede pedirle prestado el de `auth.spec.ts`).
+- **Por qué:** un hook (`beforeAll`/`afterAll`) vive **dentro de un solo archivo** — no se importa. Si dos specs necesitan el mismo login, cada uno repite su propio hook (o su propia llamada manual, como hace `pizzas.spec.ts`). Ese es el síntoma concreto que fixtures resuelven: **reutilización entre archivos**, no "hooks son antiguos, fixtures son modernos".
+- **Cómo verifico:** busco `AuthService.create(` en `tests/api/` (`grep -rn "AuthService.create(" tests/api --exclude-dir=with-fixtures`) — 3 apariciones (`auth.spec.ts`, `pizzas.spec.ts` y `orders.spec.ts`), y la de `pizzas.spec.ts` está dentro del `for`, así que se ejecuta una vez por mercado (5 veces), todo para lograr exactamente lo mismo: un `access_token` válido.
+
+**9B.2 — Crear `fixtures/api.ts` (compone sobre el `test` de M05)**
+- **Qué hago:** creo `fixtures/api.ts` que hace `omnipizzaTest.extend(...)` sobre el `test` que ya exporta `fixtures/omnipizza.ts` — así heredo gratis `standardUser` (y el resto de fixtures de M05) en vez de reimplementar el `users.find(...)`. Sumo dos fixtures propias: `authService` (**worker**-scoped, un solo `AuthService`/`APIRequestContext` por archivo — el equivalente exacto de lo que hacía el `beforeAll`/`afterAll` de `auth.spec.ts`) y `accessToken` (**test**-scoped, un login fresco por TC vía `authService.login(standardUser)`).
+- **Por qué:** una fixture `worker`-scoped puede depender de otra `worker`-scoped, pero **no** de una `test`-scoped — por eso `authService` no depende de `standardUser` (que es `test`-scoped en `fixtures/omnipizza.ts`); en cambio `accessToken` (`test`-scoped) sí puede pedir ambas. Regla general de Playwright: una fixture solo puede depender de otras de **igual o mayor** alcance (`worker` ⊇ `test`), nunca al revés.
+- **Cómo verifico:** `pnpm typecheck` pasa; el editor autocompleta `authService` y `accessToken` como parámetros válidos de `test(...)`.
+
+```ts
+// fixtures/api.ts
+import { test as omnipizzaTest, expect } from "./omnipizza";
+import { AuthService } from "../services";
+
+export const API_URL =
+  process.env.API_URL ?? "https://omnipizza-backend.onrender.com";
+
+type ApiFixtures = { accessToken: string };
+type ApiWorkerFixtures = { authService: AuthService };
+
+export const test = omnipizzaTest.extend<ApiFixtures, ApiWorkerFixtures>({
+  // eslint-disable-next-line no-empty-pattern
+  authService: [
+    async ({}, use) => {
+      const auth = await AuthService.create(API_URL);
+      await use(auth);
+      await auth.dispose();
+    },
+    { scope: "worker" },
+  ],
+
+  accessToken: async ({ authService, standardUser }, use) => {
+    const { access_token } = await authService.login(standardUser);
+    await use(access_token);
+  },
+});
+
+export { expect };
+```
+
+**9B.3 — `tests/api/with-fixtures/auth.spec.ts` — antes / después**
+
+| | Con hooks (`auth.spec.ts`) | Con fixtures (`with-fixtures/auth.spec.ts`) |
+|---|---|---|
+| Setup | `test.beforeAll` + `let auth: AuthService` | `authService` como parámetro del test |
+| Teardown | `test.afterAll` manual | Automático — el `use()` de la fixture lo garantiza |
+| Usuario | `users.find(u => u.username === "standard_user")!` manual | `standardUser` (heredado de M05, sin reimplementar) |
+| Firma del test | No declara qué necesita — `auth` es una variable de closure | `async ({ authService, standardUser })` — explícito |
+
+```ts
+// tests/api/with-fixtures/auth.spec.ts
+import { test, expect } from "../../../fixtures/api";
+
+test.describe("AuthService @api (con fixtures)", () => {
+  test("successful login returns access_token", async ({
+    authService,
+    standardUser,
+  }) => {
+    const res = await authService.login(standardUser);
+    expect(res.access_token).toBeTruthy();
+    expect(typeof res.access_token).toBe("string");
+  });
+
+  test("login with invalid password fails", async ({
+    authService,
+    standardUser,
+  }) => {
+    await expect(
+      authService.login({ ...standardUser, password: "wrong-password" }),
+    ).rejects.toThrow(/Login failed/);
+  });
+});
+```
+
+**9B.4 — `tests/api/with-fixtures/pizzas.spec.ts` — el caso donde más se nota**
+- **Qué hago:** comparo el `for` de `pizzas.spec.ts` (repite `AuthService.create()` + `login()` + `dispose()` en **cada iteración**, una vez por mercado) contra `with-fixtures/pizzas.spec.ts`, donde el token llega listo como `accessToken` y el `for` solo construye el `PizzaService` (que sí varía por mercado, y por eso se queda inline).
+- **Por qué:** esto es lo que hace visible el ahorro real — no es solo "menos líneas", es que la fixture separa lo que **no cambia entre iteraciones** (el login) de lo que **sí cambia** (el mercado). Un hook no puede hacer esa separación dentro de un `for`; una fixture sí, porque el `for` vive en el cuerpo del test y la fixture ya resolvió su parte antes de que el test empiece.
+- **Cómo verifico:** cuento las llamadas a `AuthService.create(` — bajan de 5 ejecuciones (una por mercado) a 0 en el archivo del test (vive una sola vez, en la fixture, compartida por todo el worker).
+
+```ts
+// tests/api/with-fixtures/pizzas.spec.ts
+import { test, expect, API_URL } from "../../../fixtures/api";
+import { PizzaService } from "../../../services";
+import marketsJson from "../../../data/markets.json";
+import type { Market } from "../../../types";
+
+const markets = marketsJson as Market[];
+
+test.describe("PizzaService @api (con fixtures)", () => {
+  for (const market of markets) {
+    test(`lists pizzas in market ${market.code} with currency ${market.currency}`, async ({
+      accessToken,
+    }) => {
+      const pizzas = await PizzaService.create(API_URL, accessToken, market.code);
+      const list = await pizzas.list();
+      await pizzas.dispose();
+
+      expect(list.length).toBeGreaterThan(0);
+      expect(list[0].currency).toBe(market.currency);
+    });
+  }
+});
+```
+
+**9B.5 — Correr ambas versiones y confirmar que son equivalentes**
+- **Qué hago:** corro `pnpm test:api` completo (corre los 6 specs: con hooks y con fixtures) y comparo resultados.
+- **Por qué:** el punto del ejercicio no es que una versión "gane" — es confirmar que **el mismo comportamiento** se puede expresar con dos mecanismos distintos, y que la elección entre ellos es de diseño, no de corrección.
+- **Cómo verifico:** `tests/api/{auth,pizzas,orders}.spec.ts` y `tests/api/with-fixtures/{auth,pizzas,orders}.spec.ts` pasan los 6 en verde con las mismas aserciones.
+
+> 🧭 **Hooks vs Fixtures — cuándo usar cada uno**
+>
+> | Escenario | Hooks (`beforeAll`/`afterAll`) | Fixtures (`test.extend`) |
+> |---|---|---|
+> | El setup se usa en **1 solo archivo** | ✅ más corto, no requiere tocar `fixtures/` | Funciona, pero es composición sin beneficio real |
+> | El setup se **repite en 2+ archivos** | ❌ no se puede importar un `beforeAll` de otro spec — cada archivo lo reescribe (como hacía `pizzas.spec.ts`) | ✅ se declara una vez en `fixtures/`, cualquier spec lo pide por nombre |
+> | Quieres que la **firma del test** declare qué necesita | ❌ el recurso vive en una variable de closure, invisible desde afuera | ✅ `async ({ authService, standardUser })` es explícito y autocompleta |
+> | El recurso es caro y se comparte entre varios TCs de un archivo | ✅ `beforeAll`/`afterAll` — scope de archivo | ✅ fixture con `scope: "worker"` — mismo efecto, reutilizable en más archivos |
+>
+> **El criterio real no es "fixtures son mejores"** — es *reutilización entre archivos*. Mismo criterio que ya usaste en M04 para decidir cuándo `BasePage` se ganaba `abstract`: el patrón se paga cuando **2 o más consumidores** lo necesitan, no antes. `auth.spec.ts` solo no justificaba una fixture (por eso el módulo lo enseñó con hooks primero); en cuanto `pizzas.spec.ts` necesitó el mismo login, el hook dejó de alcanzar.
+>
+> **Quédate con hooks cuando** el setup es de un solo archivo y no necesitas declararlo como parámetro tipado del test — es más corto y no toca `fixtures/`. Sube a fixtures **en cuanto** un segundo archivo necesite el mismo recurso, o quieras que el teardown esté garantizado por diseño (el `use()` de la fixture corre incluso si el test lanza) en vez de confiado a un `afterAll` que alguien podría olvidar.
+
+---
+
+### Paso 10 — Versiona tu trabajo (Git JIT)
+
+**10.1 — Commitear la capa de API**
+- **Qué hago:** agrego solo lo que toca este módulo y commiteo con un mensaje convencional.
+- **Por qué:** la capa de servicios + su config + el módulo son una unidad coherente. Un commit por capa deja un historial legible (y, en M08, fácil de revertir en CI).
+- **Cómo verifico:** `git log --oneline -1` muestra el commit `feat(m06): ...` en la cima.
+
+```bash
+git add services tests playwright.config.ts
+git commit -m "feat(m06): API layer con BaseService abstracta"
+git log --oneline -1
+```
+
+> 🪟 **Windows / PowerShell:** los comandos `git` son idénticos; no necesitas escapar nada aquí.
+
+---
+
+## 🔎 Cómo probar los endpoints en Swagger (sin código)
+
+Antes (o en vez) de correr un test, puedes **ver con tus propios ojos** qué hace cada endpoint: ir a la URL, mandar la petición, y leer la respuesta. Es el equivalente a abrir Postman, pero ya viene servido por el backend. Esto te da la **fuente de la verdad** contra la que comparar lo que devuelven `AuthService`, `PizzaService` y `OrderService`.
+
+> 💡 **Para el facilitador:** haz este recorrido en vivo **antes** de leer el código de los servicios. Cuando luego vean `auth.login()` o `pizzas.list()`, ya sabrán exactamente qué request/response está envolviendo cada método — el `.ts` deja de ser "magia".
+
+### Tabla de endpoints (la chuleta)
+
+| Endpoint | Método | ¿Requiere auth? | Headers relevantes | Lo envuelve |
+|---|---|---|---|---|
+| `/api/auth/login` | POST | No | — | `AuthService.login()` |
+| `/api/pizzas` | GET | **Sí** (Bearer) | `X-Country-Code` (MX/US/CH/JP/SA), `X-Language` (opc.) | `PizzaService.list()` |
+| `/api/checkout` | POST | **Sí** (Bearer) | `Authorization: Bearer`, `X-Country-Code` | `OrderService.createOrder()` |
+| `/api/orders` | GET | **Sí** (Bearer) | `Authorization: Bearer` | `OrderService.listMine()` |
+| `/api/orders/{order_id}` | GET | **Sí** (Bearer) | `Authorization: Bearer` | `OrderService.getById()` (lo escribes en el reto) |
+
+> **Headers transversales:** `Authorization: Bearer <token>` autentica cualquier endpoint protegido. `X-Country-Code` (uno de **MX / US / CH / JP / SA**) elige el mercado y por tanto precios/moneda. `X-Language` (**en / es / de / fr / ja**, opcional) traduce los textos de la respuesta.
+
+> 💡 **Crear vs. leer órdenes:** la orden **se crea con `POST /api/checkout`**, mientras que `/api/orders` es solo lectura (historial y detalle). Por eso `OrderService.createOrder()` postea a `/api/checkout` y `listMine()` hace `GET` sobre `/api/orders` (ver la nota del Paso 2.4 para el porqué del diseño).
+
+### Walkthrough paso a paso
+
+**1 — Abre el Swagger UI.** Ve a **https://omnipizza-backend.onrender.com/api/docs** (es **FastAPI**, así que verás la interfaz Swagger con todos los endpoints agrupados).
+
+> ⚠️ **Render free-tier "duerme".** La primera petición del día puede tardar **30-40s** mientras el servicio "despierta" (cold start). Si la primera llamada se queda colgada o da un timeout, reintenta — es el mismo motivo por el que la primera corrida de `pnpm test:api` tarda más.
+
+**2 — Autentícate (obtén el token).** Expande **`POST /api/auth/login`** → botón **"Try it out"** → en el body pega:
+
+```json
+{ "username": "standard_user", "password": "pizza123" }
+```
+
+→ **Execute**. En la respuesta (200) verás el cuerpo con **`access_token`** (más `token_type`, `username` y `behavior`). **Copia el valor de `access_token`** — es lo que vas a autorizar en el siguiente paso. (Esto es lo mismo que devuelve `auth.login(user)` en el código, tipado como `LoginResponse`.)
+
+**3 — Autoriza (mete el token en Swagger).** Pulsa el botón **Authorize** (arriba a la derecha, con el candado) → en el modal (esquema **HTTP Bearer**) pega el token → **Authorize** → **Close**. A partir de ahora Swagger añade `Authorization: Bearer <token>` automáticamente a cada llamada protegida.
+
+> ⚠️ **Pega SOLO el token, sin la palabra `Bearer`.** El esquema HTTP Bearer de Swagger ya antepone `Bearer ` por ti. Si pegas `Bearer eyJ...` se duplica el prefijo (`Bearer Bearer ...`) y obtendrás **401**.
+
+**4 — Ejecuta un endpoint protegido (`GET /api/pizzas`).** Expande **`GET /api/pizzas`** (⚠️ requiere auth — por eso el paso 3 va primero) → **"Try it out"** → en el campo del header **`X-Country-Code`** escribe **`MX`** → **Execute**. Verás el catálogo de pizzas con **precios en la moneda del mercado**. Cambia `X-Country-Code` a `US` / `CH` / `JP` / `SA` y vuelve a **Execute**: los precios y la `currency` cambian. (Esto es exactamente lo que itera `ejemplo.spec.ts` con su `for (const market of markets)`.)
+
+**5 — Crea una orden y míralas (`POST /api/checkout` → `GET /api/orders`).** Expande **`POST /api/checkout`** (el que **crea** la orden) → **"Try it out"** → pega un body válido. Un body mínimo para **MX** (`pizza_id` es un **string** como `"p01"`, cópialo tal cual del catálogo del paso 4 — no es un número):
+
+```json
+{
+  "country_code": "MX",
+  "items": [{ "pizza_id": "p01", "quantity": 1 }],
+  "name": "QA Tester",
+  "address": "Av. Siempre Viva 742",
+  "phone": "5512345678",
+  "colonia": "Centro",
+  "propina": 10
+}
+```
+
+→ **Execute**. La respuesta (2xx) confirma la orden creada con su `order_id` (no `id` — el backend real usa `order_id`, ver el aviso de más abajo).
+
+> ⚠️ Si recibes **400**, al body le falta el campo de dirección **requerido por el mercado** (esa regla de negocio la valida el propio backend con su handler, no Pydantic): el error te lo dice explícito, ej. `{"error": "Field 'colonia' is required for country MX", ...}`. Revisa que esté el **campo de dirección del mercado** — el único obligatorio por mercado: en **MX** `colonia`, en **US** `zip_code`, en **CH** `plz`, en **JP** `prefectura`, en **SA** `district`. La **propina es opcional** y NO causa 400 si la omites (`propina` en MX, `tip` en US, `trinkgeld` en CH, `chip` en JP).
+
+> ⚠️ **Pero un body mal formado sí da 422.** Si un campo común no cumple la validación básica (por ejemplo `address` con menos de 5 caracteres o `phone` con menos de 8) o falta un campo obligatorio (`items`, `name`...), responde **422** con el body de Pydantic (`{"detail": [{"type", "loc", "msg"}]}`), no con el `{error, status_code}` de los demás. Detalle capturado en vivo en [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md) §6.3.
+
+Después, expande **`GET /api/orders`** → **Execute** → verás el **historial** con la orden que acabas de crear, envuelto en `{ "orders": [...] }` (no un array plano). Y **`GET /api/orders/{order_id}`** → pega el `order_id` de arriba → **Execute** → verás el **detalle** de esa orden.
+
+> 💡 **El "premio" de este recorrido:** ahora cada método de servicio tiene un referente visible. Cuando un test API falle, abre Swagger, repite la llamada a mano, y compara la respuesta real con lo que el test esperaba — así sabes si el bug está en el test, en el servicio, o en el backend.
+>
+> 📄 **Recorrido con respuestas reales capturadas en vivo** (login, los 3 códigos de error del 403/401/400, el body exacto de cada endpoint, y por qué `Order`/`ApiError` en `types/omnipizza.d.ts` no eran el contrato real): [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md).
+
+---
+
+## ▶️ Cómo ejecutar este módulo
+
+Todos los comandos se corren **desde `proyecto/`** (el proyecto autocontenido de este módulo):
+
+```bash
+cd proyecto
+pnpm install
+cp .env.example .env
+```
+
+- **Comando del módulo (project api):** `pnpm m6` (o `pnpm test:api`, la suite API completa)
+- **Suite API completa:** `pnpm test:api`
+- **Solo la capa de UI (login por fixture):** `pnpm test:ui` (project `chromium`; necesita los navegadores: `pnpm exec playwright install chromium`)
+- **Todo el módulo (UI + API):** `pnpm test`
+- **UI Mode de Playwright (explorador interactivo):** `pnpm test:pw-ui` (todo) · `pnpm test:pw-api` (solo API)
+- **Verificar tipos:** `pnpm typecheck`
+- **Filtrar:** por tag (`pnpm exec playwright test --grep "@api"` / `--grep "@smoke"`) o por archivo (`pnpm exec playwright test tests/reto.spec.ts --project=api`)
+- **Ver el reporte:** `pnpm report`
+- **🪟 Windows / PowerShell:** las variables de entorno van con `$env:VAR="x"; pnpm m6` (no `VAR=x pnpm m6`). Ej.: `$env:API_URL="https://mi-backend"; pnpm m6`
+
+> M06 corre contra el **backend** (`API_URL`) para el project `api`. El project `chromium` (UI) usa `BASE_URL` (frontend) — cada project apunta a lo suyo.
+
+---
+
+## Outcome esperado
+
+- [ ] Entiendes **por qué** `abstract` hasta ahora (y no en M04).
+- [ ] Sabes qué pasa si intentas `new BaseService(...)` (TS lo bloquea).
+- [ ] Puedes explicar el factory `static async create`.
+- [ ] Sabes cómo se inyecta el Bearer con `extraHTTPHeaders`.
+- [ ] Llamas `await service.dispose()` al final de cada uso.
+- [ ] Los mismos contratos (`User`, `Market`, `Pizza`) alimentan UI y API.
+- [ ] Completaste `getById(orderId)` en `OrderService` y su test de contrato: 200 + schema, 404 y 403 `Access denied` para la orden de otro usuario.
+- [ ] Comparaste el MISMO flujo (login → pizzas → orden) por UI y por API (Paso 8) y sabes qué cubre cada capa.
+- [ ] Explicas cuándo usar hooks (`beforeAll`/`afterAll`) vs fixtures (`test.extend`) para el mismo setup — y por qué `pizzas.spec.ts` fue el caso que lo justificó (Paso 9 bis).
+- [ ] `OrderService` tiene su propia suite (`tests/api/orders.spec.ts` + su gemela con fixtures): checkout con el campo de dirección por mercado (MX/SA), historial (`GET /api/orders`) y el 400 por campo faltante.
+- [ ] Sabes por qué `Order`/`ApiError` en `types/omnipizza.d.ts` cambiaron: el contrato original (`id`/`status`/`createdAt`, `detail`) no era el que el backend real devuelve (`order_id`/`timestamp`, `error`) — verificado en vivo, ver [`GUIA-SWAGGER.md`](./GUIA-SWAGGER.md).

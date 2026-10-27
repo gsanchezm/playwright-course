@@ -23,7 +23,7 @@ armado y listo para clonar y correr aislado — sin arrastrar el resto del curso
 - `tests/reto.spec.ts` — TC-003 (filtrar por categoría "popular").
 
 **Todavía NO existe** (llega en módulos siguientes): `data/`+`types/` (M03), `pages/`
-(M04), `fixtures/`+`helpers/` (M05), `tests/setup/` (M06), `services/` (M07), CI real en
+(M04), `fixtures/`+`helpers/` (M05), `services/` (M06), `tests/setup/` (M07), CI real en
 `.github/workflows/` (M08).
 
 ## Cómo correr

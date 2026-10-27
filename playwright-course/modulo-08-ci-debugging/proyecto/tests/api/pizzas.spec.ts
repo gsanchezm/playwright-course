@@ -1,5 +1,5 @@
 // ============================================================
-// tests/api/pizzas.spec.ts — Suite API para catálogo (M07)
+// tests/api/pizzas.spec.ts — Suite API para catálogo (M06)
 // ============================================================
 
 import { test, expect } from "@playwright/test";

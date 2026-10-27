@@ -144,7 +144,7 @@ Abre `ejemplo.spec.ts` y **señala con el dedo**:
    - `click()` en `login-button-desktop` — repetido.
    - `expect(page).toHaveURL(/\/catalog/)` — repetido.
 2. **Locators inline** — el string `"market-MX"` está hardcoded; no hay un "objeto LoginPage" que lo encapsule.
-3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M06 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
+3. **El cold start de Render** lo absorben los **timeouts generosos del config** — sin warmup explícito en el spec. En M07 el backend se despertará de forma controlada con un `auth.setup.ts` reutilizable (que además guardará la sesión).
 4. **Las credenciales** se leen con `process.env.TEST_USER_USERNAME ?? "standard_user"` — el fallback existe por seguridad, pero **la fuente real es `.env`**.
 
 **Pregúntate:** *"si añadiera un tercer smoke, ¿cuántas líneas duplicaría?"* — la respuesta es **~8**. Esa es la deuda que M03 y M04 van a pagar.
@@ -177,7 +177,7 @@ const PASSWORD = process.env.TEST_USER_PASSWORD ?? "pizza123";
 test.describe("Smoke OmniPizza — ugly version (M01)", () => {
   // Nota: OmniPizza vive en Render free tier y el primer request del
   // día tarda 30-40s (cold start). NO hacemos warmup explícito: los
-  // timeouts generosos del playwright.config.ts lo absorben. En M06 el
+  // timeouts generosos del playwright.config.ts lo absorben. En M07 el
   // backend se despierta de forma controlada con un `auth.setup.ts`.
 
   test("TC-001 — successful login with valid user @smoke", async ({ page }) => {

@@ -16,11 +16,11 @@ vive en [`../../modulo-05-fixtures/README.md`](../../modulo-05-fixtures/README.m
   pasos) — 8 escenarios más repartidos en `tests/widgets/` (uno por funcionalidad).
 - **Config del runner: sin cambios de orquestación.** Un único project `chromium`
   anónimo. Los tests hacen login por UI (encapsulado en el POM). El setup project +
-  `storageState` + `dependencies` llegan en **M06**; multi-browser en **M08**.
+  `storageState` + `dependencies` llegan en **M07**; multi-browser en **M08**.
 
 > **Enfoque del snapshot.** M05 corre SIN sesión heredada: los fixtures inyectan Page
 > Objects sobre un login por UI normal. El badge (`storageState`) que elimina ese login
-> es justo lo que estrena M06.
+> es justo lo que estrena M07.
 
 ## Cómo correr
 

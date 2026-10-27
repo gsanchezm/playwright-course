@@ -3,7 +3,7 @@
 // ============================================================
 // Este spec corre en el project `chromium` SIN sesión heredada.
 // El login se hace por UI dentro del test — el badge/storageState
-// que evita ese login llega en M06 (Setup).
+// que evita ese login llega en M07 (Setup).
 //
 // El fixture `loginPage`/`catalogPage` inyecta Page Objects ya
 // ligados a la pestaña del TC: en el test NUNCA escribes
@@ -22,7 +22,7 @@ test.describe("Fixtures inject Page Objects (M05)", () => {
   }) => {
     // Sin `new LoginPage(page)`: el fixture ya inyectó los Page Objects.
     // Sin sesión heredada: hacemos el login por UI (igual que en M01,
-    // pero encapsulado en el POM). En M06 este login desaparece.
+    // pero encapsulado en el POM). En M07 este login desaparece.
     await loginPage.loginInMarket(standardUser, defaultMarket.code);
 
     await catalogPage.expectLoaded();

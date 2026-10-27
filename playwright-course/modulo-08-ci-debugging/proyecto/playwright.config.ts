@@ -43,24 +43,24 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "api",
       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-06-api-layer\/.*\.spec\.ts/],
     },
     {
       // M01-M04 anónimos (login por UI) + flujos negativos *.anon.spec.ts

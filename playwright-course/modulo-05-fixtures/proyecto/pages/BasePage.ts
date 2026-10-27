@@ -12,7 +12,7 @@
 // screenshot()) ya tiene cuerpo y sirve tal cual a cualquier hijo;
 // ninguno está obligado a sobreescribir nada para ser válido.
 //
-// Compara con services/BaseService.ts (M07): ahí SÍ hace falta
+// Compara con services/BaseService.ts (M06): ahí SÍ hace falta
 // `abstract basePath(): string`, porque url() no puede construirse
 // sin que cada servicio concreto lo defina. Ese es el criterio real:
 // `abstract` entra cuando la base necesita un método SIN cuerpo que

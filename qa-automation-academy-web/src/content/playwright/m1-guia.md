@@ -35,8 +35,8 @@ playwright-course/                  ← el repo Git que creaste en M00 (workspac
 | `data/`, `types/` | M03 | Datos tipados (mercados, usuarios) |
 | `pages/` | M04 | Page Object Model |
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + storageState (login una vez) |
-| `services/`, `tests/api/` | M07 | Capa de servicios para API testing |
+| `services/`, `tests/api/` | M06 | Capa de servicios para API testing |
+| `tests/setup/`, `.auth/` | M07 | Setup project + storageState (login una vez) |
 | `.github/workflows/` (uso real) | M08 | CI/CD en GitHub Actions (el installer lo deja latente) |
 
 ---
@@ -223,7 +223,7 @@ Verifica que `.env` queda ignorado:
 git check-ignore .env     # imprime ".env" → está siendo ignorado
 ```
 
-El `.gitignore` del installer ya cubre los reportes y `node_modules/`, y trae `/playwright/.auth/` (lo usaremos en M06). Lo que **falta** son las dos líneas críticas de secretos: `.env` y `.auth/`. (`.auth/` aún no existe, pero lo dejas listo: en M06 guardará el `storageState` de sesión.)
+El `.gitignore` del installer ya cubre los reportes y `node_modules/`, y trae `/playwright/.auth/` (lo usaremos en M07). Lo que **falta** son las dos líneas críticas de secretos: `.env` y `.auth/`. (`.auth/` aún no existe, pero lo dejas listo: en M07 guardará el `storageState` de sesión.)
 
 > ⚠️ **Importante:** `git check-ignore .env` debe imprimir `.env`. Si no imprime nada, el `.env` **no** está ignorado y tus credenciales se commitearían. Las entradas `.env` y `.auth/` son **críticas**: si las olvidas, terminas pusheando secrets al repo.
 
@@ -234,7 +234,7 @@ El `.gitignore` del installer ya cubre los reportes y `node_modules/`, y trae `/
 > **📐 El config NO nace en blanco: lo genera el installer**
 > El installer ya te dejó un `playwright.config.ts` **genérico**. Tu trabajo aquí es **moldearlo** al estado mínimo de M01 — y entender **cada recorte**. A partir de **M06** este archivo crece de verdad; cada módulo siguiente mostrará sólo el **diff** respecto al anterior, para que veas la evolución incremental sin perderte.
 >
-> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project ni `storageState` (M06), multi-browser (M08), project `api` (M07), ni flags de CI (M08).
+> **El estado M01 contiene lo mínimo:** `import "dotenv/config"` (descomentado), `baseURL` desde `process.env`, timeouts generosos (cold start de Render) y **un solo project** `ui-anon`. Todavía NO hay: setup project ni `storageState` (M07), multi-browser (M08), project `api` (M06), ni flags de CI (M08).
 
 Este es **el "master test plan"** del framework: define dónde están los tests, el baseURL, timeouts, qué navegador y qué hacer cuando algo falla.
 
@@ -258,7 +258,7 @@ Abre el `playwright.config.ts` generado y **reemplaza su contenido** por este (e
 // "master test plan" del framework. Partimos del config que generó
 // `pnpm create playwright` y lo recortamos a lo mínimo de M01. En
 // módulos siguientes vamos a agregar de nuevo: projects multi-browser
-// (M08), setup project con dependencies (M06), project api (M07),
+// (M08), setup project con dependencies (M07), project api (M06),
 // retries+workers+CI flags reales (M08).
 
 import { defineConfig, devices } from "@playwright/test";
@@ -312,8 +312,8 @@ export default defineConfig({
 | `screenshot: "only-on-failure"` | Captura automática del estado final de la página solo cuando el test falla; se adjunta al HTML report | Evidencia visual gratis del momento del fallo, sin ensuciar los runs verdes |
 | `actionTimeout: 15_000` | Tope por ACCIÓN individual (`click`, `fill`, `check`…; incluye su auto-waiting de visibilidad/estabilidad). Default: 0 = sin tope propio (esperaría hasta agotar el timeout del test) | 15s: si un elemento no aparece, esa acción falla rápido y con error preciso, en vez de quemar los 60s del test |
 | `navigationTimeout: 45_000` | Tope específico de navegaciones (`goto`, `reload`, `waitForURL`), separado del de acciones porque navegar es lo más lento | El cold start de Render golpea exactamente aquí: el primer `goto` puede tardar 30-40s. 45 < 60 deja margen para el resto del test |
-| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M06 se monta el setup project y en M08 vuelven firefox/webkit |
-| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M07 (convención de nombres del curso) |
+| `projects: [...]` | Cada project es una configuración de ejecución con nombre (navegador, viewport, overrides de `use`); la suite corre una vez por project | En M01 uno solo para no distraer; en M06 se suma el project `api`, en M07 el setup project y en M08 vuelven firefox/webkit |
+| `name: "ui-anon"` | Identificador del project: lo que pasas en `--project=ui-anon` y lo que ves en el report | El prefijo `ui-` anticipa el project `api` de M06 (convención de nombres del curso) |
 | `use: { ...devices["Desktop Chrome"] }` | Spread que copia el perfil completo Desktop Chrome del catálogo `devices` (chromium, viewport 1280×720, userAgent, deviceScaleFactor…); puedes sobreescribir cualquier campo después del spread | Perfil desktop estándar y reproducible: el mismo en tu máquina y en CI |
 
 > 🔷 **TypeScript — operador `??` (nullish coalescing)**
@@ -408,7 +408,7 @@ EOF
 > ⚠️ **¿Por qué `exactOptionalPropertyTypes` debe estar en `false`?**
 > Esta flag **no viene incluida en `strict`** (hay que encenderla aparte), y aquí la dejamos apagada **a propósito**. La evidencia sale del propio curso: si la activas, el `playwright.config.ts` deja de compilar. La línea `workers: process.env.CI ? 2 : undefined` — el patrón que genera el installer oficial y que enseñamos en M08 — lanza **TS2769**, porque Playwright declara `workers?: number | string` y la flag prohíbe asignarle un `undefined` explícito a esa propiedad opcional. `strict: true` ya te da la red de seguridad importante.
 >
-> ⚠️ **Ojo, esto NO es excusa para usar `storageState: undefined`** en M06 para renunciar a la sesión heredada — aunque también compilaría por la misma razón (Playwright le añadió `| undefined` al tipo). A diferencia de `workers`, ahí `undefined` SÍ compila pero NO hace lo que parece: Playwright lo trata como "no anular" (no como "vaciar"), así que la sesión heredada se cuela igual y el test falla en runtime. El patrón correcto para renunciar al badge es un `storageState` vacío explícito: `test.use({ storageState: { cookies: [], origins: [] } })`.
+> ⚠️ **Ojo, esto NO es excusa para usar `storageState: undefined`** en M07 para renunciar a la sesión heredada — aunque también compilaría por la misma razón (Playwright le añadió `| undefined` al tipo). A diferencia de `workers`, ahí `undefined` SÍ compila pero NO hace lo que parece: Playwright lo trata como "no anular" (no como "vaciar"), así que la sesión heredada se cuela igual y el test falla en runtime. El patrón correcto para renunciar al badge es un `storageState` vacío explícito: `test.use({ storageState: { cookies: [], origins: [] } })`.
 
 Verifica:
 

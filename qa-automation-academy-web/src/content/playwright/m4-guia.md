@@ -68,8 +68,8 @@ data/markets.json ──► const markets = marketsJson as Market[]
 | Carpeta | Llega en | Para qué |
 |---|---|---|
 | `fixtures/`, `helpers/` | M05 | Custom fixtures + aislamiento de datos por worker |
-| `tests/setup/`, `.auth/` | M06 | Setup project + storageState (eliminar el login UI de cada test) |
-| `services/`, `tests/api/` | M07 | API testing |
+| `services/`, `tests/api/` | M06 | API testing |
+| `tests/setup/`, `.auth/` | M07 | Eliminar el login UI de cada test (badge heredado) |
 | `.github/workflows/` | M08 | CI/CD |
 
 ---
@@ -105,7 +105,7 @@ Sólo **después** de ese ejercicio abrimos `BasePage.ts`. El patrón se gana �
 | `protected tid()` | Herramienta del equipo QA interno: la ven las hijas, no el cliente (test) |
 | `readonly page: Page` | Tu pestaña del navegador: no cambia a mitad del TC |
 
-> **⚠️ Nota sobre `abstract`:** en este módulo `BasePage` es una clase **normal**, no abstracta. La palabra `abstract` aparecerá por primera vez en M07 cuando tengamos varios servicios que realmente la justifiquen. Por ahora la convención es humana: **no instancies `BasePage` directamente — extiéndela**.
+> **⚠️ Nota sobre `abstract`:** en este módulo `BasePage` es una clase **normal**, no abstracta. La palabra `abstract` aparecerá por primera vez en M06 cuando tengamos varios servicios que realmente la justifiquen. Por ahora la convención es humana: **no instancies `BasePage` directamente — extiéndela**.
 
 ---
 
@@ -168,7 +168,7 @@ code pages/index.ts
 
 **Contenido de cada archivo** (escríbelo ahora; en los Pasos 5 y 6 lo releemos línea por línea):
 
-📄 `pages/BasePage.ts` — clase normal (NO abstract; eso llega en M07):
+📄 `pages/BasePage.ts` — clase normal (NO abstract; eso llega en M06):
 
 ```ts
 import type { Page, Locator } from "@playwright/test";
@@ -298,7 +298,7 @@ export { CheckoutPage } from "./CheckoutPage";
 > # playwright.config.ts — SIN CAMBIOS vs M01/M02/M03
 > # (M04 refactoriza los tests a Page Object Model; el runner corre igual)
 > ```
-> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-anon`). **Entra:** nada en el config — el incremental de M04 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M06**.
+> **Se mantiene:** todo (dotenv, baseURL, timeouts, project `ui-anon`). **Entra:** nada en el config — el incremental de M04 es de **arquitectura de código** (clases POM en `pages/`), no del runner. El próximo cambio real al config llega en **M06** (project `api`) y **M07** (setup project).
 
 **M04 no requiere cambios al config.** Sigue siendo el mismo de M01/M02/M03.
 
@@ -367,7 +367,7 @@ Abre `pages/BasePage.ts` y observa:
 - `protected readonly page: Page` — todas las hijas la heredan, los tests no la tocan.
 - `protected tid(base: string)` — método helper interno; las hijas lo usan para construir testids consistentes.
 - `async waitForUrl(...)` — la espera "paciente" centralizada (sin `sleep`).
-- **Por qué no es `abstract`:** porque por sí sola sigue siendo útil para crear hijas. En M07 vas a ver el caso donde `abstract` sí es indispensable.
+- **Por qué no es `abstract`:** porque por sí sola sigue siendo útil para crear hijas. En M06 vas a ver el caso donde `abstract` sí es indispensable.
 
 > 🔍 **Detalle que parece obvio — `constructor(protected readonly page: Page) {}`**
 > **Qué es:** una *parameter property* de TypeScript. Esa única línea **declara** la propiedad `page`, la marca `protected readonly` y la **asigna** (`this.page = page`) automáticamente — no hay cuerpo en el constructor. El `page` lo provee el fixture de Playwright cada vez que el test hace `new LoginPage(page)`.
@@ -429,7 +429,7 @@ Cosas a observar:
 - [ ] Sabes extender `BasePage` para crear un Page nuevo.
 - [ ] **Puedes contar las líneas eliminadas** vs M03.
 - [ ] Completaste el reto E2E con `CheckoutPage`.
-- [ ] Sabes que `abstract` llega en M07 — no lo introdujimos aquí.
+- [ ] Sabes que `abstract` llega en M06 — no lo introdujimos aquí.
 
 ---
 

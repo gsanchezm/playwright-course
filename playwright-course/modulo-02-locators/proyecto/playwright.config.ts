@@ -3,7 +3,7 @@
 // M02 practica la JERARQUÍA de locators (getByRole / getByTestId / CSS),
 // no configuración del runner. El config es idéntico al de M01: un solo
 // project ANÓNIMO `ui-anon` (M01-M03 son ejercicios de login por UI, sin
-// sesión heredada; el project autenticado nace con el setup de M06).
+// sesión heredada; el project autenticado nace con el setup de M07).
 
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";

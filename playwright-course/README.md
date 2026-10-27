@@ -16,7 +16,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | Mercados | MX / US / CH / JP / SA |
 | Duración | 7 – 9 horas, 10 módulos (M00 + 9) |
 
-> ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.setup.ts` (M06) absorbe ese cold start con un timeout generoso.
+> ⚠️ Render free tier: backend dormido tarda 30-40s en despertar. El `tests/setup/auth.api.setup.ts` / `auth.ui.setup.ts` (M07) absorbe ese cold start con un timeout generoso.
 
 ---
 
@@ -30,8 +30,8 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | 3 | [Data-driven](./modulo-03-data-driven/) | `types/*` + `data/*.json` + `for...of` parametrizado por mercado (Playwright no tiene `test.each()`) |
 | 4 | [POM incremental](./modulo-04-pom/) | `pages/BasePage.ts` + Login/Catalog/Checkout · *Git break:* feature branches + conflictos |
 | 5 | [Fixtures](./modulo-05-fixtures/) | `fixtures/omnipizza.ts` (`test.extend`) + `helpers/unique-data.ts` + `page.route()` · *Git break:* push/PR |
-| 6 | [Setup & auth](./modulo-06-setup/) | `tests/setup/auth.setup.ts` (login por UI → `storageState`) + `dependencies: ['setup']` · *Git break:* deshacer cambios |
-| 7 | [API Layer](./modulo-07-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
+| 6 | [API Layer](./modulo-06-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
+| 7 | [Setup & auth](./modulo-07-setup/) | `tests/setup/auth.ui.setup.ts` + `auth.api.setup.ts` (login por UI y por API → `storageState`) + `dependencies` · *Git break:* deshacer cambios |
 | 8 | [CI/CD + Trace Viewer](./modulo-08-ci-debugging/) | `.github/workflows/playwright.yml` con **matrix cross-browser** (firefox/webkit viven aquí) |
 | 9 | [IA + Playwright MCP](./modulo-09-ia-mcp/) *(opcional)* | Cliente LLM + Playwright MCP — copiloto que genera/depura/mantiene tests (no agrega código al framework) |
 
@@ -42,7 +42,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | Identidad, 3 estados, init/add/commit, `.gitignore`, log básico | [M00](./modulo-00-git-esencial/) |
 | Feature branches, merge fast-forward / 3-way, conflictos | [M04 Git break](./modulo-04-pom/) (refactor a POM) |
 | Push, PR, code review | [M05 Git break](./modulo-05-fixtures/) (revisar fixtures) |
-| Deshacer cambios (`restore`/`revert`/`reflog`) | [M06 Git break](./modulo-06-setup/) (`auth.setup.ts` frágil) |
+| Deshacer cambios (`restore`/`revert`/`reflog`) | [M07 Git break](./modulo-07-setup/) (`auth.*.setup.ts` frágil) |
 | GitHub Actions matrix CI, `secrets.*`, artefactos, traces | [M08](./modulo-08-ci-debugging/) |
 | Workflows de equipo, rebase interactivo, tags, aliases, branch protection | [`git-github-course/`](../git-github-course/) (referencia profunda, opcional) |
 
@@ -65,8 +65,8 @@ Locators jerárquicos         M02       (técnica; sin archivos nuevos)
 Data tipada                  M03       types/*, data/*.json  (for...of por mercado)
 Page Object Model            M04       pages/BasePage.ts + Login/Catalog/Checkout
 Fixtures + isolation         M05       fixtures/omnipizza.ts, helpers/unique-data.ts, page.route()
-Setup project + storageState M06       tests/setup/auth.setup.ts, .auth/ (gitignored)
-API layer                    M07       services/BaseService.ts + Auth/Order/PizzaService, tests/api/
+API layer                    M06       services/BaseService.ts + Auth/Order/PizzaService, tests/api/
+Setup project + storageState M07       tests/setup/auth.ui.setup.ts + auth.api.setup.ts, .auth/ (gitignored)
 CI + cross-browser           M08       .github/workflows/playwright.yml (matrix firefox/webkit)
 AI Test Harness (opcional)   M09       cliente LLM + Playwright MCP
 ```

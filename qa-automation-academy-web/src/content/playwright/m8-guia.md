@@ -9,11 +9,11 @@
 
 ## 🏗️ Arquitectura al terminar este módulo (estado FINAL del framework)
 
-Aparece **`.github/workflows/`** — el cuarto del robot. Con eso el framework queda completo: el mismo suite que corres con `pnpm m7` ahora corre **en paralelo en GitHub Actions** cada vez que abres un PR.
+Aparece **`.github/workflows/`** — el cuarto del robot. Con eso el framework queda completo: el mismo suite que corres con `pnpm test` ahora corre **en paralelo en GitHub Actions** cada vez que abres un PR.
 
 ```
 playwright-course/                  ← 🎯 ESTADO FINAL del framework
-├── .auth/                          ← (M06 — gitignored)
+├── .auth/                          ← (M07 — gitignored)
 ├── .env                            ← (M01 — gitignored)
 ├── .env.example                    ← (M01)
 ├── .github/                        ← 🆕
@@ -24,10 +24,10 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 ├── fixtures/                       ← (M05) omnipizza.ts
 ├── helpers/                        ← (M05) unique-data.ts
 ├── pages/                          ← (M04-M05) Base + Login + Catalog + Checkout + Menu + Profile + PizzaCustomizerModal
-├── services/                       ← (M07) Base (abstract) + Auth + Order + Pizza
+├── services/                       ← (M06) Base (abstract) + Auth + Order + Pizza
 ├── tests/
-│   ├── api/                        ← (M07) auth.spec.ts, pizzas.spec.ts
-│   └── setup/                      ← (M06) auth.setup.ts
+│   ├── api/                        ← (M06) auth.spec.ts, pizzas.spec.ts
+│   └── setup/                      ← (M07) auth.setup.ts
 ├── types/                          ← (M03) omnipizza.d.ts
 ├── modulo-00-git-esencial/         ← (lecciones — no contribuyen al framework)
 ├── modulo-01-smoke-feo/            ← (M01)
@@ -35,8 +35,8 @@ playwright-course/                  ← 🎯 ESTADO FINAL del framework
 ├── modulo-03-data-driven/          ← (M03)
 ├── modulo-04-pom/                  ← (M04)
 ├── modulo-05-fixtures/             ← (M05)
-├── modulo-06-setup/                ← (M06)
-├── modulo-07-api-layer/            ← (M07)
+├── modulo-06-api-layer/            ← (M06)
+├── modulo-07-setup/                ← (M07)
 ├── modulo-08-ci-debugging/         ← 🆕 ESTE MÓDULO
 │   ├── README.md
 │   ├── ejemplo.spec.ts             ← 🆕 smoke canary, regression, demo trace
@@ -159,7 +159,8 @@ Antes de tocar CI:
 ```bash
 # Desde proyecto/ (de este módulo)
 cd proyecto
-pnpm m7            # API layer corre en verde
+pnpm m6            # API layer corre en verde (project api)
+pnpm m7            # UI autenticada (setup) corre en verde
 pnpm typecheck     # sin errores
 
 # Para los pasos de GitHub vas a necesitar:
@@ -170,7 +171,7 @@ git remote -v      # debe haber un `origin` apuntando a GitHub
 
 Si no tienes `gh`, instálalo: macOS → `brew install gh`; Windows → `winget install --id GitHub.cli`; Linux → ver [`cli.github.com`](https://cli.github.com/).
 
-Si no tienes remoto, vuelve a M06 (Git break: conectar el repo a GitHub).
+Si no tienes remoto, dedícale 5 minutos al setup del remoto (HTTPS o SSH; ver M04 Paso 0.3) antes de continuar — sin remoto no hay CI.
 
 ---
 
@@ -188,7 +189,7 @@ Herramientas externas que SÍ necesitas:
 | Herramienta | Cómo verificar | Cómo instalar si falta |
 |---|---|---|
 | `gh` (GitHub CLI) | `gh --version` | macOS: `brew install gh` · Windows: `winget install --id GitHub.cli` · Linux: paquete del repo · [cli.github.com](https://cli.github.com/) |
-| `git` con remoto | `git remote -v` | M06 Git break — conectar repo a GitHub |
+| `git` con remoto | `git remote -v` | M04 Paso 0.3 — conectar repo a GitHub |
 | Cuenta de GitHub con permisos `write` | `gh repo view --json viewerPermission` | Tienes que ser **admin / maintainer** del repo para crear issues automáticos (reto) |
 
 ---
@@ -316,7 +317,7 @@ jobs:
 
 ### Paso 3 — Ajustes a `playwright.config.ts` (estado FINAL del curso)
 
-> **📐 Config — cambios vs M07 (estado FINAL del curso)**
+> **📐 Config — cambios vs M06 + M07 (estado FINAL del curso)**
 > ```diff
 >   export default defineConfig({
 > +   fullyParallel: true,
@@ -383,24 +384,24 @@ export default defineConfig({
       name: "ui-chromium",
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-firefox",
       use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "ui-webkit",
       use: { ...devices["Desktop Safari"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
-      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-07-api-layer\/.*/, /modulo-0[1234]-.*/],
+      testIgnore: [/tests\/setup\/.*/, /tests\/api\/.*/, /modulo-06-api-layer\/.*/, /modulo-0[1234]-.*/],
     },
     {
       name: "api",
       use: { baseURL: process.env.API_URL ?? "https://omnipizza-backend.onrender.com" },
-      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-07-api-layer\/.*\.spec\.ts/],
+      testMatch: [/tests\/api\/.*\.spec\.ts/, /modulo-06-api-layer\/.*\.spec\.ts/],
     },
     {
       // 🆕 M01-M04 anónimos (login por UI) + flujos negativos *.anon.spec.ts
@@ -416,7 +417,7 @@ export default defineConfig({
 > `defineConfig(...)` no es decorativo: aplica el tipo `PlaywrightTestConfig`, así que el editor te autocompleta `retries`, `workers`, `projects[]` y te marca en rojo si escribes una clave inexistente o un valor del tipo equivocado (p.ej. `trace: "siempre"`). `projects` es un **array tipado** de objetos con forma fija: cada entrada debe tener `name`, y opcionalmente `use`, `dependencies`, `testMatch`/`testIgnore`. Esa forma fija es lo que una `interface` describe.
 > 📚 Lo viste en [TS · M06 — interfaces y contratos de objetos](/docs/typescript/m6-api-response). Aquí lo aplicas: cada objeto de `projects[]` cumple el contrato que Playwright espera.
 
-**Diff conceptual vs M07:**
+**Diff conceptual vs M06 + M07 (API Layer + Setup):**
 
 | Cambio | Por qué |
 |---|---|

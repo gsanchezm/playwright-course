@@ -3,7 +3,7 @@
 // M04 refactoriza los tests a Page Object Model (clases en pages/). Es
 // PURO código: el runner corre igual que M01-M03. Un solo project
 // ANÓNIMO `ui-anon` (M01-M05 son login por UI, sin sesión heredada; el
-// project autenticado ui-chromium + setup nace en M06).
+// project autenticado ui-chromium + setup nace en M07).
 
 import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
