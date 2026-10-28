@@ -97,7 +97,8 @@ pnpm tsx modulo-02-types/01-booleans.ts   # mini-clase específica
 | 6 | `modulo-06-api-layer` | API Layer con `BaseService` (abstract) + `tests/api/` |
 | 7 | `modulo-07-setup` | Setup projects: `auth.ui.setup.ts` / `auth.api.setup.ts` (login → `storageState`) · *Git break:* deshacer cambios |
 | 8 | `modulo-08-ci-debugging` | GitHub Actions matrix CI (cross-browser) + Trace Viewer |
-| 9 | `modulo-09-ia-mcp` | *(opcional)* IA + Playwright MCP — copiloto que genera/depura/mantiene tests |
+| 9 | `modulo-09-ia-mcp` | *(opcional, 145 min)* **Equipo de agentes de QA:** `AGENTS.md` + 6 subagentes + skill `/qa-flow` (de la historia de usuario al test) |
+| esp. | `modulo-especial-ia-harness-avanzado` | *(opcional, avanzado)* IA Test Harness por prompts — genera un framework E2E completo con Claude Code + MCP |
 
 **Comandos** — cada módulo es un `proyecto/` autocontenido; entra a **su** carpeta y córrelo aislado:
 ```bash

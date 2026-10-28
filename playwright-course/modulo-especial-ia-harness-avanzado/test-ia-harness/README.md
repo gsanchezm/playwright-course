@@ -1,7 +1,7 @@
 # test-ia-harness
 
 Harness E2E **portable** (Playwright + TypeScript) sobre la app **OmniPizza**.
-Es la **referencia de forma esperada** del Modulo 09: un framework limpio que
+Es la **referencia de forma esperada** del módulo especial: un framework limpio que
 Claude Code puede generar en una carpeta externa siguiendo los prompts del modulo.
 En una corrida real tambien debe existir `TEST_PLAN.md`: se crea antes de las
 slices y documenta los casos UI/API que despues implementa la IA.

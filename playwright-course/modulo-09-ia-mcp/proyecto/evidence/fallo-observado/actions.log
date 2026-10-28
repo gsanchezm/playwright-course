@@ -1,0 +1,24 @@
+[intento 1] GET / (login, mercado MX)
+[intento 1] click market-MX
+[intento 1] fill username=problem_user, password=*** ; click login-button
+[intento 1] URL = https://omnipizza-frontend.onrender.com/catalog
+[intento 1] catalogo visible
+[intento 1] pizzas en catalogo: 12
+[intento 1] precio de la primera pizza (pizza-price-*) = "$0.00"
+[intento 1] precios (todos) = ["$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00"]
+[intento 2] GET / (login, mercado MX)
+[intento 2] click market-MX
+[intento 2] fill username=problem_user, password=*** ; click login-button
+[intento 2] URL = https://omnipizza-frontend.onrender.com/catalog
+[intento 2] catalogo visible
+[intento 2] pizzas en catalogo: 12
+[intento 2] precio de la primera pizza (pizza-price-*) = "$0.00"
+[intento 2] precios (todos) = ["$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00"]
+[intento 3] GET / (login, mercado MX)
+[intento 3] click market-MX
+[intento 3] fill username=problem_user, password=*** ; click login-button
+[intento 3] URL = https://omnipizza-frontend.onrender.com/catalog
+[intento 3] catalogo visible
+[intento 3] pizzas en catalogo: 12
+[intento 3] precio de la primera pizza (pizza-price-*) = "$0.00"
+[intento 3] precios (todos) = ["$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00","$0.00"]

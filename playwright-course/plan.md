@@ -660,6 +660,8 @@ gh pr checks                                             # status de checks del 
 
 ### A2 — Playwright MCP + agentes AI
 
+> Estado actual: A2 vive como **M09 · Equipo de agentes de QA** (`modulo-09-ia-mcp/`, opcional, 145 min: `AGENTS.md` + 6 subagentes + skill `qa-flow`). El camino por prompts quedó en `modulo-especial-ia-harness-avanzado/`.
+
 - MCP Server: exposición del DOM por árbol de accesibilidad.
 - Demostración de agentes (Claude / Cursor) escribiendo specs que respeten el POM existente.
 - **Por qué lo movimos a apéndice:** es cherry-on-top, no core. Depende de stack propietario (Claude Code, Cursor) que el alumno puede no tener.

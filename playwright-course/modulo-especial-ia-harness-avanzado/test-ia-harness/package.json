@@ -1,7 +1,7 @@
 {
   "name": "omnipizza-ai-harness",
   "version": "1.0.0",
-  "description": "Referencia de AI Test Harness (Playwright + TypeScript) para el Modulo 09 sobre OmniPizza",
+  "description": "Referencia de AI Test Harness (Playwright + TypeScript) para el módulo especial sobre OmniPizza",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {

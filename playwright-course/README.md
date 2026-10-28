@@ -20,7 +20,7 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 
 ---
 
-## Los 10 módulos (+ M09 opcional)
+## Los 10 módulos (+ M09 opcional + módulo especial)
 
 | # | Módulo | Pieza que añade al framework |
 |---|---------|-------------|
@@ -33,7 +33,8 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 | 6 | [API Layer](./modulo-06-api-layer/) | `services/BaseService.ts` (abstract) + 3 services + `tests/api/` |
 | 7 | [Setup & auth](./modulo-07-setup/) | `tests/setup/auth.ui.setup.ts` + `auth.api.setup.ts` (login por UI y por API → `storageState`) + `dependencies` · *Git break:* deshacer cambios |
 | 8 | [CI/CD + Trace Viewer](./modulo-08-ci-debugging/) | `.github/workflows/playwright.yml` con **matrix cross-browser** (firefox/webkit viven aquí) |
-| 9 | [IA + Playwright MCP](./modulo-09-ia-mcp/) *(opcional)* | Cliente LLM + Playwright MCP — copiloto que genera/depura/mantiene tests (no agrega código al framework) |
+| 9 | [Equipo de agentes de QA](./modulo-09-ia-mcp/) *(opcional, 145 min)* | `AGENTS.md` + 6 subagentes + skill `/qa-flow` — de la historia de usuario al test (reutiliza el framework, no agrega código a las capas) |
+| esp. | [IA Test Harness avanzado](./modulo-especial-ia-harness-avanzado/) *(opcional, avanzado)* | Camino alterno por prompts: genera un framework E2E completo con Claude Code + Playwright MCP |
 
 ### Mapa de Git embebido
 
@@ -49,7 +50,8 @@ Curso práctico de **Playwright con TypeScript** para Ingenieros de QA que ya pa
 ### Apéndices opcionales
 
 - **A1 — Codegen:** `pnpm exec playwright codegen` para prototipar specs rápido (se enseña en M02).
-- **A2 — [IA + Playwright MCP](./modulo-09-ia-mcp/)** (opcional, 45-60 min): configura un cliente LLM (Claude / Copilot / Gemini / ChatGPT) con Playwright MCP y Playwright Agents.
+- **A2 — [Equipo de agentes de QA](./modulo-09-ia-mcp/)** (opcional, 145 min): un `AGENTS.md`, seis subagentes y la skill `qa-flow` con Claude Code + Playwright MCP; portable a Codex, Cursor, Copilot y Gemini CLI.
+- **A3 — [IA Test Harness avanzado](./modulo-especial-ia-harness-avanzado/)** (opcional, avanzado, 90-120 min): el mismo propósito por una cadena de prompts.
 
 ---
 
@@ -68,7 +70,7 @@ Fixtures + isolation         M05       fixtures/omnipizza.ts, helpers/unique-dat
 API layer                    M06       services/BaseService.ts + Auth/Order/PizzaService, tests/api/
 Setup project + storageState M07       tests/setup/auth.ui.setup.ts + auth.api.setup.ts, .auth/ (gitignored)
 CI + cross-browser           M08       .github/workflows/playwright.yml (matrix firefox/webkit)
-AI Test Harness (opcional)   M09       cliente LLM + Playwright MCP
+Equipo de agentes (opc.)     M09       AGENTS.md + agents/ + skills/qa-flow (+ MCP)
 ```
 
 ---

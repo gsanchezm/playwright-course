@@ -1,482 +1,330 @@
-# Modulo 09 - IA Test Harness con Claude Code + Playwright MCP
+# Módulo 09 — Equipo de agentes de QA (de la historia de usuario al test, con `AGENTS.md` + subagentes + skill)
 
-**Duracion estimada:** 90-120 min<br>
-**Pieza que suma al framework:** un **AI Test Harness** generado desde cero por Claude Code en una carpeta externa vacia, con Playwright, pnpm, MCP, patrones de diseno, principios SOLID/DRY/KISS, vertical slicing, ejecucion en paralelo y una matriz cross-browser + responsive (Chromium/Firefox/WebKit + Pixel 5 / iPhone 13).
+**Duración estimada:** 145 min (2 h 25 min) · módulo opcional
+**Piezas que suma al framework:**
+- `AGENTS.md` — el "manual del equipo": proyecto, convenciones, contrato de handoff y reglas. Es la **fuente de verdad portable**.
+- `agents/*.md` — **6 subagentes** (`qa-reviewer`, `qa-test-designer`, `qa-automation-developer`, `qa-triage`, `qa-healer`, `qa-bug-reporter`), cada uno con un rol, una entrada y una salida en archivo.
+- `skills/qa-flow/SKILL.md` — la **skill** que orquesta los 6 agentes en orden: `/qa-flow US-01`.
+- `scripts/sync-claude.ps1` · `scripts/sync-claude.sh` — el adaptador de Claude Code: **copia** `agents/` y `skills/` a `.claude/` y crea `CLAUDE.md`.
+- `settings.local.json.example` — plantilla de `.claude/settings.local.json` (modelo, advisor, modelo de subagentes).
+- `stories/US-01..03` + `evidence/fallo-observado/` + `tests/seeded/` — los escenarios del módulo (historias, evidencia de un fallo y un spec que falla).
 
-Este modulo ya no trata de pedirle a la IA "un test suelto". El objetivo es mas profesional: aprender a usar Claude Code como un ingeniero asistido por IA para **crear, verificar, refactorizar y mantener** un framework E2E completo para cualquier SUT indicando solo la URL de UI y la URL de API. OmniPizza es el ejemplo del curso, no una regla hardcodeada de los prompts.
-
-> Idea central: la IA no reemplaza el criterio tecnico. La IA ejecuta el trabajo mecanico; tu controlas arquitectura, alcance, verificacion y calidad.
-
----
-
-## Resultado esperado
-
-Al terminar tendras una carpeta externa llamada `harness` (el nombre es libre; el modulo usa `harness` en todos los ejemplos):
-
-```text
-C:\tmp\harness
-# o en macOS/Linux:
-~/tmp/harness
-```
-
-con un proyecto generado por Claude Code:
-
-```text
-harness/
-  .claude/
-  .vscode/
-  src/
-    core/
-    shared/
-    features/
-      <slices-descubiertas-por-la-ia>/
-        <slice>.spec.ts / <slice>.api.spec.ts
-  CLAUDE.md
-  AGENTS.md
-  PROJECT_BRIEF.md
-  package.json
-  playwright.config.ts
-  tsconfig.json
-  pnpm-lock.yaml
-```
-
-La referencia esperada vive en [`test-ia-harness`](./test-ia-harness/). No es para copiarla manualmente: sirve para revisar si la salida de la IA tiene la forma correcta.
+**Lo que NO suma — hereda del estado final de M07:** `pages/`, `services/`, `fixtures/omnipizza.ts`, `data/`, `types/` y `tests/setup/auth.api.setup.ts` (login por API). Los agentes **reutilizan** esas piezas — no las reinventan.
 
 ---
 
-## Stack recomendado
+> 🎁 **Proyecto de referencia — [`proyecto/`](proyecto/).** Proyecto Playwright **autocontenido y ejecutable** con todo lo de este módulo ya armado (su propio `package.json`, `playwright.config.ts`, `.env.example`). Ábrelo aparte: `pnpm install` → `pnpm install:browsers` → copia `.env.example` a `.env` → `pnpm sync:claude:win` o `pnpm sync:claude:sh`. Detalles en [`proyecto/README.md`](proyecto/README.md).
 
-| Capa | Decision del modulo | Motivo |
-|---|---|---|
-| Agente principal | **Claude Code** | Excelente para modificar repos, leer contexto y ejecutar comandos. |
-| IDE | **VS Code** | Editor comun para QA/automation y compatible con MCP. |
-| Browser automation para IA | **Playwright MCP** | Claude puede navegar el SUT con snapshots de accesibilidad. |
-| Package manager | **pnpm via Corepack** | Rapido, reproducible y consistente con el curso. |
-| Entrega opcional | **GitHub CLI (`gh`)** | Permite crear commit, repo privado y push a main al final, sin hacerlo requisito del harness. |
-| Arquitectura | Vertical slices + patrones concretos | Evita un framework gigante sin responsabilidad clara. |
+## La idea, en una frase
 
-Fuentes oficiales usadas para fijar el flujo:
+**Un equipo de agentes se define con archivos Markdown, no con código:** un `AGENTS.md` que dice cómo trabajamos, un agente por rol con una entrada y una salida claras, y una skill que los encadena. Tú sigues siendo el QA: revisas, confirmas y decides.
 
-- Playwright MCP: `https://playwright.dev/docs/getting-started-mcp`
-- Claude Code MCP: `https://code.claude.com/docs/en/mcp`
-- pnpm/Corepack: `https://pnpm.io/installation`
-- Playwright install: `https://playwright.dev/docs/intro`
-- GitHub CLI: `https://cli.github.com/manual/`
+> 🧭 **¿Prefieres el enfoque por prompts?** Hay un camino alterno, más manual y más largo, en el [módulo especial de IA Test Harness avanzado](../modulo-especial-ia-harness-avanzado/README.md): ahí construyes el mismo tipo de arnés con una cadena de prompts. M09 es el camino principal.
 
 ---
 
-## Modelo mental
+## 🏗️ Arquitectura al terminar este módulo
 
-Un ingeniero novato suele hacer esto:
-
-```text
-"Claude, hazme un framework de Playwright completo."
+```
+modulo-09-ia-mcp/proyecto/
+├── AGENTS.md                       ← 🆕 fuente de verdad: proyecto + convenciones + handoff + reglas
+├── agents/                         ← 🆕 un archivo por rol (frontmatter + Rol/Entrada/Salida/Límites)
+│   ├── reviewer.md · test-designer.md · automation-developer.md
+│   └── triage.md · healer.md · bug-reporter.md
+├── skills/qa-flow/SKILL.md         ← 🆕 orquesta los 6 agentes: /qa-flow
+├── scripts/sync-claude.{ps1,sh}    ← 🆕 copia agents/ y skills/ a .claude/ (+ CLAUDE.md)
+├── settings.local.json.example     ← 🆕 plantilla de .claude/settings.local.json
+├── docs-adaptadores.md             ← 🆕 Claude Code, Codex, Cursor, Copilot, Gemini CLI
+├── stories/US-01..03               ← 🆕 historias de usuario de OmniPizza
+├── evidence/fallo-observado/       ← 🆕 evidencia capturada de un fallo
+├── tests/
+│   ├── seeded/                     ← 🆕 un spec que falla (solo corre con pnpm test:seeded)
+│   └── generated/                  ← 🆕 aquí escribe el Automation Developer
+├── work/<id>/                      ← 🆕 (gitignored) archivos de handoff por historia
+├── .claude/ · CLAUDE.md            ← 🆕 (generados, gitignored) copias para Claude Code
+└── pages/ · services/ · fixtures/ · data/ · types/ · tests/setup/   ← (M04–M07, sin cambios)
 ```
 
-Eso produce codigo grande, fragil y dificil de revisar.
+**Flujo del equipo** (cada agente lee lo que dejaron los anteriores en `work/<id>/` y escribe solo su archivo):
 
-En este modulo lo hacemos asi:
-
-```text
-1. Script prepara carpeta, MCP config y prompts.
-2. Claude verifica ambiente.
-3. Claude crea la fundacion, no features.
-4. Claude explora UI/API y escribe `TEST_PLAN.md`.
-5. Claude genera una slice pequena con casos UI/API del plan.
-6. Tu corres tests.
-7. Claude corrige con output real.
-8. Claude repite slices copiando el patron aprobado.
+```
+stories/US-01-*.md
+   │
+   ▼
+qa-reviewer ──► work/US-01/01-review.md ──► qa-test-designer ──► 02-cases.md
+                                                                    │
+                                                                    ▼
+                                          qa-automation-developer ──► tests/generated/US-01.spec.ts
+                                                                    │  (si algo falla)
+                                                                    ▼
+                                                    qa-triage ──► 04-triage.md ─┬─► qa-healer ──► 06-heal.md
+                                                                                └─► qa-bug-reporter ──► 05-issue-draft.md
 ```
 
-La diferencia es el **contrato**. `AGENTS.md` define reglas estables para que cada prompt sea corto y no gaste tokens repitiendo arquitectura.
+**Qué NO existe:** un agente que decida solo y publique solo. El Reviewer puede **detener** el flujo con preguntas bloqueantes, y el Bug Reporter **pide tu confirmación** antes de crear nada en GitHub.
 
 ---
 
-## Patrones de diseno exigidos
+## Analogía de apertura
 
-Cada patron tiene una casa fija. Si Claude lo duplica o lo mueve, se corrige.
+Un equipo de QA real no es una persona que hace todo: hay quien **revisa la historia**, quien **diseña los casos**, quien **automatiza**, y quien **investiga qué pasó cuando algo se pone rojo**. Cada uno deja su trabajo por escrito para que el siguiente lo recoja. Aquí montas ese mismo equipo con seis "compañeros" de IA: cada uno tiene un puesto, una bandeja de entrada y una bandeja de salida. El `AGENTS.md` es el reglamento de la oficina; la skill `qa-flow` es el jefe de turno que pasa el trabajo de mano en mano.
 
-| Patron | Ubicacion |
+---
+
+## ¿Qué aprenderás?
+
+1. **Qué es un subagente** y qué lo hace útil: rol acotado, entrada y salida en archivo, modelo propio.
+2. **Cómo crear un `AGENTS.md`** desde cero: qué incluir y qué dejar fuera.
+3. **El contrato de handoff:** nombres de archivo en `work/<id>/` que conectan un agente con el siguiente.
+4. **Modelos y advisor:** qué modelo usa cada agente y cómo lo ajustas con `.claude/settings.local.json`.
+5. **Triage:** decidir si un fallo es del test, de la app o intermitente, **con evidencia**.
+6. **Humano en el circuito:** dónde el flujo se detiene a preguntarte.
+7. **Portabilidad:** los mismos archivos sirven en otras herramientas (Codex, Cursor, Copilot, Gemini CLI).
+
+---
+
+## Conceptos JIT
+
+| Concepto | Analogía |
 |---|---|
-| POM | `src/features/*/*.page.ts` |
-| Service / Adapter | `src/features/*/*.service.ts` |
-| Template Method | `src/core/BasePage.ts` y `src/core/BaseService.ts` |
-| Factory | `src/features/*/*.factory.ts` |
-| Builder | solo entidades complejas, `*.builder.ts` |
-| Facade | `src/features/*/*.flow.ts` |
-| Singleton | `src/core/env.ts` |
-| Observer | `src/core/reporter.ts` |
-| Strategy | Se agrega despues si el SUT requiere estrategias, por ejemplo auth UI/API |
-| Dependency Injection | `src/shared/fixtures.ts` |
-
-Reglas de diseno:
-
-- **SRP:** un archivo, una razon principal para cambiar.
-- **OCP:** agregar una feature no debe tocar `core/`.
-- **DIP:** specs dependen de flows/fixtures, no de implementaciones internas.
-- **DRY:** duplicacion comun vive en `core/` o `shared/`.
-- **KISS/YAGNI:** una slice no recibe `service`, `factory`, `builder` o `strategy` si no lo necesita.
-- **Vertical slicing:** cada feature se entiende en su carpeta.
-- **Clean Code:** nombres con intencion, unidades pequenas, guard clauses / early return. Es Clean Code (practicas), no Clean Architecture por capas.
-- **Assertions:** 1 por test, maximo 2. Mas que eso suele ser error de diseno; agrupa verificaciones en metodos nombrados del Page/Flow. Un test unitario de forma usa una sola asercion de objeto (`toEqual`).
-- **Data-driven:** casos que solo cambian por input se parametrizan sobre `src/shared/data/*.json`, no se copian.
-- **Specs co-localizados:** cada spec vive en su slice (`*.spec.ts` / `*.api.spec.ts`); sin carpeta `tests/` separada.
-- **MenuPage:** si el SUT tiene menu, sidebar, tabs o navegacion compartida, ese Page Object debe llamarse `MenuPage`.
+| Subagente (`agents/<rol>.md`) | Un compañero con puesto fijo: su descripción de trabajo, su bandeja de entrada y su bandeja de salida |
+| `AGENTS.md` | El reglamento de la oficina: lo que todos deben saber antes de tocar nada |
+| Skill (`skills/qa-flow/SKILL.md`) | El procedimiento del jefe de turno: en qué orden pasa el trabajo y cuándo para |
+| Handoff (`work/<id>/NN-*.md`) | La bandeja entre escritorios: el siguiente solo lee lo que dejó el anterior |
+| `model:` del frontmatter | El nivel del compañero: tareas ligeras a uno rápido, tareas de código a uno más capaz |
+| MCP de Playwright | Unos ojos para mirar la app real mientras se trabaja |
+| Adaptador | El enchufe: mismos archivos, distinta herramienta |
 
 ---
 
-## Setup automatico multiplataforma
+## Presupuesto de tiempo
 
-El primer paso didactico es usar IA para generar o refrescar los scripts de setup.
-Despues ejecutas el script para crear una carpeta externa con los archivos minimos
-que Claude necesita antes de generar el framework. En esa carpeta se crea
-`PROJECT_BRIEF.md`; por eso el prompt `02-master-architect.md` lo puede leer
-despues.
-
-### Prompt 00: crear scripts de setup
-
-Desde el repo del curso, pega [`prompts/00-create-setup-scripts.md`](./prompts/00-create-setup-scripts.md).
-
-Este prompt le pide a Claude Code crear o refrescar:
-
-- `scripts/setup-ai-harness.ps1` para Windows;
-- `scripts/setup-ai-harness.sh` para macOS/Linux.
-
-Es parte del flujo porque usas IA para preparar tu propio
-ambiente, no sólo para generar tests.
-
-### Windows
-
-```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
-```
-
-### macOS/Linux
-
-```bash
-chmod +x playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
-```
-
-OmniPizza es el SUT por defecto. Para otro sistema, cambia solo las URLs (el nombre de la carpeta sigue siendo libre; se muestra `harness` para reforzar que no depende del SUT):
-
-```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 `
-  -TargetDir C:\tmp\harness `
-  -UiUrl https://mi-ui.example.com `
-  -ApiUrl https://mi-api.example.com
-```
-
-```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness" \
-  --ui-url https://mi-ui.example.com \
-  --api-url https://mi-api.example.com
-```
-
-El script:
-
-- valida `node`, `pnpm`, `claude`, `git`, `gh` opcional y `code` opcional;
-- habilita `pnpm` via Corepack si falta;
-- crea la carpeta destino;
-- escribe `PROJECT_BRIEF.md`;
-- escribe `CLAUDE.md` con instrucciones cortas para Claude Code;
-- escribe `.mcp.json` para Claude Code;
-- escribe `.vscode/mcp.json` para VS Code;
-- copia prompts compactos a `prompts/`;
-- crea `.gitignore`;
-- abre la carpeta en VS Code si `code` existe.
-
-> Si un comando requiere instalacion global, el script te muestra el comando y se detiene. No instala herramientas silenciosamente.
+| Paso | Tema | Minutos |
+|---|---|---|
+| 1 | Concepto: agentes, `AGENTS.md`, settings, modelos | 15 |
+| 2 | Entorno y MCP | 10 |
+| 3 | Reviewer + Test Designer | 25 |
+| 4 | Automation Developer | 25 |
+| 5 | Triage + Healer sobre el spec que falla | 25 |
+| 6 | Bug Reporter y el issue | 15 |
+| 7 | `qa-flow` completo con una historia nueva | 20 |
+| 8 | Reto y cierre | 10 |
+| | **Total** | **145** |
 
 ---
 
-## Configuracion MCP
+## Paso a paso
 
-El setup crea esta configuracion en la carpeta externa:
+> **Cómo leer esta sección:** trabajas en [`proyecto/`](proyecto/) con Claude Code abierto en esa carpeta. Los comandos `pnpm` son iguales en cualquier shell; solo el script de sincronización cambia entre PowerShell y bash.
+
+### Paso 1 — Concepto: agentes, `AGENTS.md`, settings y modelos (15 min)
+
+**Un subagente es un archivo Markdown** con un frontmatter y un cuerpo. Abre [`proyecto/agents/triage.md`](proyecto/agents/triage.md):
+
+- **Frontmatter:** `name`, `description` (cuándo usarlo) y `model` (qué modelo lo ejecuta).
+- **Cuerpo:** `Rol`, `Entrada`, `Salida`, `Límites`. Es un contrato corto: qué lee, qué escribe, qué no debe hacer.
+
+**Quién usa qué modelo** (campo `model:` de cada agente):
+
+| Agente | Modelo | Por qué |
+|---|---|---|
+| `qa-reviewer`, `qa-triage`, `qa-bug-reporter` | `haiku` | Leer y redactar: rápido y barato |
+| `qa-test-designer`, `qa-automation-developer`, `qa-healer` | `sonnet` | Diseñar y escribir/reparar código: más razonamiento |
+
+**`.claude/settings.local.json`** es tu configuración personal de Claude Code para este proyecto (está en `.gitignore`). La plantilla es [`proyecto/settings.local.json.example`](proyecto/settings.local.json.example):
 
 ```json
 {
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
+  "model": "sonnet",
+  "advisorModel": "fable",
+  "env": { "CLAUDE_CODE_SUBAGENT_MODEL": "haiku" }
 }
 ```
 
-Claude Code tambien permite agregarlo manualmente:
+- `model` — el modelo de **tu sesión**.
+- `advisorModel` — un modelo más capaz que la sesión puede consultar; los subagentes lo heredan.
+- `CLAUDE_CODE_SUBAGENT_MODEL` — modelo **por defecto** de los subagentes.
 
-```bash
-claude mcp add playwright npx @playwright/mcp@latest
-claude mcp list
-```
+**Precedencia del modelo de un subagente** (de mayor a menor): el `model` indicado **al invocarlo** > el `model:` de su frontmatter > `CLAUDE_CODE_SUBAGENT_MODEL` > el modelo de la sesión. Esa variable es solo un valor por defecto; para **forzarla** a todos agrega `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1`.
 
-Verificacion dentro de Claude Code:
+> ⚠️ **Advisor, lo que debes saber:** acepta `fable`, `opus` o `sonnet` (o un ID de modelo completo), **no** el alias `haiku`; no funciona con Bedrock/Foundry ni con `DISABLE_TELEMETRY`. El detalle y la verificación contra la documentación oficial están en [`proyecto/docs-adaptadores.md`](proyecto/docs-adaptadores.md).
 
-```text
-Use Playwright MCP to navigate to https://example.com, call browser_snapshot, and tell me how many links are visible. Do not answer without using the browser tool.
-```
+El archivo de settings es **opcional**: sin él, cada agente usa el `model:` de su frontmatter.
 
-Debe usar la tool. Si responde de memoria, MCP no esta conectado.
+También en este paso: aprende a escribir el `AGENTS.md` en la sección [Cómo crear un `AGENTS.md` desde cero](#cómo-crear-un-agentsmd-desde-cero) (más abajo).
+
+### Paso 2 — Entorno y MCP (10 min)
+
+Si aún no tienes Claude Code, Node, pnpm o `gh` listos, revisa [Herramientas de IA](../../00-setup/08-herramientas-ia.md). Para el Paso 6 necesitas `gh auth login`.
+
+1. Instala y prepara el proyecto:
+
+   ```bash
+   cd modulo-09-ia-mcp/proyecto
+   pnpm install
+   pnpm install:browsers
+   ```
+
+   Copia `.env.example` a `.env` (en PowerShell `Copy-Item .env.example .env`, en bash `cp .env.example .env`).
+
+2. Sincroniza el adaptador de Claude Code. Copia (no enlaza, por Windows) los agentes y la skill a `.claude/` y crea `CLAUDE.md` con `@AGENTS.md`. **No pisa** un `CLAUDE.md` ni un `.claude/settings.local.json` que ya tengas.
+
+   PowerShell:
+
+   ```powershell
+   pnpm sync:claude:win
+   ```
+
+   bash:
+
+   ```bash
+   pnpm sync:claude:sh
+   ```
+
+3. (Opcional) crea tu `.claude/settings.local.json` copiando la plantilla del Paso 1.
+
+4. **MCP de Playwright.** Los agentes `automation-developer`, `triage` y `healer` pueden mirar la app real a través del MCP de Playwright. Regístralo una vez en Claude Code:
+
+   ```bash
+   claude mcp add playwright -- npx @playwright/mcp@latest
+   ```
+
+5. Verifica la base: `pnpm test` debe pasar en verde (corre solo el project `chromium`; el spec que falla vive aparte y **no** se ejecuta aquí).
+
+> 💡 OmniPizza está en el plan gratuito de Render: la primera carga puede tardar (cold start). No es un bug.
+
+### Paso 3 — Reviewer + Test Designer (25 min)
+
+Los dos primeros agentes trabajan **sin tocar código**: leen la historia y producen documentos.
+
+1. Lee la historia [`proyecto/stories/US-01-catalogo-por-mercado.md`](proyecto/stories/US-01-catalogo-por-mercado.md).
+2. En Claude Code, dentro de `proyecto/`: *"Usa el agente `qa-reviewer` con la historia US-01"*. Produce `work/US-01/01-review.md` (preguntas, ambigüedades, supuestos).
+3. Lee el resultado. Responde a las preguntas que marque como **bloqueantes**: el flujo completo se detiene en ese punto hasta que contestes.
+4. *"Usa el agente `qa-test-designer`"*. Lee `01-review.md` y produce `work/US-01/02-cases.md` con 5-8 casos (id, título, pasos, esperado, UI/API).
+5. Revisa los casos como lo haría un QA: ¿cubren todos los criterios de aceptación? ¿hay casos inventados?
+
+🔍 **Detalle clave:** cada agente lee lo que dejaron los anteriores en `work/<id>/`. Si algo quedó fuera de `01-review.md`, no llega a los casos. Ese es el costo (y la disciplina) del handoff por archivos.
+
+### Paso 4 — Automation Developer (25 min)
+
+1. *"Usa el agente `qa-automation-developer`"*. Lee `02-cases.md` y escribe `tests/generated/US-01.spec.ts`, **reutilizando** los Page Objects y servicios del proyecto.
+2. Revisa el spec con los ojos del curso:
+   - ¿Usa los fixtures y Page Objects (nada de locators directos en el test)?
+   - ¿Locators por rol/label o `data-testid`? ¿Sin `waitForTimeout`?
+   - ¿Cada caso de `02-cases.md` tiene su test?
+3. Corre lo generado:
+
+   ```bash
+   pnpm test
+   ```
+
+4. Si algo falla, **no lo arregles tú todavía**: guarda ese fallo para el Triage. Un spec generado no es un spec correcto hasta que lo revisas.
+
+### Paso 5 — Triage + Healer sobre el spec que falla (25 min)
+
+El proyecto trae un spec que falla: [`proyecto/tests/seeded/checkout-pedido.spec.ts`](proyecto/tests/seeded/checkout-pedido.spec.ts). Solo corre bajo demanda.
+
+1. Corre el spec y mira el fallo con tus propios ojos:
+
+   ```bash
+   pnpm test:seeded
+   ```
+
+2. *"Usa el agente `qa-triage` con este spec"*. En este paso el `<id>` es el nombre del spec sin `.spec.ts` (`checkout-pedido`). Deja su veredicto en `work/<id>/04-triage.md`: `test-defect`, `app-defect` o `flaky`, **con evidencia**. Lee la evidencia, no solo el veredicto.
+3. Sigue el camino que indique el veredicto, según el contrato de [`proyecto/AGENTS.md`](proyecto/AGENTS.md). Si le toca al Healer: *"usa el agente `qa-healer`"*; modifica el spec y reporta en `work/<id>/06-heal.md`.
+4. Vuelve a correr `pnpm test:seeded`. Si sigue rojo, regresa al Triage (máximo una vez más).
+5. Compara el diff del spec con lo que esperabas. ¿El agente cambió lo mínimo?
+
+🔍 **Detalle clave:** el Triage no arregla nada. Solo **clasifica**. Separar quién decide de quién ejecuta evita que un agente "arregle" un test escondiendo un problema real.
+
+### Paso 6 — Bug Reporter y el issue (15 min)
+
+La carpeta [`proyecto/evidence/fallo-observado/`](proyecto/evidence/fallo-observado/) contiene evidencia capturada de un fallo (mensaje de error, snapshot de accesibilidad, log de acciones y captura). Su [README](proyecto/evidence/fallo-observado/README.md) describe cada archivo.
+
+1. Pide al Triage que analice **esa evidencia**: *"Usa el agente `qa-triage` con la evidencia de `evidence/fallo-observado/`"*. Aquí el `<id>` es el nombre de la carpeta de evidencia (`fallo-observado`).
+2. Si el veredicto lo manda al Bug Reporter: *"Usa el agente `qa-bug-reporter`"*. Escribe `work/<id>/05-issue-draft.md` con Título, Entorno, Pasos, Esperado, Actual, Evidencia y Severidad.
+3. **El agente se detiene y te pregunta.** Antes de crear nada, te muestra el repositorio destino (`gh repo view --json nameWithOwner`) y el borrador, y espera tu confirmación explícita.
+4. Reglas que no se negocian:
+   - Crea el issue **solo en tu repositorio propio**, nunca en un repositorio compartido.
+   - Necesitas `gh` autenticado (`gh auth login`); si no lo estás, el agente deja el borrador listo y no ejecuta nada.
+   - Si trabajas en un fork, los Issues vienen desactivados por defecto: actívalos en Settings > Features. Además fija el repo destino con `gh repo set-default <tu-usuario>/<repo>` para que `gh` apunte a tu repositorio y no al original.
+5. Confirma el repositorio y revisa el issue creado.
+
+### Paso 7 — `qa-flow` completo con una historia nueva (20 min)
+
+Ahora el jefe de turno hace todo el recorrido. Lanza el flujo y revisa los primeros archivos en clase; el resto de la corrida (varios minutos) puede terminar fuera de clase. Elige una historia que **aún no hayas usado**: [`proyecto/stories/US-02-checkout-sa.md`](proyecto/stories/US-02-checkout-sa.md) o [`proyecto/stories/US-03-login-usuario-problematico.md`](proyecto/stories/US-03-login-usuario-problematico.md).
+
+1. En Claude Code: `/qa-flow US-02` (o `US-03`).
+2. La skill invoca a los agentes en orden, verifica que cada archivo exista en `work/<id>/` antes de seguir y **se detiene** si el Reviewer marca algo como bloqueante.
+3. Cuando termine, lee su resumen: archivos generados, resultado final y próximos pasos.
+4. Revisa la carpeta `work/US-02/` en orden. ¿Dónde habrías intervenido tú?
+
+Con otra herramienta (Codex, Cursor, Copilot, Gemini CLI) sigue los pasos de la skill a mano, usando el cuerpo de cada `agents/<rol>.md` como prompt. Mira [`proyecto/docs-adaptadores.md`](proyecto/docs-adaptadores.md).
+
+### Paso 8 — Reto y cierre (10 min)
+
+Haz el [reto del módulo](reto.md): escribe tu propia historia, córrela con `qa-flow` y mejora el equipo con un séptimo agente o una regla nueva en `AGENTS.md`.
 
 ---
 
-## Prompt extra para test ids
+## Cómo crear un `AGENTS.md` desde cero
 
-Si el frontend del SUT no tiene `data-testid` estables y el equipo te permite
-modificar ese repositorio, usa [`prompts/11-frontend-testid-instrumentation.md`](./prompts/11-frontend-testid-instrumentation.md).
+Este es el archivo que más rendimiento da por línea escrita, y el que más se estropea por exceso. Hazlo así, en este orden:
 
-Este prompt se ejecuta en el **repo frontend**, no en el harness externo. Sirve
-para que la IA analice componentes, botones, inputs, links, dropdowns, imagenes,
-labels, estados y otros elementos visibles, agregue `data-testid` sin cambiar
-comportamiento, y genere `TESTID_INVENTORY.md`.
+1. **El proyecto (3-6 líneas):** qué se prueba, URLs, cómo se configura (`.env.example`), usuarios de prueba y particularidades conocidas (por ejemplo, el cold start).
+2. **Convenciones del código:** dónde viven los Page Objects, servicios y fixtures; cómo se eligen los locators; qué está prohibido (`waitForTimeout`, CSS/XPath frágil); dónde se escriben los specs nuevos.
+3. **Contrato de handoff:** una tabla paso → agente → archivo que produce. Es lo que une a los agentes entre sí.
+4. **Reglas cortas y verificables:** "no inventes datos", "el issue va a mi repo y con confirmación". Cada regla debe poder comprobarse mirando un archivo.
+5. **Puntero a la skill:** una línea hacia `skills/qa-flow/SKILL.md`, no su contenido.
 
-Recomendacion: usarlo antes de `prompts/03-test-plan.md` cuando tienes control
-del frontend. Si no tienes permiso de modificar el SUT, no lo uses; el harness
-debe trabajar con roles, labels y selectores existentes.
+**Qué NO poner:**
 
----
+- **Credenciales o secretos.** Eso va en `.env`, que nunca se versiona.
+- **Lo que ya está en el código.** No copies el contenido de los Page Objects; cita la carpeta.
+- **El detalle de cada agente.** Eso vive en `agents/<rol>.md`; si lo duplicas, se desincroniza.
+- **Un manual largo.** Se carga en cada conversación y compite por atención. Si pasa de unas 60 líneas, algo debe salir a un agente o a la skill.
+- **Instrucciones específicas de una herramienta.** `AGENTS.md` es la fuente portable; lo propio de Claude Code va en el adaptador (`CLAUDE.md` con `@AGENTS.md`).
 
-## Prompt extra: diseno del proyecto (multi-repo / monorepo)
-
-Si tienes acceso al codigo fuente del SUT (no solo a las URLs), puedes generar un
-`PROJECT_DESIGN.md` con rutas, endpoints, entidades y auth confirmados desde el
-codigo, para que `prompts/03-test-plan.md` arme un plan mas preciso:
-
-- Multi-repo (frontend y backend separados): [`prompts/12-multirepo-project-design.md`](./prompts/12-multirepo-project-design.md).
-- Monorepo (frontend y backend en un repo): [`prompts/13-monorepo-project-design.md`](./prompts/13-monorepo-project-design.md).
-
-Son de solo lectura: analizan el codigo, no lo modifican ni generan tests. Escriben
-`PROJECT_DESIGN.md` y anexan un resumen a `PROJECT_BRIEF.md`, que `03` ya lee (por
-eso `03` no cambia). Recomendacion: correrlos antes de `prompts/03-test-plan.md`.
+Compara el tuyo con [`proyecto/AGENTS.md`](proyecto/AGENTS.md) cuando termines.
 
 ---
 
-## Flujo de trabajo
+## ▶️ Cómo ejecutar este módulo
 
-### 1. Preparar carpeta externa
+Desde `proyecto/`:
 
-Windows:
-
-```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
-cd C:\tmp\harness
-claude
-```
-
-macOS/Linux:
-
-```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
-cd "$HOME/tmp/harness"
-claude
-```
-
-Acepta el workspace trust y la configuracion MCP cuando Claude lo pida.
-
-### 2. Ejecutar el prompt 01
-
-Pega [`prompts/01-bootstrap-environment.md`](./prompts/01-bootstrap-environment.md).
-
-Este prompt le pide a Claude que:
-
-- verifique versiones reales;
-- inicialice pnpm si hace falta;
-- prepare comandos base;
-- confirme MCP con una navegacion real;
-- no genere el framework todavia.
-
-### 3. Ejecutar el prompt 02
-
-Pega [`prompts/02-master-architect.md`](./prompts/02-master-architect.md).
-
-Este prompt crea la fundacion:
-
-- `AGENTS.md`;
-- `package.json`;
-- `playwright.config.ts`;
-- `tsconfig.json`;
-- `.env.example`;
-- `src/core/`;
-- `src/shared/`.
-
-No debe crear features, auth, datos de dominio ni page objects de la aplicacion todavia.
-
-### 4. Crear el plan de pruebas
-
-Pega [`prompts/03-test-plan.md`](./prompts/03-test-plan.md).
-
-Este prompt obliga a Claude a explorar antes de codificar:
-
-- navega la UI con Playwright MCP;
-- descubre endpoints desde la URL de API (`/openapi.json`, `/docs`, `/health` o probes livianos);
-- detecta features y propone nombres de slices;
-- si existe menu, sidebar, tabs o navegacion compartida, exige `MenuPage`;
-- crea `TEST_PLAN.md` con matriz de casos UI/API;
-- marca como bloqueado cualquier endpoint que no pueda confirmar.
-
-El objetivo es que no tengas que disenar todos los casos manualmente. Tu
-trabajo es revisar que el plan sea razonable antes de permitir que la IA implemente.
-
-### 5. Generar slices
-
-Pega [`prompts/04-slice-generator.md`](./prompts/04-slice-generator.md) una vez por slice propuesta en `TEST_PLAN.md`.
-
-Usa las variables que el propio plan defina:
-
-```text
-SLICE=<slice folder name from TEST_PLAN.md>
-SEED_SLICE=<empty for first slice, otherwise a completed slice>
-```
-
-Despues de cada slice:
-
-```bash
-pnpm typecheck
-pnpm exec playwright test src/features/<slice> --project=ui-chromium
-pnpm exec playwright test src/features/<slice> --project=api
-```
-
-Usa `ui-chromium` para el loop rapido. Cuando la slice quede verde, opcionalmente
-corre la matriz completa cross-browser + responsive:
-
-```bash
-pnpm exec playwright test src/features/<slice> \
-  --project=ui-firefox --project=ui-webkit \
-  --project=ui-mobile-chrome --project=ui-mobile-safari
-```
-
-Los projects moviles usan viewport <768px y activan la rama `-responsive` de los
-testids; un locator que solo resuelve `-desktop` fallara ahi. Si no existe
-`*.api.spec.ts` para esa slice, omite el comando API. Si falla, no edites a mano.
-Pega el error con [`prompts/07-healer-review.md`](./prompts/07-healer-review.md).
-
-### 6. Cablear DI y CI
-
-Cuando las slices existan:
-
-1. Pega [`prompts/05-fixtures-di.md`](./prompts/05-fixtures-di.md).
-2. Pega [`prompts/06-ci-scripts.md`](./prompts/06-ci-scripts.md).
-3. Corre:
-
-```bash
-pnpm typecheck
-pnpm test:api
-pnpm test:ui
-```
-
-CI se agrega aqui porque antes de tener specs reales no hay suficiente evidencia
-para decidir que debe correr el pipeline. El workflow tiene tres jobs:
-`api-tests` (corre en cada push/PR: typecheck + api), `ui-tests` (chromium,
-corre en cada push/PR pero solo si `api-tests` paso, via `needs: api-tests`:
-smoke + ui) y `cross-browser` (opt-in via `workflow_dispatch` o nightly:
-instala Chromium/Firefox/WebKit y corre `pnpm test:cross`). La dependencia
-`api-tests` -> `ui-tests` deja visible en GitHub Actions la piramide de
-pruebas: la capa API (mas rapida, mas casos) bloquea la capa UI (mas lenta,
-mas cara) si falla. Asi los PRs quedan rapidos y la matriz completa corre bajo
-demanda. El workflow se valida localmente; solo corre en GitHub cuando el paso 8
-crea el repo y hace push.
-
-### 7. Revision final
-
-Pega [`prompts/07-healer-review.md`](./prompts/07-healer-review.md) con el output real de typecheck, UI y API.
-
-Claude debe entregar:
-
-- suite verde o diagnostico claro;
-- lista corta de cambios;
-- anti-patterns corregidos;
-- archivos modificados.
-
-### 8. Commit, repo en GitHub y CI
-
-Si quieres publicar el harness y ver el CI en verde, pega [`prompts/08-git-github-pr.md`](./prompts/08-git-github-pr.md).
-
-Este prompt hace el commit, crea un repo privado con `gh repo create` y hace push
-directo a `main`; ahi es donde el workflow del paso 6 por fin corre en GitHub
-Actions. Despues observa el run (`gh run watch`) y, si sale rojo, lo arreglas con
-`prompts/07-healer-review.md`. `gh` es opcional: si no esta instalado o autenticado,
-el flujo deja el commit local listo y te muestra el comando exacto para crear el
-repo despues.
-
-### 9. Crear skill reutilizable opcional
-
-Cuando ya hiciste el flujo manual al menos una vez, pega [`prompts/09-create-reusable-skill.md`](./prompts/09-create-reusable-skill.md).
-
-Este paso crea un artefacto local en `skills/ai-test-harness-builder/` para
-reutilizar el protocolo con otro SUT. No instala nada globalmente: primero se
-revisa como material didactico y despues, si conviene, se puede copiar o instalar
-en el entorno personal de tu agente (Claude Code, Codex, Antigravity, GitHub Copilot, ...).
-
-### 10. Usar la skill para settear otro ambiente
-
-Para practicar el uso de skills, pega [`prompts/10-use-skill-to-bootstrap-harness.md`](./prompts/10-use-skill-to-bootstrap-harness.md).
-
-Este prompt usa la skill local para preparar una nueva carpeta externa desde:
-
-```text
-UI_URL=<url de UI>
-API_URL=<url de API>
-TARGET_DIR=<nueva carpeta externa vacia>
-```
-
-La idea es ver el contraste: primero hiciste el flujo manual con prompts, luego
-encapsulaste el protocolo en una skill, y finalmente usas esa skill para settear
-otro ambiente con menos instrucciones.
+- **Instalar:** `pnpm install` y `pnpm install:browsers`
+- **Sincronizar agentes (Claude Code):** `pnpm sync:claude:win` (PowerShell) o `pnpm sync:claude:sh` (bash)
+- **Suite normal (incluye lo generado):** `pnpm test`
+- **Solo el spec que falla:** `pnpm test:seeded`
+- **UI Mode de Playwright:** `pnpm test:pw-ui`
+- **Headed / debug:** `pnpm test:headed` · `pnpm test:debug`
+- **Typecheck:** `pnpm typecheck`
+- **Ver el reporte:** `pnpm report`
+- **Un agente:** en Claude Code, *"usa el agente `qa-triage` ..."*
+- **Todo el flujo:** en Claude Code, `/qa-flow <id>`
 
 ---
 
-## Protocolo de eficiencia de tokens
+## Outcome esperado
 
-Usa estas reglas durante todo el modulo:
-
-1. **No pegues codigo completo si Claude puede leer archivos.**
-2. **No repitas arquitectura en cada prompt:** esta en `AGENTS.md`.
-3. **No repitas casos ni endpoints en cada prompt:** estan en `TEST_PLAN.md`.
-4. **Pide una slice por vez.**
-5. **Obliga a navegar con MCP antes de generar locators.**
-6. **Pega outputs de error completos, no explicaciones tuyas.**
-7. **Pide diffs pequenos:** "fix only the failing file".
-8. **Corta loops:** maximo 3 intentos por fallo antes de documentar el limite.
-
-Prompt corto para mantener disciplina:
-
-```text
-Read AGENTS.md first. Make the smallest change that fixes the failing check. Do not refactor unrelated files. Run the check again and report only the result.
-```
+- [ ] Sabes explicar qué es un subagente y qué contiene su archivo (frontmatter + Rol/Entrada/Salida/Límites).
+- [ ] Puedes escribir un `AGENTS.md` desde cero y justificar qué dejaste fuera.
+- [ ] Puedes nombrar los archivos de `work/<id>/` en orden y qué agente produce cada uno.
+- [ ] Sabes qué modelo usa cada agente, y la precedencia cuando hay `model` al invocar, `model:` en el frontmatter y `CLAUDE_CODE_SUBAGENT_MODEL`.
+- [ ] Tienes `.claude/` sincronizado y (opcional) tu `.claude/settings.local.json` con el advisor configurado.
+- [ ] Obtuviste `01-review.md` y `02-cases.md` de una historia, y un `tests/generated/US-01.spec.ts` revisado por ti.
+- [ ] Corriste el Triage sobre un spec que falla y sobre evidencia de un fallo, y leíste la evidencia detrás de cada veredicto.
+- [ ] Si el veredicto lo requirió y `gh` está autenticado, un issue de GitHub quedó creado **en tu repositorio**, tras confirmación explícita.
+- [ ] Corriste `/qa-flow` con una historia nueva y revisaste su carpeta `work/<id>/`.
+- [ ] Entregaste el reto: historia propia + un séptimo agente o una regla nueva en `AGENTS.md`.
 
 ---
 
-## Senales de mala salida de IA
+## ¿Qué viene?
 
-Rechaza o corrige si ves:
+Si tomaste este módulo opcional, cierras el recorrido del curso: pasaste de un smoke feo a un framework con POM, fixtures, API, sesión reutilizable, CI y ahora un equipo de agentes que lo usa. Siguientes caminos:
 
-- locators CSS profundos o XPath;
-- `waitForTimeout`;
-- tests que hacen login UI en todos los specs sin razon;
-- `core/` importando features;
-- una slice que toca archivos de otra feature sin necesidad;
-- builders para objetos simples;
-- services UI mezclados con Page Objects;
-- comentarios largos explicando lo obvio;
-- codigo que no compila;
-- "TODO" en archivos del harness.
-
----
-
-## Entregable
-
-Sube o comparte:
-
-1. ruta del proyecto externo;
-2. captura o output de `claude mcp list`;
-3. `pnpm typecheck` verde;
-4. `pnpm test:api` y `pnpm test:ui`, o reporte de maximo 3 iteraciones si no quedan verdes;
-5. respuesta breve: que hizo bien Claude Code y que tuviste que corregir.
-
----
-
-## Referencia
-
-[`test-ia-harness`](./test-ia-harness/) contiene una version de referencia de la arquitectura esperada. Usala para comparar estructura, nombres y responsabilidades, no como solucion para copiar.
+- **Profundizar en IA con prompts:** el [módulo especial de IA Test Harness avanzado](../modulo-especial-ia-harness-avanzado/README.md).
+- **Llevar tu equipo a tu propio proyecto:** copia `AGENTS.md`, `agents/` y `skills/` a tu repositorio y adapta las convenciones.
+- **Ampliar el equipo:** más agentes (accesibilidad, rendimiento, datos de prueba) y más reglas, medidos siempre contra un resultado concreto.

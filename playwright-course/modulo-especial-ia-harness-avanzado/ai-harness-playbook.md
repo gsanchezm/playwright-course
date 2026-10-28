@@ -1,6 +1,6 @@
 # Playbook - AI Test Harness con Claude Code
 
-Este playbook resume el flujo operativo de M09. La version paso a paso vive en
+Este playbook resume el flujo operativo del módulo especial de IA Test Harness. La version paso a paso vive en
 [`README.md`](./README.md); los prompts copiables viven en [`prompts/`](./prompts/).
 
 ## Principio
@@ -25,7 +25,7 @@ Luego ejecuta el script generado.
 Windows:
 
 ```powershell
-.\playwright-course\modulo-09-ia-mcp\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
+.\playwright-course\modulo-especial-ia-harness-avanzado\scripts\setup-ai-harness.ps1 -TargetDir C:\tmp\harness
 cd C:\tmp\harness
 claude
 ```
@@ -33,7 +33,7 @@ claude
 macOS/Linux:
 
 ```bash
-./playwright-course/modulo-09-ia-mcp/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
+./playwright-course/modulo-especial-ia-harness-avanzado/scripts/setup-ai-harness.sh "$HOME/tmp/harness"
 cd "$HOME/tmp/harness"
 claude
 ```

@@ -1,0 +1,25 @@
+{
+  "name": "omnipizza-m09-agents",
+  "version": "1.0.0",
+  "description": "Modulo 09 (equipo de agentes de QA) sobre OmniPizza: parte del estado final de M07 y agrega agentes, skills y flujo story-to-test",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "test": "playwright test --project=chromium",
+    "test:pw-ui": "playwright test --ui",
+    "test:headed": "playwright test --headed --project=chromium",
+    "test:seeded": "playwright test --project=seeded",
+    "test:debug": "playwright test --debug --project=chromium",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install",
+    "sync:claude:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync-claude.ps1",
+    "sync:claude:sh": "bash scripts/sync-claude.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^20.11.0",
+    "dotenv": "^17.4.2",
+    "typescript": "^5.7.0"
+  }
+}

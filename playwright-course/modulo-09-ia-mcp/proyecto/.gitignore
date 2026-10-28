@@ -1,0 +1,21 @@
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# --- Secrets y storageState ---
+.env
+.env.local
+.auth/
+
+# --- Artefactos de los agentes (se conserva solo la carpeta) ---
+work/*
+!work/.gitkeep
+
+# actions.log se rastrea aunque *.log este ignorado
+!evidence/fallo-observado/actions.log
+
+# --- Config local de Claude Code (por alumno) ---
+.claude/
+CLAUDE.md

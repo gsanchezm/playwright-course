@@ -1,6 +1,6 @@
 # 08 — Herramientas de IA (opcional)
 
-> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/): el **AI Test Harness**, donde generas un framework E2E completo con **Claude Code** + Playwright MCP a partir de prompts numerados.
+> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/): el **equipo de agentes de QA**, donde un `AGENTS.md`, seis subagentes y una skill llevan una historia de usuario hasta un test con **Claude Code** + Playwright MCP. (El camino alterno por prompts vive en el módulo especial de IA Harness avanzado.)
 
 > Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Para el Módulo 9 el flujo principal es **Claude Code + Playwright MCP**; GitHub Copilot es un buen complemento dentro del editor.
 
@@ -10,7 +10,7 @@
 
 | Herramienta | Costo | Para qué | Necesaria para |
 |-------------|-------|----------|----------------|
-| **Claude Code (CLI)** | Plan Claude (Free / Pro $20) | Agente en terminal: genera, verifica y refactoriza el harness | **Módulo 9 (principal)** |
+| **Claude Code (CLI)** | Plan Claude (Free / Pro $20) | Agente en terminal: ejecuta tu equipo de subagentes y la skill `qa-flow` | **Módulo 9 (principal)** |
 | **Playwright MCP** | Gratis | Da a la IA un navegador real para descubrir selectores | **Módulo 9 (principal)** |
 | **GitHub Copilot** | $10/mes (gratis para estudiantes) | Autocompletado de código en VS Code | Módulo 9 (complemento) |
 | **Claude Desktop** | Gratis (con uso limitado) | Chat con LLM + MCP (alternativa a Claude Code) | Alternativa M9 |
@@ -52,7 +52,7 @@
 
 ## 2. Claude Code (CLI) — la herramienta principal del Módulo 9
 
-**¿Qué es?** El agente de Anthropic en la **terminal**. A diferencia del autocompletado de Copilot, Claude Code lee tu repo, ejecuta comandos y **genera, verifica y refactoriza** archivos completos siguiendo tus instrucciones. Es el motor del Módulo 9: le pegas los prompts numerados (`00 → 10`) y construye el AI Test Harness paso a paso.
+**¿Qué es?** El agente de Anthropic en la **terminal**. A diferencia del autocompletado de Copilot, Claude Code lee tu repo, ejecuta comandos y **genera, verifica y refactoriza** archivos completos siguiendo tus instrucciones. Es el motor del Módulo 9: le pides que use cada subagente (o la skill `/qa-flow`) y el equipo va de la historia al test paso a paso.
 
 - **Docs oficiales:** https://code.claude.com/docs
 - **Precio:** incluido en tu plan de Claude (Free con límites; Pro $20/mes rinde más).
@@ -75,7 +75,7 @@
    playwright    npx @playwright/mcp@latest    ✓ connected
    ```
 
-> 💡 En el Módulo 9 no configuras MCP a mano: el **script de setup del harness** escribe un `.mcp.json` en la carpeta del proyecto, así que Claude Code arranca con Playwright MCP ya conectado. El comando de arriba es para conectarlo en cualquier otra carpeta.
+> 💡 En el Módulo 9 registras el MCP una sola vez con el comando de arriba (`claude mcp add ...`). En el módulo especial de IA Harness avanzado, en cambio, el script de setup escribe un `.mcp.json` por ti.
 
 ---
 
@@ -122,7 +122,7 @@ $ claude mcp add playwright npx @playwright/mcp@latest
 $ claude mcp list        # debe mostrar: playwright ... ✓ connected
 ```
 
-O crea un `.mcp.json` en la raíz del proyecto (es justo lo que hace por ti el script de setup del harness). Es la misma configuración `mcpServers` de abajo.
+O crea un `.mcp.json` en la raíz del proyecto (es lo que genera por ti el script de setup del módulo especial). Es la misma configuración `mcpServers` de abajo.
 
 ### Setup en Claude Desktop (alternativa)
 
@@ -172,13 +172,13 @@ Si MCP está bien configurado, **abrirá un navegador real** y te responderá co
 
 ## 6. Otros clientes MCP (Copilot Agent, Gemini, ChatGPT)
 
-El flujo del Módulo 9 está pensado para **Claude Code**, pero sus prompts son **agnósticos del agente**: cualquier cliente que soporte MCP y pueda leer/editar tu repo también sirve. Alternativas maduras:
+El flujo del Módulo 9 está pensado para **Claude Code**, pero sus archivos (`AGENTS.md`, `agents/`, `skills/`) son **agnósticos del agente**: cualquier cliente que soporte MCP y pueda leer/editar tu repo también sirve. Alternativas maduras:
 
 - **GitHub Copilot (Agent mode)** en VS Code — configura MCP en `.vscode/mcp.json` (clave `servers` en vez de `mcpServers`).
 - **Gemini CLI** — `~/.gemini/settings.json`.
 - **ChatGPT / Claude.ai (web):** https://chat.openai.com/ · https://claude.ai/ · https://gemini.google.com/ — útiles para **consultar** prompts, pero la web pura no controla tu repo ni el navegador; para eso necesitas un cliente con MCP y acceso a archivos.
 
-> 💡 Si apenas exploras, **Claude Code** es el camino más simple y el mejor documentado para el harness. No necesitas plan pago para empezar.
+> 💡 Si apenas exploras, **Claude Code** es el camino más simple y el mejor documentado para el equipo de agentes. No necesitas plan pago para empezar.
 
 ---
 

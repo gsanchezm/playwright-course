@@ -165,8 +165,10 @@ export const docsNav: DocSection[] = [
       { slug: "m8-guia", label: "8.1 Guía del módulo", group: "Módulo 8 · CI + Debugging" },
       { slug: "m8-spec", label: "8.2 El spec paso a paso", group: "Módulo 8 · CI + Debugging" },
       { slug: "m8-reto", label: "🚩 Reto M8", group: "Módulo 8 · CI + Debugging" },
-      { slug: "m9-guia", label: "9.1 Guía del módulo", group: "Módulo 9 · AI Test Harness" },
-      { slug: "m9-reto", label: "🚩 Reto M9", group: "Módulo 9 · AI Test Harness" },
+      { slug: "m9-guia", label: "9.1 Guía del módulo", group: "Módulo 9 · Equipo de agentes" },
+      { slug: "m9-reto", label: "🚩 Reto M9", group: "Módulo 9 · Equipo de agentes" },
+      { slug: "especial-ia-harness-guia", label: "E.1 Guía del módulo", group: "Módulo especial · IA Harness avanzado" },
+      { slug: "especial-ia-harness-reto", label: "🚩 Reto especial", group: "Módulo especial · IA Harness avanzado" },
     ],
   },
   {

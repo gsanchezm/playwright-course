@@ -1,6 +1,6 @@
 # 08 — Herramientas de IA (opcional)
 
-> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/) sobre IA en testing.
+> **Este módulo es opcional.** Solo lo necesitas si vas a hacer el [Módulo 9 del curso de Playwright](../playwright-course/modulo-09-ia-mcp/) sobre IA en testing: un equipo de agentes de QA (`AGENTS.md` + subagentes + skill). Hay además un módulo especial opcional de IA Test Harness avanzado, por prompts.
 
 > Las herramientas de IA NO son obligatorias, pero **multiplican tu productividad** como automatizador. Recomiendo configurar al menos GitHub Copilot.
 

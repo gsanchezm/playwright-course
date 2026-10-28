@@ -1,0 +1,98 @@
+- banner:
+  - button "Ir al catálogo":
+    - img "OmniPizza"
+    - text: OmniPizza problem_user
+  - navigation:
+    - link "Catálogo":
+      - /url: /catalog
+    - link "Finalizar Compra":
+      - /url: /checkout
+    - link "Perfil":
+      - /url: /profile
+  - button "Salir"
+- main:
+  - heading "Catálogo" [level=1]
+  - textbox "Busca tu pizza favorita..."
+  - img
+  - group "Categorías":
+    - button "Todas las Pizzas" [pressed]
+    - button "Populares"
+    - button "Vegetarianas"
+    - button "Amantes de la Carne"
+    - button "Bebidas y Acompañantes"
+  - img "Margarita"
+  - heading "Margarita" [level=2]
+  - paragraph: Tomate, mozzarella, albahaca
+  - text: $0.00
+  - 'button "Agregar al carrito: Margarita"':
+    - img
+  - img "Pepperoni"
+  - heading "Pepperoni" [level=2]
+  - paragraph: Pepperoni, mozzarella, salsa de tomate
+  - text: $0.00
+  - 'button "Agregar al carrito: Pepperoni"':
+    - img
+  - img "Hawaiana"
+  - heading "Hawaiana" [level=2]
+  - paragraph: Jamón, piña, mozzarella
+  - text: $0.00
+  - 'button "Agregar al carrito: Hawaiana"':
+    - img
+  - img "Cuatro Quesos"
+  - heading "Cuatro Quesos" [level=2]
+  - paragraph: Mozzarella, parmesano, gorgonzola, provolone
+  - text: $0.00
+  - 'button "Agregar al carrito: Cuatro Quesos"':
+    - img
+  - img "Vegetariana"
+  - heading "Vegetariana" [level=2]
+  - paragraph: Champiñones, pimientos, aceitunas, cebolla
+  - text: $0.00
+  - 'button "Agregar al carrito: Vegetariana"':
+    - img
+  - img "Marinara"
+  - heading "Marinara" [level=2]
+  - paragraph: Tomate, ajo, orégano
+  - text: $0.00
+  - 'button "Agregar al carrito: Marinara"':
+    - img
+  - img "Caprichosa"
+  - heading "Caprichosa" [level=2]
+  - paragraph: Jamón, champiñones, alcachofa, aceitunas
+  - text: $0.00
+  - 'button "Agregar al carrito: Caprichosa"':
+    - img
+  - img "Diavola"
+  - heading "Diavola" [level=2]
+  - paragraph: Salami picante, chile, mozzarella
+  - text: $0.00
+  - 'button "Agregar al carrito: Diavola"':
+    - img
+  - img "Prosciutto"
+  - heading "Prosciutto" [level=2]
+  - paragraph: Prosciutto, arúgula, parmesano
+  - text: $0.00
+  - 'button "Agregar al carrito: Prosciutto"':
+    - img
+  - img "Cuatro Estaciones"
+  - heading "Cuatro Estaciones" [level=2]
+  - paragraph: Alcachofa, aceitunas, jamón, champiñones
+  - text: $0.00
+  - 'button "Agregar al carrito: Cuatro Estaciones"':
+    - img
+  - img "Funghi"
+  - heading "Funghi" [level=2]
+  - paragraph: Champiñones, mozzarella, orégano
+  - text: $0.00
+  - 'button "Agregar al carrito: Funghi"':
+    - img
+  - img "Pollo BBQ"
+  - heading "Pollo BBQ" [level=2]
+  - paragraph: Pollo, salsa BBQ, cebolla, cilantro
+  - text: $0.00
+  - 'button "Agregar al carrito: Pollo BBQ"':
+    - img
+  - heading "Tu pedido" [level=2]
+  - text: 🛒
+  - paragraph: Tu carrito está vacío.
+  - paragraph: ¡Agrega algunas pizzas!
