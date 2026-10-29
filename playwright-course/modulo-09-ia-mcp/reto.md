@@ -11,6 +11,7 @@ Ya viste el equipo trabajar con historias que te di. Ahora el material es tuyo.
 3. **Una mejora al equipo**, a elegir una:
    - **A. Un séptimo agente** en `proyecto/agents/<rol>.md` (por ejemplo, uno de accesibilidad o de datos de prueba), con frontmatter, Rol, Entrada, Salida y Límites, y su archivo en `work/<id>/`. Agrégalo al contrato de `AGENTS.md` y a `skills/qa-flow/SKILL.md`, y vuelve a sincronizar (`pnpm sync:claude:win` o `pnpm sync:claude:sh`).
    - **B. Una regla nueva en `AGENTS.md`** que cambie un resultado concreto de la corrida.
+   - **C. (Si hiciste el Paso 8 opcional) Regenera el diagrama del equipo de agentes** después de tu mejora (el séptimo agente o la regla nueva) con el mismo prompt del Paso 8-D, y compara el antes y el después: ¿el diagrama refleja tu cambio? ¿Qué caja o flecha nueva apareció?
 
 ## Cómo sabes que mejoró
 

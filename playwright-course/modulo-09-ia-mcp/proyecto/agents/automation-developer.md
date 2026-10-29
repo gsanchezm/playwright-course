@@ -11,7 +11,7 @@ Playwright para confirmar locators reales antes de escribirlos.
 
 ## Entrada
 - `work/<id>/02-cases.md` (casos a automatizar).
-- `AGENTS.md`, `pages/`, `services/`, `fixtures/omnipizza.ts`, `data/`.
+- `AGENTS.md`, `pages/`, `services/`, `fixtures/omnipizza.ts`, `fixtures/api.ts`, `data/`.
 - `tests/ejemplo.spec.ts` como modelo de estilo.
 
 ## Salida
@@ -26,7 +26,8 @@ Playwright para confirmar locators reales antes de escribirlos.
 - Locators por rol/label o `data-testid`; prohibido `waitForTimeout`.
 - Usa fixtures y `data/users.json`; nunca credenciales en el spec.
 - No modifiques otros specs, `playwright.config.ts` ni `tests/seeded/`.
-- Los casos tipo API usan `services/`, no la interfaz.
+- Los casos tipo API usan `services/` y los fixtures de `fixtures/api.ts`
+  (`authService`, `accessToken`; `import { test } from "../../fixtures/api"`), no la interfaz.
 - No cambies un caso para que pase: si el caso es ambiguo, reportalo.
 - Al terminar resume: casos automatizados, resultado de la corrida, dudas.
 - Una sola corrida de verificacion por iteracion; sin bucles infinitos.

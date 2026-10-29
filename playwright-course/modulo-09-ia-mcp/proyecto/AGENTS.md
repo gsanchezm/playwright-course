@@ -17,7 +17,8 @@ el adaptador recomendado, pero cualquier herramienta que lea Markdown sirve.
 - Page Objects en `pages/` (LoginPage, CatalogPage, CheckoutPage, ProfilePage,
   MenuPage, PizzaCustomizerModal). Los tests NUNCA tocan locators directo.
 - Servicios de API en `services/` (AuthService, PizzaService, OrderService).
-- Fixtures en `fixtures/omnipizza.ts`; datos en `data/`.
+- Fixtures: `fixtures/omnipizza.ts` (UI: POMs y `standardUser`) y `fixtures/api.ts`
+  (API: `authService` y `accessToken`); datos en `data/`.
 - Locators por rol/label o `data-testid` (via `tid()` del POM). Nada de
   CSS/XPath fragil y **nunca `waitForTimeout`**: usa web-first assertions.
 - Specs nuevos en `tests/generated/`; el spec que falla vive en `tests/seeded/`

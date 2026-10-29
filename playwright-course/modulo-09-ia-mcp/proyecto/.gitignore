@@ -16,6 +16,10 @@ work/*
 # actions.log se rastrea aunque *.log este ignorado
 !evidence/fallo-observado/actions.log
 
+# --- Mapas generados por graphify y archify (Paso 8) ---
+graphify-out/
+.archify/
+
 # --- Config local de Claude Code (por alumno) ---
 .claude/
 CLAUDE.md

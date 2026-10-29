@@ -1,6 +1,6 @@
 # m09-agentes — proyecto autocontenido
 
-Snapshot **runnable** de `playwright-course` **al terminar el Módulo 09**: el estado final de M07 (POM + fixtures + servicios + login por API) más un **equipo de 6 agentes de QA** (`AGENTS.md` + `agents/` + `skills/`) sobre **OmniPizza**. El "por qué" vive en [`../README.md`](../README.md).
+Snapshot **runnable** de `playwright-course` **al terminar el Módulo 09**: el estado final de M07 (POM + fixtures UI y API + servicios + login por API) más un **equipo de 6 agentes de QA** (`AGENTS.md` + `agents/` + `skills/`) sobre **OmniPizza**. El "por qué" vive en [`../README.md`](../README.md).
 
 ## Qué suma M09 sobre M07
 

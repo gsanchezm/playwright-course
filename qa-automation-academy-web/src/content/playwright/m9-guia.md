@@ -1,6 +1,6 @@
 # M09 · Guía del módulo: Equipo de agentes de QA (de la historia de usuario al test, con `AGENTS.md` + subagentes + skill)
 
-**Duración estimada:** 145 min (2 h 25 min) · módulo opcional
+**Duración estimada:** 145 min (2 h 25 min) · módulo opcional · +15 min si haces el Paso 8 (opcional)
 **Piezas que suma al framework:**
 - `AGENTS.md` — el "manual del equipo": proyecto, convenciones, contrato de handoff y reglas. Es la **fuente de verdad portable**.
 - `agents/*.md` — **6 subagentes** (`qa-reviewer`, `qa-test-designer`, `qa-automation-developer`, `qa-triage`, `qa-healer`, `qa-bug-reporter`), cada uno con un rol, una entrada y una salida en archivo.
@@ -8,8 +8,9 @@
 - `scripts/sync-claude.ps1` · `scripts/sync-claude.sh` — el adaptador de Claude Code: **copia** `agents/` y `skills/` a `.claude/` y crea `CLAUDE.md`.
 - `settings.local.json.example` — plantilla de `.claude/settings.local.json` (modelo, advisor, modelo de subagentes).
 - `stories/US-01..03` + `evidence/fallo-observado/` + `tests/seeded/` — los escenarios del módulo (historias, evidencia de un fallo y un spec que falla).
+- **Skills de mapas (de terceros, opcionales, instaladas en el proyecto):** `graphify` (grafo de conocimiento del repo) y `archify` (diagramas de arquitectura en HTML). Con ellas la IA dibuja **dos arquitecturas**: la del proyecto y la del equipo de agentes.
 
-**Lo que NO suma — hereda del estado final de M07:** `pages/`, `services/`, `fixtures/omnipizza.ts`, `data/`, `types/` y `tests/setup/auth.api.setup.ts` (login por API). Los agentes **reutilizan** esas piezas — no las reinventan.
+**Lo que NO suma — hereda del estado final de M07:** `pages/`, `services/`, `fixtures/omnipizza.ts`, `fixtures/api.ts` (fixtures de API de M06: `authService`, `accessToken`), `data/`, `types/` y `tests/setup/auth.api.setup.ts` (login por API). Los agentes **reutilizan** esas piezas — no las reinventan.
 
 ---
 
@@ -41,6 +42,7 @@ modulo-09-ia-mcp/proyecto/
 │   ├── seeded/                     ← 🆕 un spec que falla (solo corre con pnpm test:seeded)
 │   └── generated/                  ← 🆕 aquí escribe el Automation Developer
 ├── work/<id>/                      ← 🆕 (gitignored) archivos de handoff por historia
+├── graphify-out/ · .archify/       ← 🆕 (generados, gitignored) grafo y diagramas del Paso 8
 ├── .claude/ · CLAUDE.md            ← 🆕 (generados, gitignored) copias para Claude Code
 └── pages/ · services/ · fixtures/ · data/ · types/ · tests/setup/   ← (M04–M07, sin cambios)
 ```
@@ -80,6 +82,7 @@ Un equipo de QA real no es una persona que hace todo: hay quien **revisa la hist
 5. **Triage:** decidir si un fallo es del test, de la app o intermitente, **con evidencia**.
 6. **Humano en el circuito:** dónde el flujo se detiene a preguntarte.
 7. **Portabilidad:** los mismos archivos sirven en otras herramientas (Codex, Cursor, Copilot, Gemini CLI).
+8. **Mapas con IA (opcional):** instalar las skills `graphify` y `archify`, y pedir un grafo del repo y dos arquitecturas (proyecto y agentes) que luego verificas contra el código.
 
 ---
 
@@ -94,6 +97,8 @@ Un equipo de QA real no es una persona que hace todo: hay quien **revisa la hist
 | `model:` del frontmatter | El nivel del compañero: tareas ligeras a uno rápido, tareas de código a uno más capaz |
 | MCP de Playwright | Unos ojos para mirar la app real mientras se trabaja |
 | Adaptador | El enchufe: mismos archivos, distinta herramienta |
+| Grafo (`graphify`) | El índice del archivo: qué se conecta con qué, para no leer todo cada vez |
+| Diagrama (`archify`) | El plano del edificio: se dibuja a partir de lo construido, y se compara con la obra |
 
 ---
 
@@ -108,8 +113,9 @@ Un equipo de QA real no es una persona que hace todo: hay quien **revisa la hist
 | 5 | Triage + Healer sobre el spec que falla | 25 |
 | 6 | Bug Reporter y el issue | 15 |
 | 7 | `qa-flow` completo con una historia nueva | 20 |
-| 8 | Reto y cierre | 10 |
-| | **Total** | **145** |
+| 8 | *(Opcional)* Mapas: un grafo y dos arquitecturas | *+15* |
+| 9 | Reto y cierre | 10 |
+| | **Total** | **145** (160 con el Paso 8) |
 
 ---
 
@@ -261,7 +267,79 @@ Ahora el jefe de turno hace todo el recorrido. Lanza el flujo y revisa los prime
 
 Con otra herramienta (Codex, Cursor, Copilot, Gemini CLI) sigue los pasos de la skill a mano, usando el cuerpo de cada `agents/<rol>.md` como prompt. Mira `proyecto/docs-adaptadores.md`.
 
-### Paso 8 — Reto y cierre (10 min)
+### Paso 8 — (Opcional) Mapas: un grafo y dos arquitecturas (15 min + lo que tarde la corrida)
+
+Paso **opcional**: no hace falta para el Outcome principal. Ya tienes un equipo funcionando; ahora le pides a la IA que **lo dibuje**: primero un grafo de conocimiento del repositorio (graphify) y luego dos diagramas de arquitectura (archify). Un diagrama que sale del código real sirve para onboarding y para **detectar lo que el equipo no hace como crees**.
+
+**A. Instala las dos skills a nivel proyecto** (quedan dentro de `proyecto/.claude/`, que está en `.gitignore`: cada alumno instala las suyas y nada de terceros entra a tu repositorio). Hazlo **después** de `pnpm sync:claude:*` (Paso 2), para que `CLAUDE.md` ya tenga `@AGENTS.md`.
+
+1. **graphify.** Es un paquete de Python 3.10+; el paquete se llama `graphifyy` (con doble `y`) pero el comando es `graphify`. Primero el programa, una sola vez por máquina, y luego la skill en el proyecto:
+
+   ```bash
+   uv tool install graphifyy
+   graphify install --project
+   ```
+
+   Sin `uv` sirve `pipx install graphifyy` o `pip install graphifyy`. Si `graphify` no se encuentra, ejecuta `uv tool update-shell` y abre una terminal nueva.
+
+   `graphify install --project` hace **tres** cosas en `proyecto/`: copia la skill a `.claude/skills/graphify/`, **agrega una sección a `CLAUDE.md`** (le dice a Claude que consulte el grafo antes de leer código) y **registra hooks** en `.claude/settings.json`. Si luego quieres quitarlo: `graphify claude uninstall`.
+
+2. **archify.** Necesita Node.js 18+. Sin la bandera `-g` el comando instala en el proyecto:
+
+   ```bash
+   npx skills add tt-a1i/archify -a claude-code
+   ```
+
+   Descarga el repositorio completo (unos 50 MB), así que en una red lenta puede tardar o fallar: reintenta. Comprueba que quedó en `.claude/skills/archify/` (también crea `skills-lock.json` en `proyecto/`). Archify consulta un manifiesto de versiones para avisar de actualizaciones; si no quieres red en clase, define `ARCHIFY_UPDATE_CHECK_DISABLED=1`.
+
+3. **Abre una sesión nueva de Claude Code** en `proyecto/` (carga las skills al arrancar) y comprueba: escribe `/graphify` y pregunta *"¿tienes la skill archify?"*.
+
+> ⚠️ Son skills de terceros y ejecutan código en tu máquina. Revisa sus repositorios antes de instalarlas en un equipo de trabajo.
+
+**B. Genera el grafo.** En Claude Code, dentro de `proyecto/`:
+
+```text
+/graphify . --no-viz
+```
+
+Crea `graphify-out/` con `GRAPH_REPORT.md` (conceptos clave, conexiones y preguntas sugeridas) y `graph.json`. Quita `--no-viz` si quieres también `graph.html`, un grafo interactivo para el navegador. Puede tardar varios minutos y consume tokens (usa el LLM para extraer relaciones): córrelo desde `proyecto/`, no desde la raíz del repositorio, y mientras corre lee el Paso 9. Cuando termine, pregúntale algo:
+
+```text
+/graphify query "¿qué archivos intervienen desde que un agente recibe una historia hasta que se genera un spec?"
+/graphify explain "qa-triage"
+```
+
+**C. Arquitectura 1 — el proyecto.**
+
+```text
+Lee graphify-out/GRAPH_REPORT.md y el código de este proyecto. Usa archify para crear un
+diagrama de arquitectura del PROYECTO Playwright: capas (pages, services, fixtures de UI y
+de API, data, tests), los projects de playwright.config.ts (setup-api → chromium, y seeded
+aparte), cómo se reutiliza la sesión de login por API y hacia dónde apunta (OmniPizza).
+Que cada caja salga de un archivo real. Guarda el HTML en .archify/ y dime la ruta.
+```
+
+**D. Arquitectura 2 — el equipo de agentes.**
+
+```text
+Lee AGENTS.md, agents/*.md y skills/qa-flow/SKILL.md. Usa archify para crear un diagrama
+de arquitectura del EQUIPO DE AGENTES: AGENTS.md como fuente de verdad, los 6 agentes con
+su modelo, la skill qa-flow que los orquesta, los archivos de handoff en work/<id>/, los
+dos puntos donde un humano interviene (preguntas bloqueantes del Reviewer y confirmación
+del Bug Reporter), el MCP de Playwright y el adaptador a .claude/. Guarda el HTML en
+.archify/ y dime la ruta.
+```
+
+**E. Ábrelos y compara contra la realidad.** Abre los HTML en el navegador (están en `.archify/<tipo>-<tema>-<fecha>/`). Revisa:
+
+- ¿Cada caja corresponde a un archivo que existe? Busca una que no.
+- ¿El orden de los agentes y los nombres de archivo de `work/<id>/` coinciden con `AGENTS.md`?
+- ¿Algún agente aparece con un modelo equivocado? Corrígelo en el chat y pide que regenere (*"corrige el modelo del Triage"*).
+
+> 💡 **Los diagramas son una hipótesis, no un hecho.** La IA los dibuja leyendo archivos; si leyó mal, el dibujo sale convincente y equivocado. Tu trabajo es el punto E.
+> 💡 `graphify-out/` y `.archify/` son artefactos generados y ya están en el `.gitignore` del proyecto.
+
+### Paso 9 — Reto y cierre (10 min)
 
 Haz el reto del módulo: escribe tu propia historia, córrela con `qa-flow` y mejora el equipo con un séptimo agente o una regla nueva en `AGENTS.md`.
 
@@ -303,6 +381,8 @@ Desde `proyecto/`:
 - **Ver el reporte:** `pnpm report`
 - **Un agente:** en Claude Code, *"usa el agente `qa-triage` ..."*
 - **Todo el flujo:** en Claude Code, `/qa-flow <id>`
+- **Grafo del repo:** en Claude Code, `/graphify . --no-viz` (salida en `graphify-out/`)
+- **Arquitecturas:** en Claude Code, pide *"usa archify para ..."* (salida en `.archify/`)
 
 ---
 
@@ -317,6 +397,8 @@ Desde `proyecto/`:
 - [ ] Corriste el Triage sobre un spec que falla y sobre evidencia de un fallo, y leíste la evidencia detrás de cada veredicto.
 - [ ] Si el veredicto lo requirió y `gh` está autenticado, un issue de GitHub quedó creado **en tu repositorio**, tras confirmación explícita.
 - [ ] Corriste `/qa-flow` con una historia nueva y revisaste su carpeta `work/<id>/`.
+- [ ] *(Opcional, Paso 8)* Instalaste `graphify` y `archify` en el proyecto y generaste `graphify-out/GRAPH_REPORT.md`.
+- [ ] *(Opcional, Paso 8)* Generaste dos arquitecturas con archify (proyecto y equipo de agentes) y verificaste al menos una caja contra el código real.
 - [ ] Entregaste el reto: historia propia + un séptimo agente o una regla nueva en `AGENTS.md`.
 
 ---
